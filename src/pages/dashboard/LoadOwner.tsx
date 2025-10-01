@@ -39,7 +39,7 @@ const LoadOwnerDashboard = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">Load Provider Dashboard</h1>
+            <h1 className="text-3xl font-bold">{user?.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : "User"}'s Dashboard</h1>
             <p className="text-muted-foreground mt-1">Manage your trips and financing requests</p>
           </div>
           <Button className="bg-gradient-primary gap-2" onClick={() => navigate('/create-trip')}>

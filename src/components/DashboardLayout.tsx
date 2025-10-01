@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { TruckIcon, LogOut, Home, Package, Wallet, Shield, Users } from "lucide-react";
+import { TruckIcon, LogOut, Home, Package, Wallet, Shield, Users, User as UserIcon } from "lucide-react";
 import { auth, User } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -99,7 +99,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
               <RoleIcon className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">{config.title}</span>
             </div>
-            
+
             <Button variant="ghost" size="icon" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
             </Button>

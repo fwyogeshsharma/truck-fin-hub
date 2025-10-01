@@ -2,23 +2,37 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TruckIcon, Package, Wallet, Shield } from "lucide-react";
+import { TruckIcon, Package, Wallet, UserCircle } from "lucide-react";
 import { auth, User } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 
 const roles = [
   {
     id: "load_owner" as const,
-    title: "Load Provider",
+    title: "Load Owner",
     description: "Create trips and request invoice financing for your logistics operations",
     icon: Package,
     color: "primary",
   },
   {
+    id: "load_agent" as const,
+    title: "Load Agent",
+    description: "Manage and facilitate trip financing for multiple load owners",
+    icon: UserCircle,
+    color: "primary",
+  },
+  {
     id: "transporter" as const,
-    title: "Vehicle Provider",
+    title: "Vehicle Owner",
     description: "Execute trips efficiently and receive faster payments for deliveries",
     icon: TruckIcon,
+    color: "secondary",
+  },
+  {
+    id: "vehicle_agent" as const,
+    title: "Vehicle Agent",
+    description: "Coordinate and manage trips for multiple vehicle owners",
+    icon: UserCircle,
     color: "secondary",
   },
   {
@@ -27,13 +41,6 @@ const roles = [
     description: "Invest in trips and earn competitive returns on short-term lending",
     icon: Wallet,
     color: "accent",
-  },
-  {
-    id: "admin" as const,
-    title: "Admin",
-    description: "Manage system operations, compliance, and ensure platform security",
-    icon: Shield,
-    color: "primary",
   },
 ];
 
@@ -61,38 +68,75 @@ const RoleSelection = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4 py-12 relative overflow-hidden">
       <div className="absolute inset-0 bg-background/95" />
-      
-      <div className="w-full max-w-5xl relative">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">Choose Your Role</h1>
-          <p className="text-muted-foreground">Select how you'll use TruckFin (this can't be changed later)</p>
+
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[10%] left-[5%] opacity-10 animate-float-slow">
+          <Package className="h-20 w-20 text-primary" />
+        </div>
+        <div className="absolute top-[20%] right-[10%] opacity-10 animate-float-medium">
+          <TruckIcon className="h-24 w-24 text-secondary" />
+        </div>
+        <div className="absolute bottom-[15%] left-[15%] opacity-10 animate-float-fast">
+          <Wallet className="h-16 w-16 text-accent" />
+        </div>
+        <div className="absolute top-[60%] right-[5%] opacity-10 animate-float-slow">
+          <UserCircle className="h-20 w-20 text-primary" />
+        </div>
+        <div className="absolute bottom-[25%] right-[20%] opacity-10 animate-float-medium">
+          <Package className="h-18 w-18 text-secondary" />
+        </div>
+        <div className="absolute top-[40%] left-[8%] opacity-10 animate-float-fast">
+          <TruckIcon className="h-22 w-22 text-accent" />
+        </div>
+        <div className="absolute bottom-[40%] right-[15%] opacity-10 animate-float-slow">
+          <Wallet className="h-20 w-20 text-primary" />
+        </div>
+        <div className="absolute top-[70%] left-[25%] opacity-10 animate-float-medium">
+          <UserCircle className="h-16 w-16 text-secondary" />
+        </div>
+      </div>
+
+      <div className="w-full max-w-7xl relative">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-primary bg-clip-text text-transparent">Choose Your Role</h1>
+          <p className="text-lg text-muted-foreground">Select how you'll use TruckFin (<span className="font-bold text-foreground">this can't be changed later</span>)</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4 mb-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
           {roles.map((role) => {
             const Icon = role.icon;
             const isSelected = selectedRole === role.id;
-            
+
             return (
               <Card
                 key={role.id}
-                className={`cursor-pointer transition-all hover:shadow-lg ${
-                  isSelected ? 'ring-2 ring-primary shadow-lg' : ''
+                className={`cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl border-2 ${
+                  isSelected ? 'ring-4 ring-primary shadow-2xl scale-105 border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                 }`}
                 onClick={() => setSelectedRole(role.id)}
               >
-                <CardHeader>
-                  <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 rounded-lg bg-${role.color}/10 flex items-center justify-center flex-shrink-0`}>
-                      <Icon className={`h-6 w-6 text-${role.color}`} />
-                    </div>
-                    <div className="flex-1">
-                      <CardTitle className="text-xl mb-1">{role.title}</CardTitle>
-                      <CardDescription>{role.description}</CardDescription>
+                <CardHeader className="text-center space-y-4 p-6">
+                  <div className="flex justify-center">
+                    <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${
+                      role.color === 'primary' ? 'from-primary/20 to-primary/10' :
+                      role.color === 'secondary' ? 'from-secondary/20 to-secondary/10' :
+                      'from-accent/20 to-accent/10'
+                    } flex items-center justify-center shadow-lg`}>
+                      <Icon className={`h-8 w-8 text-${role.color}`} />
                     </div>
                   </div>
+                  <div>
+                    <CardTitle className="text-2xl mb-3 font-bold">{role.title}</CardTitle>
+                    <CardDescription className="text-base leading-relaxed">{role.description}</CardDescription>
+                  </div>
+                  {isSelected && (
+                    <div className="pt-2">
+                      <span className="text-xs font-semibold text-primary uppercase tracking-wide">✓ Selected</span>
+                    </div>
+                  )}
                 </CardHeader>
               </Card>
             );
@@ -102,11 +146,11 @@ const RoleSelection = () => {
         <div className="flex justify-center">
           <Button
             size="lg"
-            className="bg-gradient-primary px-12"
+            className="bg-gradient-primary px-16 py-6 text-lg shadow-xl hover:shadow-2xl transition-all"
             disabled={!selectedRole || isLoading}
             onClick={handleConfirm}
           >
-            {isLoading ? "Confirming..." : "Confirm Role"}
+            {isLoading ? "Confirming..." : "Confirm Role & Continue"}
           </Button>
         </div>
       </div>

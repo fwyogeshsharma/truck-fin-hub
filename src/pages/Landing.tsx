@@ -34,7 +34,7 @@ const Landing = () => {
               <span className="bg-gradient-primary bg-clip-text text-transparent"> Trucking Industry</span>
             </h1>
             <p className="text-xl text-muted-foreground">
-              Connect load owners, vehicle providers, and lenders on one platform. Get invoice financing in hours, not days.
+              Connect load providers, vehicle providers, and lenders on one platform. Get invoice financing in hours, not days.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link to="/auth">
@@ -85,7 +85,7 @@ const Landing = () => {
               {
                 step: "1",
                 title: "Create Trip",
-                desc: "Load owner posts trip details and requests financing",
+                desc: "Load provider posts trip details and requests financing",
                 icon: TruckIcon,
               },
               {
@@ -269,7 +269,7 @@ const Landing = () => {
             <div className="mt-8">
               <Link to="/auth">
                 <Button size="lg" className="bg-gradient-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all px-8 py-6">
-                  Start Now - It's Free
+                  Start Now
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
