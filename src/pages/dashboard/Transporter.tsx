@@ -35,7 +35,7 @@ const TransporterDashboard = () => {
   const handleAcceptTrip = (tripId: string) => {
     data.updateTrip(tripId, {
       transporterId: user?.id,
-      transporterName: user?.name || 'Transporter',
+      transporterName: user?.name || 'Vehicle Provider',
       status: 'in_transit',
     });
   };
@@ -51,7 +51,7 @@ const TransporterDashboard = () => {
     <DashboardLayout role="transporter">
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Transporter Dashboard</h1>
+          <h1 className="text-3xl font-bold">Vehicle Provider Dashboard</h1>
           <p className="text-muted-foreground mt-1">Manage your trips and deliveries</p>
         </div>
 

@@ -15,7 +15,7 @@ const AdminDashboard = () => {
       value: allUsers.length,
       icon: Users,
       color: "primary",
-      detail: `${allUsers.filter(u => u.role === 'lender').length} Lenders, ${allUsers.filter(u => u.role === 'load_owner').length} Load Owners`,
+      detail: `${allUsers.filter(u => u.role === 'lender').length} Lenders, ${allUsers.filter(u => u.role === 'load_owner').length} Load Providers`,
     },
     {
       title: "Total Trips",

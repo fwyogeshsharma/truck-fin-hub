@@ -34,7 +34,7 @@ const Landing = () => {
               <span className="bg-gradient-primary bg-clip-text text-transparent"> Trucking Industry</span>
             </h1>
             <p className="text-xl text-muted-foreground">
-              Connect load owners, transporters, and lenders on one platform. Get invoice financing in hours, not days.
+              Connect load owners, vehicle providers, and lenders on one platform. Get invoice financing in hours, not days.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link to="/auth">
@@ -58,7 +58,7 @@ const Landing = () => {
             {[
               { value: "₹500Cr+", label: "Financed" },
               { value: "10,000+", label: "Trips Completed" },
-              { value: "12-18%", label: "Returns for Lenders" },
+              { value: "8-12%", label: "Returns for Lenders" },
               { value: "24-48hr", label: "Funding Speed" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
@@ -103,7 +103,7 @@ const Landing = () => {
               {
                 step: "4",
                 title: "Complete & Repay",
-                desc: "Transporter delivers, automatic repayment with returns",
+                desc: "Vehicle provider delivers, automatic repayment with returns",
                 icon: Shield,
               },
             ].map((item) => (
@@ -130,20 +130,20 @@ const Landing = () => {
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Benefits for Everyone</h2>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {[
               {
-                role: "Load Owners",
+                role: "Load Providers",
                 color: "primary",
                 benefits: [
-                  "Get 80% invoice financing instantly",
+                  "Get invoice financing instantly",
                   "Improve cash flow for operations",
                   "Competitive interest rates",
                   "Digital documentation",
                 ],
               },
               {
-                role: "Transporters",
+                role: "Vehicle Providers",
                 color: "secondary",
                 benefits: [
                   "Receive payments faster",
@@ -156,20 +156,10 @@ const Landing = () => {
                 role: "Lenders",
                 color: "accent",
                 benefits: [
-                  "12-18% returns on investment",
-                  "Short-term lending (7-30 days)",
+                  "8-12% annual return",
+                  "Short-term lending (30-90 days)",
                   "Risk assessment tools",
                   "Diversified portfolio",
-                ],
-              },
-              {
-                role: "Admins",
-                color: "primary",
-                benefits: [
-                  "Complete system oversight",
-                  "Fraud detection tools",
-                  "Compliance management",
-                  "Dispute resolution",
                 ],
               },
             ].map((item) => (
@@ -191,23 +181,99 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Clients Section */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Trusted by Industry Leaders</h2>
+            <p className="text-lg text-muted-foreground">
+              Join businesses already transforming their logistics financing
+            </p>
+          </div>
+          <div className="flex justify-center items-center mb-16">
+            <a
+              href="https://rollingradius.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-card border border-border rounded-lg p-8 hover:shadow-lg transition-shadow cursor-pointer"
+            >
+              <img
+                src="/client/rr_full_transp.jpg"
+                alt="Rolling Radius"
+                className="h-20 object-contain transition-all"
+              />
+            </a>
+          </div>
+
+          {/* Partners Section */}
+          <div className="text-center mb-12">
+            <h3 className="text-2xl md:text-3xl font-bold mb-4">Our Partners</h3>
+            <p className="text-muted-foreground">
+              Partnering with leading businesses across industries
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 max-w-7xl mx-auto">
+            {[
+              { name: "Alisha Torrent", logo: "/clients/AlishaTorrent.svg", url: "https://www.alishatorrent.com/" },
+              { name: "Balaji", logo: "/clients/balaji.png", url: "https://www.balajiwafers.com/" },
+              { name: "Berger", logo: "/clients/berger.png", url: "https://www.bergerpaints.com/" },
+              { name: "Bhandari Plastic", logo: "/clients/bhandari-plastic.png", url: "https://www.bhandariplastic.com/" },
+              { name: "Dynamic Cables", logo: "/clients/dynamic-cables.png", url: "https://www.dynamiccables.com/" },
+              { name: "Emami", logo: "/clients/emami.png", url: "https://www.emamiltd.in/" },
+              { name: "Greenply", logo: "/clients/greenply.png", url: "https://www.greenply.com/" },
+              { name: "INA Energy", logo: "/clients/ina-energy.png", url: "https://www.inaenergy.in/" },
+              { name: "Mangal Electricals", logo: "/clients/mangal-electricals.png", url: "https://www.mangalelectricals.com/" },
+              { name: "Manishankar Oils", logo: "/clients/Manishankar-Oils.png", url: "https://www.manishankaroils.com/" },
+              { name: "Man Structures", logo: "/clients/man-structures.png", url: "https://www.manstructures.com/" },
+              { name: "Mohit Polytech", logo: "/clients/Mohit-Polytech-Pvt-Ltd.png", url: "https://www.mohitpolytech.com/" },
+              { name: "Oswal Cables", logo: "/clients/oswal-cables.png", url: "https://www.oswalcables.com/" },
+              { name: "Raydean", logo: "/clients/raydean.png", url: "https://www.raydean.in/" },
+              { name: "RCC", logo: "/clients/rcc.png", url: "https://www.rccgroup.in/" },
+              { name: "Rex Pipes", logo: "/clients/rex-pipes.png", url: "https://www.rexpipes.com/" },
+              { name: "RL Industries", logo: "/clients/rl-industries.png", url: "https://www.rlindustries.in/" },
+              { name: "Sagar", logo: "/clients/sagar.png", url: "https://www.sagarcement.in/" },
+              { name: "Source One", logo: "/clients/source-one.png", url: "https://www.sourceone.in/" },
+              { name: "Star Rising", logo: "/clients/star-rising.png", url: "https://www.starrising.in/" },
+              { name: "True Power", logo: "/clients/true-power.png", url: "https://www.truepower.in/" },
+              { name: "Varun Beverages", logo: "/clients/Varun-Beverages.png", url: "https://www.varunbeverages.com/" },
+            ].map((partner) => (
+              <a
+                key={partner.name}
+                href={partner.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-card border border-border rounded-lg p-6 flex items-center justify-center hover:shadow-lg transition-shadow cursor-pointer"
+              >
+                <img
+                  src={partner.logo}
+                  alt={partner.name}
+                  className="h-12 w-full object-contain transition-all"
+                />
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 bg-gradient-hero relative overflow-hidden">
         <div className="absolute inset-0 bg-background/90" />
         <div className="container mx-auto px-4 relative">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h2 className="text-3xl md:text-5xl font-bold">
+          <div className="max-w-3xl mx-auto text-center space-y-6 px-4">
+            <h2 className="text-3xl md:text-5xl font-bold leading-tight mb-6">
               Ready to Transform Your Logistics Financing?
             </h2>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-xl text-muted-foreground leading-relaxed mb-8">
               Join thousands of businesses already using TruckFin
             </p>
-            <Link to="/auth">
-              <Button size="lg" className="bg-gradient-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all">
-                Start Now - It's Free
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
+            <div className="mt-8">
+              <Link to="/auth">
+                <Button size="lg" className="bg-gradient-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all px-8 py-6">
+                  Start Now - It's Free
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>

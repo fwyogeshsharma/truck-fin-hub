@@ -34,7 +34,7 @@ const CreateTrip = () => {
 
     const trip = data.createTrip({
       loadOwnerId: user?.id || 'lo1',
-      loadOwnerName: user?.name || 'Load Owner',
+      loadOwnerName: user?.name || 'Load Provider',
       origin: formData.origin,
       destination: formData.destination,
       distance: parseFloat(formData.distance),

@@ -9,14 +9,14 @@ import { useToast } from "@/hooks/use-toast";
 const roles = [
   {
     id: "load_owner" as const,
-    title: "Load Owner",
+    title: "Load Provider",
     description: "Create trips and request invoice financing for your logistics operations",
     icon: Package,
     color: "primary",
   },
   {
     id: "transporter" as const,
-    title: "Transporter",
+    title: "Vehicle Provider",
     description: "Execute trips efficiently and receive faster payments for deliveries",
     icon: TruckIcon,
     color: "secondary",

@@ -1,73 +1,84 @@
-# Welcome to your Lovable project
+# TruckFin - Fast Logistics Financing Platform
 
-## Project info
+TruckFin is a revolutionary logistics lending platform for India's domestic trucking industry. It connects load providers, vehicle providers, and lenders on one unified platform to facilitate fast invoice financing.
 
-**URL**: https://lovable.dev/projects/bbe93d71-6114-47fd-a9f7-437ec3d329a1
+## Overview
 
-## How can I edit this code?
+TruckFin streamlines the financing process for logistics operations by:
+- Enabling load providers to get invoice financing instantly
+- Allowing vehicle providers to receive payments faster
+- Providing lenders with 8-12% annual returns on short-term lending (30-90 days)
+- Delivering funds in 24-48 hours with competitive interest rates
 
-There are several ways of editing your application.
+## Key Features
 
-**Use Lovable**
+### For Load Providers
+- Instant invoice financing
+- Improved cash flow for operations
+- Competitive interest rates
+- Digital documentation
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/bbe93d71-6114-47fd-a9f7-437ec3d329a1) and start prompting.
+### For Vehicle Providers
+- Faster payment processing
+- Reduced payment delays
+- Focus on logistics operations
+- Build credit history
 
-Changes made via Lovable will be committed automatically to this repo.
+### For Lenders
+- 8-12% annual return on investment
+- Short-term lending opportunities (30-90 days)
+- Risk assessment tools
+- Diversified portfolio options
 
-**Use your preferred IDE**
+## Getting Started
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Prerequisites
+- Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### Installation
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Navigate to the project directory
+cd truck-fin-hub
 
-# Step 3: Install the necessary dependencies.
+# Install dependencies
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Technology Stack
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+This project is built with modern web technologies:
 
-**Use GitHub Codespaces**
+- **Vite** - Fast build tool and development server
+- **TypeScript** - Type-safe development
+- **React** - UI library
+- **shadcn-ui** - Reusable component library
+- **Tailwind CSS** - Utility-first styling
+- **React Router** - Client-side routing
+- **Lucide Icons** - Beautiful icon set
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## User Roles
 
-## What technologies are used for this project?
+The platform supports four main user roles:
 
-This project is built with:
+1. **Load Provider** - Create trips and request invoice financing
+2. **Vehicle Provider** - Execute trips and receive faster payments
+3. **Lender** - Invest in trips and earn competitive returns
+4. **Admin** - Manage system operations and ensure platform security
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## How It Works
 
-## How can I deploy this project?
+1. **Create Trip** - Load provider posts trip details and requests financing
+2. **Lenders Bid** - Multiple lenders compete with interest rates
+3. **Get Funded** - Best offer selected, funds disbursed instantly
+4. **Complete & Repay** - Vehicle provider delivers, automatic repayment with returns
 
-Simply open [Lovable](https://lovable.dev/projects/bbe93d71-6114-47fd-a9f7-437ec3d329a1) and click on Share -> Publish.
+## License
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+This project is part of TruckFin's logistics financing platform.

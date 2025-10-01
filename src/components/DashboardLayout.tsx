@@ -12,7 +12,7 @@ interface DashboardLayoutProps {
 
 const roleConfig = {
   load_owner: {
-    title: "Load Owner",
+    title: "Load Provider",
     icon: Package,
     nav: [
       { label: "Dashboard", path: "/dashboard/load_owner", icon: Home },
@@ -21,7 +21,7 @@ const roleConfig = {
     ],
   },
   transporter: {
-    title: "Transporter",
+    title: "Vehicle Provider",
     icon: TruckIcon,
     nav: [
       { label: "Dashboard", path: "/dashboard/transporter", icon: Home },

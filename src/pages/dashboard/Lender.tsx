@@ -142,7 +142,7 @@ const LenderDashboard = () => {
                           {trip.loadType} • {trip.weight}kg • {trip.distance}km
                         </p>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Load Owner: {trip.loadOwnerName}
+                          Load Provider: {trip.loadOwnerName}
                         </p>
                       </div>
                       <div className="text-right">
