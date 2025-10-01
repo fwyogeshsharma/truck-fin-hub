@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Package, TruckIcon, IndianRupee, Calendar, TrendingUp } from "lucide-react";
+import { MapPin, Package, TruckIcon, IndianRupee, Calendar, TrendingUp, CheckSquare, Square } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -22,6 +23,7 @@ const InvestmentOpportunities = () => {
   console.log('Trips data:', trips);
 
   const [selectedTrip, setSelectedTrip] = useState<string | null>(null);
+  const [selectedTrips, setSelectedTrips] = useState<string[]>([]);
   const [bidRate, setBidRate] = useState<number>(12);
   const [filterLoadType, setFilterLoadType] = useState<string>("");
   const [minAmount, setMinAmount] = useState<string>("");
@@ -33,6 +35,28 @@ const InvestmentOpportunities = () => {
     const matchesMaxAmount = !maxAmount || trip.requestedAmount <= parseFloat(maxAmount);
     return matchesLoadType && matchesMinAmount && matchesMaxAmount;
   });
+
+  const toggleTripSelection = (tripId: string) => {
+    setSelectedTrips(prev =>
+      prev.includes(tripId)
+        ? prev.filter(id => id !== tripId)
+        : [...prev, tripId]
+    );
+    setSelectedTrip(null); // Clear single selection when using multi-select
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedTrips.length === filteredTrips.length) {
+      setSelectedTrips([]);
+    } else {
+      setSelectedTrips(filteredTrips.map(t => t.id));
+    }
+  };
+
+  // Calculate totals for selected trips
+  const selectedTripsData = filteredTrips.filter(t => selectedTrips.includes(t.id));
+  const totalInvestmentAmount = selectedTripsData.reduce((sum, trip) => sum + trip.requestedAmount, 0);
+  const totalExpectedReturn = totalInvestmentAmount * (bidRate / 100);
 
   const handleInvest = (tripId: string) => {
     const trip = data.getTrip(tripId);
@@ -86,6 +110,64 @@ const InvestmentOpportunities = () => {
         title: "Investment active!",
         description: `₹${(investmentAmount / 1000).toFixed(0)}K at ${bidRate}% interest is now active`,
       });
+    }, 3000);
+  };
+
+  const handleBulkInvest = () => {
+    if (selectedTrips.length === 0) return;
+
+    // Move total amount to escrow
+    data.updateWallet(user?.id || 'l1', {
+      balance: wallet.balance - totalInvestmentAmount,
+      escrowedAmount: (wallet.escrowedAmount || 0) + totalInvestmentAmount,
+    });
+
+    toast({
+      title: "Bulk bids confirmed!",
+      description: `${selectedTrips.length} trips • ₹${(totalInvestmentAmount / 1000).toFixed(0)}K moved to escrow`,
+    });
+
+    // Simulate confirmation after 3 seconds
+    setTimeout(() => {
+      selectedTrips.forEach(tripId => {
+        const trip = data.getTrip(tripId);
+        if (!trip) return;
+
+        const investmentAmount = trip.requestedAmount;
+        const expectedReturn = investmentAmount * (bidRate / 100);
+        const maturityDays = trip.maturityDays || 30;
+
+        data.createInvestment({
+          lenderId: user?.id || 'l1',
+          tripId,
+          amount: investmentAmount,
+          interestRate: bidRate,
+          expectedReturn,
+          status: 'active',
+          maturityDate: new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toISOString(),
+        });
+
+        data.updateTrip(tripId, {
+          status: 'funded',
+          interestRate: bidRate,
+          fundedAt: new Date().toISOString(),
+          lenderId: user?.id,
+          lenderName: user?.name || 'Lender',
+        });
+      });
+
+      const currentWallet = data.getWallet(user?.id || 'l1');
+      data.updateWallet(user?.id || 'l1', {
+        escrowedAmount: (currentWallet.escrowedAmount || 0) - totalInvestmentAmount,
+        totalInvested: currentWallet.totalInvested + totalInvestmentAmount,
+      });
+
+      toast({
+        title: "Investments active!",
+        description: `${selectedTrips.length} trips at ${bidRate}% interest are now active`,
+      });
+
+      setSelectedTrips([]);
     }, 3000);
   };
 
@@ -148,10 +230,88 @@ const InvestmentOpportunities = () => {
           </CardContent>
         </Card>
 
+        {/* Bulk Investment Panel */}
+        {selectedTrips.length > 0 && (
+          <Card className="border-2 border-primary bg-primary/5">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-2">
+                    Bulk Investment: {selectedTrips.length} trip{selectedTrips.length > 1 ? 's' : ''} selected
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="bulkBidRate">Common Interest Rate (%)</Label>
+                      <Input
+                        id="bulkBidRate"
+                        type="number"
+                        value={bidRate}
+                        onChange={(e) => setBidRate(parseFloat(e.target.value))}
+                        min="8"
+                        max="18"
+                        step="0.5"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Total Investment:</span>
+                        <span className="font-semibold">₹{(totalInvestmentAmount / 1000).toFixed(0)}K</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Interest Rate:</span>
+                        <span className="font-semibold">{bidRate}%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Expected Return:</span>
+                        <span className="font-semibold text-accent">₹{(totalExpectedReturn / 1000).toFixed(1)}K</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    className="bg-gradient-primary"
+                    onClick={handleBulkInvest}
+                    disabled={wallet.balance < totalInvestmentAmount}
+                  >
+                    Confirm {selectedTrips.length} Bid{selectedTrips.length > 1 ? 's' : ''}
+                  </Button>
+                  <Button variant="outline" onClick={() => setSelectedTrips([])}>
+                    Clear Selection
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Available Trips */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Available Trips ({filteredTrips.length})</h2>
+            <div className="flex items-center gap-4">
+              <h2 className="text-xl font-semibold">Available Trips ({filteredTrips.length})</h2>
+              {filteredTrips.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleSelectAll}
+                  className="flex items-center gap-2"
+                >
+                  {selectedTrips.length === filteredTrips.length ? (
+                    <>
+                      <CheckSquare className="h-4 w-4" />
+                      Deselect All
+                    </>
+                  ) : (
+                    <>
+                      <Square className="h-4 w-4" />
+                      Select All
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
             <Badge variant="outline">Wallet: ₹{(wallet.balance / 100000).toFixed(1)}L</Badge>
           </div>
 
@@ -168,10 +328,19 @@ const InvestmentOpportunities = () => {
               const expectedReturn = trip.requestedAmount * (bidRate / 100);
               const daysToMaturity = trip.maturityDays || 30;
 
+              const isMultiSelected = selectedTrips.includes(trip.id);
+
               return (
-                <Card key={trip.id} className={isSelected ? 'ring-2 ring-primary' : ''}>
+                <Card key={trip.id} className={isSelected || isMultiSelected ? 'ring-2 ring-primary' : ''}>
                   <CardHeader>
                     <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={isMultiSelected}
+                          onCheckedChange={() => toggleTripSelection(trip.id)}
+                          id={`select-${trip.id}`}
+                        />
+                      </div>
                       <div className="flex gap-4 flex-1">
                         {trip.loadOwnerLogo && (
                           <div className="flex-shrink-0">
