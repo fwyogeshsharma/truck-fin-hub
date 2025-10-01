@@ -64,11 +64,23 @@ const InvestmentOpportunities = () => {
 
     const investmentAmount = trip.requestedAmount;
     const expectedReturn = investmentAmount * (bidRate / 100);
+    const maturityDays = trip.maturityDays || 30;
 
     // Move amount to escrow
     data.updateWallet(user?.id || 'l1', {
       balance: wallet.balance - investmentAmount,
       escrowedAmount: (wallet.escrowedAmount || 0) + investmentAmount,
+    });
+
+    // Create escrowed investment immediately
+    const escrowedInvestment = data.createInvestment({
+      lenderId: user?.id || 'l1',
+      tripId,
+      amount: investmentAmount,
+      interestRate: bidRate,
+      expectedReturn,
+      status: 'escrowed',
+      maturityDate: new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toISOString(),
     });
 
     toast({
@@ -80,16 +92,9 @@ const InvestmentOpportunities = () => {
 
     // Simulate confirmation after 3 seconds
     setTimeout(() => {
-      const maturityDays = trip.maturityDays || 30;
-
-      data.createInvestment({
-        lenderId: user?.id || 'l1',
-        tripId,
-        amount: investmentAmount,
-        interestRate: bidRate,
-        expectedReturn,
+      // Update investment status to active
+      data.updateInvestment(escrowedInvestment.id, {
         status: 'active',
-        maturityDate: new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toISOString(),
       });
 
       data.updateTrip(tripId, {
@@ -122,6 +127,26 @@ const InvestmentOpportunities = () => {
       escrowedAmount: (wallet.escrowedAmount || 0) + totalInvestmentAmount,
     });
 
+    // Create escrowed investments immediately
+    const escrowedInvestments = selectedTrips.map(tripId => {
+      const trip = data.getTrip(tripId);
+      if (!trip) return null;
+
+      const investmentAmount = trip.requestedAmount;
+      const expectedReturn = investmentAmount * (bidRate / 100);
+      const maturityDays = trip.maturityDays || 30;
+
+      return data.createInvestment({
+        lenderId: user?.id || 'l1',
+        tripId,
+        amount: investmentAmount,
+        interestRate: bidRate,
+        expectedReturn,
+        status: 'escrowed',
+        maturityDate: new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toISOString(),
+      });
+    }).filter(Boolean);
+
     toast({
       title: "Bulk bids confirmed!",
       description: `${selectedTrips.length} trips • ₹${(totalInvestmentAmount / 1000).toFixed(0)}K moved to escrow`,
@@ -129,25 +154,15 @@ const InvestmentOpportunities = () => {
 
     // Simulate confirmation after 3 seconds
     setTimeout(() => {
-      selectedTrips.forEach(tripId => {
-        const trip = data.getTrip(tripId);
-        if (!trip) return;
+      escrowedInvestments.forEach((investment) => {
+        if (!investment) return;
 
-        const investmentAmount = trip.requestedAmount;
-        const expectedReturn = investmentAmount * (bidRate / 100);
-        const maturityDays = trip.maturityDays || 30;
-
-        data.createInvestment({
-          lenderId: user?.id || 'l1',
-          tripId,
-          amount: investmentAmount,
-          interestRate: bidRate,
-          expectedReturn,
+        // Update investment status to active
+        data.updateInvestment(investment.id, {
           status: 'active',
-          maturityDate: new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toISOString(),
         });
 
-        data.updateTrip(tripId, {
+        data.updateTrip(investment.tripId, {
           status: 'funded',
           interestRate: bidRate,
           fundedAt: new Date().toISOString(),

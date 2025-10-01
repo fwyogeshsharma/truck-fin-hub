@@ -56,7 +56,7 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              { value: "₹500Cr+", label: "Financed" },
+              { value: "₹25Cr+", label: "Financed" },
               { value: "10,000+", label: "Trips Completed" },
               { value: "8-12%", label: "Returns for Lenders" },
               { value: "24-48hr", label: "Funding Speed" },

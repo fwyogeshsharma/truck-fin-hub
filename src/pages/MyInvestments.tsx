@@ -11,7 +11,8 @@ import {
   Clock,
   TruckIcon,
   Package,
-  AlertCircle
+  AlertCircle,
+  Lock
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
@@ -22,12 +23,14 @@ const MyInvestments = () => {
   const myInvestments = data.getInvestments().filter(i => i.lenderId === user?.id);
   const wallet = data.getWallet(user?.id || 'l1');
 
+  const escrowedInvestments = myInvestments.filter(i => i.status === 'escrowed');
   const activeInvestments = myInvestments.filter(i => i.status === 'active');
   const completedInvestments = myInvestments.filter(i => i.status === 'completed');
   const defaultedInvestments = myInvestments.filter(i => i.status === 'defaulted');
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'escrowed': return 'bg-primary';
       case 'active': return 'bg-secondary';
       case 'completed': return 'bg-green-500';
       case 'defaulted': return 'bg-destructive';
@@ -37,6 +40,7 @@ const MyInvestments = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'escrowed': return <Lock className="h-4 w-4" />;
       case 'active': return <Clock className="h-4 w-4" />;
       case 'completed': return <CheckCircle2 className="h-4 w-4" />;
       case 'defaulted': return <AlertCircle className="h-4 w-4" />;
@@ -51,6 +55,71 @@ const MyInvestments = () => {
 
   const getTripDetails = (tripId: string) => {
     return data.getTrip(tripId);
+  };
+
+  const EscrowedInvestmentCard = ({ investment }: { investment: any }) => {
+    const trip = getTripDetails(investment.tripId);
+    if (!trip) return null;
+
+    return (
+      <Card className="border-2 border-primary/20 bg-primary/5">
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <Lock className="h-4 w-4 text-primary" />
+                <CardTitle className="text-xl">
+                  {trip.origin} → {trip.destination}
+                </CardTitle>
+              </div>
+              <CardDescription>
+                {trip.loadType} • {trip.weight}kg • {trip.distance}km
+              </CardDescription>
+              <p className="text-sm text-muted-foreground mt-1">
+                Load Provider: {trip.loadOwnerName}
+              </p>
+            </div>
+            <Badge variant="outline" className="bg-primary/10 text-primary">
+              <Lock className="h-3 w-3 mr-1" />
+              Escrowed
+            </Badge>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          <div className="bg-muted/50 p-4 rounded-lg">
+            <p className="text-sm text-muted-foreground mb-2">
+              Your bid has been placed and funds are in escrow. Awaiting confirmation...
+            </p>
+            <div className="grid md:grid-cols-3 gap-4 mt-4">
+              <div className="flex items-center gap-2">
+                <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Escrowed Amount</p>
+                  <p className="font-semibold">₹{(investment.amount / 1000).toFixed(0)}K</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Interest Rate</p>
+                  <p className="font-semibold">{investment.interestRate}%</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Invested At</p>
+                  <p className="font-semibold text-sm">
+                    {new Date(investment.investedAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   const InvestmentCard = ({ investment }: { investment: any }) => {
@@ -251,12 +320,20 @@ const MyInvestments = () => {
         </div>
 
         {/* Summary Stats */}
-        <div className="grid md:grid-cols-4 gap-4">
+        <div className="grid md:grid-cols-5 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">Total Investments</p>
                 <p className="text-3xl font-bold mt-2">{myInvestments.length}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">Escrowed</p>
+                <p className="text-3xl font-bold mt-2 text-primary">{escrowedInvestments.length}</p>
               </div>
             </CardContent>
           </Card>
@@ -292,6 +369,7 @@ const MyInvestments = () => {
         <Tabs defaultValue="all" className="space-y-4">
           <TabsList>
             <TabsTrigger value="all">All ({myInvestments.length})</TabsTrigger>
+            <TabsTrigger value="escrowed">Escrowed ({escrowedInvestments.length})</TabsTrigger>
             <TabsTrigger value="active">Active ({activeInvestments.length})</TabsTrigger>
             <TabsTrigger value="completed">Completed ({completedInvestments.length})</TabsTrigger>
             {defaultedInvestments.length > 0 && (
@@ -308,8 +386,34 @@ const MyInvestments = () => {
                 </CardContent>
               </Card>
             ) : (
-              myInvestments.map(investment => (
-                <InvestmentCard key={investment.id} investment={investment} />
+              <>
+                {escrowedInvestments.map(investment => (
+                  <EscrowedInvestmentCard key={investment.id} investment={investment} />
+                ))}
+                {activeInvestments.map(investment => (
+                  <InvestmentCard key={investment.id} investment={investment} />
+                ))}
+                {completedInvestments.map(investment => (
+                  <InvestmentCard key={investment.id} investment={investment} />
+                ))}
+              </>
+            )}
+          </TabsContent>
+
+          <TabsContent value="escrowed" className="space-y-4">
+            {escrowedInvestments.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No escrowed investments</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Funds in escrow are awaiting confirmation before becoming active
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              escrowedInvestments.map(investment => (
+                <EscrowedInvestmentCard key={investment.id} investment={investment} />
               ))
             )}
           </TabsContent>

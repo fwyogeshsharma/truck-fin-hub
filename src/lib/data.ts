@@ -31,7 +31,7 @@ export interface Investment {
   amount: number;
   interestRate: number;
   expectedReturn: number;
-  status: 'active' | 'completed' | 'defaulted';
+  status: 'escrowed' | 'active' | 'completed' | 'defaulted';
   investedAt: string;
   maturityDate: string;
 }
@@ -443,6 +443,16 @@ export const data = {
     return newInvestment;
   },
 
+  updateInvestment: (id: string, updates: Partial<Investment>): Investment | null => {
+    const investments = data.getInvestments();
+    const index = investments.findIndex(i => i.id === id);
+    if (index === -1) return null;
+
+    investments[index] = { ...investments[index], ...updates };
+    localStorage.setItem(INVESTMENTS_KEY, JSON.stringify(investments));
+    return investments[index];
+  },
+
   // Wallets
   getWallet: (userId: string): Wallet => {
     const walletsData = localStorage.getItem(WALLETS_KEY);
@@ -454,7 +464,7 @@ export const data = {
     // Create default wallet
     const newWallet: Wallet = {
       userId,
-      balance: 1000000, // Default balance for demo
+      balance: 5000000, // Default balance for demo
       lockedAmount: 0,
       escrowedAmount: 0,
       totalInvested: 0,
