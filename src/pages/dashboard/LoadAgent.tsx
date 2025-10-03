@@ -128,11 +128,11 @@ const LoadAgentDashboard = () => {
     e.preventDefault();
 
     const amount = parseFloat(formData.amount);
-    if (amount < 20000 || amount > 30000) {
+    if (amount < 20000 || amount > 80000) {
       toast({
         variant: 'destructive',
         title: 'Invalid Amount',
-        description: 'Trip value must be between ₹20,000 and ₹30,000',
+        description: 'Trip value must be between ₹20,000 and ₹80,000',
       });
       return;
     }
@@ -603,14 +603,14 @@ const LoadAgentDashboard = () => {
                     id="amount"
                     name="amount"
                     type="number"
-                    placeholder="e.g., 25000"
+                    placeholder="e.g., 50000"
                     value={formData.amount}
                     onChange={handleChange}
                     min="20000"
-                    max="30000"
+                    max="80000"
                     required
                   />
-                  <p className="text-xs text-muted-foreground">Between ₹20,000 and ₹30,000</p>
+                  <p className="text-xs text-muted-foreground">Between ₹20,000 and ₹80,000</p>
                 </div>
               </div>
 

@@ -15,7 +15,7 @@ export interface Trip {
   distance: number;
   loadType: string;
   weight: number;
-  amount: number; // Trip value (20K-30K range)
+  amount: number; // Trip value (20K-80K range)
   interestRate?: number;
   maturityDays?: number;
   riskLevel?: 'low' | 'medium' | 'high'; // AI-based risk assessment

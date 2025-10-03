@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MapPin, Package, TruckIcon, IndianRupee, Calendar, TrendingUp, CheckSquare, Square, Star, Shield, Wallet, Plus, Loader2, AlertCircle, Maximize2, Minimize2 } from "lucide-react";
+import { MapPin, Package, TruckIcon, IndianRupee, Calendar, TrendingUp, CheckSquare, Square, Star, Shield, Wallet, Plus, Loader2, AlertCircle, Maximize2, Minimize2, ChevronDown, ChevronUp } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
@@ -42,11 +42,22 @@ const InvestmentOpportunities = () => {
   const [maxAmount, setMaxAmount] = useState<string>("");
   const [isCompactView, setIsCompactView] = useState(true); // Default to compact view
 
+  // Advanced filters
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [filterOrigin, setFilterOrigin] = useState<string>("");
+  const [filterDestination, setFilterDestination] = useState<string>("");
+  const [tripValueRange, setTripValueRange] = useState<[number, number]>([0, 80000]);
+
   // Top-up dialog states
   const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingInvestmentAmount, setPendingInvestmentAmount] = useState(0);
+
+  // Bid dialog states
+  const [bidDialogOpen, setBidDialogOpen] = useState(false);
+  const [selectedTripForBid, setSelectedTripForBid] = useState<any>(null);
+  const [customBidRate, setCustomBidRate] = useState<number>(12);
 
   const refreshWallet = () => {
     setWalletData(data.getWallet(user?.id || 'l1'));
@@ -56,7 +67,13 @@ const InvestmentOpportunities = () => {
     const matchesLoadType = !filterLoadType || trip.loadType.toLowerCase().includes(filterLoadType.toLowerCase());
     const matchesMinAmount = !minAmount || trip.amount >= parseFloat(minAmount);
     const matchesMaxAmount = !maxAmount || trip.amount <= parseFloat(maxAmount);
-    return matchesLoadType && matchesMinAmount && matchesMaxAmount;
+
+    // Advanced filters
+    const matchesOrigin = !filterOrigin || trip.origin.toLowerCase().includes(filterOrigin.toLowerCase());
+    const matchesDestination = !filterDestination || trip.destination.toLowerCase().includes(filterDestination.toLowerCase());
+    const matchesTripValueRange = trip.amount >= tripValueRange[0] && trip.amount <= tripValueRange[1];
+
+    return matchesLoadType && matchesMinAmount && matchesMaxAmount && matchesOrigin && matchesDestination && matchesTripValueRange;
   });
 
   const toggleTripSelection = (tripId: string) => {
@@ -133,11 +150,12 @@ const InvestmentOpportunities = () => {
     }, 2000);
   };
 
-  const handleInvest = (tripId: string) => {
+  const handleInvest = (tripId: string, customAmount?: number, customRate?: number) => {
     const trip = data.getTrip(tripId);
     if (!trip) return;
 
-    const investmentAmount = trip.amount;
+    const investmentAmount = customAmount || trip.amount;
+    const interestRate = customRate !== undefined ? customRate : bidRate;
 
     // Check if balance is insufficient
     if (wallet.balance < investmentAmount) {
@@ -152,7 +170,7 @@ const InvestmentOpportunities = () => {
       return;
     }
 
-    const expectedReturn = investmentAmount * (bidRate / 100);
+    const expectedReturn = investmentAmount * (interestRate / 100);
     const maturityDays = trip.maturityDays || 30;
 
     // Move amount to escrow
@@ -168,7 +186,7 @@ const InvestmentOpportunities = () => {
       lenderId: user?.id || 'l1',
       tripId,
       amount: investmentAmount,
-      interestRate: bidRate,
+      interestRate: interestRate,
       expectedReturn,
       status: 'escrowed',
       maturityDate: new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toISOString(),
@@ -184,7 +202,7 @@ const InvestmentOpportunities = () => {
           lenderId: user?.id || 'l1',
           lenderName: user?.name || 'Lender',
           amount: investmentAmount,
-          interestRate: bidRate,
+          interestRate: interestRate,
         },
       ],
     });
@@ -195,6 +213,31 @@ const InvestmentOpportunities = () => {
     });
 
     setSelectedTrip(null);
+    setBidDialogOpen(false);
+    setCustomBidRate(12);
+  };
+
+  const handleOpenBidDialog = (trip: any) => {
+    setSelectedTripForBid(trip);
+    setCustomBidRate(bidRate);
+    setBidDialogOpen(true);
+  };
+
+  const handleConfirmBid = () => {
+    if (!selectedTripForBid) return;
+
+    const amount = selectedTripForBid.amount;
+
+    if (customBidRate < 8 || customBidRate > 18) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Interest Rate',
+        description: 'Interest rate must be between 8% and 18%',
+      });
+      return;
+    }
+
+    handleInvest(selectedTripForBid.id, amount, customBidRate);
   };
 
   const handleBulkInvest = () => {
@@ -297,40 +340,171 @@ const InvestmentOpportunities = () => {
         {/* Filters */}
         <Card>
           <CardHeader>
-            <CardTitle>Filters</CardTitle>
-            <CardDescription>Narrow down opportunities by your preferences</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Filters</CardTitle>
+                <CardDescription>Narrow down opportunities by your preferences</CardDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className="gap-2"
+              >
+                {showAdvancedFilters ? (
+                  <>
+                    <ChevronUp className="h-4 w-4" />
+                    Hide Advanced
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-4 w-4" />
+                    Advanced Filters
+                  </>
+                )}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="loadType">Load Type</Label>
-                <Input
-                  id="loadType"
-                  placeholder="e.g., Electronics"
-                  value={filterLoadType}
-                  onChange={(e) => setFilterLoadType(e.target.value)}
-                />
+            <div className="space-y-4">
+              {/* Basic Filters */}
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="loadType">Load Type</Label>
+                  <Input
+                    id="loadType"
+                    placeholder="e.g., Electronics"
+                    value={filterLoadType}
+                    onChange={(e) => setFilterLoadType(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="minAmount">Min Amount (₹)</Label>
+                  <Input
+                    id="minAmount"
+                    type="number"
+                    placeholder="0"
+                    value={minAmount}
+                    onChange={(e) => setMinAmount(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="maxAmount">Max Amount (₹)</Label>
+                  <Input
+                    id="maxAmount"
+                    type="number"
+                    placeholder="80000"
+                    value={maxAmount}
+                    onChange={(e) => setMaxAmount(e.target.value)}
+                    max="80000"
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="minAmount">Min Amount (₹)</Label>
-                <Input
-                  id="minAmount"
-                  type="number"
-                  placeholder="0"
-                  value={minAmount}
-                  onChange={(e) => setMinAmount(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="maxAmount">Max Amount (₹)</Label>
-                <Input
-                  id="maxAmount"
-                  type="number"
-                  placeholder="1000000"
-                  value={maxAmount}
-                  onChange={(e) => setMaxAmount(e.target.value)}
-                />
-              </div>
+
+              {/* Advanced Filters */}
+              {showAdvancedFilters && (
+                <div className="pt-4 border-t space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="filterOrigin">Origin (Start Location)</Label>
+                      <Input
+                        id="filterOrigin"
+                        placeholder="e.g., Mumbai, Delhi"
+                        value={filterOrigin}
+                        onChange={(e) => setFilterOrigin(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="filterDestination">Destination</Label>
+                      <Input
+                        id="filterDestination"
+                        placeholder="e.g., Bangalore, Chennai"
+                        value={filterDestination}
+                        onChange={(e) => setFilterDestination(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Trip Value Range Slider */}
+                  <div>
+                    <Label htmlFor="tripValueRange">
+                      Trip Value Range: ₹{(tripValueRange[0] / 1000).toFixed(0)}K - ₹{(tripValueRange[1] / 1000).toFixed(0)}K
+                    </Label>
+                    <div className="mt-2 space-y-3">
+                      {/* Min Range Slider */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Minimum</span>
+                          <span className="text-xs font-medium">₹{(tripValueRange[0] / 1000).toFixed(0)}K</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="80000"
+                          step="1000"
+                          value={tripValueRange[0]}
+                          onChange={(e) => {
+                            const newMin = parseInt(e.target.value);
+                            if (newMin <= tripValueRange[1]) {
+                              setTripValueRange([newMin, tripValueRange[1]]);
+                            }
+                          }}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                        />
+                      </div>
+
+                      {/* Max Range Slider */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Maximum</span>
+                          <span className="text-xs font-medium">₹{(tripValueRange[1] / 1000).toFixed(0)}K</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="80000"
+                          step="1000"
+                          value={tripValueRange[1]}
+                          onChange={(e) => {
+                            const newMax = parseInt(e.target.value);
+                            if (newMax >= tripValueRange[0]) {
+                              setTripValueRange([tripValueRange[0], newMax]);
+                            }
+                          }}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
+                        />
+                      </div>
+
+                      {/* Scale markers */}
+                      <div className="flex justify-between text-xs text-muted-foreground pt-1">
+                        <span>₹0</span>
+                        <span>₹20K</span>
+                        <span>₹40K</span>
+                        <span>₹60K</span>
+                        <span>₹80K</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Clear Filters Button */}
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setFilterLoadType("");
+                        setMinAmount("");
+                        setMaxAmount("");
+                        setFilterOrigin("");
+                        setFilterDestination("");
+                        setTripValueRange([0, 80000]);
+                      }}
+                    >
+                      Clear All Filters
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -434,44 +608,61 @@ const InvestmentOpportunities = () => {
               const expectedReturn = trip.amount * (bidRate / 100);
 
               return (
-                <Card key={trip.id} className={`p-4 ${isMultiSelected ? 'ring-2 ring-primary' : ''}`}>
-                  <div className="flex items-center gap-4">
+                <Card key={trip.id} className={`p-2.5 ${isMultiSelected ? 'ring-2 ring-primary' : ''}`}>
+                  <div className="flex items-center gap-3">
                     <Checkbox
                       checked={isMultiSelected}
                       onCheckedChange={() => toggleTripSelection(trip.id)}
                       id={`select-compact-${trip.id}`}
                     />
-                    <div className="flex-1 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-6">
-                        <div className="min-w-[280px]">
-                          <div className="flex items-center gap-2 mb-1">
-                            <MapPin className="h-3 w-3 text-primary" />
-                            <p className="font-semibold text-sm">{trip.origin} → {trip.destination}</p>
-                          </div>
-                          <p className="text-xs text-muted-foreground">{trip.loadType} • {trip.weight}kg</p>
+                    <div className="flex-1 grid grid-cols-12 gap-3 items-center">
+                      {/* Route & Load - 4 columns */}
+                      <div className="col-span-4">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <MapPin className="h-3 w-3 text-primary flex-shrink-0" />
+                          <p className="font-semibold text-sm truncate">{trip.origin} → {trip.destination}</p>
                         </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Trip Value</p>
-                          <p className="font-semibold">₹{(trip.amount / 1000).toFixed(0)}K</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Return</p>
-                          <p className="font-semibold text-green-600">₹{(expectedReturn / 1000).toFixed(1)}K</p>
-                        </div>
+                        <p className="text-xs text-muted-foreground truncate">{trip.loadType} • {trip.weight}kg • {trip.distance}km</p>
                       </div>
-                      <div className="flex gap-2 items-center">
+
+                      {/* Company Logo - 2 columns */}
+                      <div className="col-span-2 flex justify-center">
+                        {trip.loadOwnerLogo && (
+                          <img
+                            src={trip.loadOwnerLogo}
+                            alt={trip.loadOwnerName}
+                            className="h-8 object-contain"
+                            title={trip.loadOwnerName}
+                          />
+                        )}
+                      </div>
+
+                      {/* Trip Value - 2 columns */}
+                      <div className="col-span-2 text-center">
+                        <p className="text-xs text-muted-foreground">Trip Value</p>
+                        <p className="font-semibold">₹{(trip.amount / 1000).toFixed(0)}K</p>
+                      </div>
+
+                      {/* Return - 2 columns */}
+                      <div className="col-span-2 text-center">
+                        <p className="text-xs text-muted-foreground">Return ({bidRate}%)</p>
+                        <p className="font-semibold text-green-600">₹{(expectedReturn / 1000).toFixed(1)}K</p>
+                      </div>
+
+                      {/* Risk & Bid - 2 columns */}
+                      <div className="col-span-2 flex gap-2 items-center justify-end">
                         {trip.riskLevel && (
-                          <Badge className={`text-xs ${
+                          <Badge className={`text-xs px-2 py-0.5 ${
                             trip.riskLevel === 'low' ? 'bg-green-600' :
                             trip.riskLevel === 'medium' ? 'bg-yellow-600' : 'bg-red-600'
                           } text-white`}>
-                            {trip.riskLevel.toUpperCase()}
+                            {trip.riskLevel === 'low' ? 'LOW' : trip.riskLevel === 'medium' ? 'MED' : 'HIGH'}
                           </Badge>
                         )}
                         <Button
                           size="sm"
-                          onClick={() => setSelectedTrip(trip.id)}
-                          className="bg-gradient-primary h-8"
+                          onClick={() => handleOpenBidDialog(trip)}
+                          className="bg-gradient-primary h-7 px-3 text-xs"
                         >
                           Bid
                         </Button>
@@ -767,6 +958,110 @@ const InvestmentOpportunities = () => {
                     Add ₹{topUpAmount ? (parseFloat(topUpAmount) / 1000).toFixed(0) + 'K' : '0'}
                   </>
                 )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Bid Dialog */}
+        <Dialog open={bidDialogOpen} onOpenChange={setBidDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Place Your Bid
+              </DialogTitle>
+              <DialogDescription>
+                Enter your bid amount and interest rate for this trip
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedTripForBid && (
+              <div className="space-y-4">
+                {/* Trip Summary */}
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    {selectedTripForBid.loadOwnerLogo && (
+                      <img
+                        src={selectedTripForBid.loadOwnerLogo}
+                        alt={selectedTripForBid.loadOwnerName}
+                        className="h-12 object-contain"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-sm mb-1">
+                        {selectedTripForBid.origin} → {selectedTripForBid.destination}
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedTripForBid.loadType} • {selectedTripForBid.weight}kg • {selectedTripForBid.distance}km
+                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-xs text-muted-foreground">Trip Value:</span>
+                        <span className="text-sm font-semibold">₹{(selectedTripForBid.amount / 1000).toFixed(0)}K</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Trip Value Display */}
+                <div className="p-4 border rounded-lg bg-card">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Trip Value</span>
+                    <span className="text-2xl font-bold text-primary">
+                      ₹{(selectedTripForBid.amount / 1000).toFixed(0)}K
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ₹{selectedTripForBid.amount.toLocaleString('en-IN')}
+                  </p>
+                </div>
+
+                {/* Interest Rate Input */}
+                <div>
+                  <Label htmlFor="customBidRate">Interest Rate (%)</Label>
+                  <Input
+                    id="customBidRate"
+                    type="number"
+                    value={customBidRate}
+                    onChange={(e) => setCustomBidRate(parseFloat(e.target.value))}
+                    min="8"
+                    max="18"
+                    step="0.5"
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Recommended range: 8-12% annually
+                  </p>
+                </div>
+
+                {/* Expected Return */}
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-green-900">Expected Return</span>
+                    <span className="text-lg font-bold text-green-700">
+                      ₹{((selectedTripForBid.amount * customBidRate) / 100 / 1000).toFixed(1)}K
+                    </span>
+                  </div>
+                  <p className="text-xs text-green-700 mt-1">
+                    At {customBidRate}% interest on ₹{(selectedTripForBid.amount / 1000).toFixed(0)}K
+                  </p>
+                </div>
+
+                {/* Wallet Balance Check */}
+                <div className="flex items-center justify-between text-sm p-3 bg-muted rounded-lg">
+                  <span className="text-muted-foreground">Your Wallet Balance</span>
+                  <span className="font-semibold">₹{(wallet.balance / 1000).toFixed(0)}K</span>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setBidDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmBid} className="bg-gradient-primary">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Confirm Bid
               </Button>
             </DialogFooter>
           </DialogContent>
