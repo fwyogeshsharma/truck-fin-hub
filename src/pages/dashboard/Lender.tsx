@@ -5,6 +5,7 @@ import { Wallet, TrendingUp, Package, IndianRupee, Lock, ArrowUpRight, ArrowDown
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
+import WalletCard from "@/components/WalletCard";
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const LenderDashboard = () => {
@@ -176,17 +177,7 @@ const LenderDashboard = () => {
         </div>
 
         {/* Wallet */}
-        <Card className="bg-gradient-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Wallet className="h-5 w-5" />
-              Available for Investment
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-primary">₹{(wallet.balance / 100000).toFixed(2)}L</p>
-          </CardContent>
-        </Card>
+        <WalletCard userId={user?.id || 'l1'} showDetails={true} />
 
         {/* AI Insights */}
         <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">

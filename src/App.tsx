@@ -13,6 +13,7 @@ import AdminDashboard from "./pages/dashboard/Admin";
 import CreateTrip from "./pages/CreateTrip";
 import InvestmentOpportunities from "./pages/InvestmentOpportunities";
 import MyInvestments from "./pages/MyInvestments";
+import Profile from "./pages/Profile";
 import KYC from "./pages/KYC";
 import KYCAdmin from "./pages/KYCAdmin";
 import NotFound from "./pages/NotFound";
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/create-trip" element={<CreateTrip />} />
           <Route path="/opportunities" element={<InvestmentOpportunities />} />
           <Route path="/investments" element={<MyInvestments />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/kyc" element={<KYC />} />
           <Route path="/admin/kyc" element={<KYCAdmin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

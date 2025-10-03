@@ -4,19 +4,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Package, TruckIcon, IndianRupee, Calendar, TrendingUp, CheckSquare, Square, Star, Shield } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { MapPin, Package, TruckIcon, IndianRupee, Calendar, TrendingUp, CheckSquare, Square, Star, Shield, Wallet, Plus, Loader2, AlertCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const InvestmentOpportunities = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const user = auth.getCurrentUser();
   const allTrips = data.getTrips();
   const trips = allTrips.filter(t => t.status === 'pending');
-  const wallet = data.getWallet(user?.id || 'l1');
+
+  const [walletData, setWalletData] = useState(data.getWallet(user?.id || 'l1'));
+  const wallet = walletData;
 
   console.log('Total trips:', allTrips.length);
   console.log('Pending trips:', trips.length);
@@ -28,6 +40,16 @@ const InvestmentOpportunities = () => {
   const [filterLoadType, setFilterLoadType] = useState<string>("");
   const [minAmount, setMinAmount] = useState<string>("");
   const [maxAmount, setMaxAmount] = useState<string>("");
+
+  // Top-up dialog states
+  const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
+  const [topUpAmount, setTopUpAmount] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [pendingInvestmentAmount, setPendingInvestmentAmount] = useState(0);
+
+  const refreshWallet = () => {
+    setWalletData(data.getWallet(user?.id || 'l1'));
+  };
 
   const filteredTrips = trips.filter(trip => {
     const matchesLoadType = !filterLoadType || trip.loadType.toLowerCase().includes(filterLoadType.toLowerCase());
@@ -58,11 +80,77 @@ const InvestmentOpportunities = () => {
   const totalInvestmentAmount = selectedTripsData.reduce((sum, trip) => sum + trip.requestedAmount, 0);
   const totalExpectedReturn = totalInvestmentAmount * (bidRate / 100);
 
+  const handleTopUp = async () => {
+    const amount = parseFloat(topUpAmount);
+
+    if (!amount || amount <= 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Amount',
+        description: 'Please enter a valid amount greater than ₹0',
+      });
+      return;
+    }
+
+    if (amount < 1000) {
+      toast({
+        variant: 'destructive',
+        title: 'Minimum Amount Required',
+        description: 'Minimum top-up amount is ₹1,000',
+      });
+      return;
+    }
+
+    // Simulate payment processing
+    setIsProcessing(true);
+
+    setTimeout(() => {
+      // Update wallet balance
+      data.updateWallet(user?.id || 'l1', {
+        balance: wallet.balance + amount,
+      });
+
+      // Create transaction record
+      data.createTransaction({
+        userId: user?.id || 'l1',
+        type: 'credit',
+        amount,
+        category: 'payment',
+        description: 'Wallet top-up via payment gateway',
+        balanceAfter: wallet.balance + amount,
+      });
+
+      toast({
+        title: 'Payment Successful!',
+        description: `₹${(amount / 1000).toFixed(0)}K added to your wallet`,
+      });
+
+      setIsProcessing(false);
+      setTopUpDialogOpen(false);
+      setTopUpAmount('');
+      refreshWallet();
+    }, 2000);
+  };
+
   const handleInvest = (tripId: string) => {
     const trip = data.getTrip(tripId);
     if (!trip) return;
 
     const investmentAmount = trip.requestedAmount;
+
+    // Check if balance is insufficient
+    if (wallet.balance < investmentAmount) {
+      setPendingInvestmentAmount(investmentAmount);
+      setTopUpAmount((investmentAmount - wallet.balance).toString());
+      setTopUpDialogOpen(true);
+      toast({
+        variant: 'destructive',
+        title: 'Insufficient Balance',
+        description: `You need ₹${((investmentAmount - wallet.balance) / 1000).toFixed(0)}K more to invest`,
+      });
+      return;
+    }
+
     const expectedReturn = investmentAmount * (bidRate / 100);
     const maturityDays = trip.maturityDays || 30;
 
@@ -71,6 +159,8 @@ const InvestmentOpportunities = () => {
       balance: wallet.balance - investmentAmount,
       escrowedAmount: (wallet.escrowedAmount || 0) + investmentAmount,
     });
+
+    refreshWallet();
 
     // Create escrowed investment immediately
     const escrowedInvestment = data.createInvestment({
@@ -121,11 +211,26 @@ const InvestmentOpportunities = () => {
   const handleBulkInvest = () => {
     if (selectedTrips.length === 0) return;
 
+    // Check if balance is insufficient
+    if (wallet.balance < totalInvestmentAmount) {
+      setPendingInvestmentAmount(totalInvestmentAmount);
+      setTopUpAmount((totalInvestmentAmount - wallet.balance).toString());
+      setTopUpDialogOpen(true);
+      toast({
+        variant: 'destructive',
+        title: 'Insufficient Balance',
+        description: `You need ₹${((totalInvestmentAmount - wallet.balance) / 1000).toFixed(0)}K more to invest in all selected trips`,
+      });
+      return;
+    }
+
     // Move total amount to escrow
     data.updateWallet(user?.id || 'l1', {
       balance: wallet.balance - totalInvestmentAmount,
       escrowedAmount: (wallet.escrowedAmount || 0) + totalInvestmentAmount,
     });
+
+    refreshWallet();
 
     // Create escrowed investments immediately
     const escrowedInvestments = selectedTrips.map(tripId => {
@@ -534,6 +639,107 @@ const InvestmentOpportunities = () => {
             })
           )}
         </div>
+
+        {/* Top-Up Dialog */}
+        <Dialog open={topUpDialogOpen} onOpenChange={setTopUpDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-primary" />
+                Add Money to Wallet
+              </DialogTitle>
+              <DialogDescription>
+                Top up your wallet to invest in opportunities
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Current Balance & Required Amount */}
+              <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <AlertCircle className="h-4 w-4 text-yellow-600" />
+                  <span className="font-medium">Insufficient Balance</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Current Balance</p>
+                    <p className="text-lg font-semibold">₹{(wallet.balance / 1000).toFixed(0)}K</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Required Amount</p>
+                    <p className="text-lg font-semibold text-red-600">₹{(pendingInvestmentAmount / 1000).toFixed(0)}K</p>
+                  </div>
+                </div>
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground">Amount Needed</p>
+                  <p className="text-xl font-bold text-primary">₹{((pendingInvestmentAmount - wallet.balance) / 1000).toFixed(0)}K</p>
+                </div>
+              </div>
+
+              {/* Quick Amount Selection */}
+              <div>
+                <Label className="text-sm mb-2 block">Quick Select</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[10000, 25000, 50000, 100000, 250000, 500000].map((amount) => (
+                    <Button
+                      key={amount}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setTopUpAmount(amount.toString())}
+                      className={topUpAmount === amount.toString() ? 'border-primary bg-primary/10' : ''}
+                    >
+                      ₹{(amount / 1000).toFixed(0)}K
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom Amount */}
+              <div>
+                <Label htmlFor="topUpAmount">Enter Amount (₹)</Label>
+                <Input
+                  id="topUpAmount"
+                  type="number"
+                  placeholder="Enter amount (min ₹1,000)"
+                  value={topUpAmount}
+                  onChange={(e) => setTopUpAmount(e.target.value)}
+                  min="1000"
+                  max="10000000"
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Min: ₹1,000 | Max: ₹1,00,00,000
+                </p>
+              </div>
+
+              {/* Payment Method Info */}
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-blue-900">
+                  <strong>Simulated Payment:</strong> This is a demo payment system. Funds will be added instantly after a 2-second processing delay.
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setTopUpDialogOpen(false)} disabled={isProcessing}>
+                Cancel
+              </Button>
+              <Button onClick={handleTopUp} disabled={isProcessing} className="bg-gradient-primary">
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing Payment...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add ₹{topUpAmount ? (parseFloat(topUpAmount) / 1000).toFixed(0) + 'K' : '0'}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
