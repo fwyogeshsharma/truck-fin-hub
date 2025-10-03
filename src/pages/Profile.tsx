@@ -6,7 +6,8 @@ import { auth } from '@/lib/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { UserIcon, Mail, Phone, MapPin, Briefcase, Calendar, Shield } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { UserIcon, Mail, Phone, MapPin, Briefcase, Calendar, Shield, Wallet, ArrowRight } from 'lucide-react';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -148,8 +149,19 @@ const Profile = () => {
           </div>
 
           {/* Right Column - Wallet */}
-          <div>
+          <div className="space-y-4">
             <WalletCard userId={user.id} showDetails={true} />
+
+            {/* Wallet Details Button */}
+            <Button
+              onClick={() => navigate('/wallet')}
+              className="w-full bg-gradient-primary"
+              size="lg"
+            >
+              <Wallet className="h-4 w-4 mr-2" />
+              View Wallet Details
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
           </div>
         </div>
       </div>

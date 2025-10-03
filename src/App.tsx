@@ -14,6 +14,7 @@ import CreateTrip from "./pages/CreateTrip";
 import InvestmentOpportunities from "./pages/InvestmentOpportunities";
 import MyInvestments from "./pages/MyInvestments";
 import Profile from "./pages/Profile";
+import Wallet from "./pages/Wallet";
 import KYC from "./pages/KYC";
 import KYCAdmin from "./pages/KYCAdmin";
 import NotFound from "./pages/NotFound";
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/opportunities" element={<InvestmentOpportunities />} />
           <Route path="/investments" element={<MyInvestments />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/wallet" element={<Wallet />} />
           <Route path="/kyc" element={<KYC />} />
           <Route path="/admin/kyc" element={<KYCAdmin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
