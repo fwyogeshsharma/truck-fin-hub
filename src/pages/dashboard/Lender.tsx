@@ -102,7 +102,7 @@ const LenderDashboard = () => {
 
   // AI Insights - Calculate investment opportunities
   const pendingTrips = trips.filter(t => t.status === 'pending');
-  const totalPendingInvestment = pendingTrips.reduce((sum, trip) => sum + trip.requestedAmount, 0);
+  const totalPendingInvestment = pendingTrips.reduce((sum, trip) => sum + trip.amount, 0);
   const avgInterestRate = 10; // Average recommended rate
   const potentialEarnings = totalPendingInvestment * (avgInterestRate / 100);
 
@@ -110,10 +110,10 @@ const LenderDashboard = () => {
   const bestOpportunity = pendingTrips
     .map(trip => ({
       ...trip,
-      ltvRatio: (trip.requestedAmount / trip.amount) * 100,
+      ltvRatio: (trip.amount / trip.amount) * 100,
     }))
-    .filter(trip => trip.ltvRatio <= 75 && trip.requestedAmount >= 50000)
-    .sort((a, b) => b.requestedAmount - a.requestedAmount)[0];
+    .filter(trip => trip.ltvRatio <= 75 && trip.amount >= 50000)
+    .sort((a, b) => b.amount - a.amount)[0];
 
   // AI Insights recommendations
   const aiInsights = [
@@ -129,7 +129,7 @@ const LenderDashboard = () => {
       icon: TrendingUp,
       title: "Best Opportunity",
       description: `${bestOpportunity.origin} → ${bestOpportunity.destination}`,
-      action: `${bestOpportunity.loadType} • ₹${(bestOpportunity.requestedAmount / 1000).toFixed(0)}K • LTV ${bestOpportunity.ltvRatio.toFixed(0)}%`,
+      action: `${bestOpportunity.loadType} • ₹${(bestOpportunity.amount / 1000).toFixed(0)}K • LTV ${bestOpportunity.ltvRatio.toFixed(0)}%`,
       color: "text-accent",
       bgColor: "bg-accent/10",
     },
@@ -366,7 +366,7 @@ const LenderDashboard = () => {
                            trip.status === 'funded' ? 'Funded' : trip.status}
                         </span>
                       </div>
-                      <p className="text-sm font-semibold mt-1">₹{(trip.requestedAmount / 1000).toFixed(0)}K</p>
+                      <p className="text-sm font-semibold mt-1">₹{(trip.amount / 1000).toFixed(0)}K</p>
                     </div>
                   </div>
                 ))

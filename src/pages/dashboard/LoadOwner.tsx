@@ -22,7 +22,7 @@ const LoadOwnerDashboard = () => {
     },
     {
       title: "Total Financed",
-      value: `₹${(trips.reduce((sum, t) => sum + (t.interestRate ? t.requestedAmount : 0), 0) / 100000).toFixed(1)}L`,
+      value: `₹${(trips.reduce((sum, t) => sum + (t.interestRate ? t.amount : 0), 0) / 100000).toFixed(1)}L`,
       icon: IndianRupee,
       color: "secondary",
     },
@@ -119,7 +119,7 @@ const LoadOwnerDashboard = () => {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold">₹{(trip.amount / 1000).toFixed(0)}K</p>
-                    <p className="text-sm text-muted-foreground">Requested: ₹{(trip.requestedAmount / 1000).toFixed(0)}K</p>
+                    <p className="text-sm text-muted-foreground">Requested: ₹{(trip.amount / 1000).toFixed(0)}K</p>
                     {trip.interestRate && (
                       <p className="text-xs text-secondary">{trip.interestRate}% interest</p>
                     )}
