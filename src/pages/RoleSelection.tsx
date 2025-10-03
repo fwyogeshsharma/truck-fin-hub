@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { TruckIcon, Package, Wallet, UserCircle } from "lucide-react";
 import { auth, User } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const roles = [
   {
@@ -44,17 +51,51 @@ const roles = [
   },
 ];
 
+const companies = [
+  {
+    id: "rollingradius",
+    name: "RollingRadius",
+    logo: "/rr_full_transp_old.png",
+  },
+  {
+    id: "cjdarcl",
+    name: "CJ Darcl Logistics",
+    logo: "/CJ-Darcl-01.png",
+  },
+];
+
 const RoleSelection = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedRole, setSelectedRole] = useState<User['role'] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showCompanyDialog, setShowCompanyDialog] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<typeof companies[0] | null>(null);
 
   const handleConfirm = () => {
     if (!selectedRole) return;
 
+    const user = auth.getCurrentUser();
+
+    // If load_agent is selected and user doesn't have a company yet (first time role selection)
+    if (selectedRole === 'load_agent' && !user?.company) {
+      setShowCompanyDialog(true);
+      return;
+    }
+
+    // For other roles or if company already selected, proceed directly
+    proceedWithRoleSelection();
+  };
+
+  const proceedWithRoleSelection = () => {
+    if (!selectedRole) return;
+
     setIsLoading(true);
-    const updatedUser = auth.updateUserRole(selectedRole);
+    const updatedUser = auth.updateUserRole(
+      selectedRole,
+      selectedCompany?.name,
+      selectedCompany?.logo
+    );
 
     if (updatedUser) {
       toast({
@@ -63,8 +104,14 @@ const RoleSelection = () => {
       });
       navigate(`/dashboard/${selectedRole}`);
     }
-    
+
     setIsLoading(false);
+  };
+
+  const handleCompanySelect = (company: typeof companies[0]) => {
+    setSelectedCompany(company);
+    setShowCompanyDialog(false);
+    proceedWithRoleSelection();
   };
 
   return (
@@ -154,6 +201,41 @@ const RoleSelection = () => {
           </Button>
         </div>
       </div>
+
+      {/* Company Selection Dialog */}
+      <Dialog open={showCompanyDialog} onOpenChange={setShowCompanyDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Your Company</DialogTitle>
+            <DialogDescription>
+              Choose the logistics company you represent as a Load Agent
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {companies.map((company) => (
+              <Card
+                key={company.id}
+                className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 hover:border-primary"
+                onClick={() => handleCompanySelect(company)}
+              >
+                <CardContent className="p-6 flex items-center gap-4">
+                  <div className="w-24 h-24 flex items-center justify-center bg-white rounded-lg p-2">
+                    <img
+                      src={company.logo}
+                      alt={company.name}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">{company.name}</h3>
+                    <p className="text-sm text-muted-foreground">Click to select</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

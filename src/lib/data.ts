@@ -20,12 +20,23 @@ export interface Trip {
   maturityDays?: number;
   riskLevel?: 'low' | 'medium' | 'high'; // AI-based risk assessment
   insuranceStatus?: boolean; // Y/N if trip is insured
-  status: 'pending' | 'funded' | 'in_transit' | 'completed' | 'cancelled';
+  status: 'pending' | 'escrowed' | 'funded' | 'in_transit' | 'completed' | 'cancelled';
   createdAt: string;
   fundedAt?: string;
   completedAt?: string;
   lenderId?: string;
   lenderName?: string;
+  bids?: Array<{
+    lenderId: string;
+    lenderName: string;
+    amount: number;
+    interestRate: number;
+  }>;
+  documents?: {
+    bilty?: string; // Base64 or file path
+    ewaybill?: string;
+    invoice?: string;
+  };
 }
 
 export interface Investment {
@@ -584,15 +595,58 @@ export const data = {
   createTransaction: (transaction: Omit<Transaction, 'id' | 'timestamp'>): Transaction => {
     const transactionsData = localStorage.getItem(TRANSACTIONS_KEY);
     const transactions: Transaction[] = transactionsData ? JSON.parse(transactionsData) : [];
-    
+
     const newTransaction: Transaction = {
       ...transaction,
       id: Date.now().toString(),
       timestamp: new Date().toISOString(),
     };
-    
+
     transactions.push(newTransaction);
     localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
     return newTransaction;
+  },
+
+  // Allot trip to a lender
+  allotTrip: (tripId: string, lenderId: string, lenderName: string): { trip: Trip; investment: Investment } | null => {
+    const trip = data.getTrip(tripId);
+    if (!trip || !trip.bids || trip.bids.length === 0) return null;
+
+    const bid = trip.bids.find(b => b.lenderId === lenderId);
+    if (!bid) return null;
+
+    // Update trip status to funded
+    const updatedTrip = data.updateTrip(tripId, {
+      status: 'funded',
+      lenderId: bid.lenderId,
+      lenderName: bid.lenderName,
+      interestRate: bid.interestRate,
+      fundedAt: new Date().toISOString(),
+    });
+
+    if (!updatedTrip) return null;
+
+    // Update investment status to active
+    const investments = data.getInvestments();
+    const investment = investments.find(i => i.tripId === tripId && i.lenderId === lenderId);
+
+    if (investment) {
+      const updatedInvestment = data.updateInvestment(investment.id, {
+        status: 'active',
+      });
+
+      if (updatedInvestment) {
+        // Move funds from escrowed to invested
+        const wallet = data.getWallet(lenderId);
+        data.updateWallet(lenderId, {
+          escrowedAmount: wallet.escrowedAmount - bid.amount,
+          totalInvested: wallet.totalInvested + bid.amount,
+        });
+
+        return { trip: updatedTrip, investment: updatedInvestment };
+      }
+    }
+
+    return null;
   },
 };

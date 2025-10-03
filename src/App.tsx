@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { auth } from "@/lib/auth";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import RoleSelection from "./pages/RoleSelection";
@@ -10,6 +12,7 @@ import LoadOwnerDashboard from "./pages/dashboard/LoadOwner";
 import TransporterDashboard from "./pages/dashboard/Transporter";
 import LenderDashboard from "./pages/dashboard/Lender";
 import AdminDashboard from "./pages/dashboard/Admin";
+import LoadAgentDashboard from "./pages/dashboard/LoadAgent";
 import CreateTrip from "./pages/CreateTrip";
 import InvestmentOpportunities from "./pages/InvestmentOpportunities";
 import MyInvestments from "./pages/MyInvestments";
@@ -21,8 +24,14 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
+const App = () => {
+  useEffect(() => {
+    // Initialize mock load agent users on app load
+    auth.initializeMockUsers();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -35,6 +44,7 @@ const App = () => (
           <Route path="/dashboard/transporter" element={<TransporterDashboard />} />
           <Route path="/dashboard/lender" element={<LenderDashboard />} />
           <Route path="/dashboard/admin" element={<AdminDashboard />} />
+          <Route path="/dashboard/load_agent" element={<LoadAgentDashboard />} />
           <Route path="/create-trip" element={<CreateTrip />} />
           <Route path="/opportunities" element={<InvestmentOpportunities />} />
           <Route path="/investments" element={<MyInvestments />} />
@@ -48,6 +58,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

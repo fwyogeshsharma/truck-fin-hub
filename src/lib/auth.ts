@@ -4,11 +4,43 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role?: 'load_owner' | 'transporter' | 'lender' | 'admin';
+  role?: 'load_owner' | 'transporter' | 'lender' | 'admin' | 'load_agent' | 'vehicle_agent';
+  company?: string;
+  companyLogo?: string;
 }
 
 const AUTH_KEY = 'logistics_auth';
 const USERS_KEY = 'logistics_users';
+
+// Initialize mock load agent users
+const initializeMockUsers = () => {
+  const users = auth.getAllUsers();
+
+  // Check if mock users already exist
+  if (!users.find(u => u.email === 'aman@rollingradius.com')) {
+    const mockUsers: User[] = [
+      {
+        id: 'aman_rr',
+        email: 'aman@rollingradius.com',
+        name: 'Aman',
+        role: 'load_agent',
+        company: 'RollingRadius',
+        companyLogo: '/rr_full_transp_old.png',
+      },
+      {
+        id: 'deependra_darcl',
+        email: 'deependra@cjdarcl.com',
+        name: 'Deependra',
+        role: 'load_agent',
+        company: 'CJ Darcl Logistics',
+        companyLogo: '/CJ-Darcl-01.png',
+      },
+    ];
+
+    const updatedUsers = [...users, ...mockUsers];
+    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
+  }
+};
 
 export const auth = {
   // Get current user
@@ -57,15 +89,15 @@ export const auth = {
   },
 
   // Update user role (one-time selection)
-  updateUserRole: (role: User['role']) => {
+  updateUserRole: (role: User['role'], company?: string, companyLogo?: string) => {
     const user = auth.getCurrentUser();
     if (!user) return null;
 
-    const updatedUser = { ...user, role };
-    
+    const updatedUser = { ...user, role, company, companyLogo };
+
     // Update in auth
     localStorage.setItem(AUTH_KEY, JSON.stringify(updatedUser));
-    
+
     // Update in users list
     const users = auth.getAllUsers();
     const userIndex = users.findIndex(u => u.id === user.id);
@@ -87,4 +119,7 @@ export const auth = {
   isAuthenticated: (): boolean => {
     return !!auth.getCurrentUser();
   },
+
+  // Initialize mock users
+  initializeMockUsers,
 };

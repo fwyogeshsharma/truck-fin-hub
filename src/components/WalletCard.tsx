@@ -124,8 +124,8 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
           {/* Available Balance */}
           <div className="bg-gradient-primary p-6 rounded-lg text-primary-foreground">
             <p className="text-sm opacity-90 mb-1">Available Balance</p>
-            <p className="text-3xl font-bold">₹{(availableBalance / 100000).toFixed(2)}L</p>
-            <p className="text-xs opacity-75 mt-1">₹{availableBalance.toLocaleString('en-IN')}</p>
+            <p className="text-4xl font-bold">₹{(availableBalance / 100000).toFixed(1)}L</p>
+            <p className="text-sm opacity-75 mt-2">₹{availableBalance.toLocaleString('en-IN')}</p>
           </div>
 
           {showDetails && (

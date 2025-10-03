@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MapPin, Package, TruckIcon, IndianRupee, Calendar, TrendingUp, CheckSquare, Square, Star, Shield, Wallet, Plus, Loader2, AlertCircle } from "lucide-react";
+import { MapPin, Package, TruckIcon, IndianRupee, Calendar, TrendingUp, CheckSquare, Square, Star, Shield, Wallet, Plus, Loader2, AlertCircle, Maximize2, Minimize2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
@@ -40,6 +40,7 @@ const InvestmentOpportunities = () => {
   const [filterLoadType, setFilterLoadType] = useState<string>("");
   const [minAmount, setMinAmount] = useState<string>("");
   const [maxAmount, setMaxAmount] = useState<string>("");
+  const [isCompactView, setIsCompactView] = useState(true); // Default to compact view
 
   // Top-up dialog states
   const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
@@ -173,39 +174,27 @@ const InvestmentOpportunities = () => {
       maturityDate: new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toISOString(),
     });
 
+    // Add bid to trip and update status to escrowed
+    const existingBids = trip.bids || [];
+    data.updateTrip(tripId, {
+      status: 'escrowed',
+      bids: [
+        ...existingBids,
+        {
+          lenderId: user?.id || 'l1',
+          lenderName: user?.name || 'Lender',
+          amount: investmentAmount,
+          interestRate: bidRate,
+        },
+      ],
+    });
+
     toast({
       title: "Bid confirmed!",
-      description: `₹${(investmentAmount / 1000).toFixed(0)}K moved to escrow. Awaiting confirmation.`,
+      description: `₹${(investmentAmount / 1000).toFixed(0)}K moved to escrow. Awaiting load agent confirmation.`,
     });
 
     setSelectedTrip(null);
-
-    // Simulate confirmation after 3 seconds
-    setTimeout(() => {
-      // Update investment status to active
-      data.updateInvestment(escrowedInvestment.id, {
-        status: 'active',
-      });
-
-      data.updateTrip(tripId, {
-        status: 'funded',
-        interestRate: bidRate,
-        fundedAt: new Date().toISOString(),
-        lenderId: user?.id,
-        lenderName: user?.name || 'Lender',
-      });
-
-      const currentWallet = data.getWallet(user?.id || 'l1');
-      data.updateWallet(user?.id || 'l1', {
-        escrowedAmount: (currentWallet.escrowedAmount || 0) - investmentAmount,
-        totalInvested: currentWallet.totalInvested + investmentAmount,
-      });
-
-      toast({
-        title: "Investment active!",
-        description: `₹${(investmentAmount / 1000).toFixed(0)}K at ${bidRate}% interest is now active`,
-      });
-    }, 3000);
   };
 
   const handleBulkInvest = () => {
@@ -233,15 +222,16 @@ const InvestmentOpportunities = () => {
     refreshWallet();
 
     // Create escrowed investments immediately
-    const escrowedInvestments = selectedTrips.map(tripId => {
+    selectedTrips.forEach(tripId => {
       const trip = data.getTrip(tripId);
-      if (!trip) return null;
+      if (!trip) return;
 
       const investmentAmount = trip.amount;
       const expectedReturn = investmentAmount * (bidRate / 100);
       const maturityDays = trip.maturityDays || 30;
 
-      return data.createInvestment({
+      // Create investment
+      data.createInvestment({
         lenderId: user?.id || 'l1',
         tripId,
         amount: investmentAmount,
@@ -250,45 +240,29 @@ const InvestmentOpportunities = () => {
         status: 'escrowed',
         maturityDate: new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toISOString(),
       });
-    }).filter(Boolean);
+
+      // Add bid to trip and update status to escrowed
+      const existingBids = trip.bids || [];
+      data.updateTrip(tripId, {
+        status: 'escrowed',
+        bids: [
+          ...existingBids,
+          {
+            lenderId: user?.id || 'l1',
+            lenderName: user?.name || 'Lender',
+            amount: investmentAmount,
+            interestRate: bidRate,
+          },
+        ],
+      });
+    });
 
     toast({
       title: "Bulk bids confirmed!",
-      description: `${selectedTrips.length} trips • ₹${(totalInvestmentAmount / 1000).toFixed(0)}K moved to escrow`,
+      description: `${selectedTrips.length} trips • ₹${(totalInvestmentAmount / 1000).toFixed(0)}K moved to escrow. Awaiting load agent confirmation.`,
     });
 
-    // Simulate confirmation after 3 seconds
-    setTimeout(() => {
-      escrowedInvestments.forEach((investment) => {
-        if (!investment) return;
-
-        // Update investment status to active
-        data.updateInvestment(investment.id, {
-          status: 'active',
-        });
-
-        data.updateTrip(investment.tripId, {
-          status: 'funded',
-          interestRate: bidRate,
-          fundedAt: new Date().toISOString(),
-          lenderId: user?.id,
-          lenderName: user?.name || 'Lender',
-        });
-      });
-
-      const currentWallet = data.getWallet(user?.id || 'l1');
-      data.updateWallet(user?.id || 'l1', {
-        escrowedAmount: (currentWallet.escrowedAmount || 0) - totalInvestmentAmount,
-        totalInvested: currentWallet.totalInvested + totalInvestmentAmount,
-      });
-
-      toast({
-        title: "Investments active!",
-        description: `${selectedTrips.length} trips at ${bidRate}% interest are now active`,
-      });
-
-      setSelectedTrips([]);
-    }, 3000);
+    setSelectedTrips([]);
   };
 
   const handleResetData = () => {
@@ -304,9 +278,20 @@ const InvestmentOpportunities = () => {
             <h1 className="text-3xl font-bold">Investment Opportunities</h1>
             <p className="text-muted-foreground mt-1">Browse and invest in available trips</p>
           </div>
-          <Button variant="outline" size="sm" onClick={handleResetData}>
-            Reset Data
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCompactView(!isCompactView)}
+              className="gap-2"
+            >
+              {isCompactView ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
+              {isCompactView ? 'Expand' : 'Compact'}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleResetData}>
+              Reset Data
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -442,7 +427,62 @@ const InvestmentOpportunities = () => {
                 <p className="text-muted-foreground">No investment opportunities match your filters</p>
               </CardContent>
             </Card>
+          ) : isCompactView ? (
+            // Compact View
+            filteredTrips.map((trip) => {
+              const isMultiSelected = selectedTrips.includes(trip.id);
+              const expectedReturn = trip.amount * (bidRate / 100);
+
+              return (
+                <Card key={trip.id} className={`p-4 ${isMultiSelected ? 'ring-2 ring-primary' : ''}`}>
+                  <div className="flex items-center gap-4">
+                    <Checkbox
+                      checked={isMultiSelected}
+                      onCheckedChange={() => toggleTripSelection(trip.id)}
+                      id={`select-compact-${trip.id}`}
+                    />
+                    <div className="flex-1 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-6">
+                        <div className="min-w-[280px]">
+                          <div className="flex items-center gap-2 mb-1">
+                            <MapPin className="h-3 w-3 text-primary" />
+                            <p className="font-semibold text-sm">{trip.origin} → {trip.destination}</p>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{trip.loadType} • {trip.weight}kg</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Trip Value</p>
+                          <p className="font-semibold">₹{(trip.amount / 1000).toFixed(0)}K</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Return</p>
+                          <p className="font-semibold text-green-600">₹{(expectedReturn / 1000).toFixed(1)}K</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        {trip.riskLevel && (
+                          <Badge className={`text-xs ${
+                            trip.riskLevel === 'low' ? 'bg-green-600' :
+                            trip.riskLevel === 'medium' ? 'bg-yellow-600' : 'bg-red-600'
+                          } text-white`}>
+                            {trip.riskLevel.toUpperCase()}
+                          </Badge>
+                        )}
+                        <Button
+                          size="sm"
+                          onClick={() => setSelectedTrip(trip.id)}
+                          className="bg-gradient-primary h-8"
+                        >
+                          Bid
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })
           ) : (
+            // Expanded View
             filteredTrips.map((trip) => {
               const isSelected = selectedTrip === trip.id;
               const expectedReturn = trip.amount * (bidRate / 100);

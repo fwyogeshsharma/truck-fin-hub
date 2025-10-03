@@ -29,6 +29,15 @@ const roleConfig = {
       { label: "Wallet", path: "/wallet", icon: Wallet },
     ],
   },
+  load_agent: {
+    title: "Load Agent",
+    icon: Users,
+    nav: [
+      { label: "Dashboard", path: "/dashboard/load_agent", icon: Home },
+      { label: "All Trips", path: "/dashboard/load_agent", icon: Package },
+      { label: "Wallet", path: "/wallet", icon: Wallet },
+    ],
+  },
   transporter: {
     title: "Vehicle Provider",
     icon: TruckIcon,

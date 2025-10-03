@@ -1,18 +1,30 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, TrendingUp, Package, IndianRupee, Lock, ArrowUpRight, ArrowDownRight, Sparkles, Brain } from "lucide-react";
+import { Wallet, TrendingUp, Package, IndianRupee, Lock, ArrowUpRight, ArrowDownRight, Sparkles, Brain, RefreshCw } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
 import WalletCard from "@/components/WalletCard";
+import { useToast } from "@/hooks/use-toast";
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const LenderDashboard = () => {
+  const { toast } = useToast();
   const user = auth.getCurrentUser();
+  const [refreshKey, setRefreshKey] = useState(0);
+
   const trips = data.getTrips();
   const myInvestments = data.getInvestments().filter(i => i.lenderId === user?.id);
   const wallet = data.getWallet(user?.id || 'l1');
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+    toast({
+      title: 'Refreshed!',
+      description: 'Investment data has been updated',
+    });
+  };
 
   // Mock data for investment growth chart (last 6 months)
   const investmentGrowthData = [
@@ -146,34 +158,45 @@ const LenderDashboard = () => {
   return (
     <DashboardLayout role="lender">
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">{user?.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : "User"}'s Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Invest in trips and earn returns</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">{user?.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : "User"}'s Dashboard</h1>
+            <p className="text-muted-foreground mt-1">Invest in trips and earn returns</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            className="gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
         </div>
 
         {/* Stats */}
         <div className="grid md:grid-cols-4 gap-6">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={stat.title}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">{stat.title}</p>
-                      <p className="text-3xl font-bold mt-2">{stat.value}</p>
-                      {(stat as any).detail && (
-                        <p className="text-xs text-muted-foreground mt-1">{(stat as any).detail}</p>
-                      )}
-                    </div>
-                    <div className={`w-12 h-12 rounded-full bg-${stat.color}/10 flex items-center justify-center`}>
-                      <Icon className={`h-6 w-6 text-${stat.color}`} />
-                    </div>
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={stat.title}>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{stat.title}</p>
+                    <p className="text-3xl font-bold mt-2">{stat.value}</p>
+                    {(stat as any).detail && (
+                      <p className="text-xs text-muted-foreground mt-1">{(stat as any).detail}</p>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                  <div className={`w-12 h-12 rounded-full bg-${stat.color}/10 flex items-center justify-center`}>
+                    <Icon className={`h-6 w-6 text-${stat.color}`} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
         </div>
 
         {/* Wallet */}
@@ -323,6 +346,57 @@ const LenderDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Escrowed Investments */}
+        {myInvestments.filter(i => i.status === 'escrowed').length > 0 && (
+          <Card className="border-orange-500/50 bg-orange-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5 text-orange-600" />
+                Pending Bids (Escrowed)
+              </CardTitle>
+              <CardDescription>Awaiting load agent confirmation</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {myInvestments
+                  .filter(i => i.status === 'escrowed')
+                  .map((investment) => {
+                    const trip = data.getTrip(investment.tripId);
+                    if (!trip) return null;
+                    return (
+                      <div key={investment.id} className="flex items-center justify-between p-4 border border-orange-300 rounded-lg bg-white">
+                        <div className="flex items-center gap-4">
+                          {trip.loadOwnerLogo && (
+                            <img
+                              src={trip.loadOwnerLogo}
+                              alt={trip.loadOwnerName}
+                              className="h-12 w-12 object-contain rounded border p-1"
+                            />
+                          )}
+                          <div>
+                            <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {trip.loadType} • {trip.distance}km
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center gap-2">
+                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 flex items-center gap-1">
+                              <Lock className="h-3 w-3" />
+                              Awaiting Allotment
+                            </span>
+                          </div>
+                          <p className="text-sm font-semibold mt-1">₹{(investment.amount / 1000).toFixed(0)}K at {investment.interestRate}%</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Recent Active Trips */}
         <Card>
