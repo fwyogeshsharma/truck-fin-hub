@@ -22,7 +22,6 @@ const CreateTrip = () => {
     loadType: "",
     weight: "",
     amount: "",
-    requestedAmount: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -41,7 +40,6 @@ const CreateTrip = () => {
       loadType: formData.loadType,
       weight: parseFloat(formData.weight),
       amount: parseFloat(formData.amount),
-      requestedAmount: parseFloat(formData.requestedAmount),
     });
 
     toast({
@@ -128,53 +126,28 @@ const CreateTrip = () => {
                 />
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Total Invoice Amount (₹)</Label>
-                  <Input
-                    id="amount"
-                    name="amount"
-                    type="number"
-                    placeholder="e.g., 350000"
-                    value={formData.amount}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="requestedAmount">Financing Requested (₹)</Label>
-                  <Input
-                    id="requestedAmount"
-                    name="requestedAmount"
-                    type="number"
-                    placeholder="e.g., 280000 (80% of invoice)"
-                    value={formData.requestedAmount}
-                    onChange={handleChange}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">Usually 70-80% of invoice value</p>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="amount">Trip Value (₹)</Label>
+                <Input
+                  id="amount"
+                  name="amount"
+                  type="number"
+                  placeholder="e.g., 25000 (Between 20K-30K)"
+                  value={formData.amount}
+                  onChange={handleChange}
+                  min="20000"
+                  max="30000"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">Enter trip value between ₹20,000 and ₹30,000</p>
               </div>
 
               <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                 <h4 className="font-semibold text-sm">Financing Summary</h4>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <p className="text-muted-foreground">Invoice Amount:</p>
+                    <p className="text-muted-foreground">Trip Value:</p>
                     <p className="font-medium">₹{formData.amount ? parseFloat(formData.amount).toLocaleString('en-IN') : '0'}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Financing Requested:</p>
-                    <p className="font-medium">₹{formData.requestedAmount ? parseFloat(formData.requestedAmount).toLocaleString('en-IN') : '0'}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Financing %:</p>
-                    <p className="font-medium">
-                      {formData.amount && formData.requestedAmount
-                        ? ((parseFloat(formData.requestedAmount) / parseFloat(formData.amount)) * 100).toFixed(1)
-                        : '0'}%
-                    </p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Expected Interest Range:</p>

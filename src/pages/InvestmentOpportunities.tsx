@@ -53,8 +53,8 @@ const InvestmentOpportunities = () => {
 
   const filteredTrips = trips.filter(trip => {
     const matchesLoadType = !filterLoadType || trip.loadType.toLowerCase().includes(filterLoadType.toLowerCase());
-    const matchesMinAmount = !minAmount || trip.requestedAmount >= parseFloat(minAmount);
-    const matchesMaxAmount = !maxAmount || trip.requestedAmount <= parseFloat(maxAmount);
+    const matchesMinAmount = !minAmount || trip.amount >= parseFloat(minAmount);
+    const matchesMaxAmount = !maxAmount || trip.amount <= parseFloat(maxAmount);
     return matchesLoadType && matchesMinAmount && matchesMaxAmount;
   });
 
@@ -77,7 +77,7 @@ const InvestmentOpportunities = () => {
 
   // Calculate totals for selected trips
   const selectedTripsData = filteredTrips.filter(t => selectedTrips.includes(t.id));
-  const totalInvestmentAmount = selectedTripsData.reduce((sum, trip) => sum + trip.requestedAmount, 0);
+  const totalInvestmentAmount = selectedTripsData.reduce((sum, trip) => sum + trip.amount, 0);
   const totalExpectedReturn = totalInvestmentAmount * (bidRate / 100);
 
   const handleTopUp = async () => {
@@ -136,7 +136,7 @@ const InvestmentOpportunities = () => {
     const trip = data.getTrip(tripId);
     if (!trip) return;
 
-    const investmentAmount = trip.requestedAmount;
+    const investmentAmount = trip.amount;
 
     // Check if balance is insufficient
     if (wallet.balance < investmentAmount) {
@@ -237,7 +237,7 @@ const InvestmentOpportunities = () => {
       const trip = data.getTrip(tripId);
       if (!trip) return null;
 
-      const investmentAmount = trip.requestedAmount;
+      const investmentAmount = trip.amount;
       const expectedReturn = investmentAmount * (bidRate / 100);
       const maturityDays = trip.maturityDays || 30;
 
@@ -445,7 +445,7 @@ const InvestmentOpportunities = () => {
           ) : (
             filteredTrips.map((trip) => {
               const isSelected = selectedTrip === trip.id;
-              const expectedReturn = trip.requestedAmount * (bidRate / 100);
+              const expectedReturn = trip.amount * (bidRate / 100);
               const daysToMaturity = trip.maturityDays || 30;
 
               const isMultiSelected = selectedTrips.includes(trip.id);
@@ -536,16 +536,9 @@ const InvestmentOpportunities = () => {
                   </CardHeader>
 
                   <CardContent className="space-y-4">
-                    <div className="grid md:grid-cols-4 gap-4">
+                    <div className="grid md:grid-cols-3 gap-4">
                       <div className="flex items-center gap-2">
                         <IndianRupee className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-xs text-muted-foreground">Requested Amount</p>
-                          <p className="font-semibold">₹{(trip.requestedAmount / 1000).toFixed(0)}K</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <TruckIcon className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <p className="text-xs text-muted-foreground">Trip Value</p>
                           <p className="font-semibold">₹{(trip.amount / 1000).toFixed(0)}K</p>
@@ -563,10 +556,8 @@ const InvestmentOpportunities = () => {
                       <div className="flex items-center gap-2">
                         <TrendingUp className="h-4 w-4 text-muted-foreground" />
                         <div>
-                          <p className="text-xs text-muted-foreground">LTV Ratio</p>
-                          <p className="font-semibold">
-                            {((trip.requestedAmount / trip.amount) * 100).toFixed(0)}%
-                          </p>
+                          <p className="text-xs text-muted-foreground">Maturity Period</p>
+                          <p className="font-semibold">{trip.maturityDays || 30} days</p>
                         </div>
                       </div>
                     </div>
@@ -593,7 +584,7 @@ const InvestmentOpportunities = () => {
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Investment Amount</span>
                             <span className="font-semibold">
-                              ₹{(trip.requestedAmount / 1000).toFixed(0)}K
+                              ₹{(trip.amount / 1000).toFixed(0)}K
                             </span>
                           </div>
                           <div className="flex justify-between text-sm">
