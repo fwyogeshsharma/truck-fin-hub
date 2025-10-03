@@ -52,7 +52,7 @@ const roleConfig = {
     icon: Wallet,
     nav: [
       { label: "Dashboard", path: "/dashboard/lender", icon: Home },
-      { label: "Investment Opportunities", path: "/opportunities", icon: Package },
+      { label: "Lender Opportunities", path: "/opportunities", icon: Package },
       { label: "My Investments", path: "/investments", icon: Wallet },
     ],
   },

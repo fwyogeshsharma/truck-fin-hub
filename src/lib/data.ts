@@ -56,10 +56,23 @@ export interface Transaction {
   userId: string;
   type: 'credit' | 'debit';
   amount: number;
-  category: 'investment' | 'return' | 'payment' | 'refund' | 'fee';
+  category: 'investment' | 'return' | 'payment' | 'refund' | 'fee' | 'withdrawal';
   description: string;
   timestamp: string;
   balanceAfter: number;
+}
+
+export interface BankAccount {
+  id: string;
+  userId: string;
+  accountHolderName: string;
+  accountNumber: string;
+  ifscCode: string;
+  bankName: string;
+  accountType: 'savings' | 'current';
+  isVerified: boolean;
+  isPrimary: boolean;
+  createdAt: string;
 }
 
 export interface Wallet {
@@ -75,6 +88,7 @@ const TRIPS_KEY = 'logistics_trips';
 const INVESTMENTS_KEY = 'logistics_investments';
 const TRANSACTIONS_KEY = 'logistics_transactions';
 const WALLETS_KEY = 'logistics_wallets';
+const BANK_ACCOUNTS_KEY = 'logistics_bank_accounts';
 
 // Initialize with mock data if empty
 const initializeMockData = () => {
@@ -559,7 +573,7 @@ export const data = {
     // Create default wallet
     const newWallet: Wallet = {
       userId,
-      balance: 5000000, // Default balance for demo
+      balance: 0, // Start with 0 balance
       lockedAmount: 0,
       escrowedAmount: 0,
       totalInvested: 0,
@@ -648,5 +662,81 @@ export const data = {
     }
 
     return null;
+  },
+
+  // Bank Account operations
+  getBankAccounts: (userId: string): BankAccount[] => {
+    const accountsData = localStorage.getItem(BANK_ACCOUNTS_KEY);
+    const accounts: BankAccount[] = accountsData ? JSON.parse(accountsData) : [];
+    return accounts.filter(acc => acc.userId === userId);
+  },
+
+  getPrimaryBankAccount: (userId: string): BankAccount | null => {
+    const accounts = data.getBankAccounts(userId);
+    return accounts.find(acc => acc.isPrimary) || null;
+  },
+
+  createBankAccount: (accountData: Omit<BankAccount, 'id' | 'createdAt' | 'isVerified'>): BankAccount => {
+    const accountsData = localStorage.getItem(BANK_ACCOUNTS_KEY);
+    const accounts: BankAccount[] = accountsData ? JSON.parse(accountsData) : [];
+
+    const newAccount: BankAccount = {
+      ...accountData,
+      id: `ba-${Date.now()}`,
+      isVerified: false, // Simulated - would need actual verification
+      createdAt: new Date().toISOString(),
+    };
+
+    // If this is the first account, make it primary
+    if (accounts.filter(acc => acc.userId === accountData.userId).length === 0) {
+      newAccount.isPrimary = true;
+    }
+
+    accounts.push(newAccount);
+    localStorage.setItem(BANK_ACCOUNTS_KEY, JSON.stringify(accounts));
+    return newAccount;
+  },
+
+  updateBankAccount: (accountId: string, updates: Partial<BankAccount>): BankAccount | null => {
+    const accountsData = localStorage.getItem(BANK_ACCOUNTS_KEY);
+    const accounts: BankAccount[] = accountsData ? JSON.parse(accountsData) : [];
+    const index = accounts.findIndex(acc => acc.id === accountId);
+
+    if (index === -1) return null;
+
+    accounts[index] = { ...accounts[index], ...updates };
+    localStorage.setItem(BANK_ACCOUNTS_KEY, JSON.stringify(accounts));
+    return accounts[index];
+  },
+
+  deleteBankAccount: (accountId: string): boolean => {
+    const accountsData = localStorage.getItem(BANK_ACCOUNTS_KEY);
+    const accounts: BankAccount[] = accountsData ? JSON.parse(accountsData) : [];
+    const filteredAccounts = accounts.filter(acc => acc.id !== accountId);
+
+    if (filteredAccounts.length === accounts.length) return false;
+
+    localStorage.setItem(BANK_ACCOUNTS_KEY, JSON.stringify(filteredAccounts));
+    return true;
+  },
+
+  setPrimaryBankAccount: (userId: string, accountId: string): boolean => {
+    const accountsData = localStorage.getItem(BANK_ACCOUNTS_KEY);
+    const accounts: BankAccount[] = accountsData ? JSON.parse(accountsData) : [];
+
+    // Remove primary from all user's accounts
+    accounts.forEach(acc => {
+      if (acc.userId === userId) {
+        acc.isPrimary = false;
+      }
+    });
+
+    // Set new primary
+    const accountIndex = accounts.findIndex(acc => acc.id === accountId);
+    if (accountIndex === -1) return false;
+
+    accounts[accountIndex].isPrimary = true;
+    localStorage.setItem(BANK_ACCOUNTS_KEY, JSON.stringify(accounts));
+    return true;
   },
 };

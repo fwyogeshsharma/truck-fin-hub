@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Wallet as WalletIcon, Plus, ArrowUpCircle, Loader2 } from 'lucide-react';
+import { Wallet as WalletIcon, Plus, ArrowUpCircle, ArrowDownCircle, Loader2, Building2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { data } from '@/lib/data';
 
@@ -25,12 +25,73 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
   const { toast } = useToast();
   const wallet = data.getWallet(userId);
   const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
+  const [bankAccountDialogOpen, setBankAccountDialogOpen] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Bank account states
+  const [bankAccountForm, setBankAccountForm] = useState({
+    accountHolderName: '',
+    accountNumber: '',
+    ifscCode: '',
+    bankName: '',
+    accountType: 'savings' as 'savings' | 'current',
+  });
+
+  const hasBankAccount = data.getPrimaryBankAccount(userId) !== null;
 
   const quickAmounts = [10000, 25000, 50000, 100000, 250000, 500000];
 
+  const handleAddBankAccount = () => {
+    if (!bankAccountForm.accountHolderName || !bankAccountForm.accountNumber ||
+        !bankAccountForm.ifscCode || !bankAccountForm.bankName) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Information',
+        description: 'Please fill all required fields',
+      });
+      return;
+    }
+
+    const newAccount = data.createBankAccount({
+      userId,
+      ...bankAccountForm,
+      isPrimary: true,
+    });
+
+    toast({
+      title: 'Bank Account Added!',
+      description: 'Your bank account has been linked successfully',
+    });
+
+    setBankAccountDialogOpen(false);
+    setBankAccountForm({
+      accountHolderName: '',
+      accountNumber: '',
+      ifscCode: '',
+      bankName: '',
+      accountType: 'savings',
+    });
+
+    // Refresh component
+    if (onBalanceUpdate) {
+      onBalanceUpdate();
+    }
+  };
+
   const handleTopUp = async () => {
+    if (!hasBankAccount) {
+      toast({
+        variant: 'destructive',
+        title: 'No Bank Account',
+        description: 'Please add a bank account first to add money',
+      });
+      setBankAccountDialogOpen(true);
+      return;
+    }
+
     const amount = parseFloat(topUpAmount);
 
     if (!amount || amount <= 0) {
@@ -95,6 +156,71 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
     }, 2000); // 2 second simulated payment processing
   };
 
+  const handleWithdraw = async () => {
+    const amount = parseFloat(withdrawAmount);
+
+    if (!amount || amount <= 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Amount',
+        description: 'Please enter a valid amount greater than ₹0',
+      });
+      return;
+    }
+
+    if (amount < 1000) {
+      toast({
+        variant: 'destructive',
+        title: 'Minimum Amount Required',
+        description: 'Minimum withdrawal amount is ₹1,000',
+      });
+      return;
+    }
+
+    if (amount > wallet.balance) {
+      toast({
+        variant: 'destructive',
+        title: 'Insufficient Balance',
+        description: 'You cannot withdraw more than your available balance',
+      });
+      return;
+    }
+
+    // Simulate withdrawal processing
+    setIsProcessing(true);
+
+    setTimeout(() => {
+      // Update wallet balance
+      data.updateWallet(userId, {
+        balance: wallet.balance - amount,
+      });
+
+      // Create transaction record
+      data.createTransaction({
+        userId,
+        type: 'debit',
+        amount,
+        category: 'withdrawal',
+        description: 'Wallet withdrawal to bank account',
+        balanceAfter: wallet.balance - amount,
+      });
+
+      toast({
+        title: 'Withdrawal Successful!',
+        description: `₹${(amount / 1000).toFixed(0)}K withdrawn from your wallet`,
+      });
+
+      setIsProcessing(false);
+      setWithdrawDialogOpen(false);
+      setWithdrawAmount('');
+
+      // Notify parent component of balance update
+      if (onBalanceUpdate) {
+        onBalanceUpdate();
+      }
+    }, 2000); // 2 second simulated withdrawal processing
+  };
+
   const availableBalance = wallet.balance;
   const lockedAmount = wallet.escrowedAmount || 0;
   const totalInvested = wallet.totalInvested || 0;
@@ -109,14 +235,36 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
               <WalletIcon className="h-5 w-5 text-primary" />
               <CardTitle>Wallet</CardTitle>
             </div>
-            <Button
-              size="sm"
-              onClick={() => setTopUpDialogOpen(true)}
-              className="bg-gradient-primary"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Add Money
-            </Button>
+            <div className="flex gap-2">
+              {!hasBankAccount && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setBankAccountDialogOpen(true)}
+                  className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                >
+                  <Building2 className="h-4 w-4 mr-1" />
+                  Add Bank Account
+                </Button>
+              )}
+              <Button
+                size="sm"
+                onClick={() => hasBankAccount ? setTopUpDialogOpen(true) : setBankAccountDialogOpen(true)}
+                className="bg-gradient-primary"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Money
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setWithdrawDialogOpen(true)}
+                disabled={wallet.balance === 0 || !hasBankAccount}
+              >
+                <ArrowDownCircle className="h-4 w-4 mr-1" />
+                Withdraw
+              </Button>
+            </div>
           </div>
           <CardDescription>Manage your investment wallet</CardDescription>
         </CardHeader>
@@ -234,6 +382,198 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
                   Add ₹{topUpAmount ? (parseFloat(topUpAmount) / 1000).toFixed(0) + 'K' : '0'}
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Withdrawal Dialog */}
+      <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowDownCircle className="h-5 w-5 text-orange-600" />
+              Withdraw Money from Wallet
+            </DialogTitle>
+            <DialogDescription>
+              Withdraw funds to your linked bank account
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Available Balance */}
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Available Balance</span>
+                <span className="text-lg font-semibold text-primary">₹{(wallet.balance / 1000).toFixed(0)}K</span>
+              </div>
+            </div>
+
+            {/* Quick Amount Selection */}
+            <div>
+              <Label className="text-sm mb-2 block">Quick Select</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {quickAmounts.filter(amt => amt <= wallet.balance).map((amount) => (
+                  <Button
+                    key={amount}
+                    variant="outline"
+                    onClick={() => setWithdrawAmount(amount.toString())}
+                    className={withdrawAmount === amount.toString() ? 'border-primary bg-primary/10' : ''}
+                  >
+                    ₹{(amount / 1000).toFixed(0)}K
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Amount */}
+            <div>
+              <Label htmlFor="withdrawAmount">Withdrawal Amount (₹)</Label>
+              <Input
+                id="withdrawAmount"
+                type="number"
+                placeholder="Enter amount (min ₹1,000)"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                min="1000"
+                max={wallet.balance}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Min: ₹1,000 | Max: ₹{(wallet.balance / 1000).toFixed(0)}K
+              </p>
+            </div>
+
+            {/* Bank Account Info */}
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm font-medium mb-2">Bank Account</p>
+              <p className="text-xs text-muted-foreground">
+                This is a simulated withdrawal system. In production, this would transfer funds to your linked bank account via IMPS/NEFT/RTGS.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setWithdrawDialogOpen(false)} disabled={isProcessing}>
+              Cancel
+            </Button>
+            <Button onClick={handleWithdraw} disabled={isProcessing} variant="destructive">
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <ArrowDownCircle className="h-4 w-4 mr-2" />
+                  Withdraw ₹{withdrawAmount ? (parseFloat(withdrawAmount) / 1000).toFixed(0) + 'K' : '0'}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bank Account Dialog */}
+      <Dialog open={bankAccountDialogOpen} onOpenChange={setBankAccountDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              Add Bank Account
+            </DialogTitle>
+            <DialogDescription>
+              Link your bank account to add or withdraw money
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Alert message */}
+            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5" />
+              <p className="text-xs text-orange-800">
+                You need to add a bank account before you can add or withdraw money from your wallet
+              </p>
+            </div>
+
+            {/* Account Holder Name */}
+            <div>
+              <Label htmlFor="accountHolderName">Account Holder Name *</Label>
+              <Input
+                id="accountHolderName"
+                placeholder="As per bank records"
+                value={bankAccountForm.accountHolderName}
+                onChange={(e) => setBankAccountForm({ ...bankAccountForm, accountHolderName: e.target.value })}
+                className="mt-1"
+              />
+            </div>
+
+            {/* Account Number */}
+            <div>
+              <Label htmlFor="accountNumber">Account Number *</Label>
+              <Input
+                id="accountNumber"
+                type="text"
+                placeholder="Enter account number"
+                value={bankAccountForm.accountNumber}
+                onChange={(e) => setBankAccountForm({ ...bankAccountForm, accountNumber: e.target.value })}
+                className="mt-1"
+              />
+            </div>
+
+            {/* IFSC Code */}
+            <div>
+              <Label htmlFor="ifscCode">IFSC Code *</Label>
+              <Input
+                id="ifscCode"
+                placeholder="e.g., SBIN0001234"
+                value={bankAccountForm.ifscCode}
+                onChange={(e) => setBankAccountForm({ ...bankAccountForm, ifscCode: e.target.value.toUpperCase() })}
+                className="mt-1"
+              />
+            </div>
+
+            {/* Bank Name */}
+            <div>
+              <Label htmlFor="bankName">Bank Name *</Label>
+              <Input
+                id="bankName"
+                placeholder="e.g., State Bank of India"
+                value={bankAccountForm.bankName}
+                onChange={(e) => setBankAccountForm({ ...bankAccountForm, bankName: e.target.value })}
+                className="mt-1"
+              />
+            </div>
+
+            {/* Account Type */}
+            <div>
+              <Label htmlFor="accountType">Account Type *</Label>
+              <select
+                id="accountType"
+                value={bankAccountForm.accountType}
+                onChange={(e) => setBankAccountForm({ ...bankAccountForm, accountType: e.target.value as 'savings' | 'current' })}
+                className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background"
+              >
+                <option value="savings">Savings Account</option>
+                <option value="current">Current Account</option>
+              </select>
+            </div>
+
+            {/* Note */}
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-xs text-muted-foreground">
+                <strong>Note:</strong> This is a simulated system. In production, bank account verification would be done through penny drop or other secure methods.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBankAccountDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddBankAccount} className="bg-gradient-primary">
+              <Building2 className="h-4 w-4 mr-2" />
+              Add Account
             </Button>
           </DialogFooter>
         </DialogContent>

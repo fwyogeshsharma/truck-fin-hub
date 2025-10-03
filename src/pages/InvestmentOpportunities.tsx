@@ -318,7 +318,7 @@ const InvestmentOpportunities = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold">Investment Opportunities</h1>
+            <h1 className="text-3xl font-bold">Lender Opportunities</h1>
             <p className="text-muted-foreground mt-1">Browse and invest in available trips</p>
           </div>
           <div className="flex gap-2">

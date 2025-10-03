@@ -26,15 +26,29 @@ const LenderDashboard = () => {
     });
   };
 
-  // Mock data for investment growth chart (last 6 months)
-  const investmentGrowthData = [
-    { month: 'May', invested: 150000, returns: 12000 },
-    { month: 'Jun', invested: 280000, returns: 24500 },
-    { month: 'Jul', invested: 420000, returns: 38000 },
-    { month: 'Aug', invested: 580000, returns: 52000 },
-    { month: 'Sep', invested: 740000, returns: 68000 },
+  // User-specific investment growth data - only show if user has investments
+  const hasInvestments = myInvestments.length > 0 && (wallet.totalInvested > 0 || wallet.totalReturns > 0);
+
+  const investmentGrowthData = hasInvestments ? [
+    { month: 'May', invested: wallet.totalInvested * 0.2, returns: wallet.totalReturns * 0.15 },
+    { month: 'Jun', invested: wallet.totalInvested * 0.35, returns: wallet.totalReturns * 0.32 },
+    { month: 'Jul', invested: wallet.totalInvested * 0.52, returns: wallet.totalReturns * 0.50 },
+    { month: 'Aug', invested: wallet.totalInvested * 0.68, returns: wallet.totalReturns * 0.68 },
+    { month: 'Sep', invested: wallet.totalInvested * 0.85, returns: wallet.totalReturns * 0.88 },
     { month: 'Oct', invested: wallet.totalInvested, returns: wallet.totalReturns },
-  ];
+  ] : [];
+
+  // Calculate monthly returns from investment growth data
+  const monthlyReturnsData = hasInvestments ? investmentGrowthData.map((data, index) => {
+    if (index === 0) {
+      // First month return is the initial return
+      return { month: data.month, returns: data.returns };
+    }
+    // Monthly return = current total returns - previous total returns
+    const previousReturns = investmentGrowthData[index - 1].returns;
+    const monthlyReturn = data.returns - previousReturns;
+    return { month: data.month, returns: monthlyReturn };
+  }) : [];
 
   // Portfolio distribution by actual invested companies
   const getPortfolioDistribution = () => {
@@ -65,16 +79,6 @@ const LenderDashboard = () => {
   };
 
   const portfolioData = getPortfolioDistribution();
-
-  // Monthly returns data - more realistic with gradual growth
-  const monthlyReturnsData = [
-    { month: 'May', returns: 8500 },
-    { month: 'Jun', returns: 11200 },
-    { month: 'Jul', returns: 14800 },
-    { month: 'Aug', returns: 18600 },
-    { month: 'Sep', returns: 23400 },
-    { month: 'Oct', returns: 28900 },
-  ];
 
   const activeInvestments = myInvestments.filter(i => i.status === 'active');
   const completedInvestments = myInvestments.filter(i => i.status === 'completed');
@@ -131,7 +135,7 @@ const LenderDashboard = () => {
   const aiInsights = [
     {
       icon: Sparkles,
-      title: "New Investment Opportunities",
+      title: "New Lender Opportunities",
       description: `${pendingTrips.length} trips available for funding`,
       action: `Invest at ${avgInterestRate}% to earn ₹${(potentialEarnings / 1000).toFixed(0)}K`,
       color: "text-primary",
@@ -248,27 +252,37 @@ const LenderDashboard = () => {
             <CardDescription>Your investment portfolio over the last 6 months</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={investmentGrowthData}>
-                <defs>
-                  <linearGradient id="colorInvested" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#0EA5E9" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorReturns" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Area type="monotone" dataKey="invested" stroke="#0EA5E9" fillOpacity={1} fill="url(#colorInvested)" name="Total Invested" />
-                <Area type="monotone" dataKey="returns" stroke="#10b981" fillOpacity={1} fill="url(#colorReturns)" name="Total Returns" />
-              </AreaChart>
-            </ResponsiveContainer>
+            {hasInvestments ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={investmentGrowthData}>
+                  <defs>
+                    <linearGradient id="colorInvested" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#0EA5E9" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorReturns" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Area type="monotone" dataKey="invested" stroke="#0EA5E9" fillOpacity={1} fill="url(#colorInvested)" name="Total Invested" />
+                  <Area type="monotone" dataKey="returns" stroke="#10b981" fillOpacity={1} fill="url(#colorReturns)" name="Total Returns" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <TrendingUp className="h-12 w-12 mx-auto mb-2 opacity-20" />
+                  <p className="text-sm">No investment data yet</p>
+                  <p className="text-xs mt-1">Start investing to see your growth chart</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -331,18 +345,28 @@ const LenderDashboard = () => {
               <CardDescription>Returns earned each month</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={monthlyReturnsData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} />
-                  <Tooltip
-                    formatter={(value: any) => [`₹${(value / 1000).toFixed(1)}K`, 'Returns']}
-                    labelFormatter={(label) => `Month: ${label}`}
-                  />
-                  <Bar dataKey="returns" fill="#10b981" name="Returns" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {hasInvestments ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={monthlyReturnsData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} />
+                    <Tooltip
+                      formatter={(value: any) => [`₹${(value / 1000).toFixed(1)}K`, 'Returns']}
+                      labelFormatter={(label) => `Month: ${label}`}
+                    />
+                    <Bar dataKey="returns" fill="#10b981" name="Returns" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <IndianRupee className="h-12 w-12 mx-auto mb-2 opacity-20" />
+                    <p className="text-sm">No returns data yet</p>
+                    <p className="text-xs mt-1">Returns will appear once you have active investments</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
