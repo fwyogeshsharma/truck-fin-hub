@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Package, TruckIcon, IndianRupee, Calendar, TrendingUp, CheckSquare, Square } from "lucide-react";
+import { MapPin, Package, TruckIcon, IndianRupee, Calendar, TrendingUp, CheckSquare, Square, Star, Shield } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
@@ -357,11 +357,11 @@ const InvestmentOpportunities = () => {
                         />
                       </div>
                       <div className="flex gap-4 flex-1">
-                        {trip.loadOwnerLogo && (
+                        {trip.clientLogo && (
                           <div className="flex-shrink-0">
                             <img
-                              src={trip.loadOwnerLogo}
-                              alt={trip.loadOwnerName}
+                              src={trip.clientLogo}
+                              alt={trip.clientCompany}
                               className="h-16 w-16 object-contain rounded-lg border border-border p-2 bg-card"
                             />
                           </div>
@@ -376,12 +376,57 @@ const InvestmentOpportunities = () => {
                           <CardDescription>
                             {trip.loadType} • {trip.weight}kg • {trip.distance}km
                           </CardDescription>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Load Provider: {trip.loadOwnerName}
-                          </p>
+                          {trip.loadOwnerLogo && (
+                            <div className="flex items-center gap-2 mt-3">
+                              <span className="text-xs text-muted-foreground">Trip by:</span>
+                              <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg border border-border">
+                                <img
+                                  src={trip.loadOwnerLogo}
+                                  alt={trip.loadOwnerName}
+                                  className="h-6 object-contain"
+                                />
+                                {trip.loadOwnerRating && (
+                                  <div className="flex items-center gap-0.5 pl-2 border-l border-border">
+                                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                    <span className="text-xs font-medium">{trip.loadOwnerRating.toFixed(1)}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <Badge variant="secondary">{trip.status}</Badge>
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="flex items-center gap-2">
+                          {/* Risk Level */}
+                          {trip.riskLevel && (
+                            <Badge
+                              variant={trip.riskLevel === 'low' ? 'default' : trip.riskLevel === 'medium' ? 'secondary' : 'destructive'}
+                              className={`text-xs ${
+                                trip.riskLevel === 'low' ? 'bg-green-600' :
+                                trip.riskLevel === 'medium' ? 'bg-yellow-600' :
+                                'bg-red-600'
+                              } text-white`}
+                            >
+                              {trip.riskLevel.toUpperCase()}
+                            </Badge>
+                          )}
+                          {/* Insurance Status */}
+                          {trip.insuranceStatus ? (
+                            <Badge className="bg-green-600 text-white flex items-center gap-1">
+                              <Shield className="h-3 w-3" />
+                              Insured
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs flex items-center gap-1">
+                              <Shield className="h-3 w-3" />
+                              Not Insured
+                            </Badge>
+                          )}
+                          {/* Status */}
+                          <Badge variant="secondary">{trip.status}</Badge>
+                        </div>
+                      </div>
                     </div>
                   </CardHeader>
 
