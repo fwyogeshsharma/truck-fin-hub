@@ -17,9 +17,9 @@ const AUTH_KEY = 'current_user';
 const WALLET_KEY = 'current_wallet';
 
 export const auth = {
-  // Get current user
+  // Get current user (from sessionStorage - tab-specific)
   getCurrentUser: (): User | null => {
-    const authData = localStorage.getItem(AUTH_KEY);
+    const authData = sessionStorage.getItem(AUTH_KEY);
     return authData ? JSON.parse(authData) : null;
   },
 
@@ -27,8 +27,9 @@ export const auth = {
   login: async (email: string, password: string): Promise<User> => {
     try {
       const response = await authAPI.login(email, password);
-      localStorage.setItem(AUTH_KEY, JSON.stringify(response.user));
-      localStorage.setItem(WALLET_KEY, JSON.stringify(response.wallet));
+      // Store in sessionStorage (tab-specific)
+      sessionStorage.setItem(AUTH_KEY, JSON.stringify(response.user));
+      sessionStorage.setItem(WALLET_KEY, JSON.stringify(response.wallet));
       return response.user;
     } catch (error: any) {
       throw new Error(error.message || 'Login failed');
@@ -44,8 +45,9 @@ export const auth = {
         name,
         phone: phone || '0000000000', // Default phone if not provided
       });
-      localStorage.setItem(AUTH_KEY, JSON.stringify(response.user));
-      localStorage.setItem(WALLET_KEY, JSON.stringify(response.wallet));
+      // Store in sessionStorage (tab-specific)
+      sessionStorage.setItem(AUTH_KEY, JSON.stringify(response.user));
+      sessionStorage.setItem(WALLET_KEY, JSON.stringify(response.wallet));
       return response.user;
     } catch (error: any) {
       throw new Error(error.message || 'Signup failed');
@@ -55,8 +57,8 @@ export const auth = {
   // Logout
   logout: () => {
     authAPI.logout();
-    localStorage.removeItem(AUTH_KEY);
-    localStorage.removeItem(WALLET_KEY);
+    sessionStorage.removeItem(AUTH_KEY);
+    sessionStorage.removeItem(WALLET_KEY);
   },
 
   // Update user role (one-time selection)
@@ -72,7 +74,8 @@ export const auth = {
         companyLogo,
       });
 
-      localStorage.setItem(AUTH_KEY, JSON.stringify(response.user));
+      // Store in sessionStorage (tab-specific)
+      sessionStorage.setItem(AUTH_KEY, JSON.stringify(response.user));
       return response.user;
     } catch (error: any) {
       throw new Error(error.message || 'Failed to update role');

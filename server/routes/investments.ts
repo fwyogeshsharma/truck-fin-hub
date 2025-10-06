@@ -6,6 +6,7 @@ import {
   getInvestmentsByTrip,
   getInvestmentsByStatus,
   getInvestmentsByLenderAndStatus,
+  getInvestmentsByTripAndLender,
   createInvestment,
   updateInvestmentStatus,
   updateInvestment,
@@ -23,7 +24,9 @@ router.get('/', (req: Request, res: Response) => {
     const { lenderId, tripId, status } = req.query;
 
     let investments;
-    if (lenderId && status) {
+    if (lenderId && tripId) {
+      investments = getInvestmentsByTripAndLender(tripId as string, lenderId as string);
+    } else if (lenderId && status) {
       investments = getInvestmentsByLenderAndStatus(lenderId as string, status as any);
     } else if (lenderId) {
       investments = getInvestmentsByLender(lenderId as string);

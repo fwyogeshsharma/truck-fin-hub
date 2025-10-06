@@ -87,25 +87,33 @@ const RoleSelection = () => {
     proceedWithRoleSelection();
   };
 
-  const proceedWithRoleSelection = () => {
+  const proceedWithRoleSelection = async () => {
     if (!selectedRole) return;
 
     setIsLoading(true);
-    const updatedUser = auth.updateUserRole(
-      selectedRole,
-      selectedCompany?.name,
-      selectedCompany?.logo
-    );
+    try {
+      const updatedUser = await auth.updateUserRole(
+        selectedRole,
+        selectedCompany?.name,
+        selectedCompany?.logo
+      );
 
-    if (updatedUser) {
+      if (updatedUser) {
+        toast({
+          title: "Role selected!",
+          description: `Welcome, ${roles.find(r => r.id === selectedRole)?.title}`,
+        });
+        navigate(`/dashboard/${selectedRole}`);
+      }
+    } catch (error: any) {
       toast({
-        title: "Role selected!",
-        description: `Welcome, ${roles.find(r => r.id === selectedRole)?.title}`,
+        variant: "destructive",
+        title: "Failed to update role",
+        description: error.message || "Something went wrong",
       });
-      navigate(`/dashboard/${selectedRole}`);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const handleCompanySelect = (company: typeof companies[0]) => {

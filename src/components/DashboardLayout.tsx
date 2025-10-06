@@ -1,9 +1,10 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TruckIcon, LogOut, Home, Package, Wallet, Shield, Users, User as UserIcon, Settings, FileCheck } from "lucide-react";
 import { auth, User } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { authAPI } from "@/api/auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,9 +70,36 @@ const roleConfig = {
 const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const user = auth.getCurrentUser();
+  const [user, setUser] = useState<User | null>(auth.getCurrentUser());
   const config = roleConfig[role || 'load_owner'];
   const RoleIcon = config.icon;
+
+  // Sync user data from API on mount and when role changes
+  useEffect(() => {
+    const syncUserData = async () => {
+      try {
+        const response = await authAPI.getMe();
+        if (response.user) {
+          // Update sessionStorage with fresh data (tab-specific)
+          sessionStorage.setItem('current_user', JSON.stringify(response.user));
+          sessionStorage.setItem('current_wallet', JSON.stringify(response.wallet));
+          setUser(response.user);
+
+          // If user's role doesn't match current route, redirect to correct dashboard
+          if (response.user.role && response.user.role !== role) {
+            navigate(`/dashboard/${response.user.role}`, { replace: true });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to sync user data:', error);
+        // If token is invalid, logout
+        auth.logout();
+        navigate('/auth');
+      }
+    };
+
+    syncUserData();
+  }, [role, navigate]);
 
   const handleLogout = () => {
     auth.logout();

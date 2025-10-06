@@ -1,19 +1,17 @@
 // API Client for Truck Finance Hub
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-let authToken: string | null = localStorage.getItem('auth_token');
-
+// Use sessionStorage for tokens (tab-specific) instead of localStorage (shared across tabs)
 export const setAuthToken = (token: string | null) => {
-  authToken = token;
   if (token) {
-    localStorage.setItem('auth_token', token);
+    sessionStorage.setItem('auth_token', token);
   } else {
-    localStorage.removeItem('auth_token');
+    sessionStorage.removeItem('auth_token');
   }
 };
 
 export const getAuthToken = (): string | null => {
-  return authToken;
+  return sessionStorage.getItem('auth_token');
 };
 
 interface RequestOptions {
@@ -22,10 +20,11 @@ interface RequestOptions {
 
 export const apiClient = {
   async get<T = any>(endpoint: string, options?: RequestOptions): Promise<T> {
+    const token = getAuthToken();
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'GET',
       headers: {
-        'Authorization': authToken ? `Bearer ${authToken}` : '',
+        'Authorization': token ? `Bearer ${token}` : '',
         'Content-Type': 'application/json',
         ...options?.headers,
       },
@@ -40,10 +39,11 @@ export const apiClient = {
   },
 
   async post<T = any>(endpoint: string, data?: any, options?: RequestOptions): Promise<T> {
+    const token = getAuthToken();
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
-        'Authorization': authToken ? `Bearer ${authToken}` : '',
+        'Authorization': token ? `Bearer ${token}` : '',
         'Content-Type': 'application/json',
         ...options?.headers,
       },
@@ -59,10 +59,11 @@ export const apiClient = {
   },
 
   async put<T = any>(endpoint: string, data?: any, options?: RequestOptions): Promise<T> {
+    const token = getAuthToken();
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PUT',
       headers: {
-        'Authorization': authToken ? `Bearer ${authToken}` : '',
+        'Authorization': token ? `Bearer ${token}` : '',
         'Content-Type': 'application/json',
         ...options?.headers,
       },
@@ -78,10 +79,11 @@ export const apiClient = {
   },
 
   async delete<T = any>(endpoint: string, options?: RequestOptions): Promise<T> {
+    const token = getAuthToken();
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': authToken ? `Bearer ${authToken}` : '',
+        'Authorization': token ? `Bearer ${token}` : '',
         'Content-Type': 'application/json',
         ...options?.headers,
       },

@@ -15,21 +15,21 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [loginData, setLoginData] = useState({ email: "", password: "" });
-  const [signupData, setSignupData] = useState({ name: "", email: "", password: "" });
+  const [signupData, setSignupData] = useState({ name: "", email: "", phone: "", password: "" });
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const user = auth.login(loginData.email, loginData.password);
-      
+      const user = await auth.login(loginData.email, loginData.password);
+
       if (user) {
         toast({
           title: "Welcome back!",
           description: "Successfully logged in",
         });
-        
+
         // Check if user has selected a role
         if (user.role) {
           navigate(`/dashboard/${user.role}`);
@@ -43,11 +43,11 @@ const Auth = () => {
           description: "Invalid email or password",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Something went wrong",
+        title: "Login failed",
+        description: error.message || "Invalid credentials",
       });
     } finally {
       setIsLoading(false);
@@ -59,13 +59,13 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      const user = auth.signup(signupData.email, signupData.password, signupData.name);
-      
+      const user = await auth.signup(signupData.email, signupData.password, signupData.name, signupData.phone);
+
       toast({
         title: "Account created!",
         description: "Please select your role to continue",
       });
-      
+
       navigate("/select-role");
     } catch (error: any) {
       toast({
@@ -155,6 +155,20 @@ const Auth = () => {
                     value={signupData.email}
                     onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                     required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-phone">Phone Number</Label>
+                  <Input
+                    id="signup-phone"
+                    type="tel"
+                    placeholder="9876543210"
+                    value={signupData.phone}
+                    onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
+                    required
+                    minLength={10}
+                    maxLength={10}
+                    pattern="[0-9]{10}"
                   />
                 </div>
                 <div className="space-y-2">

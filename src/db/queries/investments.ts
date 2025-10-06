@@ -77,6 +77,15 @@ export const getInvestmentsByLenderAndStatus = (lenderId: string, status: Invest
 };
 
 /**
+ * Get investments by trip and lender
+ */
+export const getInvestmentsByTripAndLender = (tripId: string, lenderId: string): Investment[] => {
+  const db = getDatabase();
+  const stmt = db.prepare('SELECT * FROM investments WHERE trip_id = ? AND lender_id = ? ORDER BY invested_at DESC');
+  return stmt.all(tripId, lenderId) as Investment[];
+};
+
+/**
  * Create investment
  */
 export const createInvestment = (input: CreateInvestmentInput): Investment => {
@@ -219,6 +228,7 @@ export default {
   getInvestmentsByTrip,
   getInvestmentsByStatus,
   getInvestmentsByLenderAndStatus,
+  getInvestmentsByTripAndLender,
   createInvestment,
   updateInvestmentStatus,
   updateInvestment,
