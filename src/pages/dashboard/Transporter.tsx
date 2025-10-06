@@ -1,15 +1,48 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TruckIcon, CheckCircle2, Clock, MapPin } from "lucide-react";
 import { auth } from "@/lib/auth";
-import { data } from "@/lib/data";
+import { data, Trip, Wallet } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
 
 const TransporterDashboard = () => {
   const user = auth.getCurrentUser();
-  const allTrips = data.getTrips();
-  const myTrips = allTrips.filter(t => t.transporterId === user?.id || t.status === 'funded');
-  const wallet = data.getWallet(user?.id || 't1');
+  const [myTrips, setMyTrips] = useState<Trip[]>([]);
+  const [wallet, setWallet] = useState<Wallet>({
+    userId: user?.id || 't1',
+    balance: 0,
+    lockedAmount: 0,
+    escrowedAmount: 0,
+    totalInvested: 0,
+    totalReturns: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [allTrips, walletData] = await Promise.all([
+          data.getTrips(),
+          data.getWallet(user?.id || 't1')
+        ]);
+
+        // Filter trips for this transporter
+        const filteredTrips = allTrips.filter(t =>
+          t.transporterId === user?.id || t.status === 'funded'
+        );
+
+        setMyTrips(filteredTrips);
+        setWallet(walletData);
+      } catch (error) {
+        console.error('Failed to load data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [user?.id]);
 
   const stats = [
     {
@@ -32,20 +65,42 @@ const TransporterDashboard = () => {
     },
   ];
 
-  const handleAcceptTrip = (tripId: string) => {
-    data.updateTrip(tripId, {
+  const handleAcceptTrip = async (tripId: string) => {
+    await data.updateTrip(tripId, {
       transporterId: user?.id,
       transporterName: user?.name || 'Vehicle Provider',
       status: 'in_transit',
     });
+    // Reload data to show updated trip
+    const allTrips = await data.getTrips();
+    const filteredTrips = allTrips.filter(t =>
+      t.transporterId === user?.id || t.status === 'funded'
+    );
+    setMyTrips(filteredTrips);
   };
 
-  const handleCompleteTrip = (tripId: string) => {
-    data.updateTrip(tripId, {
+  const handleCompleteTrip = async (tripId: string) => {
+    await data.updateTrip(tripId, {
       status: 'completed',
       completedAt: new Date().toISOString(),
     });
+    // Reload data to show updated trip
+    const allTrips = await data.getTrips();
+    const filteredTrips = allTrips.filter(t =>
+      t.transporterId === user?.id || t.status === 'funded'
+    );
+    setMyTrips(filteredTrips);
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout role="transporter">
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="transporter">

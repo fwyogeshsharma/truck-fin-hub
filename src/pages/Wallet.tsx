@@ -60,9 +60,17 @@ const WalletPage = () => {
   const { toast } = useToast();
   const user = auth.getCurrentUser();
 
-  const [walletData, setWalletData] = useState(data.getWallet(user?.id || 'l1'));
-  const [transactions, setTransactions] = useState(data.getTransactions(user?.id || 'l1'));
+  const [walletData, setWalletData] = useState<any>({
+    balance: 0,
+    escrowedAmount: 0,
+    totalInvested: 0,
+    totalReturns: 0,
+    lockedAmount: 0,
+    userId: user?.id || ''
+  });
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
 
   // Dialogs
   const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
@@ -89,12 +97,30 @@ const WalletPage = () => {
   const [filterType, setFilterType] = useState<'all' | 'credit' | 'debit'>('all');
 
   useEffect(() => {
-    if (!user) {
+    if (!user?.id) {
       navigate('/auth');
       return;
     }
-    loadBankAccounts();
-  }, [user, navigate]);
+
+    const loadData = async () => {
+      try {
+        const [wallet, txns] = await Promise.all([
+          data.getWallet(user.id),
+          data.getTransactions(user.id)
+        ]);
+
+        setWalletData(wallet);
+        setTransactions(txns);
+        loadBankAccounts();
+      } catch (error) {
+        console.error('Failed to load wallet data:', error);
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    loadData();
+  }, [user?.id, navigate]);
 
   const loadBankAccounts = () => {
     const stored = localStorage.getItem(`${BANK_ACCOUNTS_KEY}_${user?.id}`);
@@ -108,9 +134,15 @@ const WalletPage = () => {
     setBankAccounts(accounts);
   };
 
-  const refreshData = () => {
-    setWalletData(data.getWallet(user?.id || 'l1'));
-    setTransactions(data.getTransactions(user?.id || 'l1'));
+  const refreshData = async () => {
+    if (!user?.id) return;
+
+    const [wallet, txns] = await Promise.all([
+      data.getWallet(user.id),
+      data.getTransactions(user.id)
+    ]);
+    setWalletData(wallet);
+    setTransactions(txns);
   };
 
   const handleTopUp = async () => {
@@ -134,15 +166,17 @@ const WalletPage = () => {
       return;
     }
 
+    if (!user?.id) return;
+
     setIsProcessing(true);
 
-    setTimeout(() => {
-      data.updateWallet(user?.id || 'l1', {
+    setTimeout(async () => {
+      await data.updateWallet(user.id, {
         balance: walletData.balance + amount,
       });
 
-      data.createTransaction({
-        userId: user?.id || 'l1',
+      await data.createTransaction({
+        userId: user.id,
         type: 'credit',
         amount,
         category: 'payment',
@@ -158,7 +192,7 @@ const WalletPage = () => {
       setIsProcessing(false);
       setTopUpDialogOpen(false);
       setTopUpAmount('');
-      refreshData();
+      await refreshData();
     }, 2000);
   };
 
@@ -201,17 +235,19 @@ const WalletPage = () => {
       return;
     }
 
+    if (!user?.id) return;
+
     const selectedBank = bankAccounts.find((b) => b.id === selectedBankId);
 
     setIsProcessing(true);
 
-    setTimeout(() => {
-      data.updateWallet(user?.id || 'l1', {
+    setTimeout(async () => {
+      await data.updateWallet(user.id, {
         balance: walletData.balance - amount,
       });
 
-      data.createTransaction({
-        userId: user?.id || 'l1',
+      await data.createTransaction({
+        userId: user.id,
         type: 'debit',
         amount,
         category: 'payment',
@@ -228,7 +264,7 @@ const WalletPage = () => {
       setWithdrawDialogOpen(false);
       setWithdrawAmount('');
       setSelectedBankId('');
-      refreshData();
+      await refreshData();
     }, 2000);
   };
 
@@ -326,6 +362,16 @@ const WalletPage = () => {
   const primaryBank = bankAccounts.find((b) => b.isPrimary);
 
   if (!user) return null;
+
+  if (dataLoading) {
+    return (
+      <DashboardLayout role={user.role}>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Loading wallet...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role={user.role}>

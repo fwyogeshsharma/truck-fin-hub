@@ -34,7 +34,6 @@ const roleConfig = {
     icon: Users,
     nav: [
       { label: "Dashboard", path: "/dashboard/load_agent", icon: Home },
-      { label: "All Trips", path: "/dashboard/load_agent", icon: Package },
       { label: "Wallet", path: "/wallet", icon: Wallet },
     ],
   },

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,8 +20,51 @@ import DashboardLayout from "@/components/DashboardLayout";
 
 const MyInvestments = () => {
   const user = auth.getCurrentUser();
-  const myInvestments = data.getInvestments().filter(i => i.lenderId === user?.id);
-  const wallet = data.getWallet(user?.id || 'l1');
+  const [myInvestments, setMyInvestments] = useState<any[]>([]);
+  const [wallet, setWallet] = useState<any>({
+    balance: 0,
+    escrowedAmount: 0,
+    totalInvested: 0,
+    totalReturns: 0,
+    lockedAmount: 0,
+    userId: user?.id || ''
+  });
+  const [trips, setTrips] = useState<Map<string, any>>(new Map());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!user?.id) {
+        console.error('No user ID found - user not authenticated');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const [allInvestments, walletData, allTrips] = await Promise.all([
+          data.getInvestments(),
+          data.getWallet(user.id),
+          data.getTrips()
+        ]);
+
+        // Filter investments for this user
+        const userInvestments = allInvestments.filter(i => i.lenderId === user.id);
+
+        // Create a map of trips for quick lookup
+        const tripsMap = new Map(allTrips.map(trip => [trip.id, trip]));
+
+        setMyInvestments(userInvestments);
+        setWallet(walletData);
+        setTrips(tripsMap);
+      } catch (error) {
+        console.error('Failed to load data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [user?.id]);
 
   const escrowedInvestments = myInvestments.filter(i => i.status === 'escrowed');
   const activeInvestments = myInvestments.filter(i => i.status === 'active');
@@ -49,12 +92,12 @@ const MyInvestments = () => {
   };
 
   const getTripStatus = (tripId: string) => {
-    const trip = data.getTrip(tripId);
+    const trip = trips.get(tripId);
     return trip?.status || 'unknown';
   };
 
   const getTripDetails = (tripId: string) => {
-    return data.getTrip(tripId);
+    return trips.get(tripId);
   };
 
   const EscrowedInvestmentCard = ({ investment }: { investment: any }) => {
@@ -310,6 +353,16 @@ const MyInvestments = () => {
       </Card>
     );
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout role="lender">
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Loading investments...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="lender">

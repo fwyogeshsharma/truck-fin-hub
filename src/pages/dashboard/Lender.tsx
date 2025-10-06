@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Wallet, TrendingUp, Package, IndianRupee, Lock, ArrowUpRight, ArrowDownRight, Sparkles, Brain, RefreshCw } from "lucide-react";
 import { auth } from "@/lib/auth";
-import { data } from "@/lib/data";
+import { data, type Trip, type Investment, type Wallet as WalletType } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
 import WalletCard from "@/components/WalletCard";
 import { useToast } from "@/hooks/use-toast";
@@ -13,10 +13,44 @@ const LenderDashboard = () => {
   const { toast } = useToast();
   const user = auth.getCurrentUser();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [myInvestments, setMyInvestments] = useState<Investment[]>([]);
+  const [wallet, setWallet] = useState<WalletType>({
+    userId: user?.id || '',
+    balance: 0,
+    lockedAmount: 0,
+    escrowedAmount: 0,
+    totalInvested: 0,
+    totalReturns: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
-  const trips = data.getTrips();
-  const myInvestments = data.getInvestments().filter(i => i.lenderId === user?.id);
-  const wallet = data.getWallet(user?.id || 'l1');
+  useEffect(() => {
+    const loadData = async () => {
+      if (!user?.id) {
+        console.error('No user ID found - user not authenticated');
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const [tripsData, investmentsData, walletData] = await Promise.all([
+          data.getTrips(),
+          data.getInvestments(),
+          data.getWallet(user.id),
+        ]);
+        setTrips(tripsData);
+        setMyInvestments(investmentsData.filter(i => i.lenderId === user.id));
+        setWallet(walletData);
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [user?.id, refreshKey]);
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
@@ -56,7 +90,7 @@ const LenderDashboard = () => {
     let totalInvested = 0;
 
     myInvestments.forEach(investment => {
-      const trip = data.getTrip(investment.tripId);
+      const trip = trips.find(t => t.id === investment.tripId);
       if (trip && (investment.status === 'active' || investment.status === 'completed')) {
         const companyName = trip.loadOwnerName;
         companyInvestments[companyName] = (companyInvestments[companyName] || 0) + investment.amount;
@@ -111,9 +145,14 @@ const LenderDashboard = () => {
     },
   ];
 
-  // Get recent active trips
-  const recentTrips = trips
-    .filter(t => t.status === 'funded' || t.status === 'in_transit')
+  // Get user's active investments (allotted and confirmed by load agent)
+  const activeInvestmentTrips = myInvestments
+    .filter(i => i.status === 'active')
+    .map(investment => {
+      const trip = trips.find(t => t.id === investment.tripId);
+      return trip ? { ...trip, investment } : null;
+    })
+    .filter(Boolean)
     .slice(0, 5);
 
   // AI Insights - Calculate investment opportunities
@@ -204,7 +243,7 @@ const LenderDashboard = () => {
         </div>
 
         {/* Wallet */}
-        <WalletCard userId={user?.id || 'l1'} showDetails={true} />
+        {user?.id && <WalletCard userId={user.id} showDetails={true} />}
 
         {/* AI Insights */}
         <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
@@ -386,7 +425,7 @@ const LenderDashboard = () => {
                 {myInvestments
                   .filter(i => i.status === 'escrowed')
                   .map((investment) => {
-                    const trip = data.getTrip(investment.tripId);
+                    const trip = trips.find(t => t.id === investment.tripId);
                     if (!trip) return null;
                     return (
                       <div key={investment.id} className="flex items-center justify-between p-4 border border-orange-300 rounded-lg bg-white">
@@ -422,52 +461,56 @@ const LenderDashboard = () => {
           </Card>
         )}
 
-        {/* Recent Active Trips */}
+        {/* Active Investments - Allotted Trips */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Active Trips</CardTitle>
-            <CardDescription>Track your funded investments</CardDescription>
+            <CardTitle>My Active Investments</CardTitle>
+            <CardDescription>Trips allotted to you by load agents</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentTrips.length === 0 ? (
+              {activeInvestmentTrips.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>No active trips yet</p>
+                  <p>No active investments yet</p>
+                  <p className="text-xs mt-1">Your confirmed investments will appear here</p>
                 </div>
               ) : (
-                recentTrips.map((trip) => (
-                  <div key={trip.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-4">
-                      {trip.loadOwnerLogo && (
-                        <img
-                          src={trip.loadOwnerLogo}
-                          alt={trip.loadOwnerName}
-                          className="h-12 w-12 object-contain rounded border p-1"
-                        />
-                      )}
-                      <div>
-                        <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {trip.loadType} • {trip.distance}km
+                activeInvestmentTrips.map((item: any) => {
+                  const trip = item;
+                  const investment = item.investment;
+                  return (
+                    <div key={trip.id} className="flex items-center justify-between p-4 border rounded-lg bg-green-50/50 border-green-200">
+                      <div className="flex items-center gap-4">
+                        {trip.loadOwnerLogo && (
+                          <img
+                            src={trip.loadOwnerLogo}
+                            alt={trip.loadOwnerName}
+                            className="h-12 w-12 object-contain rounded border p-1 bg-white"
+                          />
+                        )}
+                        <div>
+                          <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {trip.loadType} • {trip.distance}km
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-1">
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-600 text-white flex items-center gap-1">
+                            <ArrowUpRight className="h-3 w-3" />
+                            Active
+                          </span>
+                        </div>
+                        <p className="text-sm font-semibold mt-1">₹{(investment.amount / 1000).toFixed(0)}K at {investment.interestRate}%</p>
+                        <p className="text-xs text-muted-foreground">
+                          Return: ₹{(investment.expectedReturn / 1000).toFixed(1)}K
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          trip.status === 'in_transit' ? 'bg-secondary/20 text-secondary' :
-                          trip.status === 'funded' ? 'bg-primary/20 text-primary' :
-                          'bg-muted text-muted-foreground'
-                        }`}>
-                          {trip.status === 'in_transit' ? 'In Transit' :
-                           trip.status === 'funded' ? 'Funded' : trip.status}
-                        </span>
-                      </div>
-                      <p className="text-sm font-semibold mt-1">₹{(trip.amount / 1000).toFixed(0)}K</p>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </CardContent>

@@ -1,13 +1,38 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, TruckIcon, Wallet, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import { auth } from "@/lib/auth";
-import { data } from "@/lib/data";
+import { data, Trip, Investment } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
 
 const AdminDashboard = () => {
-  const allTrips = data.getTrips();
-  const allUsers = auth.getAllUsers();
-  const allInvestments = data.getInvestments();
+  const user = auth.getCurrentUser();
+  const [allTrips, setAllTrips] = useState<Trip[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [allInvestments, setAllInvestments] = useState<Investment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [trips, investments] = await Promise.all([
+          data.getTrips(),
+          data.getInvestments()
+        ]);
+        const users = auth.getAllUsers();
+
+        setAllTrips(trips);
+        setAllUsers(users);
+        setAllInvestments(investments);
+      } catch (error) {
+        console.error('Failed to load data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const stats = [
     {
@@ -46,6 +71,16 @@ const AdminDashboard = () => {
     { metric: "Trip Management", status: "operational", uptime: "99.8%" },
     { metric: "Wallet System", status: "operational", uptime: "99.9%" },
   ];
+
+  if (loading) {
+    return (
+      <DashboardLayout role="admin">
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="admin">

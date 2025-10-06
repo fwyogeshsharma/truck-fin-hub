@@ -1,46 +1,20 @@
-// Authentication utilities using localStorage
+// Authentication utilities using API
+
+import { authAPI, type User as APIUser } from '../api/auth';
 
 export interface User {
   id: string;
+  userId?: string;
   email: string;
   name: string;
-  role?: 'load_owner' | 'transporter' | 'lender' | 'admin' | 'load_agent' | 'vehicle_agent';
+  role?: 'load_owner' | 'vehicle_owner' | 'lender' | 'admin' | 'super_admin' | 'load_agent' | 'vehicle_agent';
   company?: string;
   companyLogo?: string;
+  userLogo?: string;
 }
 
-const AUTH_KEY = 'logistics_auth';
-const USERS_KEY = 'logistics_users';
-
-// Initialize mock load agent users
-const initializeMockUsers = () => {
-  const users = auth.getAllUsers();
-
-  // Check if mock users already exist
-  if (!users.find(u => u.email === 'aman@rollingradius.com')) {
-    const mockUsers: User[] = [
-      {
-        id: 'aman_rr',
-        email: 'aman@rollingradius.com',
-        name: 'Aman',
-        role: 'load_agent',
-        company: 'RollingRadius',
-        companyLogo: '/rr_full_transp_old.png',
-      },
-      {
-        id: 'deependra_darcl',
-        email: 'deependra@cjdarcl.com',
-        name: 'Deependra',
-        role: 'load_agent',
-        company: 'CJ Darcl Logistics',
-        companyLogo: '/CJ-Darcl-01.png',
-      },
-    ];
-
-    const updatedUsers = [...users, ...mockUsers];
-    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-  }
-};
+const AUTH_KEY = 'current_user';
+const WALLET_KEY = 'current_wallet';
 
 export const auth = {
   // Get current user
@@ -50,69 +24,66 @@ export const auth = {
   },
 
   // Login
-  login: (email: string, password: string): User | null => {
-    const users = auth.getAllUsers();
-    const user = users.find(u => u.email === email);
-    
-    if (user) {
-      localStorage.setItem(AUTH_KEY, JSON.stringify(user));
-      return user;
+  login: async (email: string, password: string): Promise<User> => {
+    try {
+      const response = await authAPI.login(email, password);
+      localStorage.setItem(AUTH_KEY, JSON.stringify(response.user));
+      localStorage.setItem(WALLET_KEY, JSON.stringify(response.wallet));
+      return response.user;
+    } catch (error: any) {
+      throw new Error(error.message || 'Login failed');
     }
-    return null;
   },
 
   // Signup
-  signup: (email: string, password: string, name: string): User => {
-    const users = auth.getAllUsers();
-    
-    // Check if user exists
-    if (users.some(u => u.email === email)) {
-      throw new Error('User already exists');
+  signup: async (email: string, password: string, name: string, phone?: string): Promise<User> => {
+    try {
+      const response = await authAPI.signup({
+        email,
+        password,
+        name,
+        phone: phone || '0000000000', // Default phone if not provided
+      });
+      localStorage.setItem(AUTH_KEY, JSON.stringify(response.user));
+      localStorage.setItem(WALLET_KEY, JSON.stringify(response.wallet));
+      return response.user;
+    } catch (error: any) {
+      throw new Error(error.message || 'Signup failed');
     }
-
-    const newUser: User = {
-      id: Date.now().toString(),
-      email,
-      name,
-    };
-
-    users.push(newUser);
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-    localStorage.setItem(AUTH_KEY, JSON.stringify(newUser));
-    
-    return newUser;
   },
 
   // Logout
   logout: () => {
+    authAPI.logout();
     localStorage.removeItem(AUTH_KEY);
+    localStorage.removeItem(WALLET_KEY);
   },
 
   // Update user role (one-time selection)
-  updateUserRole: (role: User['role'], company?: string, companyLogo?: string) => {
+  updateUserRole: async (role: User['role'], company?: string, companyLogo?: string): Promise<User | null> => {
     const user = auth.getCurrentUser();
     if (!user) return null;
 
-    const updatedUser = { ...user, role, company, companyLogo };
+    try {
+      const response = await authAPI.updateRole({
+        userId: user.id,
+        role,
+        company,
+        companyLogo,
+      });
 
-    // Update in auth
-    localStorage.setItem(AUTH_KEY, JSON.stringify(updatedUser));
-
-    // Update in users list
-    const users = auth.getAllUsers();
-    const userIndex = users.findIndex(u => u.id === user.id);
-    if (userIndex !== -1) {
-      users[userIndex] = updatedUser;
-      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+      localStorage.setItem(AUTH_KEY, JSON.stringify(response.user));
+      return response.user;
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to update role');
     }
-
-    return updatedUser;
   },
 
-  // Get all users
+  // Get all users (for compatibility - now returns empty array)
   getAllUsers: (): User[] => {
-    const usersData = localStorage.getItem(USERS_KEY);
-    return usersData ? JSON.parse(usersData) : [];
+    // This is kept for backward compatibility
+    // In the new system, user listing is done via API with proper authentication
+    return [];
   },
 
   // Check if user is authenticated
@@ -120,6 +91,10 @@ export const auth = {
     return !!auth.getCurrentUser();
   },
 
-  // Initialize mock users
-  initializeMockUsers,
+  // Initialize mock users (deprecated - now handled by database)
+  initializeMockUsers: () => {
+    // Mock users are now in the database
+    // This function is kept for backward compatibility but does nothing
+    console.log('Mock users are now managed by the database');
+  },
 };

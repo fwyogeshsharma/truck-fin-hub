@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Wallet as WalletIcon, Plus, ArrowUpCircle, ArrowDownCircle, Loader2, Building2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { data } from '@/lib/data';
+import { data, type Wallet, type BankAccount } from '@/lib/data';
 
 interface WalletCardProps {
   userId: string;
@@ -23,7 +23,16 @@ interface WalletCardProps {
 
 const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardProps) => {
   const { toast } = useToast();
-  const wallet = data.getWallet(userId);
+  const [wallet, setWallet] = useState<Wallet>({
+    userId,
+    balance: 0,
+    lockedAmount: 0,
+    escrowedAmount: 0,
+    totalInvested: 0,
+    totalReturns: 0,
+  });
+  const [primaryBankAccount, setPrimaryBankAccount] = useState<BankAccount | null>(null);
+  const [loading, setLoading] = useState(true);
   const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [bankAccountDialogOpen, setBankAccountDialogOpen] = useState(false);
@@ -40,11 +49,30 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
     accountType: 'savings' as 'savings' | 'current',
   });
 
-  const hasBankAccount = data.getPrimaryBankAccount(userId) !== null;
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const [walletData, bankAccountData] = await Promise.all([
+          data.getWallet(userId),
+          data.getPrimaryBankAccount(userId),
+        ]);
+        setWallet(walletData);
+        setPrimaryBankAccount(bankAccountData);
+      } catch (error) {
+        console.error('Failed to load wallet data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [userId]);
+
+  const hasBankAccount = primaryBankAccount !== null;
 
   const quickAmounts = [10000, 25000, 50000, 100000, 250000, 500000];
 
-  const handleAddBankAccount = () => {
+  const handleAddBankAccount = async () => {
     if (!bankAccountForm.accountHolderName || !bankAccountForm.accountNumber ||
         !bankAccountForm.ifscCode || !bankAccountForm.bankName) {
       toast({
@@ -55,29 +83,39 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
       return;
     }
 
-    const newAccount = data.createBankAccount({
-      userId,
-      ...bankAccountForm,
-      isPrimary: true,
-    });
+    try {
+      const newAccount = await data.createBankAccount({
+        userId,
+        ...bankAccountForm,
+        isPrimary: true,
+      });
 
-    toast({
-      title: 'Bank Account Added!',
-      description: 'Your bank account has been linked successfully',
-    });
+      setPrimaryBankAccount(newAccount);
 
-    setBankAccountDialogOpen(false);
-    setBankAccountForm({
-      accountHolderName: '',
-      accountNumber: '',
-      ifscCode: '',
-      bankName: '',
-      accountType: 'savings',
-    });
+      toast({
+        title: 'Bank Account Added!',
+        description: 'Your bank account has been linked successfully',
+      });
 
-    // Refresh component
-    if (onBalanceUpdate) {
-      onBalanceUpdate();
+      setBankAccountDialogOpen(false);
+      setBankAccountForm({
+        accountHolderName: '',
+        accountNumber: '',
+        ifscCode: '',
+        bankName: '',
+        accountType: 'savings',
+      });
+
+      // Refresh component
+      if (onBalanceUpdate) {
+        onBalanceUpdate();
+      }
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to add bank account',
+      });
     }
   };
 
@@ -124,34 +162,47 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
     // Simulate payment processing
     setIsProcessing(true);
 
-    setTimeout(() => {
-      // Update wallet balance
-      data.updateWallet(userId, {
-        balance: wallet.balance + amount,
-      });
+    setTimeout(async () => {
+      try {
+        const newBalance = wallet.balance + amount;
 
-      // Create transaction record
-      data.createTransaction({
-        userId,
-        type: 'credit',
-        amount,
-        category: 'payment',
-        description: 'Wallet top-up via payment gateway',
-        balanceAfter: wallet.balance + amount,
-      });
+        // Update wallet balance
+        const updatedWallet = await data.updateWallet(userId, {
+          balance: newBalance,
+        });
 
-      toast({
-        title: 'Payment Successful!',
-        description: `₹${(amount / 1000).toFixed(0)}K added to your wallet`,
-      });
+        // Create transaction record
+        await data.createTransaction({
+          userId,
+          type: 'credit',
+          amount,
+          category: 'payment',
+          description: 'Wallet top-up via payment gateway',
+          balanceAfter: newBalance,
+        });
 
-      setIsProcessing(false);
-      setTopUpDialogOpen(false);
-      setTopUpAmount('');
+        setWallet(updatedWallet);
 
-      // Notify parent component of balance update
-      if (onBalanceUpdate) {
-        onBalanceUpdate();
+        toast({
+          title: 'Payment Successful!',
+          description: `₹${(amount / 1000).toFixed(0)}K added to your wallet`,
+        });
+
+        setTopUpDialogOpen(false);
+        setTopUpAmount('');
+
+        // Notify parent component of balance update
+        if (onBalanceUpdate) {
+          onBalanceUpdate();
+        }
+      } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: error.message || 'Failed to add money',
+        });
+      } finally {
+        setIsProcessing(false);
       }
     }, 2000); // 2 second simulated payment processing
   };
@@ -189,34 +240,47 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
     // Simulate withdrawal processing
     setIsProcessing(true);
 
-    setTimeout(() => {
-      // Update wallet balance
-      data.updateWallet(userId, {
-        balance: wallet.balance - amount,
-      });
+    setTimeout(async () => {
+      try {
+        const newBalance = wallet.balance - amount;
 
-      // Create transaction record
-      data.createTransaction({
-        userId,
-        type: 'debit',
-        amount,
-        category: 'withdrawal',
-        description: 'Wallet withdrawal to bank account',
-        balanceAfter: wallet.balance - amount,
-      });
+        // Update wallet balance
+        const updatedWallet = await data.updateWallet(userId, {
+          balance: newBalance,
+        });
 
-      toast({
-        title: 'Withdrawal Successful!',
-        description: `₹${(amount / 1000).toFixed(0)}K withdrawn from your wallet`,
-      });
+        // Create transaction record
+        await data.createTransaction({
+          userId,
+          type: 'debit',
+          amount,
+          category: 'withdrawal',
+          description: 'Wallet withdrawal to bank account',
+          balanceAfter: newBalance,
+        });
 
-      setIsProcessing(false);
-      setWithdrawDialogOpen(false);
-      setWithdrawAmount('');
+        setWallet(updatedWallet);
 
-      // Notify parent component of balance update
-      if (onBalanceUpdate) {
-        onBalanceUpdate();
+        toast({
+          title: 'Withdrawal Successful!',
+          description: `₹${(amount / 1000).toFixed(0)}K withdrawn from your wallet`,
+        });
+
+        setWithdrawDialogOpen(false);
+        setWithdrawAmount('');
+
+        // Notify parent component of balance update
+        if (onBalanceUpdate) {
+          onBalanceUpdate();
+        }
+      } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: error.message || 'Failed to withdraw money',
+        });
+      } finally {
+        setIsProcessing(false);
       }
     }, 2000); // 2 second simulated withdrawal processing
   };

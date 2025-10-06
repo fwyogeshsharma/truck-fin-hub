@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { auth } from '@/lib/auth';
-import { data } from '@/lib/data';
+import { data, Trip } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +40,11 @@ import {
   XCircle,
   Shield,
   Star,
+  Upload,
+  Download,
+  FileSpreadsheet,
+  Link,
+  RefreshCw,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -49,18 +54,38 @@ const LoadAgentDashboard = () => {
   const user = auth.getCurrentUser();
 
   const [refreshKey, setRefreshKey] = useState(0);
+  const [allTrips, setAllTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Filter trips by company
-  const allTrips = data.getTrips().filter(trip => {
-    if (!user?.company) return true;
-    return trip.loadOwnerName === user.company;
-  });
+  useEffect(() => {
+    const loadTrips = async () => {
+      try {
+        const trips = await data.getTrips();
+        // Filter trips by company
+        const filteredTrips = trips.filter(trip => {
+          if (!user?.company) return true;
+          return trip.loadOwnerName === user.company;
+        });
+        setAllTrips(filteredTrips);
+      } catch (error) {
+        console.error('Failed to load trips:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTrips();
+  }, [refreshKey, user?.company]);
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createTripTab, setCreateTripTab] = useState<'form' | 'excel' | 'api'>('form');
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [documentViewDialogOpen, setDocumentViewDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<{ type: string; data: string } | null>(null);
+  const [uploadingExcel, setUploadingExcel] = useState(false);
+  const [apiEndpoint, setApiEndpoint] = useState('');
+  const [fetchingFromApi, setFetchingFromApi] = useState(false);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -74,14 +99,14 @@ const LoadAgentDashboard = () => {
     });
   };
 
-  const handleDocumentUpload = (tripId: string, docType: 'bilty' | 'ewaybill' | 'invoice', file: File) => {
+  const handleDocumentUpload = async (tripId: string, docType: 'bilty' | 'ewaybill' | 'invoice', file: File) => {
     const reader = new FileReader();
-    reader.onloadend = () => {
+    reader.onloadend = async () => {
       const base64String = reader.result as string;
-      const trip = data.getTrip(tripId);
+      const trip = await data.getTrip(tripId);
 
       if (trip) {
-        const updatedTrip = data.updateTrip(tripId, {
+        const updatedTrip = await data.updateTrip(tripId, {
           documents: {
             ...trip.documents,
             [docType]: base64String,
@@ -124,7 +149,7 @@ const LoadAgentDashboard = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleCreateTrip = (e: React.FormEvent) => {
+  const handleCreateTrip = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const amount = parseFloat(formData.amount);
@@ -137,45 +162,332 @@ const LoadAgentDashboard = () => {
       return;
     }
 
-    const trip = data.createTrip({
-      loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
-      loadOwnerName: user?.company || 'Load Agent',
-      loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
-      loadOwnerRating: 4.5,
-      origin: formData.origin,
-      destination: formData.destination,
-      distance: parseFloat(formData.distance),
-      loadType: formData.loadType,
-      weight: parseFloat(formData.weight),
-      amount: parseFloat(formData.amount),
-      maturityDays: parseInt(formData.maturityDays),
-      riskLevel: 'low', // Default risk level
-      insuranceStatus: true, // Default insured
-    });
+    try {
+      const trip = await data.createTrip({
+        loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
+        loadOwnerName: user?.company || 'Load Agent',
+        loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
+        loadOwnerRating: 4.5,
+        origin: formData.origin,
+        destination: formData.destination,
+        distance: parseFloat(formData.distance),
+        loadType: formData.loadType,
+        weight: parseFloat(formData.weight),
+        amount: parseFloat(formData.amount),
+        maturityDays: parseInt(formData.maturityDays),
+        riskLevel: 'low', // Default risk level
+        insuranceStatus: true, // Default insured
+      });
 
-    toast({
-      title: 'Trip Created Successfully!',
-      description: `Trip from ${formData.origin} to ${formData.destination} is now live`,
-    });
+      toast({
+        title: 'Trip Created Successfully!',
+        description: `Trip from ${formData.origin} to ${formData.destination} is now live`,
+      });
 
-    // Reset form
-    setFormData({
-      origin: '',
-      destination: '',
-      distance: '',
-      loadType: '',
-      weight: '',
-      amount: '',
-      maturityDays: '30',
-      date: new Date().toISOString().split('T')[0],
-    });
+      // Reset form
+      setFormData({
+        origin: '',
+        destination: '',
+        distance: '',
+        loadType: '',
+        weight: '',
+        amount: '',
+        maturityDays: '30',
+        date: new Date().toISOString().split('T')[0],
+      });
 
-    setCreateDialogOpen(false);
+      setCreateDialogOpen(false);
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to create trip',
+      });
+    }
   };
 
   const handleViewTrip = (trip: any) => {
     setSelectedTrip(trip);
     setViewDialogOpen(true);
+  };
+
+  const handleDownloadSampleExcel = () => {
+    // Create sample Excel data with proper CSV formatting
+    const sampleData = [
+      ['Origin', 'Destination', 'Distance (km)', 'Load Type', 'Weight (kg)', 'Amount (₹)', 'Maturity Days', 'Date'],
+      ['"Mumbai, Maharashtra"', '"Delhi, NCR"', '1400', 'Electronics', '15000', '50000', '30', '2025-10-06'],
+      ['"Bangalore, Karnataka"', '"Chennai, Tamil Nadu"', '350', 'FMCG', '12000', '35000', '25', '2025-10-07'],
+      ['"Pune, Maharashtra"', '"Hyderabad, Telangana"', '560', 'Machinery', '20000', '75000', '45', '2025-10-08'],
+    ];
+
+    // Convert to CSV format (fields with commas are already quoted)
+    const csvContent = sampleData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'trip_upload_template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: 'Sample Downloaded!',
+      description: 'Use this template to upload multiple trips',
+    });
+  };
+
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+
+      if (char === '"' || char === '"' || char === '"') { // Handle different quote types
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+
+    result.push(current.trim());
+
+    // Debug log
+    console.log('Raw line:', line);
+    console.log('Parsed result:', result);
+
+    return result;
+  };
+
+  const handleExcelUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingExcel(true);
+
+    try {
+      const text = await file.text();
+      // Split by newlines and remove empty lines
+      const rows = text.split(/\r?\n/).filter(row => row.trim());
+
+      // Skip header row
+      const dataRows = rows.slice(1);
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const rowText of dataRows) {
+        try {
+          // Parse CSV line (handles commas within fields)
+          let row = parseCSVLine(rowText);
+
+          // Log parsed row for debugging
+          console.log('Parsed row:', row);
+
+          // Handle case where origin/destination have unquoted commas (e.g., "Mumbai, Maharashtra" becomes 2 fields)
+          // If we have 10 fields instead of 8, merge fields to fix it
+          if (row.length === 10) {
+            console.log('Detected 10 fields - merging origin and destination parts');
+            row = [
+              `${row[0]}, ${row[1]}`, // Merge "Mumbai" + "Maharashtra" -> "Mumbai, Maharashtra"
+              `${row[2]}, ${row[3]}`, // Merge "Delhi" + "NCR" -> "Delhi, NCR"
+              row[4],  // distance
+              row[5],  // loadType
+              row[6],  // weight
+              row[7],  // amount
+              row[8],  // maturityDays
+              row[9],  // date
+            ];
+            console.log('Merged to:', row);
+          }
+
+          // Ensure we have exactly 7-8 fields
+          if (row.length < 7 || !row[0]) {
+            console.warn(`Invalid row length (${row.length}) for: ${rowText}`);
+            errorCount++;
+            continue;
+          }
+
+          const origin = row[0];
+          const destination = row[1];
+          const distance = row[2];
+          const loadType = row[3];
+          const weight = row[4];
+          const amount = row[5];
+          const maturityDays = row[6];
+          // row[7] is date (optional)
+
+          const tripAmount = parseFloat(amount);
+          if (isNaN(tripAmount) || tripAmount < 20000 || tripAmount > 80000) {
+            console.warn(`Invalid amount (${amount}) for row: ${rowText}`);
+            errorCount++;
+            continue;
+          }
+
+          const parsedDistance = parseFloat(distance);
+          const parsedWeight = parseFloat(weight);
+          const parsedMaturityDays = parseInt(maturityDays);
+
+          if (isNaN(parsedDistance) || isNaN(parsedWeight) || isNaN(parsedMaturityDays)) {
+            console.warn(`Invalid number format in row: ${rowText}`);
+            errorCount++;
+            continue;
+          }
+
+          await data.createTrip({
+            loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
+            loadOwnerName: user?.company || 'Load Agent',
+            loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
+            loadOwnerRating: 4.5,
+            origin,
+            destination,
+            distance: parsedDistance,
+            loadType,
+            weight: parsedWeight,
+            amount: tripAmount,
+            maturityDays: parsedMaturityDays,
+            riskLevel: 'low',
+            insuranceStatus: true,
+          });
+
+          successCount++;
+        } catch (error) {
+          console.error('Failed to create trip from row:', rowText, error);
+          errorCount++;
+        }
+      }
+
+      toast({
+        title: 'Bulk Upload Complete!',
+        description: `${successCount} trips created successfully${errorCount > 0 ? `, ${errorCount} failed` : ''}`,
+      });
+
+      if (successCount > 0) {
+        setCreateDialogOpen(false);
+        setRefreshKey(prev => prev + 1);
+      }
+      event.target.value = ''; // Reset file input
+    } catch (error) {
+      console.error('CSV Upload error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Upload Failed',
+        description: 'Failed to process CSV file. Please check the format.',
+      });
+    } finally {
+      setUploadingExcel(false);
+    }
+  };
+
+  const handleFetchFromApi = async () => {
+    if (!apiEndpoint.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid URL',
+        description: 'Please enter a valid API endpoint',
+      });
+      return;
+    }
+
+    setFetchingFromApi(true);
+
+    try {
+      const response = await fetch(apiEndpoint);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const apiData = await response.json();
+
+      // Handle both array and object with trips array
+      const trips = Array.isArray(apiData) ? apiData : (apiData.trips || apiData.data || []);
+
+      if (!Array.isArray(trips) || trips.length === 0) {
+        toast({
+          variant: 'destructive',
+          title: 'No Data Found',
+          description: 'No trip data found in the API response',
+        });
+        return;
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const tripData of trips) {
+        try {
+          // Extract and validate trip data
+          const origin = tripData.origin || tripData.from || tripData.source || '';
+          const destination = tripData.destination || tripData.to || tripData.target || '';
+          const distance = parseFloat(tripData.distance || tripData.distanceKm || tripData.distance_km || 0);
+          const loadType = tripData.loadType || tripData.load_type || tripData.cargoType || 'General Cargo';
+          const weight = parseFloat(tripData.weight || tripData.weightKg || tripData.weight_kg || 0);
+          const amount = parseFloat(tripData.amount || tripData.value || tripData.price || 0);
+          const maturityDays = parseInt(tripData.maturityDays || tripData.maturity_days || tripData.paymentTerm || '30');
+
+          // Validation
+          if (!origin || !destination) {
+            errorCount++;
+            continue;
+          }
+
+          if (amount < 20000 || amount > 80000) {
+            errorCount++;
+            continue;
+          }
+
+          await data.createTrip({
+            loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
+            loadOwnerName: user?.company || 'Load Agent',
+            loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
+            loadOwnerRating: 4.5,
+            origin,
+            destination,
+            distance,
+            loadType,
+            weight,
+            amount,
+            maturityDays,
+            riskLevel: tripData.riskLevel || 'low',
+            insuranceStatus: tripData.insuranceStatus !== undefined ? tripData.insuranceStatus : true,
+          });
+
+          successCount++;
+        } catch (error) {
+          console.error('Failed to create trip from API data:', tripData, error);
+          errorCount++;
+        }
+      }
+
+      toast({
+        title: 'API Import Complete!',
+        description: `${successCount} trips imported successfully${errorCount > 0 ? `, ${errorCount} failed` : ''}`,
+      });
+
+      if (successCount > 0) {
+        setCreateDialogOpen(false);
+        setRefreshKey(prev => prev + 1);
+        setApiEndpoint('');
+      }
+    } catch (error) {
+      console.error('API fetch error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'API Fetch Failed',
+        description: error instanceof Error ? error.message : 'Failed to fetch data from API',
+      });
+    } finally {
+      setFetchingFromApi(false);
+    }
   };
 
   // Filter trips
@@ -191,8 +503,8 @@ const LoadAgentDashboard = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const handleAllotTrip = (tripId: string, lenderId: string, lenderName: string) => {
-    const result = data.allotTrip(tripId, lenderId, lenderName);
+  const handleAllotTrip = async (tripId: string, lenderId: string, lenderName: string) => {
+    const result = await data.allotTrip(tripId, lenderId, lenderName);
 
     if (result) {
       toast({
@@ -207,6 +519,61 @@ const LoadAgentDashboard = () => {
         description: 'Failed to allot trip',
       });
     }
+  };
+
+  const handleAllotAllTrips = async () => {
+    console.log('Starting bulk allotment...');
+    console.log('All trips:', allTrips);
+
+    const escrowedTrips = allTrips.filter((t) => t.status === 'escrowed' && t.bids && t.bids.length > 0);
+    console.log('Escrowed trips with bids:', escrowedTrips);
+
+    if (escrowedTrips.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'No Trips to Allot',
+        description: 'There are no escrowed trips with bids',
+      });
+      return;
+    }
+
+    toast({
+      title: 'Allotting Trips...',
+      description: `Processing ${escrowedTrips.length} trips`,
+    });
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const trip of escrowedTrips) {
+      try {
+        console.log(`Allotting trip ${trip.id} to ${trip.bids[0].lenderName}...`);
+
+        // Allot to the first bidder (or you can add logic to choose the best bid)
+        const bid = trip.bids[0];
+        const result = await data.allotTrip(trip.id, bid.lenderId, bid.lenderName);
+
+        if (result) {
+          console.log(`✓ Trip ${trip.id} allotted successfully`);
+          successCount++;
+        } else {
+          console.error(`✗ Failed to allot trip ${trip.id}`);
+          errorCount++;
+        }
+      } catch (error) {
+        console.error(`Error allotting trip ${trip.id}:`, error);
+        errorCount++;
+      }
+    }
+
+    console.log(`Bulk allotment complete: ${successCount} success, ${errorCount} errors`);
+
+    toast({
+      title: 'Bulk Allotment Complete!',
+      description: `${successCount} trips allotted successfully${errorCount > 0 ? `, ${errorCount} failed` : ''}`,
+    });
+
+    setRefreshKey(prev => prev + 1); // Refresh trip list
   };
 
   // Stats
@@ -286,6 +653,16 @@ const LoadAgentDashboard = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <DashboardLayout role="load_agent">
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Loading trips...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout role="load_agent">
       <div className="space-y-6">
@@ -319,6 +696,99 @@ const LoadAgentDashboard = () => {
           );
         })}
         </div>
+
+        {/* Escrowed Trips - Pending Allotment */}
+        {allTrips.filter((t) => t.status === 'escrowed').length > 0 && (
+          <Card className="border-orange-500/50 bg-orange-50/50 dark:bg-orange-950/20">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-orange-600" />
+                    Escrowed Trips - Awaiting Allotment
+                  </CardTitle>
+                  <CardDescription>Trips with lender bids pending your approval</CardDescription>
+                </div>
+                <Button
+                  onClick={handleAllotAllTrips}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Allot All Trips
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {allTrips
+                  .filter((t) => t.status === 'escrowed')
+                  .map((trip) => (
+                    <Card key={trip.id} className="border-orange-300 bg-white dark:bg-card">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-4 mb-3">
+                              {trip.loadOwnerLogo && (
+                                <img
+                                  src={trip.loadOwnerLogo}
+                                  alt={trip.loadOwnerName}
+                                  className="h-10 w-10 object-contain rounded border p-1"
+                                />
+                              )}
+                              <div>
+                                <h3 className="font-semibold text-lg">
+                                  {trip.origin} → {trip.destination}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {trip.loadType} • {trip.distance}km • ₹{(trip.amount / 1000).toFixed(0)}K
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Bids Section */}
+                            {trip.bids && trip.bids.length > 0 && (
+                              <div className="mt-4 p-4 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                                <h4 className="font-semibold text-sm mb-3 text-orange-900 dark:text-orange-100">
+                                  Lender Bids ({trip.bids.length})
+                                </h4>
+                                <div className="space-y-2">
+                                  {trip.bids.map((bid: any, index: number) => (
+                                    <div
+                                      key={index}
+                                      className="flex items-center justify-between p-3 bg-white dark:bg-card rounded border"
+                                    >
+                                      <div>
+                                        <p className="font-medium">{bid.lenderName}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                          Amount: ₹{(bid.amount / 1000).toFixed(0)}K • Rate: {bid.interestRate}%
+                                        </p>
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleAllotTrip(trip.id, bid.lenderId, bid.lenderName)}
+                                        className="bg-green-600 hover:bg-green-700"
+                                      >
+                                        <CheckCircle className="h-4 w-4 mr-1" />
+                                        Allot
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <Badge className="bg-orange-600 ml-4">
+                            <Shield className="h-3 w-3 mr-1" />
+                            Escrowed
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* All Trips */}
         <Card>
@@ -497,10 +967,27 @@ const LoadAgentDashboard = () => {
                 <Plus className="h-5 w-5 text-primary" />
                 Create New Trip
               </DialogTitle>
-              <DialogDescription>Add a new trip to the portal</DialogDescription>
+              <DialogDescription>Add trips individually or in bulk</DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={handleCreateTrip} className="space-y-4">
+            <Tabs value={createTripTab} onValueChange={(value) => setCreateTripTab(value as 'form' | 'excel' | 'api')}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="form" className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Single Trip
+                </TabsTrigger>
+                <TabsTrigger value="excel" className="flex items-center gap-2">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Bulk Upload
+                </TabsTrigger>
+                <TabsTrigger value="api" className="flex items-center gap-2">
+                  <Link className="h-4 w-4" />
+                  API Import
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="form">
+                <form onSubmit={handleCreateTrip} className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="date">Trip Date</Label>
@@ -614,20 +1101,198 @@ const LoadAgentDashboard = () => {
                 </div>
               </div>
 
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setCreateDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className="bg-gradient-primary">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Trip
-                </Button>
-              </DialogFooter>
-            </form>
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCreateDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" className="bg-gradient-primary">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Trip
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="excel" className="space-y-4">
+                <div className="border-2 border-dashed rounded-lg p-8">
+                  <div className="text-center space-y-4">
+                    <div className="flex justify-center">
+                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                        <FileSpreadsheet className="h-8 w-8 text-primary" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">Upload Excel/CSV File</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Upload a CSV file with multiple trip details to create trips in bulk
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleDownloadSampleExcel}
+                        className="w-full max-w-sm"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download Sample Template
+                      </Button>
+
+                      <div className="relative">
+                        <Input
+                          type="file"
+                          accept=".csv,.xlsx,.xls"
+                          onChange={handleExcelUpload}
+                          disabled={uploadingExcel}
+                          className="w-full max-w-sm mx-auto"
+                          id="excel-upload"
+                        />
+                      </div>
+
+                      {uploadingExcel && (
+                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+                          Processing file...
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-6 p-4 bg-muted rounded-lg text-left">
+                      <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-primary" />
+                        File Format Requirements
+                      </h4>
+                      <ul className="text-xs text-muted-foreground space-y-1">
+                        <li>• CSV format with comma-separated values</li>
+                        <li>• First row must be headers (will be skipped)</li>
+                        <li>• Columns: Origin, Destination, Distance (km), Load Type, Weight (kg), Amount (₹), Maturity Days, Date</li>
+                        <li>• Trip amount must be between ₹20,000 and ₹80,000</li>
+                        <li>• Download the sample template for reference</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setCreateDialogOpen(false)}
+                  >
+                    Close
+                  </Button>
+                </DialogFooter>
+              </TabsContent>
+
+              <TabsContent value="api" className="space-y-4">
+                <div className="border-2 border-dashed rounded-lg p-8">
+                  <div className="text-center space-y-4">
+                    <div className="flex justify-center">
+                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Link className="h-8 w-8 text-primary" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">Import from API</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Fetch trip data from an external API endpoint and create trips automatically
+                      </p>
+                    </div>
+
+                    <div className="space-y-3 max-w-xl mx-auto">
+                      <div className="space-y-2">
+                        <Label htmlFor="api-endpoint" className="text-left block">
+                          API Endpoint URL
+                        </Label>
+                        <Input
+                          id="api-endpoint"
+                          type="url"
+                          placeholder="https://api.example.com/trips"
+                          value={apiEndpoint}
+                          onChange={(e) => setApiEndpoint(e.target.value)}
+                          disabled={fetchingFromApi}
+                          className="w-full"
+                        />
+                        <p className="text-xs text-muted-foreground text-left">
+                          Enter the full URL of your API endpoint that returns trip data
+                        </p>
+                      </div>
+
+                      <Button
+                        type="button"
+                        onClick={handleFetchFromApi}
+                        disabled={fetchingFromApi || !apiEndpoint.trim()}
+                        className="w-full bg-gradient-primary"
+                      >
+                        {fetchingFromApi ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            Fetching Trips...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-4 w-4 mr-2" />
+                            Fetch & Import Trips
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    <div className="mt-6 p-4 bg-muted rounded-lg text-left">
+                      <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-primary" />
+                        API Response Format
+                      </h4>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Your API should return a JSON array of trips or an object with a "trips" or "data" field containing the array:
+                      </p>
+                      <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto">
+                        <pre>{`[
+  {
+    "origin": "Mumbai, Maharashtra",
+    "destination": "Delhi, NCR",
+    "distance": 1400,
+    "loadType": "Electronics",
+    "weight": 15000,
+    "amount": 50000,
+    "maturityDays": 30
+  }
+]`}</pre>
+                      </div>
+                      <div className="mt-3 space-y-1">
+                        <p className="text-xs font-semibold">Supported field names:</p>
+                        <ul className="text-xs text-muted-foreground space-y-1 ml-4">
+                          <li>• <strong>origin:</strong> origin, from, source</li>
+                          <li>• <strong>destination:</strong> destination, to, target</li>
+                          <li>• <strong>distance:</strong> distance, distanceKm, distance_km</li>
+                          <li>• <strong>loadType:</strong> loadType, load_type, cargoType</li>
+                          <li>• <strong>weight:</strong> weight, weightKg, weight_kg</li>
+                          <li>• <strong>amount:</strong> amount, value, price (₹20,000 - ₹80,000)</li>
+                          <li>• <strong>maturityDays:</strong> maturityDays, maturity_days, paymentTerm</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setCreateDialogOpen(false)}
+                  >
+                    Close
+                  </Button>
+                </DialogFooter>
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
 

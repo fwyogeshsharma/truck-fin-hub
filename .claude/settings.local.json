@@ -7,7 +7,20 @@
       "Bash(cat:*)",
       "Bash(node:*)",
       "Bash(python:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(npm run dev:server:*)",
+      "Bash(del add-load-owners.js)",
+      "Bash(tsx:*)",
+      "Bash(npx tsx:*)",
+      "Bash(curl http://localhost:3001/api/health)",
+      "Bash(curl:*)",
+      "Bash(kill:*)",
+      "Read(//d/**)",
+      "Bash(npx tsc:*)",
+      "Bash(sqlite3:*)",
+      "Bash(del nul)"
     ],
     "deny": [],
     "ask": []

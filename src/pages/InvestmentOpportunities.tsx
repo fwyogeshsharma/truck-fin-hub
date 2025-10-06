@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,15 +24,45 @@ const InvestmentOpportunities = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const user = auth.getCurrentUser();
-  const allTrips = data.getTrips();
-  const trips = allTrips.filter(t => t.status === 'pending');
-
-  const [walletData, setWalletData] = useState(data.getWallet(user?.id || 'l1'));
+  const [trips, setTrips] = useState<any[]>([]);
+  const [walletData, setWalletData] = useState<any>({
+    balance: 0,
+    escrowedAmount: 0,
+    totalInvested: 0,
+    totalReturns: 0,
+    lockedAmount: 0,
+    userId: user?.id || ''
+  });
+  const [loading, setLoading] = useState(true);
   const wallet = walletData;
 
-  console.log('Total trips:', allTrips.length);
-  console.log('Pending trips:', trips.length);
-  console.log('Trips data:', trips);
+  useEffect(() => {
+    const loadData = async () => {
+      if (!user?.id) {
+        console.error('No user ID found - user not authenticated');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const [allTrips, wallet] = await Promise.all([
+          data.getTrips(),
+          data.getWallet(user.id)
+        ]);
+
+        // Filter for pending trips
+        const pendingTrips = allTrips.filter(t => t.status === 'pending');
+        setTrips(pendingTrips);
+        setWalletData(wallet);
+      } catch (error) {
+        console.error('Failed to load data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [user?.id]);
 
   const [selectedTrip, setSelectedTrip] = useState<string | null>(null);
   const [selectedTrips, setSelectedTrips] = useState<string[]>([]);
@@ -59,8 +89,10 @@ const InvestmentOpportunities = () => {
   const [selectedTripForBid, setSelectedTripForBid] = useState<any>(null);
   const [customBidRate, setCustomBidRate] = useState<number>(12);
 
-  const refreshWallet = () => {
-    setWalletData(data.getWallet(user?.id || 'l1'));
+  const refreshWallet = async () => {
+    if (!user?.id) return;
+    const wallet = await data.getWallet(user.id);
+    setWalletData(wallet);
   };
 
   const filteredTrips = trips.filter(trip => {
@@ -119,18 +151,20 @@ const InvestmentOpportunities = () => {
       return;
     }
 
+    if (!user?.id) return;
+
     // Simulate payment processing
     setIsProcessing(true);
 
     setTimeout(() => {
       // Update wallet balance
-      data.updateWallet(user?.id || 'l1', {
+      data.updateWallet(user.id, {
         balance: wallet.balance + amount,
       });
 
       // Create transaction record
       data.createTransaction({
-        userId: user?.id || 'l1',
+        userId: user.id,
         type: 'credit',
         amount,
         category: 'payment',
@@ -150,8 +184,10 @@ const InvestmentOpportunities = () => {
     }, 2000);
   };
 
-  const handleInvest = (tripId: string, customAmount?: number, customRate?: number) => {
-    const trip = data.getTrip(tripId);
+  const handleInvest = async (tripId: string, customAmount?: number, customRate?: number) => {
+    if (!user?.id) return;
+
+    const trip = trips.find(t => t.id === tripId);
     if (!trip) return;
 
     const investmentAmount = customAmount || trip.amount;
@@ -173,48 +209,60 @@ const InvestmentOpportunities = () => {
     const expectedReturn = investmentAmount * (interestRate / 100);
     const maturityDays = trip.maturityDays || 30;
 
-    // Move amount to escrow
-    data.updateWallet(user?.id || 'l1', {
-      balance: wallet.balance - investmentAmount,
-      escrowedAmount: (wallet.escrowedAmount || 0) + investmentAmount,
-    });
+    try {
+      // Move amount to escrow
+      await data.updateWallet(user.id, {
+        balance: wallet.balance - investmentAmount,
+        escrowedAmount: (wallet.escrowedAmount || 0) + investmentAmount,
+      });
 
-    refreshWallet();
+      await refreshWallet();
 
-    // Create escrowed investment immediately
-    const escrowedInvestment = data.createInvestment({
-      lenderId: user?.id || 'l1',
-      tripId,
-      amount: investmentAmount,
-      interestRate: interestRate,
-      expectedReturn,
-      status: 'escrowed',
-      maturityDate: new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toISOString(),
-    });
+      // Create escrowed investment immediately
+      const escrowedInvestment = await data.createInvestment({
+        lenderId: user.id,
+        tripId,
+        amount: investmentAmount,
+        interestRate: interestRate,
+        expectedReturn,
+        status: 'escrowed',
+        maturityDate: new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toISOString(),
+      });
 
-    // Add bid to trip and update status to escrowed
-    const existingBids = trip.bids || [];
-    data.updateTrip(tripId, {
-      status: 'escrowed',
-      bids: [
-        ...existingBids,
-        {
-          lenderId: user?.id || 'l1',
-          lenderName: user?.name || 'Lender',
-          amount: investmentAmount,
-          interestRate: interestRate,
-        },
-      ],
-    });
+      // Add bid to trip_bids table
+      await data.addBid(
+        tripId,
+        user.id,
+        user.name || 'Lender',
+        investmentAmount,
+        interestRate
+      );
 
-    toast({
-      title: "Bid confirmed!",
-      description: `₹${(investmentAmount / 1000).toFixed(0)}K moved to escrow. Awaiting load agent confirmation.`,
-    });
+      // Update trip status to escrowed
+      await data.updateTrip(tripId, {
+        status: 'escrowed',
+      });
 
-    setSelectedTrip(null);
-    setBidDialogOpen(false);
-    setCustomBidRate(12);
+      // Refresh trips list
+      const allTrips = await data.getTrips();
+      const pendingTrips = allTrips.filter(t => t.status === 'pending');
+      setTrips(pendingTrips);
+
+      toast({
+        title: "Bid confirmed!",
+        description: `₹${(investmentAmount / 1000).toFixed(0)}K moved to escrow. Awaiting load agent confirmation.`,
+      });
+
+      setSelectedTrip(null);
+      setBidDialogOpen(false);
+      setCustomBidRate(12);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to place bid',
+      });
+    }
   };
 
   const handleOpenBidDialog = (trip: any) => {
@@ -240,8 +288,8 @@ const InvestmentOpportunities = () => {
     handleInvest(selectedTripForBid.id, amount, customBidRate);
   };
 
-  const handleBulkInvest = () => {
-    if (selectedTrips.length === 0) return;
+  const handleBulkInvest = async () => {
+    if (!user?.id || selectedTrips.length === 0) return;
 
     // Check if balance is insufficient
     if (wallet.balance < totalInvestmentAmount) {
@@ -256,62 +304,84 @@ const InvestmentOpportunities = () => {
       return;
     }
 
-    // Move total amount to escrow
-    data.updateWallet(user?.id || 'l1', {
-      balance: wallet.balance - totalInvestmentAmount,
-      escrowedAmount: (wallet.escrowedAmount || 0) + totalInvestmentAmount,
-    });
-
-    refreshWallet();
-
-    // Create escrowed investments immediately
-    selectedTrips.forEach(tripId => {
-      const trip = data.getTrip(tripId);
-      if (!trip) return;
-
-      const investmentAmount = trip.amount;
-      const expectedReturn = investmentAmount * (bidRate / 100);
-      const maturityDays = trip.maturityDays || 30;
-
-      // Create investment
-      data.createInvestment({
-        lenderId: user?.id || 'l1',
-        tripId,
-        amount: investmentAmount,
-        interestRate: bidRate,
-        expectedReturn,
-        status: 'escrowed',
-        maturityDate: new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toISOString(),
+    try {
+      // Move total amount to escrow
+      await data.updateWallet(user.id, {
+        balance: wallet.balance - totalInvestmentAmount,
+        escrowedAmount: (wallet.escrowedAmount || 0) + totalInvestmentAmount,
       });
 
-      // Add bid to trip and update status to escrowed
-      const existingBids = trip.bids || [];
-      data.updateTrip(tripId, {
-        status: 'escrowed',
-        bids: [
-          ...existingBids,
-          {
-            lenderId: user?.id || 'l1',
-            lenderName: user?.name || 'Lender',
-            amount: investmentAmount,
-            interestRate: bidRate,
-          },
-        ],
+      await refreshWallet();
+
+      // Create escrowed investments immediately
+      for (const tripId of selectedTrips) {
+        const trip = trips.find(t => t.id === tripId);
+        if (!trip) continue;
+
+        const investmentAmount = trip.amount;
+        const expectedReturn = investmentAmount * (bidRate / 100);
+        const maturityDays = trip.maturityDays || 30;
+
+        // Create investment
+        await data.createInvestment({
+          lenderId: user.id,
+          tripId,
+          amount: investmentAmount,
+          interestRate: bidRate,
+          expectedReturn,
+          status: 'escrowed',
+          maturityDate: new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toISOString(),
+        });
+
+        // Add bid to trip_bids table
+        await data.addBid(
+          tripId,
+          user.id,
+          user.name || 'Lender',
+          investmentAmount,
+          bidRate
+        );
+
+        // Update trip status to escrowed
+        await data.updateTrip(tripId, {
+          status: 'escrowed',
+        });
+      }
+
+      // Refresh trips list
+      const allTrips = await data.getTrips();
+      const pendingTrips = allTrips.filter(t => t.status === 'pending');
+      setTrips(pendingTrips);
+
+      toast({
+        title: "Bulk bids confirmed!",
+        description: `${selectedTrips.length} trips • ₹${(totalInvestmentAmount / 1000).toFixed(0)}K moved to escrow. Awaiting load agent confirmation.`,
       });
-    });
 
-    toast({
-      title: "Bulk bids confirmed!",
-      description: `${selectedTrips.length} trips • ₹${(totalInvestmentAmount / 1000).toFixed(0)}K moved to escrow. Awaiting load agent confirmation.`,
-    });
-
-    setSelectedTrips([]);
+      setSelectedTrips([]);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to place bulk bids',
+      });
+    }
   };
 
   const handleResetData = () => {
     localStorage.removeItem('logistics_trips');
     window.location.reload();
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout role="lender">
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Loading investment opportunities...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="lender">

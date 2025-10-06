@@ -1,17 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TruckIcon, Plus, IndianRupee, TrendingUp } from "lucide-react";
 import { auth } from "@/lib/auth";
-import { data } from "@/lib/data";
+import { data, Trip, Wallet } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 
 const LoadOwnerDashboard = () => {
   const navigate = useNavigate();
   const user = auth.getCurrentUser();
-  const trips = data.getTrips().filter(t => t.loadOwnerId === user?.id || t.loadOwnerName.includes('ABC')); // Mock filter
-  const wallet = data.getWallet(user?.id || 'lo1');
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [wallet, setWallet] = useState<Wallet>({
+    userId: user?.id || 'lo1',
+    balance: 0,
+    lockedAmount: 0,
+    escrowedAmount: 0,
+    totalInvested: 0,
+    totalReturns: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [allTrips, walletData] = await Promise.all([
+          data.getTrips(),
+          data.getWallet(user?.id || 'lo1')
+        ]);
+
+        // Filter trips for this load owner
+        const filteredTrips = allTrips.filter(t =>
+          t.loadOwnerId === user?.id || t.loadOwnerName.includes('ABC')
+        );
+
+        setTrips(filteredTrips);
+        setWallet(walletData);
+      } catch (error) {
+        console.error('Failed to load data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [user?.id]);
 
   const stats = [
     {
@@ -33,6 +66,16 @@ const LoadOwnerDashboard = () => {
       color: "accent",
     },
   ];
+
+  if (loading) {
+    return (
+      <DashboardLayout role="load_owner">
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="load_owner">
