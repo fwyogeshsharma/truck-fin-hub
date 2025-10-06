@@ -305,8 +305,55 @@ export const data = {
 
         if (updatedInvestment) {
           console.log('Investment updated successfully');
-          // Move funds from escrowed to invested
+
+          // Transfer funds: lender escrow -> load agent balance
+          // 1. Move lender's escrowed amount to total_invested
           await walletsAPI.invest(lenderId, bid.amount, tripId);
+
+          // 2. Create transaction for lender (escrow -> invested)
+          const lenderWallet = await data.getWallet(lenderId);
+          console.log('Creating lender transaction...');
+          try {
+            await data.createTransaction({
+              userId: lenderId,
+              type: 'debit',
+              amount: bid.amount,
+              category: 'investment',
+              description: `Invested ₹${bid.amount} in trip ${trip.origin} → ${trip.destination} (${trip.loadOwnerName})`,
+              balanceAfter: lenderWallet.balance,
+            });
+            console.log('Lender transaction created successfully');
+          } catch (txnError) {
+            console.error('Failed to create lender transaction:', txnError);
+          }
+
+          // 3. Add amount to load agent's balance
+          const loadAgentId = trip.loadOwnerId;
+          console.log('Load agent ID:', loadAgentId);
+          const loadAgentWallet = await data.getWallet(loadAgentId);
+          console.log('Load agent wallet before update:', loadAgentWallet);
+
+          const newBalance = loadAgentWallet.balance + bid.amount;
+          const updatedLoadAgentWallet = await data.updateWallet(loadAgentId, {
+            balance: newBalance
+          });
+          console.log('Load agent wallet after update:', updatedLoadAgentWallet);
+
+          // 4. Create transaction for load agent (received funding)
+          console.log('Creating transaction for load agent...');
+          try {
+            const transaction = await data.createTransaction({
+              userId: loadAgentId,
+              type: 'credit',
+              amount: bid.amount,
+              category: 'payment',
+              description: `Received ₹${bid.amount} from ${bid.lenderName} for trip ${trip.origin} → ${trip.destination}`,
+              balanceAfter: newBalance,
+            });
+            console.log('Load agent transaction created:', transaction);
+          } catch (txnError) {
+            console.error('Failed to create load agent transaction:', txnError);
+          }
 
           return { trip: updatedTrip, investment: toCamelCase(updatedInvestment) };
         } else {

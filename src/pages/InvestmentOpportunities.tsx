@@ -211,9 +211,19 @@ const InvestmentOpportunities = () => {
 
     try {
       // Move amount to escrow
-      await data.updateWallet(user.id, {
+      const updatedWallet = await data.updateWallet(user.id, {
         balance: wallet.balance - investmentAmount,
         escrowedAmount: (wallet.escrowedAmount || 0) + investmentAmount,
+      });
+
+      // Create transaction record for lender
+      await data.createTransaction({
+        userId: user.id,
+        type: 'debit',
+        amount: investmentAmount,
+        category: 'investment',
+        description: `Escrowed ₹${investmentAmount} for trip ${trip.origin} → ${trip.destination}`,
+        balanceAfter: wallet.balance - investmentAmount,
       });
 
       await refreshWallet();
