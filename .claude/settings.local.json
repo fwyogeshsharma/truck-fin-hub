@@ -20,7 +20,8 @@
       "Read(//d/**)",
       "Bash(npx tsc:*)",
       "Bash(sqlite3:*)",
-      "Bash(del nul)"
+      "Bash(del nul)",
+      "Bash(npm run dev:all:*)"
     ],
     "deny": [],
     "ask": []
