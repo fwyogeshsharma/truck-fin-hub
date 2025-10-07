@@ -671,7 +671,13 @@ const InvestmentOpportunities = () => {
                 </Button>
               )}
             </div>
-            <Badge variant="outline">Wallet: ₹{(wallet.balance / 100000).toFixed(1)}L</Badge>
+            <div className="flex items-center gap-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-2 border-primary/30 rounded-lg px-4 py-2.5">
+              <Wallet className="h-5 w-5 text-primary" />
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground font-medium">Available Balance</span>
+                <span className="text-xl font-bold text-primary">₹{(wallet.balance / 100000).toFixed(1)}L</span>
+              </div>
+            </div>
           </div>
 
           {filteredTrips.length === 0 ? (
