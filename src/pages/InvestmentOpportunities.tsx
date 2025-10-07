@@ -622,7 +622,7 @@ const InvestmentOpportunities = () => {
                         <span className="font-semibold">{bidRate}%</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Expected Return:</span>
+                        <span className="text-muted-foreground">ARR (Annual Return):</span>
                         <span className="font-semibold text-accent">₹{(totalExpectedReturn / 1000).toFixed(1)}K</span>
                       </div>
                     </div>
@@ -729,9 +729,9 @@ const InvestmentOpportunities = () => {
                         <p className="font-semibold">₹{(trip.amount / 1000).toFixed(0)}K</p>
                       </div>
 
-                      {/* Return - 2 columns */}
+                      {/* ARR - 2 columns */}
                       <div className="col-span-2 text-center">
-                        <p className="text-xs text-muted-foreground">Return ({bidRate}%)</p>
+                        <p className="text-xs text-muted-foreground">ARR ({bidRate}%)</p>
                         <p className="font-semibold text-green-600">₹{(expectedReturn / 1000).toFixed(1)}K</p>
                       </div>
 
@@ -909,7 +909,7 @@ const InvestmentOpportunities = () => {
                             <span className="font-semibold">{bidRate}%</span>
                           </div>
                           <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Expected Return</span>
+                            <span className="text-muted-foreground">ARR (Annual Return)</span>
                             <span className="font-semibold text-accent">
                               ₹{(expectedReturn / 1000).toFixed(1)}K
                             </span>
@@ -1120,10 +1120,10 @@ const InvestmentOpportunities = () => {
                   </p>
                 </div>
 
-                {/* Expected Return */}
+                {/* ARR (Annual Return) */}
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-green-900">Expected Return</span>
+                    <span className="text-sm font-medium text-green-900">ARR (Annual Return)</span>
                     <span className="text-lg font-bold text-green-700">
                       ₹{((selectedTripForBid.amount * customBidRate) / 100 / 1000).toFixed(1)}K
                     </span>
