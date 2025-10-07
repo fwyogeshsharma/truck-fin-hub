@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AdvancedFilter, { type FilterConfig } from '@/components/AdvancedFilter';
 import {
   Table,
   TableBody,
@@ -90,6 +91,7 @@ const LoadAgentDashboard = () => {
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [advancedFilters, setAdvancedFilters] = useState<Record<string, any>>({});
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
@@ -490,17 +492,49 @@ const LoadAgentDashboard = () => {
     }
   };
 
-  // Filter trips
+  // Filter trips with advanced filters
   const filteredTrips = allTrips.filter((trip) => {
-    const matchesSearch =
+    // Basic search (kept for backward compatibility)
+    const matchesBasicSearch =
       trip.origin.toLowerCase().includes(searchQuery.toLowerCase()) ||
       trip.destination.toLowerCase().includes(searchQuery.toLowerCase()) ||
       trip.loadType.toLowerCase().includes(searchQuery.toLowerCase()) ||
       trip.loadOwnerName.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = statusFilter === 'all' || trip.status === statusFilter;
+    const matchesBasicStatus = statusFilter === 'all' || trip.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    // Advanced filter search
+    const matchesAdvancedSearch = !advancedFilters.search ||
+      trip.origin.toLowerCase().includes(advancedFilters.search.toLowerCase()) ||
+      trip.destination.toLowerCase().includes(advancedFilters.search.toLowerCase()) ||
+      trip.loadType.toLowerCase().includes(advancedFilters.search.toLowerCase()) ||
+      trip.loadOwnerName.toLowerCase().includes(advancedFilters.search.toLowerCase());
+
+    const matchesAdvancedStatus = !advancedFilters.status || advancedFilters.status === 'all' || trip.status === advancedFilters.status;
+
+    const matchesLoadType = !advancedFilters.loadType || advancedFilters.loadType === 'all' || trip.loadType === advancedFilters.loadType;
+
+    const matchesAmountRange =
+      (!advancedFilters.amount_min || trip.amount >= parseFloat(advancedFilters.amount_min)) &&
+      (!advancedFilters.amount_max || trip.amount <= parseFloat(advancedFilters.amount_max));
+
+    const matchesDistanceRange =
+      (!advancedFilters.distance_min || trip.distance >= parseFloat(advancedFilters.distance_min)) &&
+      (!advancedFilters.distance_max || trip.distance <= parseFloat(advancedFilters.distance_max));
+
+    const matchesWeightRange =
+      (!advancedFilters.weight_min || trip.weight >= parseFloat(advancedFilters.weight_min)) &&
+      (!advancedFilters.weight_max || trip.weight <= parseFloat(advancedFilters.weight_max));
+
+    const matchesRiskLevel = !advancedFilters.riskLevel || advancedFilters.riskLevel === 'all' || trip.riskLevel === advancedFilters.riskLevel;
+
+    const matchesBidStatus = !advancedFilters.hasBids || advancedFilters.hasBids === 'all' ||
+      (advancedFilters.hasBids === 'yes' && trip.bids && trip.bids.length > 0) ||
+      (advancedFilters.hasBids === 'no' && (!trip.bids || trip.bids.length === 0));
+
+    return matchesBasicSearch && matchesBasicStatus && matchesAdvancedSearch && matchesAdvancedStatus &&
+      matchesLoadType && matchesAmountRange && matchesDistanceRange && matchesWeightRange &&
+      matchesRiskLevel && matchesBidStatus;
   });
 
   const handleAllotTrip = async (tripId: string, lenderId: string, lenderName: string) => {
@@ -520,6 +554,90 @@ const LoadAgentDashboard = () => {
       });
     }
   };
+
+  // Advanced filter configuration
+  const filterConfig: FilterConfig[] = [
+    {
+      id: 'search',
+      label: 'Search',
+      type: 'text',
+      placeholder: 'Search by origin, destination, load type, or company...',
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { value: 'all', label: 'All Status' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'escrowed', label: 'Escrowed' },
+        { value: 'funded', label: 'Funded' },
+        { value: 'in_transit', label: 'In Transit' },
+        { value: 'completed', label: 'Completed' },
+        { value: 'cancelled', label: 'Cancelled' },
+      ],
+      placeholder: 'Select status',
+    },
+    {
+      id: 'loadType',
+      label: 'Load Type',
+      type: 'select',
+      options: [
+        { value: 'all', label: 'All Types' },
+        { value: 'Electronics', label: 'Electronics' },
+        { value: 'FMCG', label: 'FMCG' },
+        { value: 'Textiles', label: 'Textiles' },
+        { value: 'Automotive Parts', label: 'Automotive Parts' },
+        { value: 'Machinery', label: 'Machinery' },
+        { value: 'Food & Beverages', label: 'Food & Beverages' },
+      ],
+      placeholder: 'Select load type',
+    },
+    {
+      id: 'amount',
+      label: 'Trip Value (₹)',
+      type: 'range',
+      min: 0,
+      max: 10000000,
+    },
+    {
+      id: 'distance',
+      label: 'Distance (km)',
+      type: 'range',
+      min: 0,
+      max: 5000,
+    },
+    {
+      id: 'weight',
+      label: 'Weight (kg)',
+      type: 'range',
+      min: 0,
+      max: 50000,
+    },
+    {
+      id: 'riskLevel',
+      label: 'Risk Level',
+      type: 'select',
+      options: [
+        { value: 'all', label: 'All Levels' },
+        { value: 'low', label: 'Low Risk' },
+        { value: 'medium', label: 'Medium Risk' },
+        { value: 'high', label: 'High Risk' },
+      ],
+      placeholder: 'Select risk level',
+    },
+    {
+      id: 'hasBids',
+      label: 'Bid Status',
+      type: 'select',
+      options: [
+        { value: 'all', label: 'All Trips' },
+        { value: 'yes', label: 'Has Bids' },
+        { value: 'no', label: 'No Bids' },
+      ],
+      placeholder: 'Select bid status',
+    },
+  ];
 
   const handleAllotAllTrips = async () => {
     console.log('Starting bulk allotment...');
@@ -799,37 +917,21 @@ const LoadAgentDashboard = () => {
                 <CardDescription>View and search all trips across the platform</CardDescription>
               </div>
               <div className="flex gap-2">
+                <AdvancedFilter
+                  filters={filterConfig}
+                  currentFilters={advancedFilters}
+                  onFilterChange={setAdvancedFilters}
+                  onClearFilters={() => setAdvancedFilters({})}
+                />
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleRefresh}
                   className="gap-2"
                 >
-                  <Package className="h-4 w-4" />
+                  <RefreshCw className="h-4 w-4" />
                   Refresh
                 </Button>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search trips..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 w-64"
-                  />
-                </div>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border rounded-md text-sm"
-                >
-                  <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="escrowed">Escrowed</option>
-                  <option value="funded">Funded</option>
-                  <option value="in_transit">In Transit</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
               </div>
             </div>
           </CardHeader>

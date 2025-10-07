@@ -17,6 +17,8 @@ import {
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
+import AdvancedFilter, { type FilterConfig } from "@/components/AdvancedFilter";
+import { formatCurrency, formatCurrencyCompact } from "@/lib/currency";
 
 const MyInvestments = () => {
   const user = auth.getCurrentUser();
@@ -31,6 +33,49 @@ const MyInvestments = () => {
   });
   const [trips, setTrips] = useState<Map<string, any>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<Record<string, any>>({});
+
+  // Filter configuration
+  const filterConfig: FilterConfig[] = [
+    {
+      id: 'search',
+      label: 'Search',
+      type: 'text',
+      placeholder: 'Search by origin, destination...',
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { value: 'all', label: 'All Status' },
+        { value: 'escrowed', label: 'Escrowed' },
+        { value: 'active', label: 'Active' },
+        { value: 'completed', label: 'Completed' },
+        { value: 'defaulted', label: 'Defaulted' },
+      ],
+      placeholder: 'Select status',
+    },
+    {
+      id: 'amount',
+      label: 'Investment Amount (₹)',
+      type: 'range',
+      min: 0,
+      max: 10000000,
+    },
+    {
+      id: 'interestRate',
+      label: 'Interest Rate (%)',
+      type: 'range',
+      min: 0,
+      max: 20,
+    },
+    {
+      id: 'date',
+      label: 'Investment Date',
+      type: 'date',
+    },
+  ];
 
   useEffect(() => {
     const loadData = async () => {
@@ -66,10 +111,47 @@ const MyInvestments = () => {
     loadData();
   }, [user?.id]);
 
-  const escrowedInvestments = myInvestments.filter(i => i.status === 'escrowed');
-  const activeInvestments = myInvestments.filter(i => i.status === 'active');
-  const completedInvestments = myInvestments.filter(i => i.status === 'completed');
-  const defaultedInvestments = myInvestments.filter(i => i.status === 'defaulted');
+  // Apply filters to investments
+  const applyFilters = (investments: any[]) => {
+    return investments.filter(investment => {
+      const trip = trips.get(investment.tripId);
+      if (!trip) return false;
+
+      // Search filter
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        const matchesSearch =
+          trip.origin?.toLowerCase().includes(searchLower) ||
+          trip.destination?.toLowerCase().includes(searchLower) ||
+          trip.loadType?.toLowerCase().includes(searchLower);
+        if (!matchesSearch) return false;
+      }
+
+      // Status filter
+      if (filters.status && investment.status !== filters.status) return false;
+
+      // Amount range filter
+      if (filters.amount_min && investment.amount < parseFloat(filters.amount_min)) return false;
+      if (filters.amount_max && investment.amount > parseFloat(filters.amount_max)) return false;
+
+      // Interest rate range filter
+      if (filters.interestRate_min && investment.interestRate < parseFloat(filters.interestRate_min)) return false;
+      if (filters.interestRate_max && investment.interestRate > parseFloat(filters.interestRate_max)) return false;
+
+      // Date filter
+      if (filters.date) {
+        const investmentDate = new Date(investment.createdAt).toISOString().split('T')[0];
+        if (investmentDate !== filters.date) return false;
+      }
+
+      return true;
+    });
+  };
+
+  const escrowedInvestments = applyFilters(myInvestments.filter(i => i.status === 'escrowed'));
+  const activeInvestments = applyFilters(myInvestments.filter(i => i.status === 'active'));
+  const completedInvestments = applyFilters(myInvestments.filter(i => i.status === 'completed'));
+  const defaultedInvestments = applyFilters(myInvestments.filter(i => i.status === 'defaulted'));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -367,9 +449,17 @@ const MyInvestments = () => {
   return (
     <DashboardLayout role="lender">
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">My Lendings</h1>
-          <p className="text-muted-foreground mt-1">Track all your lendings and their progress</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">My Lendings</h1>
+            <p className="text-muted-foreground mt-1">Track all your lendings and their progress</p>
+          </div>
+          <AdvancedFilter
+            filters={filterConfig}
+            currentFilters={filters}
+            onFilterChange={setFilters}
+            onClearFilters={() => setFilters({})}
+          />
         </div>
 
         {/* Summary Stats */}

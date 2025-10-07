@@ -20,6 +20,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency, formatCurrencyCompact } from "@/lib/currency";
+import AdvancedFilter, { type FilterConfig } from "@/components/AdvancedFilter";
 
 const InvestmentOpportunities = () => {
   const { toast } = useToast();
@@ -68,16 +69,68 @@ const InvestmentOpportunities = () => {
   const [selectedTrip, setSelectedTrip] = useState<string | null>(null);
   const [selectedTrips, setSelectedTrips] = useState<string[]>([]);
   const [bidRate, setBidRate] = useState<number>(12);
-  const [filterLoadType, setFilterLoadType] = useState<string>("");
-  const [minAmount, setMinAmount] = useState<string>("");
-  const [maxAmount, setMaxAmount] = useState<string>("");
   const [isCompactView, setIsCompactView] = useState(true); // Default to compact view
 
-  // Advanced filters
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [filterOrigin, setFilterOrigin] = useState<string>("");
-  const [filterDestination, setFilterDestination] = useState<string>("");
-  const [tripValueRange, setTripValueRange] = useState<[number, number]>([0, 80000]);
+  // Advanced filter state for new component
+  const [advancedFilters, setAdvancedFilters] = useState<Record<string, any>>({});
+
+  // Advanced filter configuration
+  const filterConfig: FilterConfig[] = [
+    {
+      id: 'search',
+      label: 'Search',
+      type: 'text',
+      placeholder: 'Search by origin, destination, or load type...',
+    },
+    {
+      id: 'loadType',
+      label: 'Load Type',
+      type: 'select',
+      options: [
+        { value: 'all', label: 'All Types' },
+        { value: 'Electronics', label: 'Electronics' },
+        { value: 'FMCG', label: 'FMCG' },
+        { value: 'Textiles', label: 'Textiles' },
+        { value: 'Automotive Parts', label: 'Automotive Parts' },
+        { value: 'Machinery', label: 'Machinery' },
+        { value: 'Food & Beverages', label: 'Food & Beverages' },
+      ],
+      placeholder: 'Select load type',
+    },
+    {
+      id: 'amount',
+      label: 'Trip Value (₹)',
+      type: 'range',
+      min: 0,
+      max: 10000000,
+    },
+    {
+      id: 'distance',
+      label: 'Distance (km)',
+      type: 'range',
+      min: 0,
+      max: 5000,
+    },
+    {
+      id: 'weight',
+      label: 'Weight (kg)',
+      type: 'range',
+      min: 0,
+      max: 50000,
+    },
+    {
+      id: 'riskLevel',
+      label: 'Risk Level',
+      type: 'select',
+      options: [
+        { value: 'all', label: 'All Levels' },
+        { value: 'low', label: 'Low Risk' },
+        { value: 'medium', label: 'Medium Risk' },
+        { value: 'high', label: 'High Risk' },
+      ],
+      placeholder: 'Select risk level',
+    },
+  ];
 
   // Top-up dialog states
   const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
@@ -97,16 +150,29 @@ const InvestmentOpportunities = () => {
   };
 
   const filteredTrips = trips.filter(trip => {
-    const matchesLoadType = !filterLoadType || trip.loadType.toLowerCase().includes(filterLoadType.toLowerCase());
-    const matchesMinAmount = !minAmount || trip.amount >= parseFloat(minAmount);
-    const matchesMaxAmount = !maxAmount || trip.amount <= parseFloat(maxAmount);
+    // New advanced filter component filters
+    const matchesSearch = !advancedFilters.search ||
+      trip.origin.toLowerCase().includes(advancedFilters.search.toLowerCase()) ||
+      trip.destination.toLowerCase().includes(advancedFilters.search.toLowerCase()) ||
+      trip.loadType.toLowerCase().includes(advancedFilters.search.toLowerCase());
 
-    // Advanced filters
-    const matchesOrigin = !filterOrigin || trip.origin.toLowerCase().includes(filterOrigin.toLowerCase());
-    const matchesDestination = !filterDestination || trip.destination.toLowerCase().includes(filterDestination.toLowerCase());
-    const matchesTripValueRange = trip.amount >= tripValueRange[0] && trip.amount <= tripValueRange[1];
+    const matchesAdvancedLoadType = !advancedFilters.loadType || advancedFilters.loadType === 'all' || trip.loadType === advancedFilters.loadType;
 
-    return matchesLoadType && matchesMinAmount && matchesMaxAmount && matchesOrigin && matchesDestination && matchesTripValueRange;
+    const matchesAmountRange =
+      (!advancedFilters.amount_min || trip.amount >= parseFloat(advancedFilters.amount_min)) &&
+      (!advancedFilters.amount_max || trip.amount <= parseFloat(advancedFilters.amount_max));
+
+    const matchesDistanceRange =
+      (!advancedFilters.distance_min || trip.distance >= parseFloat(advancedFilters.distance_min)) &&
+      (!advancedFilters.distance_max || trip.distance <= parseFloat(advancedFilters.distance_max));
+
+    const matchesWeightRange =
+      (!advancedFilters.weight_min || trip.weight >= parseFloat(advancedFilters.weight_min)) &&
+      (!advancedFilters.weight_max || trip.weight <= parseFloat(advancedFilters.weight_max));
+
+    const matchesRiskLevel = !advancedFilters.riskLevel || advancedFilters.riskLevel === 'all' || trip.riskLevel === advancedFilters.riskLevel;
+
+    return matchesSearch && matchesAdvancedLoadType && matchesAmountRange && matchesDistanceRange && matchesWeightRange && matchesRiskLevel;
   });
 
   const toggleTripSelection = (tripId: string) => {
@@ -418,178 +484,6 @@ const InvestmentOpportunities = () => {
           </div>
         </div>
 
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Filters</CardTitle>
-                <CardDescription>Narrow down opportunities by your preferences</CardDescription>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                className="gap-2"
-              >
-                {showAdvancedFilters ? (
-                  <>
-                    <ChevronUp className="h-4 w-4" />
-                    Hide Advanced
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-4 w-4" />
-                    Advanced Filters
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Basic Filters */}
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="loadType">Load Type</Label>
-                  <Input
-                    id="loadType"
-                    placeholder="e.g., Electronics"
-                    value={filterLoadType}
-                    onChange={(e) => setFilterLoadType(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="minAmount">Min Amount (₹)</Label>
-                  <Input
-                    id="minAmount"
-                    type="number"
-                    placeholder="0"
-                    value={minAmount}
-                    onChange={(e) => setMinAmount(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="maxAmount">Max Amount (₹)</Label>
-                  <Input
-                    id="maxAmount"
-                    type="number"
-                    placeholder="80000"
-                    value={maxAmount}
-                    onChange={(e) => setMaxAmount(e.target.value)}
-                    max="80000"
-                  />
-                </div>
-              </div>
-
-              {/* Advanced Filters */}
-              {showAdvancedFilters && (
-                <div className="pt-4 border-t space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="filterOrigin">Origin (Start Location)</Label>
-                      <Input
-                        id="filterOrigin"
-                        placeholder="e.g., Mumbai, Delhi"
-                        value={filterOrigin}
-                        onChange={(e) => setFilterOrigin(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="filterDestination">Destination</Label>
-                      <Input
-                        id="filterDestination"
-                        placeholder="e.g., Bangalore, Chennai"
-                        value={filterDestination}
-                        onChange={(e) => setFilterDestination(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Trip Value Range Slider */}
-                  <div>
-                    <Label htmlFor="tripValueRange">
-                      Trip Value Range: ₹{(tripValueRange[0] / 1000).toFixed(0)}K - ₹{(tripValueRange[1] / 1000).toFixed(0)}K
-                    </Label>
-                    <div className="mt-2 space-y-3">
-                      {/* Min Range Slider */}
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Minimum</span>
-                          <span className="text-xs font-medium">₹{(tripValueRange[0] / 1000).toFixed(0)}K</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="80000"
-                          step="1000"
-                          value={tripValueRange[0]}
-                          onChange={(e) => {
-                            const newMin = parseInt(e.target.value);
-                            if (newMin <= tripValueRange[1]) {
-                              setTripValueRange([newMin, tripValueRange[1]]);
-                            }
-                          }}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
-                        />
-                      </div>
-
-                      {/* Max Range Slider */}
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Maximum</span>
-                          <span className="text-xs font-medium">₹{(tripValueRange[1] / 1000).toFixed(0)}K</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="80000"
-                          step="1000"
-                          value={tripValueRange[1]}
-                          onChange={(e) => {
-                            const newMax = parseInt(e.target.value);
-                            if (newMax >= tripValueRange[0]) {
-                              setTripValueRange([tripValueRange[0], newMax]);
-                            }
-                          }}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
-                        />
-                      </div>
-
-                      {/* Scale markers */}
-                      <div className="flex justify-between text-xs text-muted-foreground pt-1">
-                        <span>₹0</span>
-                        <span>₹20K</span>
-                        <span>₹40K</span>
-                        <span>₹60K</span>
-                        <span>₹80K</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Clear Filters Button */}
-                  <div className="flex justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setFilterLoadType("");
-                        setMinAmount("");
-                        setMaxAmount("");
-                        setFilterOrigin("");
-                        setFilterDestination("");
-                        setTripValueRange([0, 80000]);
-                      }}
-                    >
-                      Clear All Filters
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Bulk Investment Panel */}
         {selectedTrips.length > 0 && (
           <Card className="border-2 border-primary bg-primary/5">
@@ -651,6 +545,12 @@ const InvestmentOpportunities = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <h2 className="text-xl font-semibold">Available Trips ({filteredTrips.length})</h2>
+              <AdvancedFilter
+                filters={filterConfig}
+                currentFilters={advancedFilters}
+                onFilterChange={setAdvancedFilters}
+                onClearFilters={() => setAdvancedFilters({})}
+              />
               {filteredTrips.length > 0 && (
                 <Button
                   variant="outline"
