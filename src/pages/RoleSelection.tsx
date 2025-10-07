@@ -24,7 +24,7 @@ const roles = [
   // },
   {
     id: "load_agent" as const,
-    title: "Load Agent",
+    title: "Shipper",
     description: "Manage and facilitate trip financing for multiple load owners",
     icon: UserCircle,
     color: "primary",
@@ -38,7 +38,7 @@ const roles = [
   },
   {
     id: "vehicle_agent" as const,
-    title: "Vehicle Agent",
+    title: "Transporter",
     description: "Coordinate and manage trips for multiple vehicle owners",
     icon: UserCircle,
     color: "secondary",
@@ -239,7 +239,7 @@ const RoleSelection = () => {
           <DialogHeader>
             <DialogTitle>Select Your Company</DialogTitle>
             <DialogDescription>
-              Choose the logistics company you represent as a Load Agent
+              Choose the logistics company you represent as a Shipper
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">

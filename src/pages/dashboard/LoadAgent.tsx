@@ -215,7 +215,7 @@ const LoadAgentDashboard = () => {
 
       const trip = await data.createTrip({
         loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
-        loadOwnerName: user?.company || 'Load Agent',
+        loadOwnerName: user?.company || 'Shipper',
         loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
         loadOwnerRating: 4.5,
         clientCompany: formData.clientCompany,
@@ -419,7 +419,7 @@ const LoadAgentDashboard = () => {
 
           await data.createTrip({
             loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
-            loadOwnerName: user?.company || 'Load Agent',
+            loadOwnerName: user?.company || 'Shipper',
             loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
             loadOwnerRating: 4.5,
             clientCompany,
@@ -542,7 +542,7 @@ const LoadAgentDashboard = () => {
 
           await data.createTrip({
             loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
-            loadOwnerName: user?.company || 'Load Agent',
+            loadOwnerName: user?.company || 'Shipper',
             loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
             loadOwnerRating: 4.5,
             clientCompany,
@@ -882,7 +882,7 @@ const LoadAgentDashboard = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Load Agent Dashboard</h1>
+            <h1 className="text-3xl font-bold">Shipper Dashboard</h1>
             <p className="text-muted-foreground mt-1">Create and manage trips across the portal</p>
           </div>
           <Button onClick={() => setCreateDialogOpen(true)} className="bg-gradient-primary">
@@ -1038,7 +1038,7 @@ const LoadAgentDashboard = () => {
                   <TableHead>Consignor</TableHead>
                   <TableHead>Route</TableHead>
                   <TableHead>Load Type</TableHead>
-                  <TableHead>Load Agent</TableHead>
+                  <TableHead>Shipper</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Interest Rate</TableHead>
                   <TableHead>Bid Amount</TableHead>

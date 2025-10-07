@@ -31,7 +31,7 @@ const roleConfig = {
     ],
   },
   load_agent: {
-    title: "Load Agent",
+    title: "Shipper",
     icon: Users,
     nav: [
       { label: "Dashboard", path: "/dashboard/load_agent", icon: Home },
@@ -39,7 +39,7 @@ const roleConfig = {
     ],
   },
   transporter: {
-    title: "Vehicle Provider",
+    title: "Transporter",
     icon: TruckIcon,
     nav: [
       { label: "Dashboard", path: "/dashboard/transporter", icon: Home },
