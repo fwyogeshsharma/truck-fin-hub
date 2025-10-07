@@ -648,8 +648,8 @@ const InvestmentOpportunities = () => {
 
                       {/* ARR - 2 columns */}
                       <div className="col-span-2 text-center">
-                        <p className="text-xs text-muted-foreground">ARR ({bidRate}%)</p>
-                        <p className="font-semibold text-green-600">{formatCurrencyCompact(expectedReturn, true)}</p>
+                        <p className="text-xs text-muted-foreground">ARR {trip.interestRate ? `(${trip.interestRate}%)` : `(${bidRate}%)`}</p>
+                        <p className="font-semibold text-green-600">{formatCurrencyCompact(trip.interestRate ? trip.amount * (trip.interestRate / 100) : expectedReturn, true)}</p>
                       </div>
 
                       {/* Risk & Bid - 2 columns */}
@@ -775,12 +775,19 @@ const InvestmentOpportunities = () => {
                   </CardHeader>
 
                   <CardContent className="space-y-4">
-                    <div className="grid md:grid-cols-3 gap-4">
+                    <div className="grid md:grid-cols-4 gap-4">
                       <div className="flex items-center gap-2">
                         <IndianRupee className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <p className="text-xs text-muted-foreground">Trip Value</p>
                           <p className="font-semibold">{formatCurrency(trip.amount)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-green-600" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Offered Rate</p>
+                          <p className="font-semibold text-green-600">{trip.interestRate || 12}% ARR</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -793,7 +800,7 @@ const InvestmentOpportunities = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <p className="text-xs text-muted-foreground">Maturity Period</p>
                           <p className="font-semibold">{trip.maturityDays || 30} days</p>
@@ -826,8 +833,14 @@ const InvestmentOpportunities = () => {
                               {formatCurrency(trip.amount)}
                             </span>
                           </div>
+                          {trip.interestRate && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Offered Rate</span>
+                              <span className="font-semibold text-green-600">{trip.interestRate}%</span>
+                            </div>
+                          )}
                           <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Interest Rate</span>
+                            <span className="text-muted-foreground">Your Bid Rate</span>
                             <span className="font-semibold">{bidRate}%</span>
                           </div>
                           <div className="flex justify-between text-sm">

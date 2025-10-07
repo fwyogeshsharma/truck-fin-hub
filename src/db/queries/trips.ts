@@ -60,6 +60,7 @@ export interface CreateTripInput {
   load_type: string;
   weight: number;
   amount: number;
+  interest_rate?: number;
   maturity_days?: number;
   risk_level?: 'low' | 'medium' | 'high';
   insurance_status?: boolean;
@@ -166,8 +167,8 @@ export const createTrip = (input: CreateTripInput): Trip => {
     INSERT INTO trips (
       id, load_owner_id, load_owner_name, load_owner_logo, load_owner_rating,
       client_company, client_logo, origin, destination, distance, load_type,
-      weight, amount, maturity_days, risk_level, insurance_status, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+      weight, amount, interest_rate, maturity_days, risk_level, insurance_status, status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
   `);
 
   stmt.run(
@@ -184,6 +185,7 @@ export const createTrip = (input: CreateTripInput): Trip => {
     input.load_type,
     input.weight,
     input.amount,
+    input.interest_rate || null,
     input.maturity_days || 30,
     input.risk_level || 'low',
     input.insurance_status ? 1 : 0

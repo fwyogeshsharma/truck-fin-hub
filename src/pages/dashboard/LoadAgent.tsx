@@ -171,6 +171,7 @@ const LoadAgentDashboard = () => {
     loadType: '',
     weight: '',
     amount: '',
+    interestRate: '12',
     maturityDays: '30',
     date: new Date().toISOString().split('T')[0], // Today's date
   });
@@ -202,6 +203,16 @@ const LoadAgentDashboard = () => {
     }
 
     try {
+      const interestRate = parseFloat(formData.interestRate);
+      if (interestRate < 8 || interestRate > 18) {
+        toast({
+          variant: 'destructive',
+          title: 'Invalid Interest Rate',
+          description: 'Interest rate must be between 8% and 18%',
+        });
+        return;
+      }
+
       const trip = await data.createTrip({
         loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
         loadOwnerName: user?.company || 'Load Agent',
@@ -215,6 +226,7 @@ const LoadAgentDashboard = () => {
         loadType: formData.loadType,
         weight: parseFloat(formData.weight),
         amount: parseFloat(formData.amount),
+        interestRate: interestRate,
         maturityDays: parseInt(formData.maturityDays),
         riskLevel: 'low', // Default risk level
         insuranceStatus: true, // Default insured
@@ -235,6 +247,7 @@ const LoadAgentDashboard = () => {
         loadType: '',
         weight: '',
         amount: '',
+        interestRate: '12',
         maturityDays: '30',
         date: new Date().toISOString().split('T')[0],
       });
@@ -258,10 +271,10 @@ const LoadAgentDashboard = () => {
   const handleDownloadSampleExcel = () => {
     // Create sample Excel data with proper CSV formatting
     const sampleData = [
-      ['Consignee Company', 'Origin', 'Destination', 'Distance (km)', 'Load Type', 'Weight (kg)', 'Amount (₹)', 'Maturity Days', 'Date'],
-      ['Berger Paints', '"Mumbai, Maharashtra"', '"Delhi, NCR"', '1400', 'Electronics', '15000', '50000', '30', '2025-10-06'],
-      ['Emami', '"Bangalore, Karnataka"', '"Chennai, Tamil Nadu"', '350', 'FMCG', '12000', '35000', '25', '2025-10-07'],
-      ['Greenply', '"Pune, Maharashtra"', '"Hyderabad, Telangana"', '560', 'Machinery', '20000', '75000', '45', '2025-10-08'],
+      ['Consignee Company', 'Origin', 'Destination', 'Distance (km)', 'Load Type', 'Weight (kg)', 'Amount (₹)', 'Interest Rate (%)', 'Maturity Days', 'Date'],
+      ['Berger Paints', '"Mumbai, Maharashtra"', '"Delhi, NCR"', '1400', 'Electronics', '15000', '50000', '12', '30', '2025-10-06'],
+      ['Emami', '"Bangalore, Karnataka"', '"Chennai, Tamil Nadu"', '350', 'FMCG', '12000', '35000', '11', '25', '2025-10-07'],
+      ['Greenply', '"Pune, Maharashtra"', '"Hyderabad, Telangana"', '560', 'Machinery', '20000', '75000', '12.5', '45', '2025-10-08'],
     ];
 
     // Convert to CSV format (fields with commas are already quoted)
@@ -336,9 +349,9 @@ const LoadAgentDashboard = () => {
           console.log('Parsed row:', row);
 
           // Handle case where origin/destination have unquoted commas (e.g., "Mumbai, Maharashtra" becomes 2 fields)
-          // If we have 11 fields instead of 9, merge fields to fix it
-          if (row.length === 11) {
-            console.log('Detected 11 fields - merging origin and destination parts');
+          // If we have 12 fields instead of 10, merge fields to fix it
+          if (row.length === 12) {
+            console.log('Detected 12 fields - merging origin and destination parts');
             row = [
               row[0], // clientCompany
               `${row[1]}, ${row[2]}`, // Merge "Mumbai" + "Maharashtra" -> "Mumbai, Maharashtra"
@@ -347,14 +360,15 @@ const LoadAgentDashboard = () => {
               row[6],  // loadType
               row[7],  // weight
               row[8],  // amount
-              row[9],  // maturityDays
-              row[10],  // date
+              row[9],  // interestRate
+              row[10], // maturityDays
+              row[11], // date
             ];
             console.log('Merged to:', row);
           }
 
-          // Ensure we have exactly 8-9 fields
-          if (row.length < 8 || !row[0]) {
+          // Ensure we have exactly 9-10 fields
+          if (row.length < 9 || !row[0]) {
             console.warn(`Invalid row length (${row.length}) for: ${rowText}`);
             errorCount++;
             continue;
@@ -367,8 +381,9 @@ const LoadAgentDashboard = () => {
           const loadType = row[4];
           const weight = row[5];
           const amount = row[6];
-          const maturityDays = row[7];
-          // row[8] is date (optional)
+          const interestRate = row[7];
+          const maturityDays = row[8];
+          // row[9] is date (optional)
 
           // Find the client logo
           const selectedClient = clientCompanies.find(c => c.name === clientCompany);
@@ -381,6 +396,13 @@ const LoadAgentDashboard = () => {
           const tripAmount = parseFloat(amount);
           if (isNaN(tripAmount) || tripAmount < 20000 || tripAmount > 80000) {
             console.warn(`Invalid amount (${amount}) for row: ${rowText}`);
+            errorCount++;
+            continue;
+          }
+
+          const parsedInterestRate = parseFloat(interestRate);
+          if (isNaN(parsedInterestRate) || parsedInterestRate < 8 || parsedInterestRate > 18) {
+            console.warn(`Invalid interest rate (${interestRate}) for row: ${rowText}`);
             errorCount++;
             continue;
           }
@@ -408,6 +430,7 @@ const LoadAgentDashboard = () => {
             loadType,
             weight: parsedWeight,
             amount: tripAmount,
+            interestRate: parsedInterestRate,
             maturityDays: parsedMaturityDays,
             riskLevel: 'low',
             insuranceStatus: true,
@@ -488,6 +511,7 @@ const LoadAgentDashboard = () => {
           const loadType = tripData.loadType || tripData.load_type || tripData.cargoType || 'General Cargo';
           const weight = parseFloat(tripData.weight || tripData.weightKg || tripData.weight_kg || 0);
           const amount = parseFloat(tripData.amount || tripData.value || tripData.price || 0);
+          const interestRate = parseFloat(tripData.interestRate || tripData.interest_rate || tripData.rate || '12');
           const maturityDays = parseInt(tripData.maturityDays || tripData.maturity_days || tripData.paymentTerm || '30');
 
           // Find the client logo
@@ -510,6 +534,12 @@ const LoadAgentDashboard = () => {
             continue;
           }
 
+          if (interestRate < 8 || interestRate > 18) {
+            console.warn(`Invalid interest rate: ${interestRate}`);
+            errorCount++;
+            continue;
+          }
+
           await data.createTrip({
             loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
             loadOwnerName: user?.company || 'Load Agent',
@@ -523,6 +553,7 @@ const LoadAgentDashboard = () => {
             loadType,
             weight,
             amount,
+            interestRate,
             maturityDays,
             riskLevel: tripData.riskLevel || 'low',
             insuranceStatus: tripData.insuranceStatus !== undefined ? tripData.insuranceStatus : true,
@@ -1009,6 +1040,7 @@ const LoadAgentDashboard = () => {
                   <TableHead>Load Type</TableHead>
                   <TableHead>Load Agent</TableHead>
                   <TableHead>Amount</TableHead>
+                  <TableHead>Interest Rate</TableHead>
                   <TableHead>Bid Amount</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
@@ -1018,7 +1050,7 @@ const LoadAgentDashboard = () => {
               <TableBody>
                 {filteredTrips.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center text-muted-foreground">
                       No trips found
                     </TableCell>
                   </TableRow>
@@ -1080,6 +1112,12 @@ const LoadAgentDashboard = () => {
                         </TableCell>
                         <TableCell>
                           <p className="font-semibold">₹{(trip.amount / 1000).toFixed(0)}K</p>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-center">
+                            <p className="font-semibold text-green-600">{trip.interestRate || 12}%</p>
+                            <p className="text-xs text-muted-foreground">ARR</p>
+                          </div>
                         </TableCell>
                         <TableCell>
                           {trip.bids && trip.bids.length > 0 ? (
@@ -1201,7 +1239,7 @@ const LoadAgentDashboard = () => {
                 )}
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="date">Trip Date</Label>
                   <Input
@@ -1212,6 +1250,23 @@ const LoadAgentDashboard = () => {
                     onChange={handleChange}
                     required
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="interestRate">Interest Rate (% Annual)</Label>
+                  <Input
+                    id="interestRate"
+                    name="interestRate"
+                    type="number"
+                    placeholder="e.g., 12"
+                    value={formData.interestRate}
+                    onChange={handleChange}
+                    min="8"
+                    max="18"
+                    step="0.5"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">Between 8% and 18%</p>
                 </div>
 
                 <div className="space-y-2">
@@ -1409,9 +1464,10 @@ const LoadAgentDashboard = () => {
                     <ul className="text-xs text-muted-foreground space-y-1">
                       <li>• CSV format with comma-separated values</li>
                       <li>• First row must be headers (will be skipped)</li>
-                      <li>• Columns: Consignee Company, Origin, Destination, Distance (km), Load Type, Weight (kg), Amount (₹), Maturity Days, Date</li>
+                      <li>• Columns: Consignee Company, Origin, Destination, Distance (km), Load Type, Weight (kg), Amount (₹), Interest Rate (%), Maturity Days, Date</li>
                       <li>• Consignee Company must match exactly from the list (e.g., "Berger Paints", "Emami")</li>
                       <li>• Trip amount must be between ₹20,000 and ₹80,000</li>
+                      <li>• Interest rate must be between 8% and 18%</li>
                       <li>• Download the sample template for reference</li>
                     </ul>
                   </div>
@@ -1501,6 +1557,7 @@ const LoadAgentDashboard = () => {
     "loadType": "Electronics",
     "weight": 15000,
     "amount": 50000,
+    "interestRate": 12,
     "maturityDays": 30
   }
 ]`}</pre>
@@ -1515,6 +1572,7 @@ const LoadAgentDashboard = () => {
                           <li>• <strong>loadType:</strong> loadType, load_type, cargoType</li>
                           <li>• <strong>weight:</strong> weight, weightKg, weight_kg</li>
                           <li>• <strong>amount:</strong> amount, value, price (₹20,000 - ₹80,000)</li>
+                          <li>• <strong>interestRate:</strong> interestRate, interest_rate, rate (8% - 18%)</li>
                           <li>• <strong>maturityDays:</strong> maturityDays, maturity_days, paymentTerm</li>
                         </ul>
                       </div>
