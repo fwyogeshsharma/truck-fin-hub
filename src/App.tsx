@@ -21,6 +21,7 @@ import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
 import KYC from "./pages/KYC";
 import KYCAdmin from "./pages/KYCAdmin";
+import PlatformConfiguration from "./pages/PlatformConfig";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => {
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/kyc" element={<KYC />} />
           <Route path="/admin/kyc" element={<KYCAdmin />} />
+          <Route path="/platform-config" element={<PlatformConfiguration />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

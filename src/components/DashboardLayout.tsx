@@ -70,6 +70,7 @@ const roleConfig = {
     icon: Shield,
     nav: [
       { label: "Dashboard", path: "/dashboard/super_admin", icon: Home },
+      { label: "Platform Config", path: "/platform-config", icon: Settings },
       { label: "Admin Panel", path: "/dashboard/admin", icon: Shield },
       { label: "Users", path: "/admin/users", icon: Users },
       { label: "System", path: "/admin/system", icon: Shield },

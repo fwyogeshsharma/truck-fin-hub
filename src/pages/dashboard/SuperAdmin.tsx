@@ -11,7 +11,8 @@ import {
   Database,
   Activity,
   DollarSign,
-  FileText
+  FileText,
+  Settings
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
@@ -167,6 +168,18 @@ const SuperAdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-3 gap-4">
+              <Button
+                variant="outline"
+                className="flex items-center gap-2 h-auto py-4"
+                onClick={() => navigate('/platform-config')}
+              >
+                <Settings className="h-5 w-5" />
+                <div className="text-left">
+                  <div className="font-semibold">Platform Configuration</div>
+                  <div className="text-xs text-muted-foreground">Configure fees, rates & limits</div>
+                </div>
+              </Button>
+
               <Button
                 variant="outline"
                 className="flex items-center gap-2 h-auto py-4"
