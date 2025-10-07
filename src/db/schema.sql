@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS users (
   company TEXT,
   company_logo TEXT,
   user_logo TEXT,
+  terms_accepted INTEGER DEFAULT 0,
+  terms_accepted_at TEXT,
   is_active INTEGER DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))

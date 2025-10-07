@@ -9,6 +9,8 @@ export interface User {
   company?: string;
   companyLogo?: string;
   userLogo?: string;
+  termsAccepted?: boolean;
+  termsAcceptedAt?: string;
 }
 
 export interface LoginResponse {
@@ -54,6 +56,10 @@ export const authAPI = {
 
   logout() {
     setAuthToken(null);
+  },
+
+  async acceptTerms(userId: string): Promise<{ user: User }> {
+    return apiClient.put('/auth/accept-terms', { userId });
   },
 };
 

@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { auth } from "@/lib/auth";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import TermsAcceptance from "./pages/TermsAcceptance";
 import RoleSelection from "./pages/RoleSelection";
 import LoadOwnerDashboard from "./pages/dashboard/LoadOwner";
 import TransporterDashboard from "./pages/dashboard/Transporter";
@@ -41,6 +42,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/terms" element={<TermsAcceptance />} />
           <Route path="/select-role" element={<RoleSelection />} />
           <Route path="/dashboard/load_owner" element={<LoadOwnerDashboard />} />
           <Route path="/dashboard/transporter" element={<TransporterDashboard />} />

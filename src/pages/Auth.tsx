@@ -30,8 +30,11 @@ const Auth = () => {
           description: "Successfully logged in",
         });
 
-        // Check if user has selected a role
-        if (user.role) {
+        // Check if user has accepted terms
+        if (!user.termsAccepted) {
+          navigate("/terms");
+        } else if (user.role) {
+          // Check if user has selected a role
           navigate(`/dashboard/${user.role}`);
         } else {
           navigate("/select-role");
@@ -63,10 +66,11 @@ const Auth = () => {
 
       toast({
         title: "Account created!",
-        description: "Please select your role to continue",
+        description: "Please review and accept our terms to continue",
       });
 
-      navigate("/select-role");
+      // Always redirect to terms page after signup
+      navigate("/terms");
     } catch (error: any) {
       toast({
         variant: "destructive",

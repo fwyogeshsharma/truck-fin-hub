@@ -12,6 +12,8 @@ export interface User {
   company?: string;
   company_logo?: string;
   user_logo?: string;
+  terms_accepted?: number;
+  terms_accepted_at?: string;
   is_active: number;
   created_at: string;
   updated_at: string;
@@ -37,6 +39,8 @@ export interface UpdateUserInput {
   company?: string;
   company_logo?: string;
   user_logo?: string;
+  terms_accepted?: number;
+  terms_accepted_at?: string;
   is_active?: number;
 }
 
@@ -192,6 +196,14 @@ export const updateUser = (id: string, input: UpdateUserInput): User | null => {
   if (input.user_logo !== undefined) {
     updates.push('user_logo = ?');
     values.push(input.user_logo);
+  }
+  if (input.terms_accepted !== undefined) {
+    updates.push('terms_accepted = ?');
+    values.push(input.terms_accepted);
+  }
+  if (input.terms_accepted_at !== undefined) {
+    updates.push('terms_accepted_at = ?');
+    values.push(input.terms_accepted_at);
   }
   if (input.is_active !== undefined) {
     updates.push('is_active = ?');

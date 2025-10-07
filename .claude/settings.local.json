@@ -21,7 +21,8 @@
       "Bash(npx tsc:*)",
       "Bash(sqlite3:*)",
       "Bash(del nul)",
-      "Bash(npm run dev:all:*)"
+      "Bash(npm run dev:all:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []

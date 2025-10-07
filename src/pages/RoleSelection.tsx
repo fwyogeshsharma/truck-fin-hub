@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,13 +15,13 @@ import {
 
 // Regular user roles (admin and super_admin are hidden from regular users)
 const roles = [
-  {
-    id: "load_owner" as const,
-    title: "Load Owner",
-    description: "Create trips and request invoice financing for your logistics operations",
-    icon: Package,
-    color: "primary",
-  },
+  // {
+  //   id: "load_owner" as const,
+  //   title: "Load Owner",
+  //   description: "Create trips and request invoice financing for your logistics operations",
+  //   icon: Package,
+  //   color: "primary",
+  // },
   {
     id: "load_agent" as const,
     title: "Load Agent",
@@ -74,6 +74,26 @@ const RoleSelection = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showCompanyDialog, setShowCompanyDialog] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<typeof companies[0] | null>(null);
+
+  // Check if user has accepted terms on component mount
+  useEffect(() => {
+    const user = auth.getCurrentUser();
+    if (!user) {
+      // Not logged in, redirect to auth
+      navigate("/auth");
+      return;
+    }
+
+    if (!user.termsAccepted) {
+      // Terms not accepted, redirect to terms page
+      toast({
+        variant: "destructive",
+        title: "Terms Required",
+        description: "You must accept the terms and conditions before selecting a role",
+      });
+      navigate("/terms");
+    }
+  }, [navigate, toast]);
 
   const handleConfirm = () => {
     if (!selectedRole) return;

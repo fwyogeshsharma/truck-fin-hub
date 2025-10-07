@@ -11,6 +11,8 @@ export interface User {
   company?: string;
   companyLogo?: string;
   userLogo?: string;
+  termsAccepted?: boolean;
+  termsAcceptedAt?: string;
 }
 
 const AUTH_KEY = 'current_user';
@@ -99,5 +101,23 @@ export const auth = {
     // Mock users are now in the database
     // This function is kept for backward compatibility but does nothing
     console.log('Mock users are now managed by the database');
+  },
+
+  // Accept terms and conditions
+  acceptTerms: async (userId: string): Promise<User> => {
+    try {
+      const response = await authAPI.acceptTerms(userId);
+      // Update sessionStorage with the new user data
+      sessionStorage.setItem(AUTH_KEY, JSON.stringify(response.user));
+      return response.user;
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to accept terms');
+    }
+  },
+
+  // Check if user has accepted terms
+  hasAcceptedTerms: (): boolean => {
+    const user = auth.getCurrentUser();
+    return user?.termsAccepted === true;
   },
 };
