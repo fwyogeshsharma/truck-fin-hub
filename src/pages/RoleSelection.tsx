@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+// Regular user roles (admin and super_admin are hidden from regular users)
 const roles = [
   {
     id: "load_owner" as const,
@@ -49,6 +50,8 @@ const roles = [
     icon: Wallet,
     color: "accent",
   },
+  // Note: admin and super_admin roles are not shown here
+  // They are accessible only through direct login with specific credentials
 ];
 
 const companies = [

@@ -65,6 +65,16 @@ const roleConfig = {
       { label: "System", path: "/admin/system", icon: Shield },
     ],
   },
+  super_admin: {
+    title: "Super Admin",
+    icon: Shield,
+    nav: [
+      { label: "Dashboard", path: "/dashboard/super_admin", icon: Home },
+      { label: "Admin Panel", path: "/dashboard/admin", icon: Shield },
+      { label: "Users", path: "/admin/users", icon: Users },
+      { label: "System", path: "/admin/system", icon: Shield },
+    ],
+  },
 };
 
 const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
@@ -78,6 +88,13 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   useEffect(() => {
     const syncUserData = async () => {
       try {
+        // Skip API sync for admin roles (they don't exist in database)
+        const currentUser = auth.getCurrentUser();
+        if (currentUser?.role === 'super_admin' || currentUser?.role === 'admin') {
+          setUser(currentUser);
+          return;
+        }
+
         const response = await authAPI.getMe();
         if (response.user) {
           // Update sessionStorage with fresh data (tab-specific)
@@ -92,9 +109,12 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
         }
       } catch (error) {
         console.error('Failed to sync user data:', error);
-        // If token is invalid, logout
-        auth.logout();
-        navigate('/auth');
+        // If token is invalid, logout (but not for admin roles)
+        const currentUser = auth.getCurrentUser();
+        if (currentUser?.role !== 'super_admin' && currentUser?.role !== 'admin') {
+          auth.logout();
+          navigate('/auth');
+        }
       }
     };
 

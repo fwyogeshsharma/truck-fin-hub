@@ -12,6 +12,7 @@ import LoadOwnerDashboard from "./pages/dashboard/LoadOwner";
 import TransporterDashboard from "./pages/dashboard/Transporter";
 import LenderDashboard from "./pages/dashboard/Lender";
 import AdminDashboard from "./pages/dashboard/Admin";
+import SuperAdminDashboard from "./pages/dashboard/SuperAdmin";
 import LoadAgentDashboard from "./pages/dashboard/LoadAgent";
 import CreateTrip from "./pages/CreateTrip";
 import InvestmentOpportunities from "./pages/InvestmentOpportunities";
@@ -44,6 +45,7 @@ const App = () => {
           <Route path="/dashboard/transporter" element={<TransporterDashboard />} />
           <Route path="/dashboard/lender" element={<LenderDashboard />} />
           <Route path="/dashboard/admin" element={<AdminDashboard />} />
+          <Route path="/dashboard/super_admin" element={<SuperAdminDashboard />} />
           <Route path="/dashboard/load_agent" element={<LoadAgentDashboard />} />
           <Route path="/create-trip" element={<CreateTrip />} />
           <Route path="/opportunities" element={<InvestmentOpportunities />} />

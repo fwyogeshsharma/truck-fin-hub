@@ -11,6 +11,24 @@ import { getWallet } from '../../src/db/queries/wallets.ts';
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
+// Admin credentials (from config)
+const ADMIN_CONFIG = {
+  superAdmin: {
+    username: 'Alok',
+    email: 'alok@faberwork.com',
+    password: 'faber@123',
+    role: 'super_admin',
+    id: 'super_admin_001',
+  },
+  admin: {
+    username: 'Admin',
+    email: 'admin@truckfin.com',
+    password: 'admin@123',
+    role: 'admin',
+    id: 'admin_001',
+  },
+};
+
 // Login
 router.post('/login', async (req: Request, res: Response) => {
   try {
@@ -20,6 +38,65 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
+    // Check for super admin credentials
+    if (email.toLowerCase() === ADMIN_CONFIG.superAdmin.email.toLowerCase() &&
+        password === ADMIN_CONFIG.superAdmin.password) {
+      const token = jwt.sign(
+        { id: ADMIN_CONFIG.superAdmin.id, email: ADMIN_CONFIG.superAdmin.email, role: ADMIN_CONFIG.superAdmin.role },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      return res.json({
+        user: {
+          id: ADMIN_CONFIG.superAdmin.id,
+          userId: ADMIN_CONFIG.superAdmin.id,
+          email: ADMIN_CONFIG.superAdmin.email,
+          name: ADMIN_CONFIG.superAdmin.username,
+          role: ADMIN_CONFIG.superAdmin.role,
+        },
+        wallet: {
+          userId: ADMIN_CONFIG.superAdmin.id,
+          balance: 0,
+          lockedAmount: 0,
+          escrowedAmount: 0,
+          totalInvested: 0,
+          totalReturns: 0,
+        },
+        token,
+      });
+    }
+
+    // Check for admin credentials
+    if (email.toLowerCase() === ADMIN_CONFIG.admin.email.toLowerCase() &&
+        password === ADMIN_CONFIG.admin.password) {
+      const token = jwt.sign(
+        { id: ADMIN_CONFIG.admin.id, email: ADMIN_CONFIG.admin.email, role: ADMIN_CONFIG.admin.role },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      return res.json({
+        user: {
+          id: ADMIN_CONFIG.admin.id,
+          userId: ADMIN_CONFIG.admin.id,
+          email: ADMIN_CONFIG.admin.email,
+          name: ADMIN_CONFIG.admin.username,
+          role: ADMIN_CONFIG.admin.role,
+        },
+        wallet: {
+          userId: ADMIN_CONFIG.admin.id,
+          balance: 0,
+          lockedAmount: 0,
+          escrowedAmount: 0,
+          totalInvested: 0,
+          totalReturns: 0,
+        },
+        token,
+      });
+    }
+
+    // Regular user authentication
     const user = verifyPassword(email, password);
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -154,6 +231,49 @@ router.get('/me', async (req: Request, res: Response) => {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET) as any;
+
+    // Check if this is a super admin or admin
+    if (decoded.role === 'super_admin') {
+      return res.json({
+        user: {
+          id: ADMIN_CONFIG.superAdmin.id,
+          userId: ADMIN_CONFIG.superAdmin.id,
+          email: ADMIN_CONFIG.superAdmin.email,
+          name: ADMIN_CONFIG.superAdmin.username,
+          role: ADMIN_CONFIG.superAdmin.role,
+        },
+        wallet: {
+          userId: ADMIN_CONFIG.superAdmin.id,
+          balance: 0,
+          lockedAmount: 0,
+          escrowedAmount: 0,
+          totalInvested: 0,
+          totalReturns: 0,
+        },
+      });
+    }
+
+    if (decoded.role === 'admin') {
+      return res.json({
+        user: {
+          id: ADMIN_CONFIG.admin.id,
+          userId: ADMIN_CONFIG.admin.id,
+          email: ADMIN_CONFIG.admin.email,
+          name: ADMIN_CONFIG.admin.username,
+          role: ADMIN_CONFIG.admin.role,
+        },
+        wallet: {
+          userId: ADMIN_CONFIG.admin.id,
+          balance: 0,
+          lockedAmount: 0,
+          escrowedAmount: 0,
+          totalInvested: 0,
+          totalReturns: 0,
+        },
+      });
+    }
+
+    // Regular user
     const user = getUserByEmail(decoded.email);
 
     if (!user) {
