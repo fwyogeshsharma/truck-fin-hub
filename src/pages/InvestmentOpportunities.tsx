@@ -349,7 +349,7 @@ const InvestmentOpportunities = () => {
 
       toast({
         title: "Bid confirmed!",
-        description: `${formatCurrency(investmentAmount)} moved to escrow. Awaiting load agent confirmation.`,
+        description: `${formatCurrency(investmentAmount)} moved to escrow. Awaiting Borrower confirmation.`,
       });
 
       setSelectedTrip(null);
@@ -455,7 +455,7 @@ const InvestmentOpportunities = () => {
 
       toast({
         title: "Bulk bids confirmed!",
-        description: `${selectedTrips.length} trips • ${formatCurrency(totalInvestmentAmount)} moved to escrow. Awaiting load agent confirmation.`,
+        description: `${selectedTrips.length} trips • ${formatCurrency(totalInvestmentAmount)} moved to escrow. Awaiting Borrower confirmation.`,
       });
 
       setSelectedTrips([]);

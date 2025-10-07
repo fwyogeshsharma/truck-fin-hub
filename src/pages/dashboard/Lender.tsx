@@ -146,7 +146,7 @@ const LenderDashboard = () => {
     },
   ];
 
-  // Get user's active investments (allotted and confirmed by load agent)
+  // Get user's active investments (allotted and confirmed by Borrower)
   const activeInvestmentTrips = myInvestments
     .filter(i => i.status === 'active')
     .map(investment => {
@@ -419,7 +419,7 @@ const LenderDashboard = () => {
                 <Lock className="h-5 w-5 text-orange-600" />
                 Pending Bids (Escrowed)
               </CardTitle>
-              <CardDescription>Awaiting load agent confirmation</CardDescription>
+              <CardDescription>Awaiting Borrower confirmation</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -466,7 +466,7 @@ const LenderDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>My Active Investments</CardTitle>
-            <CardDescription>Trips allotted to you by load agents</CardDescription>
+            <CardDescription>Trips allotted to you by Borrowers</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
