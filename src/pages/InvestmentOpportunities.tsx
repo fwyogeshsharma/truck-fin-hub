@@ -603,8 +603,24 @@ const InvestmentOpportunities = () => {
                       id={`select-compact-${trip.id}`}
                     />
                     <div className="flex-1 grid grid-cols-12 gap-3 items-center">
-                      {/* Route & Load - 4 columns */}
-                      <div className="col-span-4">
+                      {/* Consignee Logo - 1 column */}
+                      <div className="col-span-1 flex justify-center">
+                        {trip.clientLogo ? (
+                          <img
+                            src={trip.clientLogo}
+                            alt={trip.clientCompany || 'Company'}
+                            className="h-8 w-auto object-contain"
+                            title={trip.clientCompany}
+                          />
+                        ) : (
+                          <div className="h-8 w-10 bg-muted rounded flex items-center justify-center border border-dashed">
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Route & Load - 3 columns */}
+                      <div className="col-span-3">
                         <div className="flex items-center gap-1.5 mb-0.5">
                           <MapPin className="h-3 w-3 text-primary flex-shrink-0" />
                           <p className="font-semibold text-sm truncate">{trip.origin} → {trip.destination}</p>
@@ -612,7 +628,7 @@ const InvestmentOpportunities = () => {
                         <p className="text-xs text-muted-foreground truncate">{trip.loadType} • {trip.weight}kg • {trip.distance}km</p>
                       </div>
 
-                      {/* Company Logo - 2 columns */}
+                      {/* Load Owner Logo - 2 columns */}
                       <div className="col-span-2 flex justify-center">
                         {trip.loadOwnerLogo && (
                           <img
@@ -680,15 +696,20 @@ const InvestmentOpportunities = () => {
                         />
                       </div>
                       <div className="flex gap-4 flex-1">
-                        {trip.clientLogo && (
-                          <div className="flex-shrink-0">
+                        <div className="flex-shrink-0">
+                          {trip.clientLogo ? (
                             <img
                               src={trip.clientLogo}
-                              alt={trip.clientCompany}
+                              alt={trip.clientCompany || 'Company'}
                               className="h-16 w-16 object-contain rounded-lg border border-border p-2 bg-card"
+                              title={trip.clientCompany}
                             />
-                          </div>
-                        )}
+                          ) : (
+                            <div className="h-16 w-16 bg-muted rounded-lg border border-dashed flex items-center justify-center">
+                              <Package className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <MapPin className="h-4 w-4 text-primary" />

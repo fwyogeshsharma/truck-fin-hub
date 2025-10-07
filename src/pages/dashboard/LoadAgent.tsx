@@ -135,8 +135,36 @@ const LoadAgentDashboard = () => {
     setDocumentViewDialogOpen(true);
   };
 
+  // Client companies list
+  const clientCompanies = [
+    { name: 'Alisha Torrent', logo: '/clients/AlishaTorrent.svg' },
+    { name: 'Balaji', logo: '/clients/balaji.png' },
+    { name: 'Berger Paints', logo: '/clients/berger.png' },
+    { name: 'Bhandari Plastic', logo: '/clients/bhandari-plastic.png' },
+    { name: 'Dynamic Cables', logo: '/clients/dynamic-cables.png' },
+    { name: 'Emami', logo: '/clients/emami.png' },
+    { name: 'Greenply', logo: '/clients/greenply.png' },
+    { name: 'INA Energy', logo: '/clients/ina-energy.png' },
+    { name: 'Mangal Electricals', logo: '/clients/mangal-electricals.png' },
+    { name: 'Manishankar Oils', logo: '/clients/Manishankar-Oils.png' },
+    { name: 'Man Structures', logo: '/clients/man-structures.png' },
+    { name: 'Mohit Polytech Pvt Ltd', logo: '/clients/Mohit-Polytech-Pvt-Ltd.png' },
+    { name: 'Oswal Cables', logo: '/clients/oswal-cables.png' },
+    { name: 'Raydean', logo: '/clients/raydean.png' },
+    { name: 'RCC', logo: '/clients/rcc.png' },
+    { name: 'Rex Pipes', logo: '/clients/rex-pipes.png' },
+    { name: 'RL Industries', logo: '/clients/rl-industries.png' },
+    { name: 'Sagar', logo: '/clients/sagar.png' },
+    { name: 'Source One', logo: '/clients/source-one.png' },
+    { name: 'Star Rising', logo: '/clients/star-rising.png' },
+    { name: 'True Power', logo: '/clients/true-power.png' },
+    { name: 'Varun Beverages', logo: '/clients/Varun-Beverages.png' },
+  ];
+
   // Form states with today's date pre-filled
   const [formData, setFormData] = useState({
+    clientCompany: '',
+    clientLogo: '',
     origin: '',
     destination: '',
     distance: '',
@@ -149,6 +177,15 @@ const LoadAgentDashboard = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleClientCompanyChange = (companyName: string) => {
+    const selectedClient = clientCompanies.find(c => c.name === companyName);
+    setFormData({
+      ...formData,
+      clientCompany: companyName,
+      clientLogo: selectedClient?.logo || '',
+    });
   };
 
   const handleCreateTrip = async (e: React.FormEvent) => {
@@ -170,6 +207,8 @@ const LoadAgentDashboard = () => {
         loadOwnerName: user?.company || 'Load Agent',
         loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
         loadOwnerRating: 4.5,
+        clientCompany: formData.clientCompany,
+        clientLogo: formData.clientLogo,
         origin: formData.origin,
         destination: formData.destination,
         distance: parseFloat(formData.distance),
@@ -188,6 +227,8 @@ const LoadAgentDashboard = () => {
 
       // Reset form
       setFormData({
+        clientCompany: '',
+        clientLogo: '',
         origin: '',
         destination: '',
         distance: '',
@@ -217,10 +258,10 @@ const LoadAgentDashboard = () => {
   const handleDownloadSampleExcel = () => {
     // Create sample Excel data with proper CSV formatting
     const sampleData = [
-      ['Origin', 'Destination', 'Distance (km)', 'Load Type', 'Weight (kg)', 'Amount (₹)', 'Maturity Days', 'Date'],
-      ['"Mumbai, Maharashtra"', '"Delhi, NCR"', '1400', 'Electronics', '15000', '50000', '30', '2025-10-06'],
-      ['"Bangalore, Karnataka"', '"Chennai, Tamil Nadu"', '350', 'FMCG', '12000', '35000', '25', '2025-10-07'],
-      ['"Pune, Maharashtra"', '"Hyderabad, Telangana"', '560', 'Machinery', '20000', '75000', '45', '2025-10-08'],
+      ['Consignee Company', 'Origin', 'Destination', 'Distance (km)', 'Load Type', 'Weight (kg)', 'Amount (₹)', 'Maturity Days', 'Date'],
+      ['Berger Paints', '"Mumbai, Maharashtra"', '"Delhi, NCR"', '1400', 'Electronics', '15000', '50000', '30', '2025-10-06'],
+      ['Emami', '"Bangalore, Karnataka"', '"Chennai, Tamil Nadu"', '350', 'FMCG', '12000', '35000', '25', '2025-10-07'],
+      ['Greenply', '"Pune, Maharashtra"', '"Hyderabad, Telangana"', '560', 'Machinery', '20000', '75000', '45', '2025-10-08'],
     ];
 
     // Convert to CSV format (fields with commas are already quoted)
@@ -295,37 +336,47 @@ const LoadAgentDashboard = () => {
           console.log('Parsed row:', row);
 
           // Handle case where origin/destination have unquoted commas (e.g., "Mumbai, Maharashtra" becomes 2 fields)
-          // If we have 10 fields instead of 8, merge fields to fix it
-          if (row.length === 10) {
-            console.log('Detected 10 fields - merging origin and destination parts');
+          // If we have 11 fields instead of 9, merge fields to fix it
+          if (row.length === 11) {
+            console.log('Detected 11 fields - merging origin and destination parts');
             row = [
-              `${row[0]}, ${row[1]}`, // Merge "Mumbai" + "Maharashtra" -> "Mumbai, Maharashtra"
-              `${row[2]}, ${row[3]}`, // Merge "Delhi" + "NCR" -> "Delhi, NCR"
-              row[4],  // distance
-              row[5],  // loadType
-              row[6],  // weight
-              row[7],  // amount
-              row[8],  // maturityDays
-              row[9],  // date
+              row[0], // clientCompany
+              `${row[1]}, ${row[2]}`, // Merge "Mumbai" + "Maharashtra" -> "Mumbai, Maharashtra"
+              `${row[3]}, ${row[4]}`, // Merge "Delhi" + "NCR" -> "Delhi, NCR"
+              row[5],  // distance
+              row[6],  // loadType
+              row[7],  // weight
+              row[8],  // amount
+              row[9],  // maturityDays
+              row[10],  // date
             ];
             console.log('Merged to:', row);
           }
 
-          // Ensure we have exactly 7-8 fields
-          if (row.length < 7 || !row[0]) {
+          // Ensure we have exactly 8-9 fields
+          if (row.length < 8 || !row[0]) {
             console.warn(`Invalid row length (${row.length}) for: ${rowText}`);
             errorCount++;
             continue;
           }
 
-          const origin = row[0];
-          const destination = row[1];
-          const distance = row[2];
-          const loadType = row[3];
-          const weight = row[4];
-          const amount = row[5];
-          const maturityDays = row[6];
-          // row[7] is date (optional)
+          const clientCompany = row[0];
+          const origin = row[1];
+          const destination = row[2];
+          const distance = row[3];
+          const loadType = row[4];
+          const weight = row[5];
+          const amount = row[6];
+          const maturityDays = row[7];
+          // row[8] is date (optional)
+
+          // Find the client logo
+          const selectedClient = clientCompanies.find(c => c.name === clientCompany);
+          if (!selectedClient) {
+            console.warn(`Unknown client company (${clientCompany}) for row: ${rowText}`);
+            errorCount++;
+            continue;
+          }
 
           const tripAmount = parseFloat(amount);
           if (isNaN(tripAmount) || tripAmount < 20000 || tripAmount > 80000) {
@@ -349,6 +400,8 @@ const LoadAgentDashboard = () => {
             loadOwnerName: user?.company || 'Load Agent',
             loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
             loadOwnerRating: 4.5,
+            clientCompany,
+            clientLogo: selectedClient.logo,
             origin,
             destination,
             distance: parsedDistance,
@@ -428,6 +481,7 @@ const LoadAgentDashboard = () => {
       for (const tripData of trips) {
         try {
           // Extract and validate trip data
+          const clientCompany = tripData.clientCompany || tripData.client_company || tripData.consignee || '';
           const origin = tripData.origin || tripData.from || tripData.source || '';
           const destination = tripData.destination || tripData.to || tripData.target || '';
           const distance = parseFloat(tripData.distance || tripData.distanceKm || tripData.distance_km || 0);
@@ -436,8 +490,17 @@ const LoadAgentDashboard = () => {
           const amount = parseFloat(tripData.amount || tripData.value || tripData.price || 0);
           const maturityDays = parseInt(tripData.maturityDays || tripData.maturity_days || tripData.paymentTerm || '30');
 
+          // Find the client logo
+          const selectedClient = clientCompanies.find(c => c.name === clientCompany);
+
           // Validation
           if (!origin || !destination) {
+            errorCount++;
+            continue;
+          }
+
+          if (!selectedClient) {
+            console.warn(`Unknown client company: ${clientCompany}`);
             errorCount++;
             continue;
           }
@@ -452,6 +515,8 @@ const LoadAgentDashboard = () => {
             loadOwnerName: user?.company || 'Load Agent',
             loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
             loadOwnerRating: 4.5,
+            clientCompany,
+            clientLogo: selectedClient.logo,
             origin,
             destination,
             distance,
@@ -939,9 +1004,10 @@ const LoadAgentDashboard = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Consignor</TableHead>
                   <TableHead>Route</TableHead>
                   <TableHead>Load Type</TableHead>
-                  <TableHead>Load Owner</TableHead>
+                  <TableHead>Load Agent</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Bid Amount</TableHead>
                   <TableHead>Status</TableHead>
@@ -952,7 +1018,7 @@ const LoadAgentDashboard = () => {
               <TableBody>
                 {filteredTrips.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground">
                       No trips found
                     </TableCell>
                   </TableRow>
@@ -961,6 +1027,22 @@ const LoadAgentDashboard = () => {
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                     .map((trip) => (
                       <TableRow key={trip.id}>
+                        <TableCell>
+                          <div className="flex items-center justify-center">
+                            {trip.clientLogo ? (
+                              <img
+                                src={trip.clientLogo}
+                                alt={trip.clientCompany || 'Company'}
+                                className="h-10 w-auto object-contain"
+                                title={trip.clientCompany}
+                              />
+                            ) : (
+                              <div className="h-10 w-16 bg-muted rounded flex items-center justify-center border border-dashed">
+                                <Package className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4 text-primary" />
@@ -979,23 +1061,21 @@ const LoadAgentDashboard = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-center gap-2">
                             {trip.loadOwnerLogo && (
                               <img
                                 src={trip.loadOwnerLogo}
                                 alt={trip.loadOwnerName}
-                                className="h-6 object-contain"
+                                className="h-8 object-contain"
+                                title={trip.loadOwnerName}
                               />
                             )}
-                            <div>
-                              <p className="font-medium text-sm">{trip.loadOwnerName}</p>
-                              {trip.loadOwnerRating && (
-                                <div className="flex items-center gap-1">
-                                  <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                  <span className="text-xs">{trip.loadOwnerRating.toFixed(1)}</span>
-                                </div>
-                              )}
-                            </div>
+                            {trip.loadOwnerRating && (
+                              <div className="flex items-center gap-1">
+                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                <span className="text-xs font-medium">{trip.loadOwnerRating.toFixed(1)}</span>
+                              </div>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1090,6 +1170,37 @@ const LoadAgentDashboard = () => {
 
               <TabsContent value="form">
                 <form onSubmit={handleCreateTrip} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="clientCompany">Consignee Company *</Label>
+                <select
+                  id="clientCompany"
+                  value={formData.clientCompany}
+                  onChange={(e) => handleClientCompanyChange(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md"
+                  required
+                >
+                  <option value="">Select Company</option>
+                  {clientCompanies.map((company) => (
+                    <option key={company.name} value={company.name}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+                {formData.clientLogo && (
+                  <div className="mt-2 p-3 border rounded-lg bg-muted/30 flex items-center gap-3">
+                    <img
+                      src={formData.clientLogo}
+                      alt={formData.clientCompany}
+                      className="h-12 w-auto object-contain"
+                    />
+                    <div>
+                      <p className="text-sm font-medium">{formData.clientCompany}</p>
+                      <p className="text-xs text-muted-foreground">Selected consignee</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="date">Trip Date</Label>
@@ -1298,7 +1409,8 @@ const LoadAgentDashboard = () => {
                     <ul className="text-xs text-muted-foreground space-y-1">
                       <li>• CSV format with comma-separated values</li>
                       <li>• First row must be headers (will be skipped)</li>
-                      <li>• Columns: Origin, Destination, Distance (km), Load Type, Weight (kg), Amount (₹), Maturity Days, Date</li>
+                      <li>• Columns: Consignee Company, Origin, Destination, Distance (km), Load Type, Weight (kg), Amount (₹), Maturity Days, Date</li>
+                      <li>• Consignee Company must match exactly from the list (e.g., "Berger Paints", "Emami")</li>
                       <li>• Trip amount must be between ₹20,000 and ₹80,000</li>
                       <li>• Download the sample template for reference</li>
                     </ul>
@@ -1382,6 +1494,7 @@ const LoadAgentDashboard = () => {
                       <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto">
                         <pre>{`[
   {
+    "clientCompany": "Berger Paints",
     "origin": "Mumbai, Maharashtra",
     "destination": "Delhi, NCR",
     "distance": 1400,
@@ -1395,6 +1508,7 @@ const LoadAgentDashboard = () => {
                       <div className="mt-3 space-y-1">
                         <p className="text-xs font-semibold">Supported field names:</p>
                         <ul className="text-xs text-muted-foreground space-y-1 ml-4">
+                          <li>• <strong>clientCompany:</strong> clientCompany, client_company, consignee (must match exactly from list)</li>
                           <li>• <strong>origin:</strong> origin, from, source</li>
                           <li>• <strong>destination:</strong> destination, to, target</li>
                           <li>• <strong>distance:</strong> distance, distanceKm, distance_km</li>
