@@ -25,6 +25,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { formatCurrency, formatCurrencyCompact } from '@/lib/currency';
 import {
   Wallet as WalletIcon,
   Plus,
@@ -186,7 +187,7 @@ const WalletPage = () => {
 
       toast({
         title: 'Payment Successful!',
-        description: `₹${(amount / 1000).toFixed(0)}K added to your wallet`,
+        description: `${formatCurrency(amount)} added to your wallet`,
       });
 
       setIsProcessing(false);
@@ -257,7 +258,7 @@ const WalletPage = () => {
 
       toast({
         title: 'Withdrawal Successful!',
-        description: `₹${(amount / 1000).toFixed(0)}K withdrawn to your bank account`,
+        description: `${formatCurrency(amount)} withdrawn to your bank account`,
       });
 
       setIsProcessing(false);
@@ -404,7 +405,7 @@ const WalletPage = () => {
               <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">₹{(walletData.balance / 100000).toFixed(2)}L</p>
+              <p className="text-3xl font-bold">{formatCurrency(walletData.balance)}</p>
               <p className="text-xs text-muted-foreground mt-1">
                 ₹{walletData.balance.toLocaleString('en-IN')}
               </p>
@@ -416,7 +417,7 @@ const WalletPage = () => {
               <CardTitle className="text-sm font-medium">In Escrow</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">₹{((walletData.escrowedAmount || 0) / 1000).toFixed(0)}K</p>
+              <p className="text-2xl font-bold">{formatCurrencyCompact(walletData.escrowedAmount || 0, true)}</p>
             </CardContent>
           </Card>
 
@@ -425,7 +426,7 @@ const WalletPage = () => {
               <CardTitle className="text-sm font-medium">Total Invested</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">₹{(walletData.totalInvested / 100000).toFixed(1)}L</p>
+              <p className="text-2xl font-bold">{formatCurrencyCompact(walletData.totalInvested, true)}</p>
             </CardContent>
           </Card>
         </div>
@@ -530,13 +531,11 @@ const WalletPage = () => {
                                   txn.type === 'credit' ? 'text-green-600' : 'text-red-600'
                                 }`}
                               >
-                                {txn.type === 'credit' ? '+' : '-'}₹
-                                {(txn.amount / 1000).toFixed(txn.amount >= 100000 ? 0 : 1)}
-                                {txn.amount >= 100000 ? 'L' : 'K'}
+                                {txn.type === 'credit' ? '+' : '-'}{formatCurrencyCompact(txn.amount, true)}
                               </span>
                             </TableCell>
                             <TableCell className="text-right font-medium">
-                              ₹{(txn.balanceAfter / 1000).toFixed(0)}K
+                              {formatCurrencyCompact(txn.balanceAfter, true)}
                             </TableCell>
                           </TableRow>
                         ))
@@ -668,7 +667,7 @@ const WalletPage = () => {
                       onClick={() => setTopUpAmount(amount.toString())}
                       className={topUpAmount === amount.toString() ? 'border-primary bg-primary/10' : ''}
                     >
-                      ₹{(amount / 1000).toFixed(0)}K
+                      {formatCurrencyCompact(amount, true)}
                     </Button>
                   ))}
                 </div>
@@ -702,7 +701,7 @@ const WalletPage = () => {
                 ) : (
                   <>
                     <Plus className="h-4 w-4 mr-2" />
-                    Add ₹{topUpAmount ? (parseFloat(topUpAmount) / 1000).toFixed(0) + 'K' : '0'}
+                    Add {topUpAmount ? formatCurrencyCompact(parseFloat(topUpAmount), true) : '₹0'}
                   </>
                 )}
               </Button>
@@ -724,7 +723,7 @@ const WalletPage = () => {
             <div className="space-y-4">
               <div className="p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">Available Balance</p>
-                <p className="text-2xl font-bold">₹{(walletData.balance / 1000).toFixed(0)}K</p>
+                <p className="text-2xl font-bold">{formatCurrencyCompact(walletData.balance, true)}</p>
               </div>
 
               {bankAccounts.length === 0 ? (
@@ -780,7 +779,7 @@ const WalletPage = () => {
                       className="mt-1"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Min: ₹100 | Max: ₹{(walletData.balance / 1000).toFixed(0)}K
+                      Min: ₹100 | Max: {formatCurrencyCompact(walletData.balance, true)}
                     </p>
                   </div>
                 </>
@@ -808,7 +807,7 @@ const WalletPage = () => {
                 ) : (
                   <>
                     <ArrowDownCircle className="h-4 w-4 mr-2" />
-                    Withdraw ₹{withdrawAmount ? (parseFloat(withdrawAmount) / 1000).toFixed(0) + 'K' : '0'}
+                    Withdraw {withdrawAmount ? formatCurrencyCompact(parseFloat(withdrawAmount), true) : '₹0'}
                   </>
                 )}
               </Button>

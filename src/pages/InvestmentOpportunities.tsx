@@ -19,6 +19,7 @@ import { data } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { formatCurrency, formatCurrencyCompact } from "@/lib/currency";
 
 const InvestmentOpportunities = () => {
   const { toast } = useToast();
@@ -174,7 +175,7 @@ const InvestmentOpportunities = () => {
 
       toast({
         title: 'Payment Successful!',
-        description: `₹${(amount / 1000).toFixed(0)}K added to your wallet`,
+        description: `${formatCurrency(amount)} added to your wallet`,
       });
 
       setIsProcessing(false);
@@ -201,7 +202,7 @@ const InvestmentOpportunities = () => {
       toast({
         variant: 'destructive',
         title: 'Insufficient Balance',
-        description: `You need ₹${((investmentAmount - wallet.balance) / 1000).toFixed(0)}K more to invest`,
+        description: `You need ${formatCurrency(investmentAmount - wallet.balance)} more to invest`,
       });
       return;
     }
@@ -260,7 +261,7 @@ const InvestmentOpportunities = () => {
 
       toast({
         title: "Bid confirmed!",
-        description: `₹${(investmentAmount / 1000).toFixed(0)}K moved to escrow. Awaiting load agent confirmation.`,
+        description: `${formatCurrency(investmentAmount)} moved to escrow. Awaiting load agent confirmation.`,
       });
 
       setSelectedTrip(null);
@@ -309,7 +310,7 @@ const InvestmentOpportunities = () => {
       toast({
         variant: 'destructive',
         title: 'Insufficient Balance',
-        description: `You need ₹${((totalInvestmentAmount - wallet.balance) / 1000).toFixed(0)}K more to invest in all selected trips`,
+        description: `You need ${formatCurrency(totalInvestmentAmount - wallet.balance)} more to invest in all selected trips`,
       });
       return;
     }
@@ -365,7 +366,7 @@ const InvestmentOpportunities = () => {
 
       toast({
         title: "Bulk bids confirmed!",
-        description: `${selectedTrips.length} trips • ₹${(totalInvestmentAmount / 1000).toFixed(0)}K moved to escrow. Awaiting load agent confirmation.`,
+        description: `${selectedTrips.length} trips • ${formatCurrency(totalInvestmentAmount)} moved to escrow. Awaiting load agent confirmation.`,
       });
 
       setSelectedTrips([]);
@@ -615,7 +616,7 @@ const InvestmentOpportunities = () => {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Total Investment:</span>
-                        <span className="font-semibold">₹{(totalInvestmentAmount / 1000).toFixed(0)}K</span>
+                        <span className="font-semibold">{formatCurrency(totalInvestmentAmount)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Interest Rate:</span>
@@ -623,7 +624,7 @@ const InvestmentOpportunities = () => {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">ARR (Annual Return):</span>
-                        <span className="font-semibold text-accent">₹{(totalExpectedReturn / 1000).toFixed(1)}K</span>
+                        <span className="font-semibold text-accent">{formatCurrency(totalExpectedReturn)}</span>
                       </div>
                     </div>
                   </div>
@@ -675,7 +676,7 @@ const InvestmentOpportunities = () => {
               <Wallet className="h-5 w-5 text-primary" />
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground font-medium">Available Balance</span>
-                <span className="text-xl font-bold text-primary">₹{(wallet.balance / 100000).toFixed(1)}L</span>
+                <span className="text-xl font-bold text-primary">{formatCurrencyCompact(wallet.balance, true)}</span>
               </div>
             </div>
           </div>
@@ -726,13 +727,13 @@ const InvestmentOpportunities = () => {
                       {/* Trip Value - 2 columns */}
                       <div className="col-span-2 text-center">
                         <p className="text-xs text-muted-foreground">Trip Value</p>
-                        <p className="font-semibold">₹{(trip.amount / 1000).toFixed(0)}K</p>
+                        <p className="font-semibold">{formatCurrencyCompact(trip.amount, true)}</p>
                       </div>
 
                       {/* ARR - 2 columns */}
                       <div className="col-span-2 text-center">
                         <p className="text-xs text-muted-foreground">ARR ({bidRate}%)</p>
-                        <p className="font-semibold text-green-600">₹{(expectedReturn / 1000).toFixed(1)}K</p>
+                        <p className="font-semibold text-green-600">{formatCurrencyCompact(expectedReturn, true)}</p>
                       </div>
 
                       {/* Risk & Bid - 2 columns */}
@@ -858,7 +859,7 @@ const InvestmentOpportunities = () => {
                         <IndianRupee className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <p className="text-xs text-muted-foreground">Trip Value</p>
-                          <p className="font-semibold">₹{(trip.amount / 1000).toFixed(0)}K</p>
+                          <p className="font-semibold">{formatCurrency(trip.amount)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -901,7 +902,7 @@ const InvestmentOpportunities = () => {
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Investment Amount</span>
                             <span className="font-semibold">
-                              ₹{(trip.amount / 1000).toFixed(0)}K
+                              {formatCurrency(trip.amount)}
                             </span>
                           </div>
                           <div className="flex justify-between text-sm">
@@ -911,7 +912,7 @@ const InvestmentOpportunities = () => {
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">ARR (Annual Return)</span>
                             <span className="font-semibold text-accent">
-                              ₹{(expectedReturn / 1000).toFixed(1)}K
+                              {formatCurrency(expectedReturn)}
                             </span>
                           </div>
                           <div className="flex justify-between text-sm">
@@ -1083,7 +1084,7 @@ const InvestmentOpportunities = () => {
                       </p>
                       <div className="flex items-center gap-2 mt-2">
                         <span className="text-xs text-muted-foreground">Trip Value:</span>
-                        <span className="text-sm font-semibold">₹{(selectedTripForBid.amount / 1000).toFixed(0)}K</span>
+                        <span className="text-sm font-semibold">{formatCurrency(selectedTripForBid.amount)}</span>
                       </div>
                     </div>
                   </div>
@@ -1094,12 +1095,9 @@ const InvestmentOpportunities = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Trip Value</span>
                     <span className="text-2xl font-bold text-primary">
-                      ₹{(selectedTripForBid.amount / 1000).toFixed(0)}K
+                      {formatCurrency(selectedTripForBid.amount)}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    ₹{selectedTripForBid.amount.toLocaleString('en-IN')}
-                  </p>
                 </div>
 
                 {/* Interest Rate Input */}
@@ -1125,18 +1123,18 @@ const InvestmentOpportunities = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-green-900">ARR (Annual Return)</span>
                     <span className="text-lg font-bold text-green-700">
-                      ₹{((selectedTripForBid.amount * customBidRate) / 100 / 1000).toFixed(1)}K
+                      {formatCurrency((selectedTripForBid.amount * customBidRate) / 100)}
                     </span>
                   </div>
                   <p className="text-xs text-green-700 mt-1">
-                    At {customBidRate}% interest on ₹{(selectedTripForBid.amount / 1000).toFixed(0)}K
+                    At {customBidRate}% interest on {formatCurrency(selectedTripForBid.amount)}
                   </p>
                 </div>
 
                 {/* Wallet Balance Check */}
                 <div className="flex items-center justify-between text-sm p-3 bg-muted rounded-lg">
                   <span className="text-muted-foreground">Your Wallet Balance</span>
-                  <span className="font-semibold">₹{(wallet.balance / 1000).toFixed(0)}K</span>
+                  <span className="font-semibold">{formatCurrencyCompact(wallet.balance, true)}</span>
                 </div>
               </div>
             )}

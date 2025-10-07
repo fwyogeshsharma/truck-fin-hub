@@ -8,6 +8,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import WalletCard from "@/components/WalletCard";
 import { useToast } from "@/hooks/use-toast";
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { formatCurrency, formatCurrencyCompact } from "@/lib/currency";
 
 const LenderDashboard = () => {
   const { toast } = useToast();
@@ -120,13 +121,13 @@ const LenderDashboard = () => {
   const stats = [
     {
       title: "Total Invested",
-      value: `₹${(wallet.totalInvested / 100000).toFixed(1)}L`,
+      value: formatCurrencyCompact(wallet.totalInvested, true),
       icon: IndianRupee,
       color: "primary",
     },
     {
       title: "Escrowed Amount",
-      value: `₹${((wallet.escrowedAmount || 0) / 1000).toFixed(0)}K`,
+      value: formatCurrencyCompact(wallet.escrowedAmount || 0, true),
       icon: Lock,
       color: "secondary",
       detail: "Pending confirmation",
@@ -139,7 +140,7 @@ const LenderDashboard = () => {
     },
     {
       title: "Total Returns",
-      value: `₹${(wallet.totalReturns / 1000).toFixed(0)}K`,
+      value: formatCurrencyCompact(wallet.totalReturns, true),
       icon: TrendingUp,
       color: "accent",
     },
@@ -176,7 +177,7 @@ const LenderDashboard = () => {
       icon: Sparkles,
       title: "New Lender Opportunities",
       description: `${pendingTrips.length} trips available for funding`,
-      action: `Invest at ${avgInterestRate}% to earn ₹${(potentialEarnings / 1000).toFixed(0)}K`,
+      action: `Invest at ${avgInterestRate}% to earn ${formatCurrencyCompact(potentialEarnings, true)}`,
       color: "text-primary",
       bgColor: "bg-primary/10",
     },
@@ -184,7 +185,7 @@ const LenderDashboard = () => {
       icon: TrendingUp,
       title: "Best Opportunity",
       description: `${bestOpportunity.origin} → ${bestOpportunity.destination}`,
-      action: `${bestOpportunity.loadType} • ₹${(bestOpportunity.amount / 1000).toFixed(0)}K • LTV ${bestOpportunity.ltvRatio.toFixed(0)}%`,
+      action: `${bestOpportunity.loadType} • ${formatCurrencyCompact(bestOpportunity.amount, true)} • LTV ${bestOpportunity.ltvRatio.toFixed(0)}%`,
       color: "text-accent",
       bgColor: "bg-accent/10",
     },
@@ -352,7 +353,7 @@ const LenderDashboard = () => {
                   </Pie>
                   <Tooltip
                     formatter={(value: any, name: string, props: any) => [
-                      `${value}% (₹${(props.payload.amount / 1000).toFixed(0)}K)`,
+                      `${value}% (${formatCurrency(props.payload.amount)})`,
                       'Investment'
                     ]}
                   />
@@ -369,7 +370,7 @@ const LenderDashboard = () => {
                         />
                         <span className="text-muted-foreground">{company.name}</span>
                       </div>
-                      <span className="font-medium">₹{(company.amount / 1000).toFixed(0)}K ({company.value}%)</span>
+                      <span className="font-medium">{formatCurrency(company.amount)} ({company.value}%)</span>
                     </div>
                   ))}
                 </div>
@@ -389,9 +390,9 @@ const LenderDashboard = () => {
                   <BarChart data={monthlyReturnsData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
-                    <YAxis tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} />
+                    <YAxis tickFormatter={(value) => formatCurrencyCompact(value, true)} />
                     <Tooltip
-                      formatter={(value: any) => [`₹${(value / 1000).toFixed(1)}K`, 'Returns']}
+                      formatter={(value: any) => [formatCurrency(value), 'Returns']}
                       labelFormatter={(label) => `Month: ${label}`}
                     />
                     <Bar dataKey="returns" fill="#10b981" name="Returns" radius={[8, 8, 0, 0]} />
@@ -451,7 +452,7 @@ const LenderDashboard = () => {
                               Awaiting Allotment
                             </span>
                           </div>
-                          <p className="text-sm font-semibold mt-1">₹{(investment.amount / 1000).toFixed(0)}K at {investment.interestRate}%</p>
+                          <p className="text-sm font-semibold mt-1">{formatCurrency(investment.amount)} at {investment.interestRate}%</p>
                         </div>
                       </div>
                     );
@@ -503,9 +504,9 @@ const LenderDashboard = () => {
                             Active
                           </span>
                         </div>
-                        <p className="text-sm font-semibold mt-1">₹{(investment.amount / 1000).toFixed(0)}K at {investment.interestRate}%</p>
+                        <p className="text-sm font-semibold mt-1">{formatCurrency(investment.amount)} at {investment.interestRate}%</p>
                         <p className="text-xs text-muted-foreground">
-                          Return: ₹{(investment.expectedReturn / 1000).toFixed(1)}K
+                          Return: {formatCurrency(investment.expectedReturn)}
                         </p>
                       </div>
                     </div>

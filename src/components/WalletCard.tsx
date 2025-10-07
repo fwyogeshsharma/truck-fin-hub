@@ -14,6 +14,7 @@ import {
 import { Wallet as WalletIcon, Plus, ArrowUpCircle, ArrowDownCircle, Loader2, Building2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { data, type Wallet, type BankAccount } from '@/lib/data';
+import { formatCurrency, formatCurrencyCompact } from '@/lib/currency';
 
 interface WalletCardProps {
   userId: string;
@@ -185,7 +186,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
 
         toast({
           title: 'Payment Successful!',
-          description: `₹${(amount / 1000).toFixed(0)}K added to your wallet`,
+          description: `${formatCurrency(amount)} added to your wallet`,
         });
 
         setTopUpDialogOpen(false);
@@ -263,7 +264,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
 
         toast({
           title: 'Withdrawal Successful!',
-          description: `₹${(amount / 1000).toFixed(0)}K withdrawn from your wallet`,
+          description: `${formatCurrency(amount)} withdrawn from your wallet`,
         });
 
         setWithdrawDialogOpen(false);
@@ -336,8 +337,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
           {/* Available Balance */}
           <div className="bg-gradient-primary p-6 rounded-lg text-primary-foreground">
             <p className="text-sm opacity-90 mb-1">Available Balance</p>
-            <p className="text-4xl font-bold">₹{(availableBalance / 100000).toFixed(1)}L</p>
-            <p className="text-sm opacity-75 mt-2">₹{availableBalance.toLocaleString('en-IN')}</p>
+            <p className="text-4xl font-bold">{formatCurrency(availableBalance)}</p>
           </div>
 
           {showDetails && (
@@ -345,26 +345,26 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
               {/* Locked in Escrow */}
               <div className="p-4 bg-muted rounded-lg">
                 <p className="text-xs text-muted-foreground mb-1">In Escrow</p>
-                <p className="text-lg font-semibold">₹{(lockedAmount / 1000).toFixed(0)}K</p>
+                <p className="text-lg font-semibold">{formatCurrencyCompact(lockedAmount, true)}</p>
               </div>
 
               {/* Total Invested */}
               <div className="p-4 bg-muted rounded-lg">
                 <p className="text-xs text-muted-foreground mb-1">Total Invested</p>
-                <p className="text-lg font-semibold">₹{(totalInvested / 100000).toFixed(1)}L</p>
+                <p className="text-lg font-semibold">{formatCurrencyCompact(totalInvested, true)}</p>
               </div>
 
               {/* Total Returns */}
               <div className="p-4 bg-muted rounded-lg">
                 <p className="text-xs text-muted-foreground mb-1">Total Returns</p>
-                <p className="text-lg font-semibold text-green-600">₹{(totalReturns / 1000).toFixed(0)}K</p>
+                <p className="text-lg font-semibold text-green-600">{formatCurrencyCompact(totalReturns, true)}</p>
               </div>
 
               {/* Net Worth */}
               <div className="p-4 bg-muted rounded-lg">
                 <p className="text-xs text-muted-foreground mb-1">Net Worth</p>
                 <p className="text-lg font-semibold">
-                  ₹{((availableBalance + lockedAmount + totalInvested) / 100000).toFixed(1)}L
+                  {formatCurrencyCompact(availableBalance + lockedAmount + totalInvested, true)}
                 </p>
               </div>
             </div>
@@ -397,7 +397,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
                     onClick={() => setTopUpAmount(amount.toString())}
                     className={topUpAmount === amount.toString() ? 'border-primary bg-primary/10' : ''}
                   >
-                    ₹{(amount / 1000).toFixed(0)}K
+                    {formatCurrencyCompact(amount, true)}
                   </Button>
                 ))}
               </div>
@@ -443,7 +443,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
               ) : (
                 <>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add ₹{topUpAmount ? (parseFloat(topUpAmount) / 1000).toFixed(0) + 'K' : '0'}
+                  Add {topUpAmount ? formatCurrencyCompact(parseFloat(topUpAmount), true) : '₹0'}
                 </>
               )}
             </Button>
@@ -469,7 +469,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
             <div className="p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Available Balance</span>
-                <span className="text-lg font-semibold text-primary">₹{(wallet.balance / 1000).toFixed(0)}K</span>
+                <span className="text-lg font-semibold text-primary">{formatCurrencyCompact(wallet.balance, true)}</span>
               </div>
             </div>
 
@@ -484,7 +484,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
                     onClick={() => setWithdrawAmount(amount.toString())}
                     className={withdrawAmount === amount.toString() ? 'border-primary bg-primary/10' : ''}
                   >
-                    ₹{(amount / 1000).toFixed(0)}K
+                    {formatCurrencyCompact(amount, true)}
                   </Button>
                 ))}
               </div>
@@ -504,7 +504,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
                 className="mt-1"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Min: ₹1,000 | Max: ₹{(wallet.balance / 1000).toFixed(0)}K
+                Min: ₹1,000 | Max: {formatCurrencyCompact(wallet.balance, true)}
               </p>
             </div>
 
@@ -530,7 +530,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
               ) : (
                 <>
                   <ArrowDownCircle className="h-4 w-4 mr-2" />
-                  Withdraw ₹{withdrawAmount ? (parseFloat(withdrawAmount) / 1000).toFixed(0) + 'K' : '0'}
+                  Withdraw {withdrawAmount ? formatCurrencyCompact(parseFloat(withdrawAmount), true) : '₹0'}
                 </>
               )}
             </Button>
