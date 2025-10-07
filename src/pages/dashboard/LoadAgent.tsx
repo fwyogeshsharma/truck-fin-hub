@@ -1220,64 +1220,88 @@ const LoadAgentDashboard = () => {
               </TabsContent>
 
               <TabsContent value="excel" className="space-y-4">
-                <div className="border-2 border-dashed rounded-lg p-8">
-                  <div className="text-center space-y-4">
+                <div className="space-y-6">
+                  {/* Header Section */}
+                  <div className="text-center space-y-2">
                     <div className="flex justify-center">
                       <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
                         <FileSpreadsheet className="h-8 w-8 text-primary" />
                       </div>
                     </div>
+                    <h3 className="font-semibold text-lg">Upload Excel/CSV File</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Upload a CSV file with multiple trip details to create trips in bulk
+                    </p>
+                  </div>
 
-                    <div>
-                      <h3 className="font-semibold text-lg mb-2">Upload Excel/CSV File</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Upload a CSV file with multiple trip details to create trips in bulk
-                      </p>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleDownloadSampleExcel}
-                        className="w-full max-w-sm"
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Download Sample Template
-                      </Button>
-
-                      <div className="relative">
-                        <Input
-                          type="file"
-                          accept=".csv,.xlsx,.xls"
-                          onChange={handleExcelUpload}
-                          disabled={uploadingExcel}
-                          className="w-full max-w-sm mx-auto"
-                          id="excel-upload"
-                        />
-                      </div>
+                  {/* Upload Section */}
+                  <div className="border-2 border-dashed rounded-lg p-8 bg-muted/30 hover:bg-muted/50 transition-colors">
+                    <div className="space-y-4">
+                      <Label htmlFor="excel-upload" className="cursor-pointer">
+                        <div className="flex flex-col items-center justify-center space-y-4">
+                          <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center">
+                            <Upload className="h-10 w-10 text-primary" />
+                          </div>
+                          <div className="text-center">
+                            <p className="text-base font-semibold mb-1">Choose CSV File to Upload</p>
+                            <p className="text-sm text-muted-foreground">Click here to browse or drag and drop</p>
+                          </div>
+                          <Button
+                            type="button"
+                            className="bg-gradient-primary text-base px-8 py-6 h-auto pointer-events-none"
+                            size="lg"
+                          >
+                            <Upload className="h-5 w-5 mr-2" />
+                            Select File
+                          </Button>
+                        </div>
+                      </Label>
+                      <Input
+                        type="file"
+                        accept=".csv,.xlsx,.xls"
+                        onChange={handleExcelUpload}
+                        disabled={uploadingExcel}
+                        className="hidden"
+                        id="excel-upload"
+                      />
 
                       {uploadingExcel && (
-                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-4">
                           <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
                           Processing file...
                         </div>
                       )}
                     </div>
+                  </div>
 
-                    <div className="mt-6 p-4 bg-muted rounded-lg text-left">
-                      <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                        <Shield className="h-4 w-4 text-primary" />
-                        File Format Requirements
-                      </h4>
-                      <ul className="text-xs text-muted-foreground space-y-1">
-                        <li>• CSV format with comma-separated values</li>
-                        <li>• First row must be headers (will be skipped)</li>
-                        <li>• Columns: Origin, Destination, Distance (km), Load Type, Weight (kg), Amount (₹), Maturity Days, Date</li>
-                        <li>• Trip amount must be between ₹20,000 and ₹80,000</li>
-                        <li>• Download the sample template for reference</li>
-                      </ul>
-                    </div>
+                  {/* Template Download Link */}
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Don't have a file ready?{' '}
+                      <button
+                        type="button"
+                        onClick={handleDownloadSampleExcel}
+                        className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+                      >
+                        <Download className="h-3 w-3" />
+                        Download sample template
+                      </button>
+                    </p>
+                  </div>
+
+                  {/* File Format Requirements */}
+                  <div className="p-4 bg-muted rounded-lg text-left">
+                    <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-primary" />
+                      File Format Requirements
+                    </h4>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• CSV format with comma-separated values</li>
+                      <li>• First row must be headers (will be skipped)</li>
+                      <li>• Columns: Origin, Destination, Distance (km), Load Type, Weight (kg), Amount (₹), Maturity Days, Date</li>
+                      <li>• Trip amount must be between ₹20,000 and ₹80,000</li>
+                      <li>• Download the sample template for reference</li>
+                    </ul>
                   </div>
                 </div>
 
