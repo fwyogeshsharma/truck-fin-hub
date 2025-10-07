@@ -7,10 +7,24 @@ import { data, Trip, Wallet } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 
+/**
+ * LoadOwnerDashboard Component
+ *
+ * Main dashboard for Load Owners (truck/transport company owners) who need
+ * financing for their trips. This component displays:
+ * - Active trips and financing requests
+ * - Wallet balance and financial overview
+ * - Statistics on trip status and financing
+ * - Quick access to create new trip financing requests
+ */
 const LoadOwnerDashboard = () => {
   const navigate = useNavigate();
   const user = auth.getCurrentUser();
+
+  // State for storing trips owned by this load owner
   const [trips, setTrips] = useState<Trip[]>([]);
+
+  // Wallet state containing balance, locked amounts, and investment totals
   const [wallet, setWallet] = useState<Wallet>({
     userId: user?.id || 'lo1',
     balance: 0,
@@ -19,17 +33,25 @@ const LoadOwnerDashboard = () => {
     totalInvested: 0,
     totalReturns: 0,
   });
+
+  // Loading state for data fetching
   const [loading, setLoading] = useState(true);
 
+  /**
+   * Effect hook to load trips and wallet data when component mounts
+   * or when user ID changes
+   */
   useEffect(() => {
     const loadData = async () => {
       try {
+        // Fetch both trips and wallet data in parallel for better performance
         const [allTrips, walletData] = await Promise.all([
           data.getTrips(),
           data.getWallet(user?.id || 'lo1')
         ]);
 
-        // Filter trips for this load owner
+        // Filter trips to only show those belonging to this load owner
+        // Checks both loadOwnerId match and legacy loadOwnerName filter
         const filteredTrips = allTrips.filter(t =>
           t.loadOwnerId === user?.id || t.loadOwnerName.includes('ABC')
         );
@@ -46,6 +68,12 @@ const LoadOwnerDashboard = () => {
     loadData();
   }, [user?.id]);
 
+  /**
+   * Dashboard statistics cards showing key metrics:
+   * - Active Trips: Count of trips that are pending, funded, or in transit
+   * - Total Financed: Sum of all trips that have been financed (have interest rate)
+   * - Pending Requests: Count of trips awaiting funding approval
+   */
   const stats = [
     {
       title: "Active Trips",
@@ -67,6 +95,7 @@ const LoadOwnerDashboard = () => {
     },
   ];
 
+  // Show loading state while fetching data
   if (loading) {
     return (
       <DashboardLayout role="load_owner">
@@ -80,6 +109,7 @@ const LoadOwnerDashboard = () => {
   return (
     <DashboardLayout role="load_owner">
       <div className="space-y-6">
+        {/* Header section with user name and Create Trip button */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">{user?.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : "User"}'s Dashboard</h1>
@@ -91,7 +121,7 @@ const LoadOwnerDashboard = () => {
           </Button>
         </div>
 
-        {/* Stats */}
+        {/* Stats section - displays key metrics in card format */}
         <div className="grid md:grid-cols-3 gap-6">
           {stats.map((stat) => {
             const Icon = stat.icon;
@@ -113,7 +143,7 @@ const LoadOwnerDashboard = () => {
           })}
         </div>
 
-        {/* Wallet Balance */}
+        {/* Wallet Balance section - shows available, locked, and total financed amounts */}
         <Card className="bg-gradient-card">
           <CardHeader>
             <CardTitle>Wallet Balance</CardTitle>
@@ -137,7 +167,7 @@ const LoadOwnerDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Recent Trips */}
+        {/* Recent Trips section - lists up to 5 most recent trips with status and financial details */}
         <Card>
           <CardHeader>
             <CardTitle>Your Trips</CardTitle>
@@ -150,6 +180,7 @@ const LoadOwnerDashboard = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
+                      {/* Status badge with conditional styling based on trip status */}
                       <span className={`text-xs px-2 py-1 rounded-full ${
                         trip.status === 'funded' ? 'bg-secondary/20 text-secondary' :
                         trip.status === 'pending' ? 'bg-accent/20 text-accent' :
@@ -158,8 +189,10 @@ const LoadOwnerDashboard = () => {
                         {trip.status}
                       </span>
                     </div>
+                    {/* Trip details: load type, weight, and distance */}
                     <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight}kg • {trip.distance}km</p>
                   </div>
+                  {/* Financial information section */}
                   <div className="text-right">
                     <p className="font-semibold">₹{(trip.amount / 1000).toFixed(0)}K</p>
                     <p className="text-sm text-muted-foreground">Requested: ₹{(trip.amount / 1000).toFixed(0)}K</p>
