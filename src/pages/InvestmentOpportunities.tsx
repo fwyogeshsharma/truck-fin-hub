@@ -70,6 +70,8 @@ const InvestmentOpportunities = () => {
   const [selectedTrips, setSelectedTrips] = useState<string[]>([]);
   const [bidRate, setBidRate] = useState<number>(12);
   const [isCompactView, setIsCompactView] = useState(true); // Default to compact view
+  const [tripInterestRates, setTripInterestRates] = useState<Record<string, number>>({});
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Advanced filter state for new component
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, any>>({});
@@ -176,12 +178,29 @@ const InvestmentOpportunities = () => {
   });
 
   const toggleTripSelection = (tripId: string) => {
-    setSelectedTrips(prev =>
-      prev.includes(tripId)
+    setSelectedTrips(prev => {
+      const newSelection = prev.includes(tripId)
         ? prev.filter(id => id !== tripId)
-        : [...prev, tripId]
-    );
+        : [...prev, tripId];
+
+      // Initialize interest rate for newly selected trip
+      if (!prev.includes(tripId) && !tripInterestRates[tripId]) {
+        setTripInterestRates(prevRates => ({
+          ...prevRates,
+          [tripId]: bidRate
+        }));
+      }
+
+      return newSelection;
+    });
     setSelectedTrip(null); // Clear single selection when using multi-select
+  };
+
+  const updateTripInterestRate = (tripId: string, rate: number) => {
+    setTripInterestRates(prev => ({
+      ...prev,
+      [tripId]: rate
+    }));
   };
 
   const toggleSelectAll = () => {
@@ -195,7 +214,10 @@ const InvestmentOpportunities = () => {
   // Calculate totals for selected trips
   const selectedTripsData = filteredTrips.filter(t => selectedTrips.includes(t.id));
   const totalInvestmentAmount = selectedTripsData.reduce((sum, trip) => sum + trip.amount, 0);
-  const totalExpectedReturn = totalInvestmentAmount * (bidRate / 100);
+  const totalExpectedReturn = selectedTripsData.reduce((sum, trip) => {
+    const rate = tripInterestRates[trip.id] || bidRate;
+    return sum + (trip.amount * (rate / 100));
+  }, 0);
 
   const handleTopUp = async () => {
     const amount = parseFloat(topUpAmount);
@@ -396,7 +418,8 @@ const InvestmentOpportunities = () => {
         if (!trip) continue;
 
         const investmentAmount = trip.amount;
-        const expectedReturn = investmentAmount * (bidRate / 100);
+        const tripRate = tripInterestRates[tripId] || bidRate; // Use individual trip rate
+        const expectedReturn = investmentAmount * (tripRate / 100);
         const maturityDays = trip.maturityDays || 30;
 
         // Create investment
@@ -404,7 +427,7 @@ const InvestmentOpportunities = () => {
           lenderId: user.id,
           tripId,
           amount: investmentAmount,
-          interestRate: bidRate,
+          interestRate: tripRate,
           expectedReturn,
           status: 'escrowed',
           maturityDate: new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toISOString(),
@@ -416,7 +439,7 @@ const InvestmentOpportunities = () => {
           user.id,
           user.name || 'Lender',
           investmentAmount,
-          bidRate
+          tripRate
         );
 
         // Update trip status to escrowed
@@ -436,6 +459,7 @@ const InvestmentOpportunities = () => {
       });
 
       setSelectedTrips([]);
+      setTripInterestRates({});
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -488,53 +512,160 @@ const InvestmentOpportunities = () => {
         {selectedTrips.length > 0 && (
           <Card className="border-2 border-primary bg-primary/5">
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-2">
-                    Bulk Investment: {selectedTrips.length} trip{selectedTrips.length > 1 ? 's' : ''} selected
-                  </h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="bulkBidRate">Common Interest Rate (%)</Label>
-                      <Input
-                        id="bulkBidRate"
-                        type="number"
-                        value={bidRate}
-                        onChange={(e) => setBidRate(parseFloat(e.target.value))}
-                        min="8"
-                        max="18"
-                        step="0.5"
-                        className="mt-1"
-                      />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-4 mb-4">
+                      <h3 className="font-semibold text-lg">
+                        Bulk Investment: {selectedTrips.length} trip{selectedTrips.length > 1 ? 's' : ''} selected
+                      </h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="gap-2"
+                      >
+                        {isExpanded ? (
+                          <>
+                            <ChevronUp className="h-4 w-4" />
+                            Collapse
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="h-4 w-4" />
+                            Expand Trips
+                          </>
+                        )}
+                      </Button>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Total Investment:</span>
-                        <span className="font-semibold">{formatCurrency(totalInvestmentAmount)}</span>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="bulkBidRate" className="text-xs">Common Interest Rate (%)</Label>
+                        <Input
+                          id="bulkBidRate"
+                          type="number"
+                          value={bidRate}
+                          onChange={(e) => {
+                            const newRate = parseFloat(e.target.value);
+                            setBidRate(newRate);
+                            // Update all selected trips with the new rate
+                            const updatedRates: Record<string, number> = {};
+                            selectedTrips.forEach(tripId => {
+                              updatedRates[tripId] = newRate;
+                            });
+                            setTripInterestRates(updatedRates);
+                          }}
+                          min="8"
+                          max="18"
+                          step="0.5"
+                          className="mt-1 h-9"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Applied to all trips</p>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Interest Rate:</span>
-                        <span className="font-semibold">{bidRate}%</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">ARR (Annual Return):</span>
-                        <span className="font-semibold text-accent">{formatCurrency(totalExpectedReturn)}</span>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Total Investment:</span>
+                          <span className="font-semibold">{formatCurrency(totalInvestmentAmount)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Total ARR:</span>
+                          <span className="font-semibold text-accent">{formatCurrency(totalExpectedReturn)}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      className="bg-gradient-primary"
+                      onClick={handleBulkInvest}
+                      disabled={wallet.balance < totalInvestmentAmount}
+                    >
+                      Confirm {selectedTrips.length} Bid{selectedTrips.length > 1 ? 's' : ''}
+                    </Button>
+                    <Button variant="outline" onClick={() => { setSelectedTrips([]); setTripInterestRates({}); }}>
+                      Clear Selection
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <Button
-                    className="bg-gradient-primary"
-                    onClick={handleBulkInvest}
-                    disabled={wallet.balance < totalInvestmentAmount}
-                  >
-                    Confirm {selectedTrips.length} Bid{selectedTrips.length > 1 ? 's' : ''}
-                  </Button>
-                  <Button variant="outline" onClick={() => setSelectedTrips([])}>
-                    Clear Selection
-                  </Button>
-                </div>
+
+                {/* Expanded Trip List */}
+                {isExpanded && (
+                  <div className="border-t pt-4 space-y-3">
+                    <h4 className="font-semibold text-sm text-muted-foreground">Selected Trips with Individual Interest Rates</h4>
+                    {selectedTripsData.map((trip) => {
+                      const tripRate = tripInterestRates[trip.id] || bidRate;
+                      const tripReturn = trip.amount * (tripRate / 100);
+
+                      return (
+                        <div key={trip.id} className="p-3 bg-card border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            {/* Logo */}
+                            {trip.clientLogo && (
+                              <img
+                                src={trip.clientLogo}
+                                alt={trip.clientCompany || 'Company'}
+                                className="h-10 w-10 object-contain flex-shrink-0"
+                              />
+                            )}
+
+                            {/* Trip Details - Fixed width */}
+                            <div className="w-64 flex-shrink-0">
+                              <div className="flex items-center gap-1 mb-1">
+                                <MapPin className="h-3 w-3 text-primary flex-shrink-0" />
+                                <p className="font-semibold text-xs truncate">
+                                  {trip.origin} → {trip.destination}
+                                </p>
+                              </div>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {trip.loadType} • {trip.weight}kg • {trip.distance}km
+                              </p>
+                            </div>
+
+                            {/* Trip Value - Compact */}
+                            <div className="w-24 flex-shrink-0 text-center">
+                              <p className="text-xs text-muted-foreground">Value</p>
+                              <p className="font-semibold text-sm">{formatCurrencyCompact(trip.amount, true)}</p>
+                            </div>
+
+                            {/* Range Slider - Takes remaining space */}
+                            <div className="flex-1 min-w-0 px-4">
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1">
+                                  <input
+                                    id={`rate-${trip.id}`}
+                                    type="range"
+                                    value={tripRate}
+                                    onChange={(e) => updateTripInterestRate(trip.id, parseFloat(e.target.value))}
+                                    min="8"
+                                    max="18"
+                                    step="0.5"
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                                  />
+                                  <div className="flex justify-between text-xs text-muted-foreground mt-0.5">
+                                    <span>8%</span>
+                                    <span>18%</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Rate Display - Compact */}
+                            <div className="w-16 flex-shrink-0 text-center">
+                              <p className="text-xs text-muted-foreground">Rate</p>
+                              <p className="font-bold text-sm text-primary">{tripRate}%</p>
+                            </div>
+
+                            {/* ARR - Compact */}
+                            <div className="w-24 flex-shrink-0 text-center">
+                              <p className="text-xs text-muted-foreground">ARR</p>
+                              <p className="font-semibold text-sm text-green-600">{formatCurrencyCompact(tripReturn, true)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
