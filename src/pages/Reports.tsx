@@ -103,8 +103,8 @@ const Reports = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4">
-              <div className="flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
                 <label className="text-sm font-medium mb-2 block">Report Period</label>
                 <Select
                   value={filter.period}
@@ -119,6 +119,70 @@ const Reports = () => {
                     <SelectItem value="monthly">Monthly</SelectItem>
                     <SelectItem value="quarterly">Quarterly</SelectItem>
                     <SelectItem value="yearly">Yearly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Company</label>
+                <Select
+                  value={filter.company || 'all'}
+                  onValueChange={(value: any) => setFilter({ ...filter, company: value === 'all' ? undefined : value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Companies" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Companies</SelectItem>
+                    <SelectItem value="Berger Paints">Berger Paints</SelectItem>
+                    <SelectItem value="Emami">Emami</SelectItem>
+                    <SelectItem value="Greenply">Greenply</SelectItem>
+                    <SelectItem value="Varun Beverages">Varun Beverages</SelectItem>
+                    <SelectItem value="Balaji">Balaji</SelectItem>
+                    <SelectItem value="RCC">RCC</SelectItem>
+                    <SelectItem value="Manishankar Oils">Manishankar Oils</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Load Type</label>
+                <Select
+                  value={filter.loadType || 'all'}
+                  onValueChange={(value: any) => setFilter({ ...filter, loadType: value === 'all' ? undefined : value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Load Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Load Types</SelectItem>
+                    <SelectItem value="Electronics">Electronics</SelectItem>
+                    <SelectItem value="FMCG">FMCG</SelectItem>
+                    <SelectItem value="Textiles">Textiles</SelectItem>
+                    <SelectItem value="Automotive Parts">Automotive Parts</SelectItem>
+                    <SelectItem value="Machinery">Machinery</SelectItem>
+                    <SelectItem value="Food & Beverages">Food & Beverages</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Status</label>
+                <Select
+                  value={filter.status || 'all'}
+                  onValueChange={(value: any) => setFilter({ ...filter, status: value === 'all' ? undefined : value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="escrowed">Escrowed</SelectItem>
+                    <SelectItem value="funded">Funded</SelectItem>
+                    <SelectItem value="in_transit">In Transit</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

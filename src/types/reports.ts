@@ -46,6 +46,8 @@ export interface ReportFilter {
   endDate?: string;
   status?: string;
   category?: string;
+  company?: string;
+  loadType?: string;
 }
 
 export interface ReportData {

@@ -307,8 +307,10 @@ const InvestmentOpportunities = () => {
       return;
     }
 
-    const expectedReturn = investmentAmount * (interestRate / 100);
     const maturityDays = trip.maturityDays || 30;
+    const yearlyRate = (interestRate * 365) / maturityDays;
+    const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.2);
+    const expectedReturn = investmentAmount * (adjustedYearlyRate / 100);
 
     try {
       // Move amount to escrow
@@ -431,8 +433,10 @@ const InvestmentOpportunities = () => {
 
         const investmentAmount = trip.amount;
         const tripRate = tripInterestRates[tripId] || bidRate; // Use individual trip rate
-        const expectedReturn = investmentAmount * (tripRate / 100);
         const maturityDays = trip.maturityDays || 30;
+        const yearlyRate = (tripRate * 365) / maturityDays;
+        const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.2);
+        const expectedReturn = investmentAmount * (adjustedYearlyRate / 100);
 
         // Create investment
         await data.createInvestment({
@@ -607,7 +611,9 @@ const InvestmentOpportunities = () => {
                     <h4 className="font-semibold text-sm text-muted-foreground">Selected Trips with Individual Interest Rates</h4>
                     {selectedTripsData.map((trip) => {
                       const tripRate = tripInterestRates[trip.id] || bidRate;
-                      const tripReturn = trip.amount * (tripRate / 100);
+                      const yearlyRate = (tripRate * 365) / (trip.maturityDays || 30);
+                      const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.2);
+                      const tripReturn = trip.amount * (adjustedYearlyRate / 100);
 
                       return (
                         <div key={trip.id} className="p-3 bg-card border rounded-lg">
@@ -736,7 +742,9 @@ const InvestmentOpportunities = () => {
             // Compact View
             filteredTrips.map((trip) => {
               const isMultiSelected = selectedTrips.includes(trip.id);
-              const expectedReturn = trip.amount * (bidRate / 100);
+              const yearlyRate = (bidRate * 365) / (trip.maturityDays || 30);
+              const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.2);
+              const expectedReturn = trip.amount * (adjustedYearlyRate / 100);
 
               return (
                 <Card key={trip.id} className={`p-2.5 ${isMultiSelected ? 'ring-2 ring-primary' : ''}`}>
@@ -1062,8 +1070,8 @@ const InvestmentOpportunities = () => {
 
                       {/* ARR - 2 columns */}
                       <div className="col-span-2 text-center">
-                        <p className="text-xs text-muted-foreground">ARR {trip.interestRate ? `(${trip.interestRate}%)` : `(${bidRate}%)`}</p>
-                        <p className="font-semibold text-green-600">{formatCurrencyCompact(trip.interestRate ? trip.amount * (trip.interestRate / 100) : expectedReturn, true)}</p>
+                        <p className="text-xs text-muted-foreground">ARR ({(((trip.interestRate || bidRate) * 365) / (trip.maturityDays || 30) * 0.8).toFixed(2)}%)</p>
+                        <p className="font-semibold text-green-600">{formatCurrencyCompact(trip.interestRate ? trip.amount * (((trip.interestRate * 365) / (trip.maturityDays || 30)) * 0.8 / 100) : trip.amount * (((bidRate * 365) / (trip.maturityDays || 30)) * 0.8 / 100), true)}</p>
                       </div>
 
                       {/* Risk & Bid - 2 columns */}
@@ -1093,8 +1101,10 @@ const InvestmentOpportunities = () => {
             // Expanded View
             filteredTrips.map((trip) => {
               const isSelected = selectedTrip === trip.id;
-              const expectedReturn = trip.amount * (bidRate / 100);
               const daysToMaturity = trip.maturityDays || 30;
+              const yearlyRate = (bidRate * 365) / daysToMaturity;
+              const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.2);
+              const expectedReturn = trip.amount * (adjustedYearlyRate / 100);
 
               const isMultiSelected = selectedTrips.includes(trip.id);
 
@@ -1462,7 +1472,7 @@ const InvestmentOpportunities = () => {
                         <TrendingUp className="h-4 w-4 text-green-600" />
                         <div>
                           <p className="text-xs text-muted-foreground">Offered Rate</p>
-                          <p className="font-semibold text-green-600">{trip.interestRate || 12}% ARR</p>
+                          <p className="font-semibold text-green-600">{(((trip.interestRate || 12) * 365) / (trip.maturityDays || 30) * 0.8).toFixed(2)}% ARR</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1732,11 +1742,11 @@ const InvestmentOpportunities = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-green-900">ARR (Annual Return)</span>
                     <span className="text-lg font-bold text-green-700">
-                      {formatCurrency((selectedTripForBid.amount * customBidRate) / 100)}
+                      {formatCurrency((selectedTripForBid.amount * ((customBidRate * 365) / (selectedTripForBid.maturityDays || 30)) * 0.8) / 100)}
                     </span>
                   </div>
                   <p className="text-xs text-green-700 mt-1">
-                    At {customBidRate}% interest on {formatCurrency(selectedTripForBid.amount)}
+                    At {(((customBidRate * 365) / (selectedTripForBid.maturityDays || 30)) * 0.8).toFixed(2)}% yearly interest on {formatCurrency(selectedTripForBid.amount)}
                   </p>
                 </div>
 

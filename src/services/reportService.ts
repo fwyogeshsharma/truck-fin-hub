@@ -39,10 +39,17 @@ export const reportService = {
 
   // Load Owner Reports
   generateTripSummary(filter: ReportFilter): ReportData {
+    // Build filter description
+    const filterParts: string[] = [];
+    if (filter.company) filterParts.push(`Company: ${filter.company}`);
+    if (filter.loadType) filterParts.push(`Load Type: ${filter.loadType}`);
+    if (filter.status) filterParts.push(`Status: ${filter.status}`);
+    const filterDesc = filterParts.length > 0 ? ` (Filtered: ${filterParts.join(', ')})` : '';
+
     return {
       id: `report_${Date.now()}`,
       type: 'trip_summary',
-      title: 'Trip Summary Report',
+      title: `Trip Summary Report${filterDesc}`,
       generatedAt: new Date().toISOString(),
       period: filter.period,
       startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),

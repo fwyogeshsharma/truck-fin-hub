@@ -101,7 +101,7 @@ const LoadAgentDashboard = () => {
     });
   };
 
-  const handleDocumentUpload = async (tripId: string, docType: 'bilty' | 'ewaybill' | 'invoice', file: File) => {
+  const handleDocumentUpload = async (tripId: string, docType: 'bilty' | 'ewaybill' | 'invoice' | 'pod', file: File) => {
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64String = reader.result as string;
@@ -204,14 +204,6 @@ const LoadAgentDashboard = () => {
 
     try {
       const interestRate = parseFloat(formData.interestRate);
-      if (interestRate < 8 || interestRate > 18) {
-        toast({
-          variant: 'destructive',
-          title: 'Invalid Interest Rate',
-          description: 'Interest rate must be between 8% and 18%',
-        });
-        return;
-      }
 
       const trip = await data.createTrip({
         loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
@@ -1114,9 +1106,14 @@ const LoadAgentDashboard = () => {
                           <p className="font-semibold">₹{(trip.amount / 1000).toFixed(0)}K</p>
                         </TableCell>
                         <TableCell>
-                          <div className="text-center">
-                            <p className="font-semibold text-green-600">{trip.interestRate || 12}%</p>
-                            <p className="text-xs text-muted-foreground">ARR</p>
+                          <div className="text-center cursor-help relative group">
+                            <p className="font-semibold text-green-600">
+                              {trip.interestRate || 12}% ({trip.maturityDays || 30} days)
+                            </p>
+                            <div className="hidden group-hover:block absolute z-10 bg-popover text-popover-foreground border rounded-lg shadow-lg p-3 mt-1 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                              <p className="text-sm font-semibold">{trip.interestRate || 12}% in {trip.maturityDays || 30} days</p>
+                              <p className="text-sm text-muted-foreground">{((trip.interestRate || 12) * 365 / (trip.maturityDays || 30)).toFixed(2)}% Yearly</p>
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1208,38 +1205,25 @@ const LoadAgentDashboard = () => {
 
               <TabsContent value="form">
                 <form onSubmit={handleCreateTrip} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="clientCompany">Consignee Company *</Label>
-                <select
-                  id="clientCompany"
-                  value={formData.clientCompany}
-                  onChange={(e) => handleClientCompanyChange(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md"
-                  required
-                >
-                  <option value="">Select Company</option>
-                  {clientCompanies.map((company) => (
-                    <option key={company.name} value={company.name}>
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
-                {formData.clientLogo && (
-                  <div className="mt-2 p-3 border rounded-lg bg-muted/30 flex items-center gap-3">
-                    <img
-                      src={formData.clientLogo}
-                      alt={formData.clientCompany}
-                      className="h-12 w-auto object-contain"
-                    />
-                    <div>
-                      <p className="text-sm font-medium">{formData.clientCompany}</p>
-                      <p className="text-xs text-muted-foreground">Selected consignee</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="clientCompany">Consignee Company *</Label>
+                  <select
+                    id="clientCompany"
+                    value={formData.clientCompany}
+                    onChange={(e) => handleClientCompanyChange(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md"
+                    required
+                  >
+                    <option value="">Select Company</option>
+                    {clientCompanies.map((company) => (
+                      <option key={company.name} value={company.name}>
+                        {company.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="date">Trip Date</Label>
                   <Input
@@ -1251,37 +1235,50 @@ const LoadAgentDashboard = () => {
                     required
                   />
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="interestRate">Interest Rate (% Annual)</Label>
+              {formData.clientLogo && (
+                <div className="p-3 border rounded-lg bg-muted/30 flex items-center gap-3">
+                  <img
+                    src={formData.clientLogo}
+                    alt={formData.clientCompany}
+                    className="h-12 w-auto object-contain"
+                  />
+                  <div>
+                    <p className="text-sm font-medium">{formData.clientCompany}</p>
+                    <p className="text-xs text-muted-foreground">Selected consignee</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label>Loan Required on Interest rate & Duration</Label>
+                <div className="flex items-center gap-2">
                   <Input
                     id="interestRate"
                     name="interestRate"
                     type="number"
-                    placeholder="e.g., 12"
+                    placeholder="12"
                     value={formData.interestRate}
                     onChange={handleChange}
-                    min="8"
-                    max="18"
                     step="0.5"
                     required
+                    className="w-20"
                   />
-                  <p className="text-xs text-muted-foreground">Between 8% and 18%</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="maturityDays">Maturity Days</Label>
+                  <span className="text-sm">% Interest rate in</span>
                   <Input
                     id="maturityDays"
                     name="maturityDays"
                     type="number"
-                    placeholder="e.g., 30"
+                    placeholder="30"
                     value={formData.maturityDays}
                     onChange={handleChange}
                     min="1"
                     max="180"
                     required
+                    className="w-20"
                   />
+                  <span className="text-sm">days</span>
                 </div>
               </div>
 
@@ -1691,7 +1688,7 @@ const LoadAgentDashboard = () => {
                     <Package className="h-5 w-5" />
                     Trip Documents
                   </h3>
-                  <div className="grid md:grid-cols-3 gap-4">
+                  <div className="grid md:grid-cols-4 gap-4">
                     {/* Bilty Upload */}
                     <div className="p-3 border rounded-lg space-y-2">
                       <Label htmlFor={`bilty-${selectedTrip.id}`} className="text-sm font-medium">
@@ -1827,6 +1824,53 @@ const LoadAgentDashboard = () => {
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) handleDocumentUpload(selectedTrip.id, 'invoice', file);
+                          }}
+                          className="text-xs"
+                        />
+                      )}
+                    </div>
+
+                    {/* POD Upload */}
+                    <div className="p-3 border rounded-lg space-y-2">
+                      <Label htmlFor={`pod-${selectedTrip.id}`} className="text-sm font-medium">
+                        POD
+                      </Label>
+                      {selectedTrip.documents?.pod ? (
+                        <div className="space-y-2">
+                          <Badge className="bg-green-600 w-full justify-center text-xs py-1">Uploaded</Badge>
+                          <div className="grid grid-cols-2 gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-8"
+                              onClick={() => handleViewDocument('POD', selectedTrip.documents!.pod!)}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-8"
+                              onClick={() => {
+                                const link = document.createElement('a');
+                                link.href = selectedTrip.documents!.pod!;
+                                link.download = `pod-${selectedTrip.id}.pdf`;
+                                link.click();
+                              }}
+                            >
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Input
+                          id={`pod-${selectedTrip.id}`}
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleDocumentUpload(selectedTrip.id, 'pod', file);
                           }}
                           className="text-xs"
                         />
