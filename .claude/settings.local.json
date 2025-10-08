@@ -22,7 +22,8 @@
       "Bash(sqlite3:*)",
       "Bash(del nul)",
       "Bash(npm run dev:all:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

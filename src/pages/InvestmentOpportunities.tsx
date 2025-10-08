@@ -12,7 +12,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MapPin, Package, TruckIcon, IndianRupee, Calendar, TrendingUp, CheckSquare, Square, Star, Shield, Wallet, Plus, Loader2, AlertCircle, Maximize2, Minimize2, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { MapPin, Package, TruckIcon, IndianRupee, Calendar, TrendingUp, CheckSquare, Square, Star, Shield, Wallet, Plus, Loader2, AlertCircle, Maximize2, Minimize2, ChevronDown, ChevronUp, Building2, Users, TrendingUp as TrendingUpIcon, Info } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
@@ -21,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency, formatCurrencyCompact } from "@/lib/currency";
 import AdvancedFilter, { type FilterConfig } from "@/components/AdvancedFilter";
+import { getCompanyInfo } from "@/data/companyInfo";
 
 const InvestmentOpportunities = () => {
   const { toast } = useToast();
@@ -486,6 +498,7 @@ const InvestmentOpportunities = () => {
 
   return (
     <DashboardLayout role="lender">
+      <TooltipProvider>
       <div className="space-y-6">
         <div className="flex justify-between items-start">
           <div>
@@ -734,15 +747,143 @@ const InvestmentOpportunities = () => {
                       id={`select-compact-${trip.id}`}
                     />
                     <div className="flex-1 grid grid-cols-12 gap-3 items-center">
-                      {/* Consignee Logo - 1 column */}
+                      {/* Load Owner (Client/Consignee) Logo - 1 column */}
                       <div className="col-span-1 flex justify-center">
                         {trip.clientLogo ? (
-                          <img
-                            src={trip.clientLogo}
-                            alt={trip.clientCompany || 'Company'}
-                            className="h-8 w-auto object-contain"
-                            title={trip.clientCompany}
-                          />
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button className="relative group">
+                                <img
+                                  src={trip.clientLogo}
+                                  alt={trip.clientCompany || 'Company'}
+                                  className="h-8 w-auto object-contain transition-transform group-hover:scale-110"
+                                />
+                                <div className="absolute -top-1 -right-1 bg-primary rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Info className="h-2.5 w-2.5 text-white" />
+                                </div>
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-96 p-4" side="top" align="center">
+                              {(() => {
+                                const companyInfo = getCompanyInfo(trip.clientCompany || '');
+                                return companyInfo ? (
+                                  <div className="space-y-3">
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <Building2 className="h-5 w-5 text-primary" />
+                                        <div>
+                                          <h4 className="font-semibold text-base">{companyInfo.name}</h4>
+                                          <Badge variant="outline" className="mt-1 text-xs">{companyInfo.industry}</Badge>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 bg-yellow-50 p-2 rounded-lg">
+                                      <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                                      <div>
+                                        <span className="font-bold text-lg">{companyInfo.rating.toFixed(1)}</span>
+                                        <span className="text-xs text-muted-foreground ml-1">/ 5.0 Rating</span>
+                                      </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                      {companyInfo.marketCap && (
+                                        <div className="flex items-start gap-2">
+                                          <TrendingUpIcon className="h-4 w-4 text-green-600 mt-0.5" />
+                                          <div>
+                                            <p className="text-xs text-muted-foreground">Market Cap</p>
+                                            <p className="font-semibold text-sm">{companyInfo.marketCap}</p>
+                                          </div>
+                                        </div>
+                                      )}
+                                      {companyInfo.headquarters && (
+                                        <div className="flex items-start gap-2">
+                                          <MapPin className="h-4 w-4 text-blue-600 mt-0.5" />
+                                          <div>
+                                            <p className="text-xs text-muted-foreground">Headquarters</p>
+                                            <p className="font-semibold text-sm">{companyInfo.headquarters}</p>
+                                          </div>
+                                        </div>
+                                      )}
+                                      {companyInfo.founded && (
+                                        <div className="flex items-start gap-2">
+                                          <Calendar className="h-4 w-4 text-purple-600 mt-0.5" />
+                                          <div>
+                                            <p className="text-xs text-muted-foreground">Founded</p>
+                                            <p className="font-semibold text-sm">{companyInfo.founded}</p>
+                                          </div>
+                                        </div>
+                                      )}
+                                      {companyInfo.employees && (
+                                        <div className="flex items-start gap-2">
+                                          <Users className="h-4 w-4 text-orange-600 mt-0.5" />
+                                          <div>
+                                            <p className="text-xs text-muted-foreground">Employees</p>
+                                            <p className="font-semibold text-sm">{companyInfo.employees}</p>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {companyInfo.financials && (
+                                      <div className="border-t pt-3 space-y-2">
+                                        <p className="text-xs font-semibold text-muted-foreground uppercase">Financials</p>
+                                        <div className="grid grid-cols-3 gap-2">
+                                          {companyInfo.financials.revenue && (
+                                            <div className="bg-muted/50 p-2 rounded">
+                                              <p className="text-xs text-muted-foreground">Revenue</p>
+                                              <p className="font-semibold text-sm">{companyInfo.financials.revenue}</p>
+                                            </div>
+                                          )}
+                                          {companyInfo.financials.profit && (
+                                            <div className="bg-muted/50 p-2 rounded">
+                                              <p className="text-xs text-muted-foreground">Profit</p>
+                                              <p className="font-semibold text-sm">{companyInfo.financials.profit}</p>
+                                            </div>
+                                          )}
+                                          {companyInfo.financials.debtToEquity && (
+                                            <div className="bg-muted/50 p-2 rounded">
+                                              <p className="text-xs text-muted-foreground">D/E Ratio</p>
+                                              <p className="font-semibold text-sm">{companyInfo.financials.debtToEquity}</p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    <div className="border-t pt-3">
+                                      <p className="text-xs text-muted-foreground leading-relaxed">{companyInfo.description}</p>
+                                    </div>
+
+                                    {companyInfo.trustFactors && companyInfo.trustFactors.length > 0 && (
+                                      <div className="border-t pt-3 bg-blue-50 -m-4 mt-3 p-4 rounded-b-lg">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <Package className="h-4 w-4 text-blue-700" />
+                                          <p className="text-xs font-semibold text-blue-900 uppercase">Load Owner - Trust Factors</p>
+                                        </div>
+                                        <ul className="text-xs space-y-1.5">
+                                          {companyInfo.trustFactors.map((factor, idx) => (
+                                            <li key={idx} className="flex items-start gap-2 text-blue-800">
+                                              <span className="text-blue-600 mt-0.5">✓</span>
+                                              <span>{factor}</span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <Package className="h-5 w-5 text-primary" />
+                                      <p className="font-semibold">{trip.clientCompany || 'Load Owner'}</p>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">Company shipping the goods</p>
+                                  </div>
+                                );
+                              })()}
+                            </PopoverContent>
+                          </Popover>
                         ) : (
                           <div className="h-8 w-10 bg-muted rounded flex items-center justify-center border border-dashed">
                             <Package className="h-4 w-4 text-muted-foreground" />
@@ -759,15 +900,157 @@ const InvestmentOpportunities = () => {
                         <p className="text-xs text-muted-foreground truncate">{trip.loadType} • {trip.weight}kg • {trip.distance}km</p>
                       </div>
 
-                      {/* Load Owner Logo - 2 columns */}
-                      <div className="col-span-2 flex justify-center">
+                      {/* Load Owner (Borrower) Logo with Rating - 2 columns */}
+                      <div className="col-span-2 flex justify-center items-center gap-1.5">
                         {trip.loadOwnerLogo && (
-                          <img
-                            src={trip.loadOwnerLogo}
-                            alt={trip.loadOwnerName}
-                            className="h-8 object-contain"
-                            title={trip.loadOwnerName}
-                          />
+                          <>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <button className="flex items-center gap-1.5 hover:bg-muted/50 rounded-lg p-1 transition-colors">
+                                  <img
+                                    src={trip.loadOwnerLogo}
+                                    alt={trip.loadOwnerName}
+                                    className="h-8 object-contain"
+                                  />
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Info className="h-3.5 w-3.5 text-primary cursor-pointer" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="text-xs">Click for Borrower details</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-96 p-4" side="top" align="center">
+                                {(() => {
+                                  const companyInfo = getCompanyInfo(trip.loadOwnerName);
+                                  return companyInfo ? (
+                                    <div className="space-y-3">
+                                      <div className="flex items-start justify-between">
+                                        <div className="flex items-center gap-2">
+                                          <Building2 className="h-5 w-5 text-primary" />
+                                          <div>
+                                            <h4 className="font-semibold text-base">{companyInfo.name}</h4>
+                                            <Badge variant="outline" className="mt-1 text-xs">{companyInfo.industry}</Badge>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-center gap-2 bg-yellow-50 p-2 rounded-lg">
+                                        <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                                        <div>
+                                          <span className="font-bold text-lg">{companyInfo.rating.toFixed(1)}</span>
+                                          <span className="text-xs text-muted-foreground ml-1">/ 5.0 Rating</span>
+                                        </div>
+                                      </div>
+
+                                      <div className="grid grid-cols-2 gap-3">
+                                        {companyInfo.marketCap && (
+                                          <div className="flex items-start gap-2">
+                                            <TrendingUpIcon className="h-4 w-4 text-green-600 mt-0.5" />
+                                            <div>
+                                              <p className="text-xs text-muted-foreground">Market Cap</p>
+                                              <p className="font-semibold text-sm">{companyInfo.marketCap}</p>
+                                            </div>
+                                          </div>
+                                        )}
+                                        {companyInfo.headquarters && (
+                                          <div className="flex items-start gap-2">
+                                            <MapPin className="h-4 w-4 text-blue-600 mt-0.5" />
+                                            <div>
+                                              <p className="text-xs text-muted-foreground">Headquarters</p>
+                                              <p className="font-semibold text-sm">{companyInfo.headquarters}</p>
+                                            </div>
+                                          </div>
+                                        )}
+                                        {companyInfo.founded && (
+                                          <div className="flex items-start gap-2">
+                                            <Calendar className="h-4 w-4 text-purple-600 mt-0.5" />
+                                            <div>
+                                              <p className="text-xs text-muted-foreground">Founded</p>
+                                              <p className="font-semibold text-sm">{companyInfo.founded}</p>
+                                            </div>
+                                          </div>
+                                        )}
+                                        {companyInfo.employees && (
+                                          <div className="flex items-start gap-2">
+                                            <Users className="h-4 w-4 text-orange-600 mt-0.5" />
+                                            <div>
+                                              <p className="text-xs text-muted-foreground">Employees</p>
+                                              <p className="font-semibold text-sm">{companyInfo.employees}</p>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {companyInfo.financials && (
+                                        <div className="border-t pt-3 space-y-2">
+                                          <p className="text-xs font-semibold text-muted-foreground uppercase">Financials</p>
+                                          <div className="grid grid-cols-3 gap-2">
+                                            {companyInfo.financials.revenue && (
+                                              <div className="bg-muted/50 p-2 rounded">
+                                                <p className="text-xs text-muted-foreground">Revenue</p>
+                                                <p className="font-semibold text-sm">{companyInfo.financials.revenue}</p>
+                                              </div>
+                                            )}
+                                            {companyInfo.financials.profit && (
+                                              <div className="bg-muted/50 p-2 rounded">
+                                                <p className="text-xs text-muted-foreground">Profit</p>
+                                                <p className="font-semibold text-sm">{companyInfo.financials.profit}</p>
+                                              </div>
+                                            )}
+                                            {companyInfo.financials.debtToEquity && (
+                                              <div className="bg-muted/50 p-2 rounded">
+                                                <p className="text-xs text-muted-foreground">D/E Ratio</p>
+                                                <p className="font-semibold text-sm">{companyInfo.financials.debtToEquity}</p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      <div className="border-t pt-3">
+                                        <p className="text-xs text-muted-foreground leading-relaxed">{companyInfo.description}</p>
+                                      </div>
+
+                                      {companyInfo.trustFactors && companyInfo.trustFactors.length > 0 && (
+                                        <div className="border-t pt-3 bg-green-50 -m-4 mt-3 p-4 rounded-b-lg">
+                                          <div className="flex items-center gap-2 mb-2">
+                                            <Shield className="h-4 w-4 text-green-700" />
+                                            <p className="text-xs font-semibold text-green-900 uppercase">Trust Factors</p>
+                                          </div>
+                                          <ul className="text-xs space-y-1.5">
+                                            {companyInfo.trustFactors.map((factor, idx) => (
+                                              <li key={idx} className="flex items-start gap-2 text-green-800">
+                                                <span className="text-green-600 mt-0.5">✓</span>
+                                                <span>{factor}</span>
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-2">
+                                      <p className="font-semibold">{trip.loadOwnerName}</p>
+                                      <p className="text-sm text-muted-foreground">Borrower company information</p>
+                                    </div>
+                                  );
+                                })()}
+                              </PopoverContent>
+                            </Popover>
+                            {(() => {
+                              const companyInfo = getCompanyInfo(trip.loadOwnerName);
+                              const rating = companyInfo?.rating || trip.loadOwnerRating;
+                              return rating && (
+                                <div className="flex items-center gap-0.5 bg-yellow-50 px-1.5 py-0.5 rounded">
+                                  <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                  <span className="text-xs font-semibold">{rating.toFixed(1)}</span>
+                                </div>
+                              );
+                            })()}
+                          </>
                         )}
                       </div>
 
@@ -829,12 +1112,140 @@ const InvestmentOpportunities = () => {
                       <div className="flex gap-4 flex-1">
                         <div className="flex-shrink-0">
                           {trip.clientLogo ? (
-                            <img
-                              src={trip.clientLogo}
-                              alt={trip.clientCompany || 'Company'}
-                              className="h-16 w-16 object-contain rounded-lg border border-border p-2 bg-card"
-                              title={trip.clientCompany}
-                            />
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <button className="relative group h-16 w-16 rounded-lg border border-border p-2 bg-card hover:border-primary transition-colors">
+                                  <img
+                                    src={trip.clientLogo}
+                                    alt={trip.clientCompany || 'Company'}
+                                    className="h-full w-full object-contain"
+                                  />
+                                  <div className="absolute -top-2 -right-2 bg-primary rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                                    <Info className="h-3 w-3 text-white" />
+                                  </div>
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-96 p-4" side="right" align="start">
+                                {(() => {
+                                  const companyInfo = getCompanyInfo(trip.clientCompany || '');
+                                  return companyInfo ? (
+                                    <div className="space-y-3">
+                                      <div className="flex items-start justify-between">
+                                        <div className="flex items-center gap-2">
+                                          <Package className="h-5 w-5 text-blue-600" />
+                                          <div>
+                                            <h4 className="font-semibold text-base">{companyInfo.name}</h4>
+                                            <Badge variant="outline" className="mt-1 text-xs bg-blue-50">{companyInfo.industry}</Badge>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-center gap-2 bg-yellow-50 p-2 rounded-lg">
+                                        <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                                        <div>
+                                          <span className="font-bold text-lg">{companyInfo.rating.toFixed(1)}</span>
+                                          <span className="text-xs text-muted-foreground ml-1">/ 5.0 Rating</span>
+                                        </div>
+                                      </div>
+
+                                      <div className="grid grid-cols-2 gap-3">
+                                        {companyInfo.marketCap && (
+                                          <div className="flex items-start gap-2">
+                                            <TrendingUpIcon className="h-4 w-4 text-green-600 mt-0.5" />
+                                            <div>
+                                              <p className="text-xs text-muted-foreground">Market Cap</p>
+                                              <p className="font-semibold text-sm">{companyInfo.marketCap}</p>
+                                            </div>
+                                          </div>
+                                        )}
+                                        {companyInfo.headquarters && (
+                                          <div className="flex items-start gap-2">
+                                            <MapPin className="h-4 w-4 text-blue-600 mt-0.5" />
+                                            <div>
+                                              <p className="text-xs text-muted-foreground">Headquarters</p>
+                                              <p className="font-semibold text-sm">{companyInfo.headquarters}</p>
+                                            </div>
+                                          </div>
+                                        )}
+                                        {companyInfo.founded && (
+                                          <div className="flex items-start gap-2">
+                                            <Calendar className="h-4 w-4 text-purple-600 mt-0.5" />
+                                            <div>
+                                              <p className="text-xs text-muted-foreground">Founded</p>
+                                              <p className="font-semibold text-sm">{companyInfo.founded}</p>
+                                            </div>
+                                          </div>
+                                        )}
+                                        {companyInfo.employees && (
+                                          <div className="flex items-start gap-2">
+                                            <Users className="h-4 w-4 text-orange-600 mt-0.5" />
+                                            <div>
+                                              <p className="text-xs text-muted-foreground">Employees</p>
+                                              <p className="font-semibold text-sm">{companyInfo.employees}</p>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {companyInfo.financials && (
+                                        <div className="border-t pt-3 space-y-2">
+                                          <p className="text-xs font-semibold text-muted-foreground uppercase">Financials</p>
+                                          <div className="grid grid-cols-3 gap-2">
+                                            {companyInfo.financials.revenue && (
+                                              <div className="bg-muted/50 p-2 rounded">
+                                                <p className="text-xs text-muted-foreground">Revenue</p>
+                                                <p className="font-semibold text-sm">{companyInfo.financials.revenue}</p>
+                                              </div>
+                                            )}
+                                            {companyInfo.financials.profit && (
+                                              <div className="bg-muted/50 p-2 rounded">
+                                                <p className="text-xs text-muted-foreground">Profit</p>
+                                                <p className="font-semibold text-sm">{companyInfo.financials.profit}</p>
+                                              </div>
+                                            )}
+                                            {companyInfo.financials.debtToEquity && (
+                                              <div className="bg-muted/50 p-2 rounded">
+                                                <p className="text-xs text-muted-foreground">D/E Ratio</p>
+                                                <p className="font-semibold text-sm">{companyInfo.financials.debtToEquity}</p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      <div className="border-t pt-3">
+                                        <p className="text-xs text-muted-foreground leading-relaxed">{companyInfo.description}</p>
+                                      </div>
+
+                                      {companyInfo.trustFactors && companyInfo.trustFactors.length > 0 && (
+                                        <div className="border-t pt-3 bg-blue-50 -m-4 mt-3 p-4 rounded-b-lg">
+                                          <div className="flex items-center gap-2 mb-2">
+                                            <Package className="h-4 w-4 text-blue-700" />
+                                            <p className="text-xs font-semibold text-blue-900 uppercase">Load Owner - Trust Factors</p>
+                                          </div>
+                                          <ul className="text-xs space-y-1.5">
+                                            {companyInfo.trustFactors.map((factor, idx) => (
+                                              <li key={idx} className="flex items-start gap-2 text-blue-800">
+                                                <span className="text-blue-600 mt-0.5">✓</span>
+                                                <span>{factor}</span>
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-2">
+                                      <div className="flex items-center gap-2">
+                                        <Package className="h-5 w-5 text-primary" />
+                                        <p className="font-semibold">{trip.clientCompany || 'Load Owner'}</p>
+                                      </div>
+                                      <p className="text-sm text-muted-foreground">Company shipping the goods</p>
+                                    </div>
+                                  );
+                                })()}
+                              </PopoverContent>
+                            </Popover>
                           ) : (
                             <div className="h-16 w-16 bg-muted rounded-lg border border-dashed flex items-center justify-center">
                               <Package className="h-8 w-8 text-muted-foreground" />
@@ -853,20 +1264,153 @@ const InvestmentOpportunities = () => {
                           </CardDescription>
                           {trip.loadOwnerLogo && (
                             <div className="flex items-center gap-2 mt-3">
-                              <span className="text-xs text-muted-foreground">Trip by:</span>
-                              <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg border border-border">
-                                <img
-                                  src={trip.loadOwnerLogo}
-                                  alt={trip.loadOwnerName}
-                                  className="h-6 object-contain"
-                                />
-                                {trip.loadOwnerRating && (
-                                  <div className="flex items-center gap-0.5 pl-2 border-l border-border">
-                                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                    <span className="text-xs font-medium">{trip.loadOwnerRating.toFixed(1)}</span>
-                                  </div>
-                                )}
-                              </div>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="text-xs text-muted-foreground cursor-help">Borrower:</span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs">Company requesting financing for this trip</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg border border-border hover:bg-muted transition-colors">
+                                    <img
+                                      src={trip.loadOwnerLogo}
+                                      alt={trip.loadOwnerName}
+                                      className="h-6 object-contain"
+                                    />
+                                    {(() => {
+                                      const companyInfo = getCompanyInfo(trip.loadOwnerName);
+                                      const rating = companyInfo?.rating || trip.loadOwnerRating;
+                                      return rating && (
+                                        <div className="flex items-center gap-0.5 pl-2 border-l border-border">
+                                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                          <span className="text-xs font-medium">{rating.toFixed(1)}</span>
+                                        </div>
+                                      );
+                                    })()}
+                                    <Info className="h-3.5 w-3.5 text-primary ml-1" />
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-96 p-4" side="top" align="start">
+                                  {(() => {
+                                    const companyInfo = getCompanyInfo(trip.loadOwnerName);
+                                    return companyInfo ? (
+                                      <div className="space-y-3">
+                                        <div className="flex items-start justify-between">
+                                          <div className="flex items-center gap-2">
+                                            <Building2 className="h-5 w-5 text-primary" />
+                                            <div>
+                                              <h4 className="font-semibold text-base">{companyInfo.name}</h4>
+                                              <Badge variant="outline" className="mt-1 text-xs">{companyInfo.industry}</Badge>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 bg-yellow-50 p-2 rounded-lg">
+                                          <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                                          <div>
+                                            <span className="font-bold text-lg">{companyInfo.rating.toFixed(1)}</span>
+                                            <span className="text-xs text-muted-foreground ml-1">/ 5.0 Rating</span>
+                                          </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                          {companyInfo.marketCap && (
+                                            <div className="flex items-start gap-2">
+                                              <TrendingUpIcon className="h-4 w-4 text-green-600 mt-0.5" />
+                                              <div>
+                                                <p className="text-xs text-muted-foreground">Market Cap</p>
+                                                <p className="font-semibold text-sm">{companyInfo.marketCap}</p>
+                                              </div>
+                                            </div>
+                                          )}
+                                          {companyInfo.headquarters && (
+                                            <div className="flex items-start gap-2">
+                                              <MapPin className="h-4 w-4 text-blue-600 mt-0.5" />
+                                              <div>
+                                                <p className="text-xs text-muted-foreground">Headquarters</p>
+                                                <p className="font-semibold text-sm">{companyInfo.headquarters}</p>
+                                              </div>
+                                            </div>
+                                          )}
+                                          {companyInfo.founded && (
+                                            <div className="flex items-start gap-2">
+                                              <Calendar className="h-4 w-4 text-purple-600 mt-0.5" />
+                                              <div>
+                                                <p className="text-xs text-muted-foreground">Founded</p>
+                                                <p className="font-semibold text-sm">{companyInfo.founded}</p>
+                                              </div>
+                                            </div>
+                                          )}
+                                          {companyInfo.employees && (
+                                            <div className="flex items-start gap-2">
+                                              <Users className="h-4 w-4 text-orange-600 mt-0.5" />
+                                              <div>
+                                                <p className="text-xs text-muted-foreground">Employees</p>
+                                                <p className="font-semibold text-sm">{companyInfo.employees}</p>
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {companyInfo.financials && (
+                                          <div className="border-t pt-3 space-y-2">
+                                            <p className="text-xs font-semibold text-muted-foreground uppercase">Financials</p>
+                                            <div className="grid grid-cols-3 gap-2">
+                                              {companyInfo.financials.revenue && (
+                                                <div className="bg-muted/50 p-2 rounded">
+                                                  <p className="text-xs text-muted-foreground">Revenue</p>
+                                                  <p className="font-semibold text-sm">{companyInfo.financials.revenue}</p>
+                                                </div>
+                                              )}
+                                              {companyInfo.financials.profit && (
+                                                <div className="bg-muted/50 p-2 rounded">
+                                                  <p className="text-xs text-muted-foreground">Profit</p>
+                                                  <p className="font-semibold text-sm">{companyInfo.financials.profit}</p>
+                                                </div>
+                                              )}
+                                              {companyInfo.financials.debtToEquity && (
+                                                <div className="bg-muted/50 p-2 rounded">
+                                                  <p className="text-xs text-muted-foreground">D/E Ratio</p>
+                                                  <p className="font-semibold text-sm">{companyInfo.financials.debtToEquity}</p>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        <div className="border-t pt-3">
+                                          <p className="text-xs text-muted-foreground leading-relaxed">{companyInfo.description}</p>
+                                        </div>
+
+                                        {companyInfo.trustFactors && companyInfo.trustFactors.length > 0 && (
+                                          <div className="border-t pt-3 bg-green-50 -m-4 mt-3 p-4 rounded-b-lg">
+                                            <div className="flex items-center gap-2 mb-2">
+                                              <Shield className="h-4 w-4 text-green-700" />
+                                              <p className="text-xs font-semibold text-green-900 uppercase">Trust Factors</p>
+                                            </div>
+                                            <ul className="text-xs space-y-1.5">
+                                              {companyInfo.trustFactors.map((factor, idx) => (
+                                                <li key={idx} className="flex items-start gap-2 text-green-800">
+                                                  <span className="text-green-600 mt-0.5">✓</span>
+                                                  <span>{factor}</span>
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        <p className="font-semibold">{trip.loadOwnerName}</p>
+                                        <p className="text-sm text-muted-foreground">Borrower company information</p>
+                                      </div>
+                                    );
+                                  })()}
+                                </PopoverContent>
+                              </Popover>
                             </div>
                           )}
                         </div>
@@ -1216,6 +1760,7 @@ const InvestmentOpportunities = () => {
           </DialogContent>
         </Dialog>
       </div>
+      </TooltipProvider>
     </DashboardLayout>
   );
 };
