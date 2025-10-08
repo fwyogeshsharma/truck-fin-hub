@@ -12,6 +12,7 @@ import walletRoutes from './routes/wallets.ts';
 import transactionRoutes from './routes/transactions.ts';
 import bankAccountRoutes from './routes/bankAccounts.ts';
 import kycRoutes from './routes/kyc.ts';
+import notificationRoutes from './routes/notifications.ts';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -41,6 +42,7 @@ app.use('/api/wallets', walletRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/bank-accounts', bankAccountRoutes);
 app.use('/api/kyc', kycRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {

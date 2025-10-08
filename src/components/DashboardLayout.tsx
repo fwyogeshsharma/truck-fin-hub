@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { TruckIcon, LogOut, Home, Package, Wallet, Shield, Users, User as UserIcon, Settings, FileCheck } from "lucide-react";
+import { TruckIcon, LogOut, Home, Package, Wallet, Shield, Users, User as UserIcon, Settings, FileCheck, Bell as BellIcon } from "lucide-react";
 import { auth, User } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import NotificationBell from "@/components/NotificationBell";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -166,6 +167,8 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
               <span className="text-sm font-medium">{config.title}</span>
             </div>
 
+            {user?.id && <NotificationBell userId={user.id} />}
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -193,6 +196,10 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                 <DropdownMenuItem onClick={() => navigate('/settings')}>
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/settings/notifications')}>
+                  <BellIcon className="mr-2 h-4 w-4" />
+                  <span>Notifications</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/kyc')}>
                   <FileCheck className="mr-2 h-4 w-4" />
