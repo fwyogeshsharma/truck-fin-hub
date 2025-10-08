@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { TruckIcon, LogOut, Home, Package, Wallet, Shield, Users, User as UserIcon, Settings, FileCheck, Bell as BellIcon } from "lucide-react";
+import { TruckIcon, LogOut, Home, Package, Wallet, Shield, Users, User as UserIcon, Settings, FileCheck, Bell as BellIcon, FileText } from "lucide-react";
 import { auth, User } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -200,6 +200,10 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                 <DropdownMenuItem onClick={() => navigate('/settings/notifications')}>
                   <BellIcon className="mr-2 h-4 w-4" />
                   <span>Notifications</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/reports')}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  <span>Reports</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/kyc')}>
                   <FileCheck className="mr-2 h-4 w-4" />

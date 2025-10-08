@@ -24,6 +24,7 @@ import KYC from "./pages/KYC";
 import KYCAdmin from "./pages/KYCAdmin";
 import PlatformConfiguration from "./pages/PlatformConfig";
 import NotificationSettings from "./pages/NotificationSettings";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,7 @@ const App = () => {
           <Route path="/admin/kyc" element={<KYCAdmin />} />
           <Route path="/platform-config" element={<PlatformConfiguration />} />
           <Route path="/settings/notifications" element={<NotificationSettings />} />
+          <Route path="/reports" element={<Reports />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
