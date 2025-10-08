@@ -277,12 +277,18 @@ export const data = {
 
       console.log('Allotting trip:', tripId, 'to lender:', lenderId);
 
+      // Calculate adjusted interest rate for shipper (lender rate + 20% markup)
+      const maturityDays = trip.maturityDays || 30;
+      const yearlyRate = (bid.interestRate * 365) / maturityDays;
+      const adjustedYearlyRate = yearlyRate * 1.2;
+      const shipperRate = (adjustedYearlyRate * maturityDays) / 365;
+
       // Update trip status to funded
       const updatedTrip = await data.updateTrip(tripId, {
         status: 'funded',
         lenderId: bid.lenderId,
         lenderName: bid.lenderName,
-        interestRate: bid.interestRate,
+        interestRate: shipperRate,
         fundedAt: new Date().toISOString(),
       });
 

@@ -958,27 +958,34 @@ const LoadAgentDashboard = () => {
                                   Lender Bids ({trip.bids.length})
                                 </h4>
                                 <div className="space-y-2">
-                                  {trip.bids.map((bid: any, index: number) => (
-                                    <div
-                                      key={index}
-                                      className="flex items-center justify-between p-3 bg-white dark:bg-card rounded border"
-                                    >
-                                      <div>
-                                        <p className="font-medium">{bid.lenderName}</p>
-                                        <p className="text-sm text-muted-foreground">
-                                          Amount: ₹{(bid.amount / 1000).toFixed(0)}K • Rate: {bid.interestRate}%
-                                        </p>
-                                      </div>
-                                      <Button
-                                        size="sm"
-                                        onClick={() => handleAllotTrip(trip.id, bid.lenderId, bid.lenderName)}
-                                        className="bg-green-600 hover:bg-green-700"
+                                  {trip.bids.map((bid: any, index: number) => {
+                                    // Convert lender's bid rate to shipper's rate
+                                    const yearlyRate = (bid.interestRate * 365) / (trip.maturityDays || 30);
+                                    const adjustedYearlyRate = yearlyRate * 1.2;
+                                    const shipperRate = (adjustedYearlyRate * (trip.maturityDays || 30)) / 365;
+
+                                    return (
+                                      <div
+                                        key={index}
+                                        className="flex items-center justify-between p-3 bg-white dark:bg-card rounded border"
                                       >
-                                        <CheckCircle className="h-4 w-4 mr-1" />
-                                        Allot
-                                      </Button>
-                                    </div>
-                                  ))}
+                                        <div>
+                                          <p className="font-medium">{bid.lenderName}</p>
+                                          <p className="text-sm text-muted-foreground">
+                                            Amount: ₹{(bid.amount / 1000).toFixed(0)}K • Rate: {shipperRate.toFixed(2)}%
+                                          </p>
+                                        </div>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => handleAllotTrip(trip.id, bid.lenderId, bid.lenderName)}
+                                          className="bg-green-600 hover:bg-green-700"
+                                        >
+                                          <CheckCircle className="h-4 w-4 mr-1" />
+                                          Allot
+                                        </Button>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}
@@ -1118,17 +1125,26 @@ const LoadAgentDashboard = () => {
                         </TableCell>
                         <TableCell>
                           {trip.bids && trip.bids.length > 0 ? (
-                            <div>
-                              <p className="font-semibold text-green-600">
-                                ₹{(trip.bids[0].amount / 1000).toFixed(0)}K
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                @ {trip.bids[0].interestRate}%
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                by {trip.bids[0].lenderName}
-                              </p>
-                            </div>
+                            (() => {
+                              // Convert lender's bid rate to shipper's rate
+                              const yearlyRate = (trip.bids[0].interestRate * 365) / (trip.maturityDays || 30);
+                              const adjustedYearlyRate = yearlyRate * 1.2;
+                              const shipperRate = (adjustedYearlyRate * (trip.maturityDays || 30)) / 365;
+
+                              return (
+                                <div>
+                                  <p className="font-semibold text-green-600">
+                                    ₹{(trip.bids[0].amount / 1000).toFixed(0)}K
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    @ {shipperRate.toFixed(2)}%
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    by {trip.bids[0].lenderName}
+                                  </p>
+                                </div>
+                              );
+                            })()
                           ) : (
                             <p className="text-sm text-muted-foreground">No bids</p>
                           )}
