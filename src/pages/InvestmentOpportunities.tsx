@@ -389,11 +389,11 @@ const InvestmentOpportunities = () => {
 
     const amount = selectedTripForBid.amount;
 
-    if (customBidRate < 8 || customBidRate > 18) {
+    if (customBidRate < 0 || customBidRate > 20) {
       toast({
         variant: 'destructive',
         title: 'Invalid Interest Rate',
-        description: 'Interest rate must be between 8% and 18%',
+        description: 'Interest rate must be between 0% and 20%',
       });
       return;
     }
@@ -573,8 +573,8 @@ const InvestmentOpportunities = () => {
                               return updatedRates;
                             });
                           }}
-                          min="8"
-                          max="18"
+                          min="0"
+                          max="20"
                           step="0.5"
                           className="mt-1 h-9"
                         />
@@ -656,14 +656,14 @@ const InvestmentOpportunities = () => {
                                     type="range"
                                     value={tripRate}
                                     onChange={(e) => updateTripInterestRate(trip.id, parseFloat(e.target.value))}
-                                    min="8"
-                                    max="18"
+                                    min="0"
+                                    max="20"
                                     step="0.5"
                                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
                                   />
                                   <div className="flex justify-between text-xs text-muted-foreground mt-0.5">
-                                    <span>8%</span>
-                                    <span>18%</span>
+                                    <span>0%</span>
+                                    <span>20%</span>
                                   </div>
                                 </div>
                               </div>
@@ -1505,12 +1505,12 @@ const InvestmentOpportunities = () => {
                             type="number"
                             value={bidRate}
                             onChange={(e) => setBidRate(parseFloat(e.target.value))}
-                            min="8"
-                            max="18"
+                            min="0"
+                            max="20"
                             step="0.5"
                           />
                           <p className="text-xs text-muted-foreground">
-                            Recommended range: 8-12% annually
+                            Recommended range: 0-20% annually
                           </p>
                         </div>
 
@@ -1730,13 +1730,13 @@ const InvestmentOpportunities = () => {
                     type="number"
                     value={customBidRate}
                     onChange={(e) => setCustomBidRate(parseFloat(e.target.value))}
-                    min="8"
-                    max="18"
+                    min="0"
+                    max="20"
                     step="0.5"
                     className="mt-1"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Recommended range: 8-12% annually
+                    Recommended range: 0-20% annually
                   </p>
                 </div>
 
