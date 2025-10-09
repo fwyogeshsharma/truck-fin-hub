@@ -48,6 +48,22 @@ export interface ReportFilter {
   category?: string;
   company?: string;
   loadType?: string;
+  // Advanced Filters
+  amountMin?: number;
+  amountMax?: number;
+  distanceMin?: number;
+  distanceMax?: number;
+  weightMin?: number;
+  weightMax?: number;
+  origin?: string;
+  destination?: string;
+  riskLevel?: string;
+  interestRateMin?: number;
+  interestRateMax?: number;
+  userId?: string;
+  groupBy?: 'day' | 'week' | 'month' | 'company' | 'loadType' | 'status';
+  sortBy?: 'date' | 'amount' | 'distance' | 'weight' | 'returns';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface ReportData {

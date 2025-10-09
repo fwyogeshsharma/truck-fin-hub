@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import DashboardLayout from '@/components/DashboardLayout';
 import { auth } from '@/lib/auth';
 import { getReportsByRole, reportConfigs } from '@/config/reportConfigs';
@@ -10,7 +11,8 @@ import { ReportData, ReportFilter, ReportType } from '@/types/reports';
 import {
   Package, DollarSign, PieChart, TrendingUp, Briefcase, Shield, BarChart3,
   TruckIcon, Wallet, Award, LayoutDashboard, Users, ArrowLeftRight, FileCheck,
-  Receipt, Calculator, Download, FileText, Calendar, Filter as FilterIcon
+  Receipt, Calculator, Download, FileText, Calendar, Filter as FilterIcon,
+  Search, ArrowUpDown, ArrowUp, ArrowDown
 } from 'lucide-react';
 import {
   Select,
@@ -21,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency } from '@/lib/currency';
+import { TableAdvancedFilter, type TableFilter } from '@/components/TableAdvancedFilter';
 
 // Icon mapping
 const iconMap: Record<string, any> = {
@@ -36,6 +39,7 @@ const Reports = () => {
     period: 'monthly',
   });
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [tableFilter, setTableFilter] = useState<TableFilter>({});
 
   if (!user) {
     return <div>Please login to view reports</div>;
@@ -61,6 +65,71 @@ const Reports = () => {
   const handleDownloadExcel = () => {
     if (!selectedReport) return;
     alert('Excel download functionality will be implemented soon!');
+  };
+
+  const getFilteredAndSortedDetails = () => {
+    if (!selectedReport) return [];
+
+    let filtered = [...selectedReport.details];
+
+    // Apply global search filter
+    if (tableFilter.searchTerm) {
+      filtered = filtered.filter((row) =>
+        Object.values(row).some((value) =>
+          String(value).toLowerCase().includes(tableFilter.searchTerm!.toLowerCase())
+        )
+      );
+    }
+
+    // Apply column-specific filters
+    if (tableFilter.columns) {
+      Object.entries(tableFilter.columns).forEach(([column, filterValue]) => {
+        if (filterValue === undefined) return;
+
+        // Handle min/max filters for numbers
+        if (column.endsWith('_min')) {
+          const baseColumn = column.replace('_min', '');
+          filtered = filtered.filter((row) => {
+            const value = row[baseColumn];
+            return typeof value === 'number' && value >= (filterValue as number);
+          });
+        } else if (column.endsWith('_max')) {
+          const baseColumn = column.replace('_max', '');
+          filtered = filtered.filter((row) => {
+            const value = row[baseColumn];
+            return typeof value === 'number' && value <= (filterValue as number);
+          });
+        } else {
+          // Handle exact match or text search
+          filtered = filtered.filter((row) =>
+            String(row[column]).toLowerCase().includes(String(filterValue).toLowerCase())
+          );
+        }
+      });
+    }
+
+    // Apply sorting
+    if (tableFilter.sortBy) {
+      filtered.sort((a, b) => {
+        const aValue = a[tableFilter.sortBy!];
+        const bValue = b[tableFilter.sortBy!];
+
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return tableFilter.sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+        }
+
+        const aString = String(aValue).toLowerCase();
+        const bString = String(bValue).toLowerCase();
+
+        if (tableFilter.sortOrder === 'asc') {
+          return aString.localeCompare(bString);
+        } else {
+          return bString.localeCompare(aString);
+        }
+      });
+    }
+
+    return filtered;
   };
 
   const getCategoryIcon = (category: string) => {
@@ -93,102 +162,6 @@ const Reports = () => {
             Generate detailed reports and insights for your business
           </p>
         </div>
-
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FilterIcon className="h-5 w-5" />
-              Report Filters
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Report Period</label>
-                <Select
-                  value={filter.period}
-                  onValueChange={(value: any) => setFilter({ ...filter, period: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                    <SelectItem value="yearly">Yearly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Company</label>
-                <Select
-                  value={filter.company || 'all'}
-                  onValueChange={(value: any) => setFilter({ ...filter, company: value === 'all' ? undefined : value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Companies" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Companies</SelectItem>
-                    <SelectItem value="Berger Paints">Berger Paints</SelectItem>
-                    <SelectItem value="Emami">Emami</SelectItem>
-                    <SelectItem value="Greenply">Greenply</SelectItem>
-                    <SelectItem value="Varun Beverages">Varun Beverages</SelectItem>
-                    <SelectItem value="Balaji">Balaji</SelectItem>
-                    <SelectItem value="RCC">RCC</SelectItem>
-                    <SelectItem value="Manishankar Oils">Manishankar Oils</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Load Type</label>
-                <Select
-                  value={filter.loadType || 'all'}
-                  onValueChange={(value: any) => setFilter({ ...filter, loadType: value === 'all' ? undefined : value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Load Types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Load Types</SelectItem>
-                    <SelectItem value="Electronics">Electronics</SelectItem>
-                    <SelectItem value="FMCG">FMCG</SelectItem>
-                    <SelectItem value="Textiles">Textiles</SelectItem>
-                    <SelectItem value="Automotive Parts">Automotive Parts</SelectItem>
-                    <SelectItem value="Machinery">Machinery</SelectItem>
-                    <SelectItem value="Food & Beverages">Food & Beverages</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Status</label>
-                <Select
-                  value={filter.status || 'all'}
-                  onValueChange={(value: any) => setFilter({ ...filter, status: value === 'all' ? undefined : value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="escrowed">Escrowed</SelectItem>
-                    <SelectItem value="funded">Funded</SelectItem>
-                    <SelectItem value="in_transit">In Transit</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         <Tabs value={activeCategory} onValueChange={setActiveCategory}>
           <TabsList>
@@ -308,34 +281,59 @@ const Reports = () => {
               {/* Details Table */}
               {selectedReport.details.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">Details</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">Details</h3>
+                    <TableAdvancedFilter
+                      columns={Object.keys(selectedReport.details[0])}
+                      filter={tableFilter}
+                      onFilterChange={setTableFilter}
+                      data={selectedReport.details}
+                    />
+                  </div>
                   <div className="border rounded-lg overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead className="bg-muted">
                           <tr>
                             {Object.keys(selectedReport.details[0]).map((key) => (
-                              <th key={key} className="text-left p-3 text-sm font-medium">
+                              <th
+                                key={key}
+                                className="text-left p-3 text-sm font-medium"
+                              >
                                 {key.charAt(0).toUpperCase() + key.slice(1)}
                               </th>
                             ))}
                           </tr>
                         </thead>
                         <tbody>
-                          {selectedReport.details.map((row, idx) => (
-                            <tr key={idx} className="border-t">
-                              {Object.values(row).map((value: any, vidx) => (
-                                <td key={vidx} className="p-3 text-sm">
-                                  {typeof value === 'number' && value > 1000
-                                    ? formatCurrency(value)
-                                    : value}
-                                </td>
-                              ))}
+                          {getFilteredAndSortedDetails().length > 0 ? (
+                            getFilteredAndSortedDetails().map((row, idx) => (
+                              <tr key={idx} className="border-t hover:bg-muted/30 transition-colors">
+                                {Object.values(row).map((value: any, vidx) => (
+                                  <td key={vidx} className="p-3 text-sm">
+                                    {typeof value === 'number' && value > 1000
+                                      ? formatCurrency(value)
+                                      : value}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td
+                                colSpan={Object.keys(selectedReport.details[0]).length}
+                                className="p-8 text-center text-muted-foreground"
+                              >
+                                No results found
+                              </td>
                             </tr>
-                          ))}
+                          )}
                         </tbody>
                       </table>
                     </div>
+                  </div>
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    Showing {getFilteredAndSortedDetails().length} of {selectedReport.details.length} records
                   </div>
                 </div>
               )}
