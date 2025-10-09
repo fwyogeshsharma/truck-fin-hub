@@ -561,23 +561,24 @@ const InvestmentOpportunities = () => {
                         <Input
                           id="bulkBidRate"
                           type="number"
-                          value={bidRate}
+                          value={selectedTrips.length > 0 ? (tripInterestRates[selectedTrips[0]] || bidRate) : bidRate}
                           onChange={(e) => {
                             const newRate = parseFloat(e.target.value);
-                            setBidRate(newRate);
-                            // Update all selected trips with the new rate
-                            const updatedRates: Record<string, number> = {};
-                            selectedTrips.forEach(tripId => {
-                              updatedRates[tripId] = newRate;
+                            // Update ONLY the currently selected trips with the new rate
+                            setTripInterestRates(prevRates => {
+                              const updatedRates: Record<string, number> = { ...prevRates };
+                              selectedTrips.forEach(tripId => {
+                                updatedRates[tripId] = newRate;
+                              });
+                              return updatedRates;
                             });
-                            setTripInterestRates(updatedRates);
                           }}
                           min="8"
                           max="18"
                           step="0.5"
                           className="mt-1 h-9"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Applied to all trips</p>
+                        <p className="text-xs text-muted-foreground mt-1">Applied to selected trips only</p>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
@@ -742,7 +743,8 @@ const InvestmentOpportunities = () => {
             // Compact View
             filteredTrips.map((trip) => {
               const isMultiSelected = selectedTrips.includes(trip.id);
-              const yearlyRate = (bidRate * 365) / (trip.maturityDays || 30);
+              const tripRate = tripInterestRates[trip.id] || bidRate;
+              const yearlyRate = (tripRate * 365) / (trip.maturityDays || 30);
               const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.2);
               const expectedReturn = trip.amount * (adjustedYearlyRate / 100);
 
@@ -1070,8 +1072,8 @@ const InvestmentOpportunities = () => {
 
                       {/* ARR - 2 columns */}
                       <div className="col-span-2 text-center">
-                        <p className="text-xs text-muted-foreground">ARR ({(((trip.interestRate || bidRate) * 365) / (trip.maturityDays || 30) * 0.8).toFixed(2)}%)</p>
-                        <p className="font-semibold text-green-600">{formatCurrencyCompact(trip.interestRate ? trip.amount * (((trip.interestRate * 365) / (trip.maturityDays || 30)) * 0.8 / 100) : trip.amount * (((bidRate * 365) / (trip.maturityDays || 30)) * 0.8 / 100), true)}</p>
+                        <p className="text-xs text-muted-foreground">ARR ({(((trip.interestRate || tripInterestRates[trip.id] || bidRate) * 365) / (trip.maturityDays || 30) * 0.8).toFixed(2)}%)</p>
+                        <p className="font-semibold text-green-600">{formatCurrencyCompact(trip.interestRate ? trip.amount * (((trip.interestRate * 365) / (trip.maturityDays || 30)) * 0.8 / 100) : trip.amount * ((((tripInterestRates[trip.id] || bidRate) * 365) / (trip.maturityDays || 30)) * 0.8 / 100), true)}</p>
                       </div>
 
                       {/* Risk & Bid - 2 columns */}
@@ -1102,7 +1104,8 @@ const InvestmentOpportunities = () => {
             filteredTrips.map((trip) => {
               const isSelected = selectedTrip === trip.id;
               const daysToMaturity = trip.maturityDays || 30;
-              const yearlyRate = (bidRate * 365) / daysToMaturity;
+              const tripRate = tripInterestRates[trip.id] || bidRate;
+              const yearlyRate = (tripRate * 365) / daysToMaturity;
               const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.2);
               const expectedReturn = trip.amount * (adjustedYearlyRate / 100);
 
