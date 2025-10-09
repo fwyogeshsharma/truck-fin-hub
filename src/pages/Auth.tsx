@@ -30,8 +30,11 @@ const Auth = () => {
           description: "Successfully logged in",
         });
 
-        // Check if user has accepted terms
-        if (!user.termsAccepted) {
+        // Skip terms check for super_admin
+        if (user.role === 'super_admin') {
+          navigate(`/dashboard/${user.role}`);
+        } else if (!user.termsAccepted) {
+          // Check if user has accepted terms
           navigate("/terms");
         } else if (user.role) {
           // Check if user has selected a role
