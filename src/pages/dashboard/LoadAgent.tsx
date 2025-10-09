@@ -48,6 +48,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { formatPercentage } from '@/lib/currency';
 
 const LoadAgentDashboard = () => {
   const navigate = useNavigate();
@@ -972,7 +973,7 @@ const LoadAgentDashboard = () => {
                                         <div>
                                           <p className="font-medium">{bid.lenderName}</p>
                                           <p className="text-sm text-muted-foreground">
-                                            Amount: ₹{(bid.amount / 1000).toFixed(0)}K • Rate: {shipperRate.toFixed(2)}%
+                                            Amount: ₹{(bid.amount / 1000).toFixed(0)}K • Rate: {formatPercentage(shipperRate)}%
                                           </p>
                                         </div>
                                         <Button
@@ -1115,11 +1116,11 @@ const LoadAgentDashboard = () => {
                         <TableCell>
                           <div className="text-center cursor-help relative group">
                             <p className="font-semibold text-green-600">
-                              {trip.interestRate || 12}% ({trip.maturityDays || 30} days)
+                              {formatPercentage(trip.interestRate || 12)}% ({trip.maturityDays || 30} days)
                             </p>
                             <div className="hidden group-hover:block absolute z-10 bg-popover text-popover-foreground border rounded-lg shadow-lg p-3 mt-1 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                              <p className="text-sm font-semibold">{trip.interestRate || 12}% in {trip.maturityDays || 30} days</p>
-                              <p className="text-sm text-muted-foreground">{((trip.interestRate || 12) * 365 / (trip.maturityDays || 30)).toFixed(2)}% Yearly</p>
+                              <p className="text-sm font-semibold">{formatPercentage(trip.interestRate || 12)}% in {trip.maturityDays || 30} days</p>
+                              <p className="text-sm text-muted-foreground">{formatPercentage((trip.interestRate || 12) * 365 / (trip.maturityDays || 30))}% Yearly</p>
                             </div>
                           </div>
                         </TableCell>
@@ -1137,7 +1138,7 @@ const LoadAgentDashboard = () => {
                                     ₹{(trip.bids[0].amount / 1000).toFixed(0)}K
                                   </p>
                                   <p className="text-xs text-muted-foreground">
-                                    @ {shipperRate.toFixed(2)}%
+                                    @ {formatPercentage(shipperRate)}%
                                   </p>
                                   <p className="text-xs text-muted-foreground">
                                     by {trip.bids[0].lenderName}

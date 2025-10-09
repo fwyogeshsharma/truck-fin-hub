@@ -30,7 +30,7 @@ import { data } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { formatCurrency, formatCurrencyCompact } from "@/lib/currency";
+import { formatCurrency, formatCurrencyCompact, formatPercentage } from "@/lib/currency";
 import AdvancedFilter, { type FilterConfig } from "@/components/AdvancedFilter";
 import { getCompanyInfo } from "@/data/companyInfo";
 
@@ -1072,7 +1072,7 @@ const InvestmentOpportunities = () => {
 
                       {/* ARR - 2 columns */}
                       <div className="col-span-2 text-center">
-                        <p className="text-xs text-muted-foreground">ARR ({(((trip.interestRate || tripInterestRates[trip.id] || bidRate) * 365) / (trip.maturityDays || 30) * 0.8).toFixed(2)}%)</p>
+                        <p className="text-xs text-muted-foreground">ARR ({formatPercentage(((trip.interestRate || tripInterestRates[trip.id] || bidRate) * 365) / (trip.maturityDays || 30) * 0.8)}%)</p>
                         <p className="font-semibold text-green-600">{formatCurrencyCompact(trip.interestRate ? trip.amount * (((trip.interestRate * 365) / (trip.maturityDays || 30)) * 0.8 / 100) : trip.amount * ((((tripInterestRates[trip.id] || bidRate) * 365) / (trip.maturityDays || 30)) * 0.8 / 100), true)}</p>
                       </div>
 
@@ -1475,7 +1475,7 @@ const InvestmentOpportunities = () => {
                         <TrendingUp className="h-4 w-4 text-green-600" />
                         <div>
                           <p className="text-xs text-muted-foreground">Offered Rate</p>
-                          <p className="font-semibold text-green-600">{(((trip.interestRate || 12) * 365) / (trip.maturityDays || 30) * 0.8).toFixed(2)}% ARR</p>
+                          <p className="font-semibold text-green-600">{formatPercentage(((trip.interestRate || 12) * 365) / (trip.maturityDays || 30) * 0.8)}% ARR</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1749,7 +1749,7 @@ const InvestmentOpportunities = () => {
                     </span>
                   </div>
                   <p className="text-xs text-green-700 mt-1">
-                    At {(((customBidRate * 365) / (selectedTripForBid.maturityDays || 30)) * 0.8).toFixed(2)}% yearly interest on {formatCurrency(selectedTripForBid.amount)}
+                    At {formatPercentage(((customBidRate * 365) / (selectedTripForBid.maturityDays || 30)) * 0.8)}% yearly interest on {formatCurrency(selectedTripForBid.amount)}
                   </p>
                 </div>
 

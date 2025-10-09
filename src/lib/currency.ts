@@ -109,3 +109,11 @@ export const parseCurrency = (formattedAmount: string): number => {
 
   return parseFloat(cleaned) || 0;
 };
+
+/**
+ * Format percentage removing trailing zeros
+ * Example: 4.799999 → "4.8", 12.00 → "12", 15.50 → "15.5"
+ */
+export const formatPercentage = (value: number, decimals: number = 2): string => {
+  return parseFloat(value.toFixed(decimals)).toString();
+};
