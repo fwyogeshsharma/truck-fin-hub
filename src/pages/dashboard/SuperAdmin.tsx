@@ -100,13 +100,6 @@ const SuperAdminDashboard = () => {
       color: "accent",
       description: "Currently in progress",
     },
-    {
-      title: "System Health",
-      value: "Good",
-      icon: Shield,
-      color: "primary",
-      description: "All systems operational",
-    },
   ];
 
   if (loading) {
@@ -140,7 +133,7 @@ const SuperAdminDashboard = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid md:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-3 gap-6">
           {dashboardStats.map((stat) => {
             const Icon = stat.icon;
             return (
