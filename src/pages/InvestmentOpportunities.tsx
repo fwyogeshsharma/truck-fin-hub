@@ -80,7 +80,6 @@ const InvestmentOpportunities = () => {
 
   const [selectedTrip, setSelectedTrip] = useState<string | null>(null);
   const [selectedTrips, setSelectedTrips] = useState<string[]>([]);
-  const [bidRate, setBidRate] = useState<number>(12);
   const [isCompactView, setIsCompactView] = useState(true); // Default to compact view
   const [tripInterestRates, setTripInterestRates] = useState<Record<string, number>>({});
   const [isExpanded, setIsExpanded] = useState(false);
@@ -155,7 +154,7 @@ const InvestmentOpportunities = () => {
   // Bid dialog states
   const [bidDialogOpen, setBidDialogOpen] = useState(false);
   const [selectedTripForBid, setSelectedTripForBid] = useState<any>(null);
-  const [customBidRate, setCustomBidRate] = useState<number>(12);
+  const [customBidRate, setCustomBidRate] = useState<number>(0);
 
   const refreshWallet = async () => {
     if (!user?.id) return;
@@ -195,11 +194,12 @@ const InvestmentOpportunities = () => {
         ? prev.filter(id => id !== tripId)
         : [...prev, tripId];
 
-      // Initialize interest rate for newly selected trip
+      // Initialize interest rate for newly selected trip using trip's own interest rate
       if (!prev.includes(tripId) && !tripInterestRates[tripId]) {
+        const trip = trips.find(t => t.id === tripId);
         setTripInterestRates(prevRates => ({
           ...prevRates,
-          [tripId]: bidRate
+          [tripId]: trip?.interestRate || 12
         }));
       }
 
@@ -227,9 +227,33 @@ const InvestmentOpportunities = () => {
   const selectedTripsData = filteredTrips.filter(t => selectedTrips.includes(t.id));
   const totalInvestmentAmount = selectedTripsData.reduce((sum, trip) => sum + trip.amount, 0);
   const totalExpectedReturn = selectedTripsData.reduce((sum, trip) => {
-    const rate = tripInterestRates[trip.id] || bidRate;
-    return sum + (trip.amount * (rate / 100));
+    const rate = tripInterestRates[trip.id] || trip.interestRate || 12;
+    const maturityDays = trip.maturityDays || 30;
+    const yearlyRate = (rate * 365) / maturityDays;
+    const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.2);
+    return sum + (trip.amount * (adjustedYearlyRate / 100));
   }, 0);
+
+  // Calculate average interest rate (raw rate) from selected trips
+  const averageInterestRate = selectedTrips.length > 0
+    ? selectedTrips.reduce((sum, tripId) => {
+        const trip = trips.find(t => t.id === tripId);
+        return sum + (tripInterestRates[tripId] || trip?.interestRate || 12);
+      }, 0) / selectedTrips.length
+    : 0;
+
+  // Calculate average ARR % (annualized rate) from selected trips
+  const averageARR = selectedTrips.length > 0
+    ? selectedTrips.reduce((sum, tripId) => {
+        const trip = trips.find(t => t.id === tripId);
+        if (!trip) return sum;
+        const rate = tripInterestRates[tripId] || trip?.interestRate || 12;
+        const maturityDays = trip.maturityDays || 30;
+        const yearlyRate = (rate * 365) / maturityDays;
+        const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.2);
+        return sum + adjustedYearlyRate;
+      }, 0) / selectedTrips.length
+    : 0;
 
   const handleTopUp = async () => {
     const amount = parseFloat(topUpAmount);
@@ -292,7 +316,7 @@ const InvestmentOpportunities = () => {
     if (!trip) return;
 
     const investmentAmount = customAmount || trip.amount;
-    const interestRate = customRate !== undefined ? customRate : bidRate;
+    const interestRate = customRate !== undefined ? customRate : (trip.interestRate || 12);
 
     // Check if balance is insufficient
     if (wallet.balance < investmentAmount) {
@@ -380,7 +404,7 @@ const InvestmentOpportunities = () => {
 
   const handleOpenBidDialog = (trip: any) => {
     setSelectedTripForBid(trip);
-    setCustomBidRate(bidRate);
+    setCustomBidRate(trip.interestRate || 12);
     setBidDialogOpen(true);
   };
 
@@ -432,7 +456,7 @@ const InvestmentOpportunities = () => {
         if (!trip) continue;
 
         const investmentAmount = trip.amount;
-        const tripRate = tripInterestRates[tripId] || bidRate; // Use individual trip rate
+        const tripRate = tripInterestRates[tripId] || trip.interestRate || 12; // Use individual trip rate
         const maturityDays = trip.maturityDays || 30;
         const yearlyRate = (tripRate * 365) / maturityDays;
         const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.2);
@@ -557,28 +581,15 @@ const InvestmentOpportunities = () => {
                     </div>
                     <div className="grid md:grid-cols-3 gap-4">
                       <div>
-                        <Label htmlFor="bulkBidRate" className="text-xs">Common Interest Rate (%)</Label>
+                        <Label htmlFor="bulkBidRate" className="text-xs">Average ARR (%) - Read Only</Label>
                         <Input
                           id="bulkBidRate"
-                          type="number"
-                          value={selectedTrips.length > 0 ? (tripInterestRates[selectedTrips[0]] || bidRate) : bidRate}
-                          onChange={(e) => {
-                            const newRate = parseFloat(e.target.value);
-                            // Update ONLY the currently selected trips with the new rate
-                            setTripInterestRates(prevRates => {
-                              const updatedRates: Record<string, number> = { ...prevRates };
-                              selectedTrips.forEach(tripId => {
-                                updatedRates[tripId] = newRate;
-                              });
-                              return updatedRates;
-                            });
-                          }}
-                          min="0"
-                          max="20"
-                          step="0.5"
-                          className="mt-1 h-9"
+                          type="text"
+                          value={`${averageARR.toFixed(2)}%`}
+                          disabled
+                          className="mt-1 h-9 bg-muted cursor-not-allowed"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Applied to selected trips only</p>
+                        <p className="text-xs text-muted-foreground mt-1">Average annualized return rate of selected trips</p>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
@@ -611,10 +622,20 @@ const InvestmentOpportunities = () => {
                   <div className="border-t pt-4 space-y-3">
                     <h4 className="font-semibold text-sm text-muted-foreground">Selected Trips with Individual Interest Rates</h4>
                     {selectedTripsData.map((trip) => {
-                      const tripRate = tripInterestRates[trip.id] || bidRate;
-                      const yearlyRate = (tripRate * 365) / (trip.maturityDays || 30);
+                      const tripRate = tripInterestRates[trip.id] || trip.interestRate || 12;
+                      const maturityDays = trip.maturityDays || 30;
+                      const yearlyRate = (tripRate * 365) / maturityDays;
                       const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.2);
                       const tripReturn = trip.amount * (adjustedYearlyRate / 100);
+
+                      // Handler to convert slider yearly rate back to monthly rate for storage
+                      const handleYearlyRateChange = (yearlyARR: number) => {
+                        // Convert yearly ARR back to monthly rate
+                        // yearlyARR = (monthlyRate * 365 / maturityDays) * 0.8
+                        // monthlyRate = yearlyARR / 0.8 * maturityDays / 365
+                        const monthlyRate = (yearlyARR / 0.8) * (maturityDays / 365);
+                        updateTripInterestRate(trip.id, monthlyRate);
+                      };
 
                       return (
                         <div key={trip.id} className="p-3 bg-card border rounded-lg">
@@ -654,28 +675,28 @@ const InvestmentOpportunities = () => {
                                   <input
                                     id={`rate-${trip.id}`}
                                     type="range"
-                                    value={tripRate}
-                                    onChange={(e) => updateTripInterestRate(trip.id, parseFloat(e.target.value))}
+                                    value={adjustedYearlyRate}
+                                    onChange={(e) => handleYearlyRateChange(parseFloat(e.target.value))}
                                     min="0"
-                                    max="20"
-                                    step="0.5"
+                                    max="100"
+                                    step="1"
                                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
                                   />
                                   <div className="flex justify-between text-xs text-muted-foreground mt-0.5">
                                     <span>0%</span>
-                                    <span>20%</span>
+                                    <span>100%</span>
                                   </div>
                                 </div>
                               </div>
                             </div>
 
-                            {/* Rate Display - Compact */}
+                            {/* ARR % Display - Compact */}
                             <div className="w-16 flex-shrink-0 text-center">
-                              <p className="text-xs text-muted-foreground">Rate</p>
-                              <p className="font-bold text-sm text-primary">{tripRate}%</p>
+                              <p className="text-xs text-muted-foreground">ARR %</p>
+                              <p className="font-bold text-sm text-primary">{adjustedYearlyRate.toFixed(1)}%</p>
                             </div>
 
-                            {/* ARR - Compact */}
+                            {/* ARR Amount - Compact */}
                             <div className="w-24 flex-shrink-0 text-center">
                               <p className="text-xs text-muted-foreground">ARR</p>
                               <p className="font-semibold text-sm text-green-600">{formatCurrencyCompact(tripReturn, true)}</p>
@@ -743,7 +764,7 @@ const InvestmentOpportunities = () => {
             // Compact View
             filteredTrips.map((trip) => {
               const isMultiSelected = selectedTrips.includes(trip.id);
-              const tripRate = tripInterestRates[trip.id] || bidRate;
+              const tripRate = tripInterestRates[trip.id] || trip.interestRate || 12;
               const yearlyRate = (tripRate * 365) / (trip.maturityDays || 30);
               const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.2);
               const expectedReturn = trip.amount * (adjustedYearlyRate / 100);
@@ -1072,8 +1093,8 @@ const InvestmentOpportunities = () => {
 
                       {/* ARR - 2 columns */}
                       <div className="col-span-2 text-center">
-                        <p className="text-xs text-muted-foreground">ARR ({formatPercentage(((trip.interestRate || tripInterestRates[trip.id] || bidRate) * 365) / (trip.maturityDays || 30) * 0.8)}%)</p>
-                        <p className="font-semibold text-green-600">{formatCurrencyCompact(trip.interestRate ? trip.amount * (((trip.interestRate * 365) / (trip.maturityDays || 30)) * 0.8 / 100) : trip.amount * ((((tripInterestRates[trip.id] || bidRate) * 365) / (trip.maturityDays || 30)) * 0.8 / 100), true)}</p>
+                        <p className="text-xs text-muted-foreground">ARR ({formatPercentage(((tripInterestRates[trip.id] || trip.interestRate || 12) * 365) / (trip.maturityDays || 30) * 0.8)}%)</p>
+                        <p className="font-semibold text-green-600">{formatCurrencyCompact(trip.amount * ((((tripInterestRates[trip.id] || trip.interestRate || 12) * 365) / (trip.maturityDays || 30)) * 0.8 / 100), true)}</p>
                       </div>
 
                       {/* Risk & Bid - 2 columns */}
@@ -1104,7 +1125,7 @@ const InvestmentOpportunities = () => {
             filteredTrips.map((trip) => {
               const isSelected = selectedTrip === trip.id;
               const daysToMaturity = trip.maturityDays || 30;
-              const tripRate = tripInterestRates[trip.id] || bidRate;
+              const tripRate = tripInterestRates[trip.id] || trip.interestRate || 12;
               const yearlyRate = (tripRate * 365) / daysToMaturity;
               const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.2);
               const expectedReturn = trip.amount * (adjustedYearlyRate / 100);
@@ -1503,8 +1524,8 @@ const InvestmentOpportunities = () => {
                           <Input
                             id={`rate-${trip.id}`}
                             type="number"
-                            value={bidRate}
-                            onChange={(e) => setBidRate(parseFloat(e.target.value))}
+                            value={tripRate}
+                            onChange={(e) => updateTripInterestRate(trip.id, parseFloat(e.target.value))}
                             min="0"
                             max="20"
                             step="0.5"
@@ -1529,7 +1550,7 @@ const InvestmentOpportunities = () => {
                           )}
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Your Bid Rate</span>
-                            <span className="font-semibold">{bidRate}%</span>
+                            <span className="font-semibold">{tripRate}%</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">ARR (Annual Return)</span>
@@ -1546,7 +1567,7 @@ const InvestmentOpportunities = () => {
                         <div className="flex gap-2">
                           <Button
                             className="bg-gradient-primary flex-1"
-                            onClick={() => handleInvest(trip.id)}
+                            onClick={() => handleInvest(trip.id, trip.amount, tripRate)}
                           >
                             Confirm Bid
                           </Button>
