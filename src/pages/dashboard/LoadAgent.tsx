@@ -46,6 +46,8 @@ import {
   FileSpreadsheet,
   Link,
   RefreshCw,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatPercentage } from '@/lib/currency';
@@ -93,6 +95,10 @@ const LoadAgentDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, any>>({});
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
@@ -626,6 +632,17 @@ const LoadAgentDashboard = () => {
       matchesRiskLevel && matchesBidStatus;
   });
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredTrips.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTrips = filteredTrips.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [advancedFilters]);
+
   const handleAllotTrip = async (tripId: string, lenderId: string, lenderName: string) => {
     const result = await data.allotTrip(tripId, lenderId, lenderName);
 
@@ -1055,9 +1072,7 @@ const LoadAgentDashboard = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredTrips
-                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                    .map((trip) => (
+                  paginatedTrips.map((trip) => (
                       <TableRow key={trip.id}>
                         <TableCell>
                           <div className="flex items-center justify-center">
@@ -1192,6 +1207,82 @@ const LoadAgentDashboard = () => {
             </Table>
           </CardContent>
         </Card>
+
+        {/* Pagination Controls */}
+        {filteredTrips.length > 0 && totalPages > 1 && (
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="itemsPerPage" className="text-sm">Items per page:</Label>
+                <select
+                  id="itemsPerPage"
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="border rounded px-2 py-1 text-sm"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+                <span className="text-sm text-muted-foreground ml-4">
+                  Showing {startIndex + 1}-{Math.min(endIndex, filteredTrips.length)} of {filteredTrips.length}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="gap-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+
+                <div className="flex gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      return page === 1 ||
+                             page === totalPages ||
+                             (page >= currentPage - 1 && page <= currentPage + 1);
+                    })
+                    .map((page, index, array) => (
+                      <div key={page} className="flex items-center gap-1">
+                        {index > 0 && array[index - 1] !== page - 1 && (
+                          <span className="px-2 text-muted-foreground">...</span>
+                        )}
+                        <Button
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(page)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {page}
+                        </Button>
+                      </div>
+                    ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="gap-1"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Create Trip Dialog */}
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>

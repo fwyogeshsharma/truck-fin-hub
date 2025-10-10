@@ -85,21 +85,21 @@ const LenderDashboard = () => {
     return { month: data.month, returns: monthlyReturn };
   }) : [];
 
-  // Portfolio distribution by actual invested companies
+  // Portfolio distribution by borrower companies
   const getPortfolioDistribution = () => {
-    const companyInvestments: { [key: string]: number } = {};
+    const borrowerInvestments: { [key: string]: number } = {};
     let totalInvested = 0;
 
     myInvestments.forEach(investment => {
       const trip = trips.find(t => t.id === investment.tripId);
       if (trip && (investment.status === 'active' || investment.status === 'completed')) {
-        const companyName = trip.loadOwnerName;
-        companyInvestments[companyName] = (companyInvestments[companyName] || 0) + investment.amount;
+        const borrowerName = trip.loadOwnerName;
+        borrowerInvestments[borrowerName] = (borrowerInvestments[borrowerName] || 0) + investment.amount;
         totalInvested += investment.amount;
       }
     });
 
-    const portfolioData = Object.entries(companyInvestments)
+    const portfolioData = Object.entries(borrowerInvestments)
       .map(([name, amount], index) => ({
         name,
         value: totalInvested > 0 ? Math.round((amount / totalInvested) * 100) : 0,
@@ -332,7 +332,7 @@ const LenderDashboard = () => {
           <Card>
             <CardHeader>
               <CardTitle>Portfolio Distribution</CardTitle>
-              <CardDescription>Investment breakdown by company</CardDescription>
+              <CardDescription>Investment breakdown by borrower</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -361,16 +361,16 @@ const LenderDashboard = () => {
               </ResponsiveContainer>
               {portfolioData.length > 1 && portfolioData[0].amount > 0 && (
                 <div className="mt-4 space-y-2">
-                  {portfolioData.slice(0, 5).map((company, index) => (
+                  {portfolioData.slice(0, 5).map((borrower, index) => (
                     <div key={index} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
                         <div
                           className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: company.color }}
+                          style={{ backgroundColor: borrower.color }}
                         />
-                        <span className="text-muted-foreground">{company.name}</span>
+                        <span className="text-muted-foreground">{borrower.name}</span>
                       </div>
-                      <span className="font-medium">{formatCurrency(company.amount)} ({company.value}%)</span>
+                      <span className="font-medium">{formatCurrency(borrower.amount)} ({borrower.value}%)</span>
                     </div>
                   ))}
                 </div>

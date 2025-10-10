@@ -23,7 +23,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { MapPin, Package, TruckIcon, IndianRupee, Calendar, TrendingUp, CheckSquare, Square, Star, Shield, Wallet, Plus, Loader2, AlertCircle, Maximize2, Minimize2, ChevronDown, ChevronUp, Building2, Users, TrendingUp as TrendingUpIcon, Info } from "lucide-react";
+import { MapPin, Package, TruckIcon, IndianRupee, Calendar, TrendingUp, CheckSquare, Square, Star, Shield, Wallet, Plus, Loader2, AlertCircle, Maximize2, Minimize2, ChevronDown, ChevronUp, Building2, Users, TrendingUp as TrendingUpIcon, Info, ChevronLeft, ChevronRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
@@ -83,6 +83,10 @@ const InvestmentOpportunities = () => {
   const [isCompactView, setIsCompactView] = useState(true); // Default to compact view
   const [tripInterestRates, setTripInterestRates] = useState<Record<string, number>>({});
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Advanced filter state for new component
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, any>>({});
@@ -187,6 +191,17 @@ const InvestmentOpportunities = () => {
 
     return matchesSearch && matchesAdvancedLoadType && matchesAmountRange && matchesDistanceRange && matchesWeightRange && matchesRiskLevel;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredTrips.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTrips = filteredTrips.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [advancedFilters]);
 
   const toggleTripSelection = (tripId: string) => {
     setSelectedTrips(prev => {
@@ -762,7 +777,7 @@ const InvestmentOpportunities = () => {
             </Card>
           ) : isCompactView ? (
             // Compact View
-            filteredTrips.map((trip) => {
+            paginatedTrips.map((trip) => {
               const isMultiSelected = selectedTrips.includes(trip.id);
               const tripRate = tripInterestRates[trip.id] || trip.interestRate || 12;
               const yearlyRate = (tripRate * 365) / (trip.maturityDays || 30);
@@ -1122,7 +1137,7 @@ const InvestmentOpportunities = () => {
             })
           ) : (
             // Expanded View
-            filteredTrips.map((trip) => {
+            paginatedTrips.map((trip) => {
               const isSelected = selectedTrip === trip.id;
               const daysToMaturity = trip.maturityDays || 30;
               const tripRate = tripInterestRates[trip.id] || trip.interestRate || 12;
@@ -1589,6 +1604,83 @@ const InvestmentOpportunities = () => {
                 </Card>
               );
             })
+          )}
+
+          {/* Pagination Controls */}
+          {filteredTrips.length > 0 && totalPages > 1 && (
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="itemsPerPage" className="text-sm">Items per page:</Label>
+                  <select
+                    id="itemsPerPage"
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="border rounded px-2 py-1 text-sm"
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                  <span className="text-sm text-muted-foreground ml-4">
+                    Showing {startIndex + 1}-{Math.min(endIndex, filteredTrips.length)} of {filteredTrips.length}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="gap-1"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+
+                  <div className="flex gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(page => {
+                        // Show first page, last page, current page, and pages around current
+                        return page === 1 ||
+                               page === totalPages ||
+                               (page >= currentPage - 1 && page <= currentPage + 1);
+                      })
+                      .map((page, index, array) => (
+                        <div key={page} className="flex items-center gap-1">
+                          {index > 0 && array[index - 1] !== page - 1 && (
+                            <span className="px-2 text-muted-foreground">...</span>
+                          )}
+                          <Button
+                            variant={currentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(page)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {page}
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="gap-1"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
           )}
         </div>
 
