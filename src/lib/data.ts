@@ -38,7 +38,9 @@ export interface Trip {
   documents?: {
     bilty?: string;
     ewaybill?: string;
-    invoice?: string;
+    advance_invoice?: string;
+    pod?: string;
+    final_invoice?: string;
   };
 }
 

@@ -108,7 +108,7 @@ const LoadAgentDashboard = () => {
     });
   };
 
-  const handleDocumentUpload = async (tripId: string, docType: 'bilty' | 'ewaybill' | 'invoice' | 'pod', file: File) => {
+  const handleDocumentUpload = async (tripId: string, docType: 'ewaybill' | 'bilty' | 'advance_invoice' | 'pod' | 'final_invoice', file: File) => {
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64String = reader.result as string;
@@ -1814,58 +1814,11 @@ const LoadAgentDashboard = () => {
                     <Package className="h-5 w-5" />
                     Trip Documents
                   </h3>
-                  <div className="grid md:grid-cols-4 gap-4">
-                    {/* Bilty Upload */}
-                    <div className="p-3 border rounded-lg space-y-2">
-                      <Label htmlFor={`bilty-${selectedTrip.id}`} className="text-sm font-medium">
-                        Bilty
-                      </Label>
-                      {selectedTrip.documents?.bilty ? (
-                        <div className="space-y-2">
-                          <Badge className="bg-green-600 w-full justify-center text-xs py-1">Uploaded</Badge>
-                          <div className="grid grid-cols-2 gap-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs h-8"
-                              onClick={() => handleViewDocument('Bilty', selectedTrip.documents!.bilty!)}
-                            >
-                              <Eye className="h-3 w-3 mr-1" />
-                              View
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs h-8"
-                              onClick={() => {
-                                const link = document.createElement('a');
-                                link.href = selectedTrip.documents!.bilty!;
-                                link.download = `bilty-${selectedTrip.id}.pdf`;
-                                link.click();
-                              }}
-                            >
-                              Download
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <Input
-                          id={`bilty-${selectedTrip.id}`}
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleDocumentUpload(selectedTrip.id, 'bilty', file);
-                          }}
-                          className="text-xs"
-                        />
-                      )}
-                    </div>
-
-                    {/* E-Way Bill Upload */}
+                  <div className="grid md:grid-cols-5 gap-4">
+                    {/* 1. E-Way Bill Upload */}
                     <div className="p-3 border rounded-lg space-y-2">
                       <Label htmlFor={`ewaybill-${selectedTrip.id}`} className="text-sm font-medium">
-                        E-Way Bill
+                        1. E-Way Bill
                       </Label>
                       {selectedTrip.documents?.ewaybill ? (
                         <div className="space-y-2">
@@ -1909,12 +1862,12 @@ const LoadAgentDashboard = () => {
                       )}
                     </div>
 
-                    {/* Invoice Upload */}
+                    {/* 2. Bilty Upload */}
                     <div className="p-3 border rounded-lg space-y-2">
-                      <Label htmlFor={`invoice-${selectedTrip.id}`} className="text-sm font-medium">
-                        Invoice
+                      <Label htmlFor={`bilty-${selectedTrip.id}`} className="text-sm font-medium">
+                        2. Bilty
                       </Label>
-                      {selectedTrip.documents?.invoice ? (
+                      {selectedTrip.documents?.bilty ? (
                         <div className="space-y-2">
                           <Badge className="bg-green-600 w-full justify-center text-xs py-1">Uploaded</Badge>
                           <div className="grid grid-cols-2 gap-1">
@@ -1922,7 +1875,7 @@ const LoadAgentDashboard = () => {
                               variant="outline"
                               size="sm"
                               className="text-xs h-8"
-                              onClick={() => handleViewDocument('Invoice', selectedTrip.documents!.invoice!)}
+                              onClick={() => handleViewDocument('Bilty', selectedTrip.documents!.bilty!)}
                             >
                               <Eye className="h-3 w-3 mr-1" />
                               View
@@ -1933,8 +1886,8 @@ const LoadAgentDashboard = () => {
                               className="text-xs h-8"
                               onClick={() => {
                                 const link = document.createElement('a');
-                                link.href = selectedTrip.documents!.invoice!;
-                                link.download = `invoice-${selectedTrip.id}.pdf`;
+                                link.href = selectedTrip.documents!.bilty!;
+                                link.download = `bilty-${selectedTrip.id}.pdf`;
                                 link.click();
                               }}
                             >
@@ -1944,22 +1897,69 @@ const LoadAgentDashboard = () => {
                         </div>
                       ) : (
                         <Input
-                          id={`invoice-${selectedTrip.id}`}
+                          id={`bilty-${selectedTrip.id}`}
                           type="file"
                           accept=".pdf,.jpg,.jpeg,.png"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) handleDocumentUpload(selectedTrip.id, 'invoice', file);
+                            if (file) handleDocumentUpload(selectedTrip.id, 'bilty', file);
                           }}
                           className="text-xs"
                         />
                       )}
                     </div>
 
-                    {/* POD Upload */}
+                    {/* 3. Advance Invoice Upload */}
+                    <div className="p-3 border rounded-lg space-y-2">
+                      <Label htmlFor={`advance_invoice-${selectedTrip.id}`} className="text-sm font-medium">
+                        3. Advance Invoice
+                      </Label>
+                      {selectedTrip.documents?.advance_invoice ? (
+                        <div className="space-y-2">
+                          <Badge className="bg-green-600 w-full justify-center text-xs py-1">Uploaded</Badge>
+                          <div className="grid grid-cols-2 gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-8"
+                              onClick={() => handleViewDocument('Advance Invoice', selectedTrip.documents!.advance_invoice!)}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-8"
+                              onClick={() => {
+                                const link = document.createElement('a');
+                                link.href = selectedTrip.documents!.advance_invoice!;
+                                link.download = `advance-invoice-${selectedTrip.id}.pdf`;
+                                link.click();
+                              }}
+                            >
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Input
+                          id={`advance_invoice-${selectedTrip.id}`}
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleDocumentUpload(selectedTrip.id, 'advance_invoice', file);
+                          }}
+                          className="text-xs"
+                        />
+                      )}
+                    </div>
+
+                    {/* 4. POD Upload */}
                     <div className="p-3 border rounded-lg space-y-2">
                       <Label htmlFor={`pod-${selectedTrip.id}`} className="text-sm font-medium">
-                        POD
+                        4. POD
                       </Label>
                       {selectedTrip.documents?.pod ? (
                         <div className="space-y-2">
@@ -1997,6 +1997,53 @@ const LoadAgentDashboard = () => {
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) handleDocumentUpload(selectedTrip.id, 'pod', file);
+                          }}
+                          className="text-xs"
+                        />
+                      )}
+                    </div>
+
+                    {/* 5. Final Invoice Upload */}
+                    <div className="p-3 border rounded-lg space-y-2">
+                      <Label htmlFor={`final_invoice-${selectedTrip.id}`} className="text-sm font-medium">
+                        5. Final Invoice
+                      </Label>
+                      {selectedTrip.documents?.final_invoice ? (
+                        <div className="space-y-2">
+                          <Badge className="bg-green-600 w-full justify-center text-xs py-1">Uploaded</Badge>
+                          <div className="grid grid-cols-2 gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-8"
+                              onClick={() => handleViewDocument('Final Invoice', selectedTrip.documents!.final_invoice!)}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-8"
+                              onClick={() => {
+                                const link = document.createElement('a');
+                                link.href = selectedTrip.documents!.final_invoice!;
+                                link.download = `final-invoice-${selectedTrip.id}.pdf`;
+                                link.click();
+                              }}
+                            >
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Input
+                          id={`final_invoice-${selectedTrip.id}`}
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleDocumentUpload(selectedTrip.id, 'final_invoice', file);
                           }}
                           className="text-xs"
                         />
