@@ -61,6 +61,29 @@ export const notificationTemplates: Record<string, NotificationTemplate> = {
   },
 
   // Investment-related notifications
+  investment_opportunity: {
+    type: 'investment_opportunity',
+    subject: 'New Investment Opportunity Available',
+    priority: 'high',
+    roles: ['lender'],
+    emailTemplate: (data) => `
+      <h2>New Investment Opportunity! 💼</h2>
+      <p>A new trip is available for funding on the platform.</p>
+      <p><strong>Trip Details:</strong></p>
+      <ul>
+        <li>Route: ${data.origin} → ${data.destination}</li>
+        <li>Load Type: ${data.loadType}</li>
+        <li>Amount: ${formatCurrency(data.amount)}</li>
+        <li>Distance: ${data.distance}km</li>
+        <li>Interest Rate: ${data.interestRate || 'N/A'}%</li>
+        <li>Risk Level: ${data.riskLevel || 'Low'}</li>
+        <li>Maturity: ${data.maturityDays || 30} days</li>
+      </ul>
+      <p>Review this opportunity and place your bid in the Investment Opportunities section.</p>
+    `,
+    inAppMessage: (data) => `New investment opportunity: ${data.origin} → ${data.destination}, ${formatCurrency(data.amount)} at ${data.interestRate || 'N/A'}% interest`,
+  },
+
   bid_received: {
     type: 'bid_received',
     subject: 'New Investment Bid Received',

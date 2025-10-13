@@ -12,6 +12,9 @@ import {
   getTripBids,
   deleteTrip,
 } from '../../src/db/queries/trips.ts';
+import { getUsersByRole } from '../../src/db/queries/users.ts';
+import { createNotification } from '../../src/db/queries/notifications.ts';
+import { getNotificationTemplate } from '../../src/services/notificationTemplates.ts';
 
 const router = Router();
 
@@ -57,9 +60,48 @@ router.get('/:id', (req: Request, res: Response) => {
 });
 
 // POST /api/trips - Create new trip
-router.post('/', (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     const trip = createTrip(req.body);
+
+    // Notify all lenders about the new investment opportunity
+    try {
+      const lenders = getUsersByRole('lender');
+      const template = getNotificationTemplate('investment_opportunity');
+
+      if (template) {
+        const tripData = {
+          tripId: trip.id,
+          origin: trip.origin,
+          destination: trip.destination,
+          loadType: trip.load_type,
+          amount: trip.amount,
+          distance: trip.distance,
+          interestRate: trip.interest_rate,
+          riskLevel: trip.risk_level,
+          maturityDays: trip.maturity_days,
+        };
+
+        // Create notifications for all lenders
+        lenders.forEach(lender => {
+          createNotification({
+            userId: lender.id,
+            type: 'investment_opportunity',
+            title: template.subject,
+            message: template.inAppMessage(tripData),
+            priority: template.priority,
+            actionUrl: `/investment-opportunities`,
+            metadata: tripData,
+          });
+        });
+
+        console.log(`Notified ${lenders.length} lenders about new trip ${trip.id}`);
+      }
+    } catch (notifError) {
+      console.error('Failed to send notifications:', notifError);
+      // Don't fail the trip creation if notifications fail
+    }
+
     res.status(201).json(trip);
   } catch (error: any) {
     console.error('Create trip error:', error);
@@ -107,7 +149,7 @@ router.get('/:id/bids', (req: Request, res: Response) => {
 });
 
 // POST /api/trips/:id/bids - Add bid to trip
-router.post('/:id/bids', (req: Request, res: Response) => {
+router.post('/:id/bids', async (req: Request, res: Response) => {
   try {
     const { lenderId, lenderName, amount, interestRate } = req.body;
 
@@ -116,6 +158,41 @@ router.post('/:id/bids', (req: Request, res: Response) => {
     }
 
     const bid = addBid(req.params.id, lenderId, lenderName, amount, interestRate);
+
+    // Notify the trip owner (shipper/load owner) about the new bid
+    try {
+      const trip = getTrip(req.params.id);
+      if (trip) {
+        const template = getNotificationTemplate('bid_received');
+
+        if (template) {
+          const bidData = {
+            tripId: trip.id,
+            origin: trip.origin,
+            destination: trip.destination,
+            lenderName,
+            amount,
+            interestRate,
+          };
+
+          createNotification({
+            userId: trip.load_owner_id,
+            type: 'bid_received',
+            title: template.subject,
+            message: template.inAppMessage(bidData),
+            priority: template.priority,
+            actionUrl: `/trips/${trip.id}`,
+            metadata: bidData,
+          });
+
+          console.log(`Notified load owner ${trip.load_owner_id} about bid from ${lenderName}`);
+        }
+      }
+    } catch (notifError) {
+      console.error('Failed to send bid notification:', notifError);
+      // Don't fail the bid creation if notification fails
+    }
+
     res.status(201).json(bid);
   } catch (error: any) {
     console.error('Add bid error:', error);

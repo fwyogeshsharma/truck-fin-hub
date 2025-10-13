@@ -20,6 +20,10 @@ export const notifyTripCompleted = async (userId: string, userEmail: string, tri
 };
 
 // Investment-related notifications
+export const notifyInvestmentOpportunity = async (userId: string, userEmail: string, tripData: any) => {
+  await sendNotification(userId, userEmail, 'investment_opportunity', tripData);
+};
+
 export const notifyBidReceived = async (userId: string, userEmail: string, bidData: any) => {
   await sendNotification(userId, userEmail, 'bid_received', bidData);
 };

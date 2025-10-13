@@ -231,3 +231,25 @@ CREATE INDEX IF NOT EXISTS idx_user_kyc_status ON user_kyc(kyc_status);
 CREATE INDEX IF NOT EXISTS idx_user_kyc_pan ON user_kyc(pan_number);
 CREATE INDEX IF NOT EXISTS idx_user_kyc_aadhar ON user_kyc(aadhar_number);
 CREATE INDEX IF NOT EXISTS idx_user_kyc_gst ON user_kyc(gst_number);
+
+-- ============================================================
+-- Table 10: notifications
+-- ============================================================
+CREATE TABLE IF NOT EXISTS notifications (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  priority TEXT NOT NULL CHECK(priority IN ('low', 'medium', 'high', 'urgent')) DEFAULT 'medium',
+  read INTEGER DEFAULT 0,
+  action_url TEXT,
+  metadata TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  read_at TEXT,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(user_id, read);
+CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at DESC);

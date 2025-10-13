@@ -2,6 +2,7 @@ export type NotificationType =
   | 'trip_created'
   | 'trip_funded'
   | 'trip_completed'
+  | 'investment_opportunity'
   | 'investment_allotted'
   | 'investment_confirmed'
   | 'investment_returned'

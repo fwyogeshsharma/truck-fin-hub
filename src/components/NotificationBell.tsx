@@ -21,14 +21,47 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
 
-  const loadNotifications = () => {
-    const notifs = notificationService.getRecent(userId, 20);
-    setNotifications(notifs);
-    setUnreadCount(notificationService.getUnreadCount(userId));
+  const loadNotifications = async () => {
+    try {
+      // Fetch notifications from API
+      const [notifsResponse, countResponse] = await Promise.all([
+        fetch(`/api/notifications/${userId}?limit=20`),
+        fetch(`/api/notifications/${userId}/unread-count`)
+      ]);
+
+      if (notifsResponse.ok) {
+        const dbNotifs = await notifsResponse.json();
+        // Convert database format to client format
+        const clientNotifs = dbNotifs.map((n: any) => ({
+          id: n.id,
+          userId: n.user_id,
+          type: n.type,
+          title: n.title,
+          message: n.message,
+          priority: n.priority || 'medium',
+          read: n.read === 1,
+          actionUrl: n.action_url || n.link,
+          metadata: n.metadata ? JSON.parse(n.metadata) : undefined,
+          createdAt: n.created_at,
+          readAt: n.read_at,
+        }));
+        setNotifications(clientNotifs);
+      }
+
+      if (countResponse.ok) {
+        const countData = await countResponse.json();
+        setUnreadCount(countData.count);
+      }
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    }
   };
 
   useEffect(() => {
     loadNotifications();
+
+    // Poll for new notifications every 30 seconds
+    const interval = setInterval(loadNotifications, 30000);
 
     // Listen for new notifications
     const handleNewNotification = (event: any) => {
@@ -40,31 +73,48 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
     window.addEventListener('notification-created', handleNewNotification);
 
     return () => {
+      clearInterval(interval);
       window.removeEventListener('notification-created', handleNewNotification);
     };
   }, [userId]);
 
-  const handleMarkAsRead = (notificationId: string, e: React.MouseEvent) => {
+  const handleMarkAsRead = async (notificationId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    notificationService.markAsRead(userId, notificationId);
-    loadNotifications();
-  };
-
-  const handleMarkAllAsRead = () => {
-    notificationService.markAllAsRead(userId);
-    loadNotifications();
-  };
-
-  const handleDelete = (notificationId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    notificationService.deleteNotification(userId, notificationId);
-    loadNotifications();
-  };
-
-  const handleNotificationClick = (notification: Notification) => {
-    if (!notification.read) {
-      notificationService.markAsRead(userId, notification.id);
+    try {
+      await fetch(`/api/notifications/${userId}/${notificationId}/read`, { method: 'PUT' });
       loadNotifications();
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await fetch(`/api/notifications/${userId}/read-all`, { method: 'PUT' });
+      loadNotifications();
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+    }
+  };
+
+  const handleDelete = async (notificationId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await fetch(`/api/notifications/${userId}/${notificationId}`, { method: 'DELETE' });
+      loadNotifications();
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+    }
+  };
+
+  const handleNotificationClick = async (notification: Notification) => {
+    if (!notification.read) {
+      try {
+        await fetch(`/api/notifications/${userId}/${notification.id}/read`, { method: 'PUT' });
+        loadNotifications();
+      } catch (error) {
+        console.error('Failed to mark as read:', error);
+      }
     }
 
     if (notification.actionUrl) {
@@ -219,9 +269,13 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
               variant="ghost"
               size="sm"
               className="w-full"
-              onClick={() => {
-                notificationService.clearAll(userId);
-                loadNotifications();
+              onClick={async () => {
+                try {
+                  await fetch(`/api/notifications/${userId}`, { method: 'DELETE' });
+                  loadNotifications();
+                } catch (error) {
+                  console.error('Failed to clear notifications:', error);
+                }
               }}
             >
               Clear all notifications
