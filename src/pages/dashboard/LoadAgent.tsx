@@ -977,10 +977,9 @@ const LoadAgentDashboard = () => {
                                 </h4>
                                 <div className="space-y-2">
                                   {trip.bids.map((bid: any, index: number) => {
-                                    // Convert lender's bid rate to shipper's rate
-                                    const yearlyRate = (bid.interestRate * 365) / (trip.maturityDays || 30);
-                                    const adjustedYearlyRate = yearlyRate * 1.2;
-                                    const shipperRate = (adjustedYearlyRate * (trip.maturityDays || 30)) / 365;
+                                    // Add 30% markup to lender's bid rate
+                                    // If lender bids 10%, shipper pays 10% + (10% * 0.3) = 13%
+                                    const shipperRate = bid.interestRate + (bid.interestRate * 0.3);
 
                                     return (
                                       <div
@@ -1142,10 +1141,9 @@ const LoadAgentDashboard = () => {
                         <TableCell>
                           {trip.bids && trip.bids.length > 0 ? (
                             (() => {
-                              // Convert lender's bid rate to shipper's rate
-                              const yearlyRate = (trip.bids[0].interestRate * 365) / (trip.maturityDays || 30);
-                              const adjustedYearlyRate = yearlyRate * 1.2;
-                              const shipperRate = (adjustedYearlyRate * (trip.maturityDays || 30)) / 365;
+                              // Add 30% markup to lender's bid rate
+                              // If lender bids 10%, shipper pays 10% + (10% * 0.3) = 13%
+                              const shipperRate = trip.bids[0].interestRate + (trip.bids[0].interestRate * 0.3);
 
                               return (
                                 <div>
