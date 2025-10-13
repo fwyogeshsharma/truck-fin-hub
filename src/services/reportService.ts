@@ -1,27 +1,73 @@
 import { ReportData, ReportFilter, ReportType, ChartData } from '@/types/reports';
 import { formatCurrency } from '@/lib/currency';
+import { tripsAPI } from '@/api/trips';
+import { db } from '@/lib/db';
 
-// Sample data generator for reports
+// Sample data generator for reports with real data integration
 export const reportService = {
+  // Helper function to fetch real trips data
+  async fetchTripsData(filter: ReportFilter, userId?: string, userRole?: string): Promise<any[]> {
+    try {
+      // Fetch trips from the database
+      const filters: any = {};
+      if (filter.status) filters.status = filter.status;
+
+      // Filter by user role
+      if (userRole === 'load_owner') {
+        filters.loadOwnerId = userId;
+      } else if (userRole === 'lender') {
+        filters.lenderId = userId;
+      }
+
+      const trips = await tripsAPI.getAll(filters);
+      return trips || [];
+    } catch (error) {
+      console.error('Error fetching trips data:', error);
+      return [];
+    }
+  },
+
+  // Helper to calculate aggregated metrics from real trips data
+  calculateTripMetrics(trips: any[]) {
+    const totalTrips = trips.length;
+    const fundedTrips = trips.filter(t => t.status === 'funded' || t.status === 'in_transit' || t.status === 'completed').length;
+    const completedTrips = trips.filter(t => t.status === 'completed').length;
+    const inProgressTrips = trips.filter(t => t.status === 'in_transit' || t.status === 'funded').length;
+    const pendingTrips = trips.filter(t => t.status === 'pending' || t.status === 'escrowed').length;
+
+    const totalAmount = trips.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const avgAmount = totalTrips > 0 ? totalAmount / totalTrips : 0;
+
+    return {
+      totalTrips,
+      fundedTrips,
+      completedTrips,
+      inProgressTrips,
+      pendingTrips,
+      totalAmount,
+      avgAmount
+    };
+  },
+
   // Generate report based on type and filters
-  generateReport(type: ReportType, filter: ReportFilter, userId: string): ReportData {
-    const reportGenerators: Record<ReportType, () => ReportData> = {
+  async generateReport(type: ReportType, filter: ReportFilter, userId: string, userRole?: string): Promise<ReportData> {
+    const reportGenerators: Record<ReportType, () => Promise<ReportData>> = {
       // Load Owner Reports
-      trip_summary: () => this.generateTripSummary(filter),
-      funding_analysis: () => this.generateFundingAnalysis(filter),
-      cost_breakdown: () => this.generateCostBreakdown(filter),
-      trip_performance: () => this.generateTripPerformance(filter),
+      trip_summary: () => this.generateTripSummary(filter, userId, userRole),
+      funding_analysis: () => this.generateFundingAnalysis(filter, userId, userRole),
+      cost_breakdown: () => this.generateCostBreakdown(filter, userId, userRole),
+      trip_performance: () => this.generateTripPerformance(filter, userId, userRole),
 
       // Lender Reports
-      portfolio_summary: () => this.generatePortfolioSummary(filter),
-      returns_analysis: () => this.generateReturnsAnalysis(filter),
-      risk_assessment: () => this.generateRiskAssessment(filter),
-      investment_performance: () => this.generateInvestmentPerformance(filter),
+      portfolio_summary: () => this.generatePortfolioSummary(filter, userId, userRole),
+      returns_analysis: () => this.generateReturnsAnalysis(filter, userId, userRole),
+      risk_assessment: () => this.generateRiskAssessment(filter, userId, userRole),
+      investment_performance: () => this.generateInvestmentPerformance(filter, userId, userRole),
 
       // Transporter Reports
-      delivery_summary: () => this.generateDeliverySummary(filter),
-      earnings_report: () => this.generateEarningsReport(filter),
-      performance_metrics: () => this.generatePerformanceMetrics(filter),
+      delivery_summary: () => this.generateDeliverySummary(filter, userId, userRole),
+      earnings_report: () => this.generateEarningsReport(filter, userId, userRole),
+      performance_metrics: () => this.generatePerformanceMetrics(filter, userId, userRole),
 
       // Admin Reports
       platform_overview: () => this.generatePlatformOverview(filter),
@@ -34,17 +80,34 @@ export const reportService = {
       tax_summary: () => this.generateTaxSummary(filter, userId),
     };
 
-    return reportGenerators[type]();
+    return await reportGenerators[type]();
   },
 
   // Load Owner Reports
-  generateTripSummary(filter: ReportFilter): ReportData {
+  async generateTripSummary(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
+    // Fetch real trips data
+    const trips = await this.fetchTripsData(filter, userId, userRole);
+    const metrics = this.calculateTripMetrics(trips);
+
     // Build filter description
     const filterParts: string[] = [];
     if (filter.company) filterParts.push(`Company: ${filter.company}`);
     if (filter.loadType) filterParts.push(`Load Type: ${filter.loadType}`);
     if (filter.status) filterParts.push(`Status: ${filter.status}`);
     const filterDesc = filterParts.length > 0 ? ` (Filtered: ${filterParts.join(', ')})` : '';
+
+    // Build details from real trips
+    const details = trips.map(trip => ({
+      date: new Date(trip.created_at).toLocaleDateString(),
+      tripId: trip.id.substring(0, 8).toUpperCase(),
+      route: `${trip.origin} → ${trip.destination}`,
+      amount: trip.amount,
+      status: trip.status,
+      fundedBy: trip.lender_name || '-'
+    }));
+
+    // Calculate monthly trends for chart
+    const monthlyData = this.calculateMonthlyTrends(trips);
 
     return {
       id: `report_${Date.now()}`,
@@ -55,34 +118,28 @@ export const reportService = {
       startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       endDate: filter.endDate || new Date().toISOString(),
       summary: {
-        totalCount: 45,
-        totalAmount: 6750000,
-        averageAmount: 150000,
+        totalCount: metrics.totalTrips,
+        totalAmount: metrics.totalAmount,
+        averageAmount: metrics.avgAmount,
         growth: 15.5,
         trends: [
-          { label: 'Total Trips', value: 45, change: 12 },
-          { label: 'Funded', value: 38, change: 8 },
-          { label: 'Completed', value: 32, change: 10 },
-          { label: 'In Progress', value: 6 },
-          { label: 'Pending Funding', value: 7, change: -5 },
+          { label: 'Total Trips', value: metrics.totalTrips, change: 12 },
+          { label: 'Funded', value: metrics.fundedTrips, change: 8 },
+          { label: 'Completed', value: metrics.completedTrips, change: 10 },
+          { label: 'In Progress', value: metrics.inProgressTrips },
+          { label: 'Pending Funding', value: metrics.pendingTrips, change: -5 },
         ],
       },
-      details: [
-        { date: '2025-01-05', tripId: 'TRP001', route: 'Mumbai → Delhi', amount: 150000, status: 'Completed', fundedBy: 'ABC Finance' },
-        { date: '2025-01-08', tripId: 'TRP002', route: 'Delhi → Bangalore', amount: 180000, status: 'In Progress', fundedBy: 'XYZ Capital' },
-        { date: '2025-01-12', tripId: 'TRP003', route: 'Chennai → Hyderabad', amount: 120000, status: 'Completed', fundedBy: 'PQR Investments' },
-        { date: '2025-01-15', tripId: 'TRP004', route: 'Kolkata → Mumbai', amount: 200000, status: 'In Progress', fundedBy: 'LMN Fund' },
-        { date: '2025-01-18', tripId: 'TRP005', route: 'Pune → Ahmedabad', amount: 95000, status: 'Pending', fundedBy: '-' },
-      ],
+      details,
       charts: [
         {
           type: 'bar',
           title: 'Trips by Month',
           data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            labels: monthlyData.labels,
             datasets: [{
               label: 'Number of Trips',
-              data: [12, 15, 18, 22, 20, 25],
+              data: monthlyData.counts,
               backgroundColor: 'rgba(14, 165, 233, 0.7)',
               borderColor: 'rgba(14, 165, 233, 1)',
             }],
@@ -92,10 +149,10 @@ export const reportService = {
           type: 'pie',
           title: 'Trip Status Distribution',
           data: {
-            labels: ['Completed', 'In Progress', 'Pending Funding'],
+            labels: ['Completed', 'In Progress', 'Pending'],
             datasets: [{
               label: 'Trips',
-              data: [32, 6, 7],
+              data: [metrics.completedTrips, metrics.inProgressTrips, metrics.pendingTrips],
               backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
             }],
           },
@@ -104,7 +161,49 @@ export const reportService = {
     };
   },
 
-  generateFundingAnalysis(filter: ReportFilter): ReportData {
+  // Helper to calculate monthly trends
+  calculateMonthlyTrends(trips: any[]) {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthCounts: Record<string, number> = {};
+
+    trips.forEach(trip => {
+      const date = new Date(trip.created_at);
+      const monthKey = `${monthNames[date.getMonth()]}`;
+      monthCounts[monthKey] = (monthCounts[monthKey] || 0) + 1;
+    });
+
+    // Get last 6 months
+    const now = new Date();
+    const labels: string[] = [];
+    const counts: number[] = [];
+
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = monthNames[d.getMonth()];
+      labels.push(monthKey);
+      counts.push(monthCounts[monthKey] || 0);
+    }
+
+    return { labels, counts };
+  },
+
+  async generateFundingAnalysis(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
+    const trips = await this.fetchTripsData(filter, userId, userRole);
+    const fundedTrips = trips.filter(t => t.lender_id);
+    const totalBorrowed = fundedTrips.reduce((sum, t) => sum + t.amount, 0);
+    const avgInterestRate = fundedTrips.length > 0
+      ? fundedTrips.reduce((sum, t) => sum + (t.interest_rate || 12), 0) / fundedTrips.length
+      : 12.5;
+
+    const details = fundedTrips.map(trip => ({
+      lender: trip.lender_name || 'N/A',
+      amount: trip.amount,
+      interestRate: trip.interest_rate || 12,
+      tenure: trip.maturity_days || 30,
+      status: trip.status === 'completed' ? 'Repaid' : 'Active',
+      outstanding: trip.status === 'completed' ? 0 : trip.amount * (1 + (trip.interest_rate || 12) / 100)
+    }));
+
     return {
       id: `report_${Date.now()}`,
       type: 'funding_analysis',
@@ -163,7 +262,7 @@ export const reportService = {
     };
   },
 
-  generateCostBreakdown(filter: ReportFilter): ReportData {
+  async generateCostBreakdown(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
     return {
       id: `report_${Date.now()}`,
       type: 'cost_breakdown',
@@ -208,7 +307,7 @@ export const reportService = {
     };
   },
 
-  generateTripPerformance(filter: ReportFilter): ReportData {
+  async generateTripPerformance(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
     return {
       id: `report_${Date.now()}`,
       type: 'trip_performance',
@@ -261,7 +360,7 @@ export const reportService = {
   },
 
   // Lender Reports
-  generatePortfolioSummary(filter: ReportFilter): ReportData {
+  async generatePortfolioSummary(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
     return {
       id: `report_${Date.now()}`,
       type: 'portfolio_summary',
@@ -318,7 +417,7 @@ export const reportService = {
     };
   },
 
-  generateReturnsAnalysis(filter: ReportFilter): ReportData {
+  async generateReturnsAnalysis(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
     return {
       id: `report_${Date.now()}`,
       type: 'returns_analysis',
@@ -364,7 +463,7 @@ export const reportService = {
     };
   },
 
-  generateRiskAssessment(filter: ReportFilter): ReportData {
+  async generateRiskAssessment(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
     return {
       id: `report_${Date.now()}`,
       type: 'risk_assessment',
@@ -408,7 +507,7 @@ export const reportService = {
     };
   },
 
-  generateInvestmentPerformance(filter: ReportFilter): ReportData {
+  async generateInvestmentPerformance(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
     return {
       id: `report_${Date.now()}`,
       type: 'investment_performance',
@@ -461,7 +560,7 @@ export const reportService = {
   },
 
   // Transporter Reports (simplified examples)
-  generateDeliverySummary(filter: ReportFilter): ReportData {
+  async generateDeliverySummary(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
     return {
       id: `report_${Date.now()}`,
       type: 'delivery_summary',
@@ -487,7 +586,7 @@ export const reportService = {
     };
   },
 
-  generateEarningsReport(filter: ReportFilter): ReportData {
+  async generateEarningsReport(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
     return {
       id: `report_${Date.now()}`,
       type: 'earnings_report',
@@ -513,7 +612,7 @@ export const reportService = {
     };
   },
 
-  generatePerformanceMetrics(filter: ReportFilter): ReportData {
+  async generatePerformanceMetrics(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
     return {
       id: `report_${Date.now()}`,
       type: 'performance_metrics',
@@ -540,7 +639,7 @@ export const reportService = {
   },
 
   // Admin Reports (simplified)
-  generatePlatformOverview(filter: ReportFilter): ReportData {
+  async generatePlatformOverview(filter: ReportFilter): Promise<ReportData> {
     return {
       id: `report_${Date.now()}`,
       type: 'platform_overview',
@@ -566,7 +665,7 @@ export const reportService = {
     };
   },
 
-  generateUserAnalytics(filter: ReportFilter): ReportData {
+  async generateUserAnalytics(filter: ReportFilter): Promise<ReportData> {
     return {
       id: `report_${Date.now()}`,
       type: 'user_analytics',
@@ -592,7 +691,7 @@ export const reportService = {
     };
   },
 
-  generateTransactionSummary(filter: ReportFilter): ReportData {
+  async generateTransactionSummary(filter: ReportFilter): Promise<ReportData> {
     return {
       id: `report_${Date.now()}`,
       type: 'transaction_summary',
@@ -618,7 +717,7 @@ export const reportService = {
     };
   },
 
-  generateKYCStatusReport(filter: ReportFilter): ReportData {
+  async generateKYCStatusReport(filter: ReportFilter): Promise<ReportData> {
     return {
       id: `report_${Date.now()}`,
       type: 'kyc_status_report',
@@ -645,7 +744,7 @@ export const reportService = {
   },
 
   // Common Reports
-  generateWalletStatement(filter: ReportFilter, userId: string): ReportData {
+  async generateWalletStatement(filter: ReportFilter, userId: string): Promise<ReportData> {
     return {
       id: `report_${Date.now()}`,
       type: 'wallet_statement',
@@ -675,7 +774,7 @@ export const reportService = {
     };
   },
 
-  generateTaxSummary(filter: ReportFilter, userId: string): ReportData {
+  async generateTaxSummary(filter: ReportFilter, userId: string): Promise<ReportData> {
     return {
       id: `report_${Date.now()}`,
       type: 'tax_summary',

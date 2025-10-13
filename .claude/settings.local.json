@@ -23,7 +23,8 @@
       "Bash(del nul)",
       "Bash(npm run dev:all:*)",
       "Bash(taskkill:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []
