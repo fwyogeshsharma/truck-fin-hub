@@ -231,7 +231,7 @@ const PlatformConfiguration = () => {
             suffix="%"
           />
           <ConfigInput
-            label="Load Agent Commission"
+            label="Borrower Commission"
             value={config.fees.loadAgentCommission}
             onChange={(v) => handleInputChange('fees', 'loadAgentCommission', v)}
             suffix="%"

@@ -37,8 +37,8 @@ const SuperAdminDashboard = () => {
     totalValue: 0,
     activeTrips: 0,
     completedTrips: 0,
-    totalLenders: 0,
-    totalLoadOwners: 0,
+    totalInvestors: 0,
+    totalBorrowers: 0,
   });
 
   useEffect(() => {
@@ -48,6 +48,17 @@ const SuperAdminDashboard = () => {
           data.getTrips(),
           data.getInvestments(),
         ]);
+
+        // Get all users from auth
+        const allUsers = auth.getAllUsers();
+
+        // Count borrowers (load_agent and load_owner roles)
+        const totalBorrowers = allUsers.filter(u =>
+          u.role === 'load_agent' || u.role === 'load_owner'
+        ).length;
+
+        // Count investors (lender role)
+        const totalInvestors = allUsers.filter(u => u.role === 'lender').length;
 
         const activeTrips = trips.filter(t =>
           ['pending', 'funded', 'in_transit', 'escrowed'].includes(t.status)
@@ -60,14 +71,14 @@ const SuperAdminDashboard = () => {
         const totalInvestmentValue = investments.reduce((sum, inv) => sum + inv.amount, 0);
 
         setStats({
-          totalUsers: 0, // This would come from user API
+          totalUsers: allUsers.length,
           totalTrips: trips.length,
           totalInvestments: investments.length,
           totalValue: totalInvestmentValue,
           activeTrips,
           completedTrips,
-          totalLenders: 0, // Would come from user API
-          totalLoadOwners: 0, // Would come from user API
+          totalInvestors,
+          totalBorrowers,
         });
       } catch (error) {
         console.error('Failed to load data:', error);
@@ -227,16 +238,16 @@ const SuperAdminDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Package className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Total Load Owners</span>
+                    <span className="text-sm">Total Borrowers</span>
                   </div>
-                  <span className="font-semibold">{stats.totalLoadOwners || 'N/A'}</span>
+                  <span className="font-semibold">{stats.totalBorrowers}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Wallet className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Total Lenders</span>
+                    <span className="text-sm">Total Investors</span>
                   </div>
-                  <span className="font-semibold">{stats.totalLenders || 'N/A'}</span>
+                  <span className="font-semibold">{stats.totalInvestors}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">

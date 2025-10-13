@@ -40,7 +40,7 @@ const AdminDashboard = () => {
       value: allUsers.length,
       icon: Users,
       color: "primary",
-      detail: `${allUsers.filter(u => u.role === 'lender').length} Lenders, ${allUsers.filter(u => u.role === 'load_owner').length} Load Providers`,
+      detail: `${allUsers.filter(u => u.role === 'lender').length} Investors, ${allUsers.filter(u => u.role === 'load_owner').length} Borrowers`,
     },
     {
       title: "Total Trips",
