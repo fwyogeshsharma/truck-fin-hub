@@ -478,7 +478,7 @@ const LenderDashboard = () => {
                               Awaiting Allotment
                             </span>
                           </div>
-                          <p className="text-sm font-semibold mt-1">{formatCurrency(investment.amount)} at {investment.interestRate}%</p>
+                          <p className="text-sm font-semibold mt-1">{formatCurrency(investment.amount)} at {investment.interestRate.toFixed(2)}%</p>
                         </div>
                       </div>
                     );
@@ -530,7 +530,7 @@ const LenderDashboard = () => {
                             Active
                           </span>
                         </div>
-                        <p className="text-sm font-semibold mt-1">{formatCurrency(investment.amount)} at {investment.interestRate}%</p>
+                        <p className="text-sm font-semibold mt-1">{formatCurrency(investment.amount)} at {investment.interestRate.toFixed(2)}%</p>
                         <p className="text-xs text-muted-foreground">
                           Return: {formatCurrency(investment.expectedReturn)}
                         </p>
