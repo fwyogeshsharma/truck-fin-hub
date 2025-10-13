@@ -180,7 +180,7 @@ const RoleSelection = () => {
       <div className="w-full max-w-7xl relative">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-primary bg-clip-text text-transparent">Choose Your Role</h1>
-          <p className="text-lg text-muted-foreground">Select how you'll use TruckFin (<span className="font-bold text-foreground">this can't be changed later</span>)</p>
+          <p className="text-lg text-muted-foreground">Select how you'll use LogiFin (<span className="font-bold text-foreground">this can't be changed later</span>)</p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">

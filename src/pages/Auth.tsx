@@ -96,7 +96,7 @@ const Auth = () => {
               <TruckIcon className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Welcome to TruckFin</CardTitle>
+          <CardTitle className="text-2xl">Welcome to LogiFin</CardTitle>
           <CardDescription>Sign in or create an account to get started</CardDescription>
         </CardHeader>
         

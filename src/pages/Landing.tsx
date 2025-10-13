@@ -10,10 +10,7 @@ const Landing = () => {
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TruckIcon className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              TruckFin
-            </span>
+            <img src="/logiFin.png" alt="LogiFin" className="h-10 w-auto object-contain" />
           </div>
           <Link to="/auth">
             <Button variant="outline" className="gap-2">
@@ -74,7 +71,7 @@ const Landing = () => {
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">How TruckFin Works</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">How LogiFin Works</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               A seamless platform connecting all stakeholders in logistics financing
             </p>
@@ -264,7 +261,7 @@ const Landing = () => {
               Ready to Transform Your Logistics Financing?
             </h2>
             <p className="text-xl text-muted-foreground leading-relaxed mb-8">
-              Join thousands of businesses already using TruckFin
+              Join thousands of businesses already using LogiFin
             </p>
             <div className="mt-8">
               <Link to="/auth">
@@ -281,7 +278,7 @@ const Landing = () => {
       {/* Footer */}
       <footer className="border-t border-border py-8 bg-card/50">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p>&copy; 2025 TruckFin. Revolutionizing logistics financing in India.</p>
+          <p>&copy; 2025 LogiFin (Logistic Finance). Revolutionizing logistics financing in India.</p>
         </div>
       </footer>
     </div>
