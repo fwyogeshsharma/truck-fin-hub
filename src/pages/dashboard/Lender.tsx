@@ -9,6 +9,7 @@ import WalletCard from "@/components/WalletCard";
 import { useToast } from "@/hooks/use-toast";
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { formatCurrency, formatCurrencyCompact } from "@/lib/currency";
+import { getChartColors, getChartColorPalette } from "@/lib/chartColors";
 
 const LenderDashboard = () => {
   const { toast } = useToast();
@@ -25,6 +26,31 @@ const LenderDashboard = () => {
     totalReturns: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [chartColors, setChartColors] = useState(getChartColors());
+  const [colorPalette, setColorPalette] = useState(getChartColorPalette());
+
+  // Update chart colors when theme changes
+  useEffect(() => {
+    const updateColors = () => {
+      setChartColors(getChartColors());
+      setColorPalette(getChartColorPalette());
+    };
+
+    // Update colors immediately
+    updateColors();
+
+    // Listen for theme changes
+    const observer = new MutationObserver(() => {
+      updateColors();
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['style', 'class'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -104,12 +130,12 @@ const LenderDashboard = () => {
         name,
         value: totalInvested > 0 ? Math.round((amount / totalInvested) * 100) : 0,
         amount,
-        color: ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6', '#f97316'][index % 8],
+        color: colorPalette[index % colorPalette.length],
       }))
       .sort((a, b) => b.value - a.value);
 
     return portfolioData.length > 0 ? portfolioData : [
-      { name: 'No investments yet', value: 100, amount: 0, color: '#6b7280' }
+      { name: 'No investments yet', value: 100, amount: 0, color: chartColors.muted }
     ];
   };
 
@@ -297,12 +323,12 @@ const LenderDashboard = () => {
                 <AreaChart data={investmentGrowthData}>
                   <defs>
                     <linearGradient id="colorInvested" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#0EA5E9" stopOpacity={0}/>
+                      <stop offset="5%" stopColor={chartColors.primary} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={chartColors.primary} stopOpacity={0}/>
                     </linearGradient>
                     <linearGradient id="colorReturns" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      <stop offset="5%" stopColor={chartColors.secondary} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={chartColors.secondary} stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -310,8 +336,8 @@ const LenderDashboard = () => {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Area type="monotone" dataKey="invested" stroke="#0EA5E9" fillOpacity={1} fill="url(#colorInvested)" name="Total Invested" />
-                  <Area type="monotone" dataKey="returns" stroke="#10b981" fillOpacity={1} fill="url(#colorReturns)" name="Total Returns" />
+                  <Area type="monotone" dataKey="invested" stroke={chartColors.primary} fillOpacity={1} fill="url(#colorInvested)" name="Total Invested" />
+                  <Area type="monotone" dataKey="returns" stroke={chartColors.secondary} fillOpacity={1} fill="url(#colorReturns)" name="Total Returns" />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
@@ -395,7 +421,7 @@ const LenderDashboard = () => {
                       formatter={(value: any) => [formatCurrency(value), 'Returns']}
                       labelFormatter={(label) => `Month: ${label}`}
                     />
-                    <Bar dataKey="returns" fill="#10b981" name="Returns" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="returns" fill={chartColors.secondary} name="Returns" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
