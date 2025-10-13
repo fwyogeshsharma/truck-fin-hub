@@ -37,11 +37,18 @@ interface CredibilityDocument {
   files?: Array<{ id: string; name: string; url: string }>;
 }
 
+interface BankGuarantee {
+  uploaded: boolean;
+  fileUrl?: string;
+  fileName?: string;
+}
+
 interface CredibilityScore {
   totalScore: number;
   maxScore: number;
   documents: CredibilityDocument[];
   cibilScore?: number;
+  bankGuarantee?: BankGuarantee;
 }
 
 const ShipperKYC = () => {
@@ -67,6 +74,7 @@ const ShipperKYC = () => {
       { id: '9', type: 'ewaybill', name: 'E-Way Bills (Multiple uploads)', points: 150, uploaded: false, allowMultiple: true, files: [] },
     ],
     cibilScore: undefined,
+    bankGuarantee: { uploaded: false },
   });
 
   useEffect(() => {
@@ -253,6 +261,58 @@ const ShipperKYC = () => {
       title: 'CIBIL Score Added',
       description: `+${calculateCibilPoints(score)} points added to your credibility score!`,
     });
+  };
+
+  const handleBankGuaranteeUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const updatedScore = {
+      ...credibilityScore,
+      bankGuarantee: {
+        uploaded: true,
+        fileUrl: URL.createObjectURL(file),
+        fileName: file.name,
+      },
+    };
+
+    setCredibilityScore(updatedScore);
+    localStorage.setItem(`credibility_score_${user?.id}`, JSON.stringify(updatedScore));
+
+    toast({
+      title: 'Bank Guarantee Uploaded',
+      description: 'Your maximum loan amount has been increased! Lenders can now offer higher financing.',
+    });
+  };
+
+  const handleRemoveBankGuarantee = () => {
+    const updatedScore = {
+      ...credibilityScore,
+      bankGuarantee: { uploaded: false },
+    };
+
+    setCredibilityScore(updatedScore);
+    localStorage.setItem(`credibility_score_${user?.id}`, JSON.stringify(updatedScore));
+
+    toast({
+      title: 'Bank Guarantee Removed',
+      description: 'Your loan amount limits have been adjusted.',
+      variant: 'destructive',
+    });
+  };
+
+  // Calculate max loan amount based on guarantee
+  const getMaxLoanAmount = (): { amount: number; description: string } => {
+    if (credibilityScore.bankGuarantee?.uploaded) {
+      return {
+        amount: 5000000, // 50 Lakhs with guarantee
+        description: 'With Bank Guarantee',
+      };
+    }
+    return {
+      amount: 100000, // 1 Lakh without guarantee
+      description: 'Without Bank Guarantee',
+    };
   };
 
   const getScoreLevel = (score: number): { label: string; color: string; description: string } => {
@@ -569,6 +629,141 @@ const ShipperKYC = () => {
                     </div>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Bank Guarantee Card */}
+            <Card className="border-2 border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-primary" />
+                  Bank Guarantee (Optional)
+                </CardTitle>
+                <CardDescription>
+                  Upload bank guarantee certificate to increase your maximum loan amount significantly
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Loan Amount Impact Display */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className={`p-4 rounded-lg border-2 ${
+                      !credibilityScore.bankGuarantee?.uploaded
+                        ? 'bg-orange-50 border-orange-200'
+                        : 'bg-muted border-muted'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertCircle className="h-5 w-5 text-orange-600" />
+                        <h4 className="font-medium text-orange-900">Without Guarantee</h4>
+                      </div>
+                      <p className="text-2xl font-bold text-orange-600">₹1,00,000</p>
+                      <p className="text-xs text-orange-700 mt-1">Maximum loan amount per trip</p>
+                    </div>
+
+                    <div className={`p-4 rounded-lg border-2 ${
+                      credibilityScore.bankGuarantee?.uploaded
+                        ? 'bg-green-50 border-green-200'
+                        : 'bg-muted border-muted'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        <h4 className="font-medium text-green-900">With Guarantee</h4>
+                      </div>
+                      <p className="text-2xl font-bold text-green-600">₹50,00,000</p>
+                      <p className="text-xs text-green-700 mt-1">Maximum loan amount per trip</p>
+                    </div>
+                  </div>
+
+                  {/* Current Status */}
+                  <div className={`p-4 rounded-lg ${
+                    credibilityScore.bankGuarantee?.uploaded
+                      ? 'bg-green-50 border-2 border-green-200'
+                      : 'bg-blue-50 border-2 border-blue-200'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className={`font-semibold ${
+                          credibilityScore.bankGuarantee?.uploaded ? 'text-green-900' : 'text-blue-900'
+                        }`}>
+                          {credibilityScore.bankGuarantee?.uploaded
+                            ? 'Bank Guarantee Active'
+                            : 'Current Maximum Loan Amount'}
+                        </p>
+                        <p className={`text-2xl font-bold mt-1 ${
+                          credibilityScore.bankGuarantee?.uploaded ? 'text-green-600' : 'text-blue-600'
+                        }`}>
+                          ₹{(getMaxLoanAmount().amount / 100000).toFixed(0)}L
+                        </p>
+                        <p className={`text-sm mt-1 ${
+                          credibilityScore.bankGuarantee?.uploaded ? 'text-green-700' : 'text-blue-700'
+                        }`}>
+                          {getMaxLoanAmount().description}
+                        </p>
+                      </div>
+                      <div>
+                        {credibilityScore.bankGuarantee?.uploaded ? (
+                          <CheckCircle2 className="h-12 w-12 text-green-600" />
+                        ) : (
+                          <AlertCircle className="h-12 w-12 text-blue-600" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Upload Section */}
+                  {credibilityScore.bankGuarantee?.uploaded ? (
+                    <div className="flex items-center justify-between p-4 bg-white border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <FileCheck className="h-5 w-5 text-green-600" />
+                        <div>
+                          <p className="font-medium">{credibilityScore.bankGuarantee.fileName}</p>
+                          <p className="text-xs text-green-700">Bank guarantee certificate uploaded</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveBankGuarantee}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                          <div className="text-sm">
+                            <p className="font-medium text-yellow-900 mb-1">Why Upload Bank Guarantee?</p>
+                            <ul className="list-disc list-inside text-yellow-800 space-y-1">
+                              <li>Increase max loan from ₹1L to ₹50L per trip</li>
+                              <li>Access to larger financing opportunities</li>
+                              <li>Build stronger trust with lenders</li>
+                              <li>Get better interest rates</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Input
+                          id="bank-guarantee-upload"
+                          type="file"
+                          className="hidden"
+                          onChange={handleBankGuaranteeUpload}
+                          accept=".pdf,.jpg,.jpeg,.png"
+                        />
+                        <Button
+                          onClick={() => document.getElementById('bank-guarantee-upload')?.click()}
+                          className="w-full bg-gradient-primary"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload Bank Guarantee Certificate (Optional)
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
