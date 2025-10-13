@@ -183,8 +183,28 @@ const LoadAgentDashboard = () => {
     date: new Date().toISOString().split('T')[0], // Today's date
   });
 
+  // Helper function to capitalize first letter of each word in a city name
+  const capitalizeCity = (text: string): string => {
+    return text
+      .split(',')
+      .map(part =>
+        part.trim()
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ')
+      )
+      .join(', ');
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    // Capitalize city names for origin and destination
+    if (name === 'origin' || name === 'destination') {
+      setFormData({ ...formData, [name]: capitalizeCity(value) });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleClientCompanyChange = (companyName: string) => {
@@ -1380,7 +1400,7 @@ const LoadAgentDashboard = () => {
                     value={formData.maturityDays}
                     onChange={handleChange}
                     min="1"
-                    max="180"
+                    max="365"
                     required
                     className="w-20"
                   />

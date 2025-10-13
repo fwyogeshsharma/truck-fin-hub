@@ -24,8 +24,19 @@ const CreateTrip = () => {
     amount: "",
   });
 
+  const capitalizeFirstLetter = (text: string): string => {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    // Capitalize first letter for origin and destination fields
+    if (name === 'origin' || name === 'destination') {
+      setFormData({ ...formData, [name]: capitalizeFirstLetter(value) });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {

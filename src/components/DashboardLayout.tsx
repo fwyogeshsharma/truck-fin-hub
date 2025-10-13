@@ -211,7 +211,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                   <FileText className="mr-2 h-4 w-4" />
                   <span>Reports</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/kyc')}>
+                <DropdownMenuItem onClick={() => navigate(role === 'load_owner' || role === 'load_agent' ? '/shipper-kyc' : '/kyc')}>
                   <FileCheck className="mr-2 h-4 w-4" />
                   <span>KYC</span>
                 </DropdownMenuItem>

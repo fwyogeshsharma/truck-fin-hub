@@ -21,6 +21,7 @@ import MyInvestments from "./pages/MyInvestments";
 import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
 import KYC from "./pages/KYC";
+import ShipperKYC from "./pages/ShipperKYC";
 import KYCAdmin from "./pages/KYCAdmin";
 import PlatformConfiguration from "./pages/PlatformConfig";
 import NotificationSettings from "./pages/NotificationSettings";
@@ -58,6 +59,7 @@ const App = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/kyc" element={<KYC />} />
+          <Route path="/shipper-kyc" element={<ShipperKYC />} />
           <Route path="/admin/kyc" element={<KYCAdmin />} />
           <Route path="/platform-config" element={<PlatformConfiguration />} />
           <Route path="/settings/notifications" element={<NotificationSettings />} />

@@ -98,7 +98,7 @@ export const DEFAULT_PLATFORM_CONFIG: PlatformConfig = {
   terms: {
     defaultMaturityDays: 30, // 30 days default
     minMaturityDays: 7, // 7 days minimum
-    maxMaturityDays: 180, // 180 days maximum (6 months)
+    maxMaturityDays: 365, // 365 days maximum (1 year)
     gracePeriodDays: 7, // 7 days grace period
     penaltyRate: 2.0, // 2% penalty per month
   },
