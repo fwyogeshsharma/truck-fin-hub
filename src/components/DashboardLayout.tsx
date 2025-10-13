@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { TruckIcon, LogOut, Home, Package, Wallet, Shield, Users, User as UserIcon, Settings, FileCheck, Bell as BellIcon, FileText } from "lucide-react";
+import { TruckIcon, LogOut, Home, Package, Wallet, Shield, Users, User as UserIcon, Settings, FileCheck, Bell as BellIcon, FileText, Menu, X } from "lucide-react";
 import { auth, User } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import NotificationBell from "@/components/NotificationBell";
 
 interface DashboardLayoutProps {
@@ -83,6 +84,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(auth.getCurrentUser());
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const config = roleConfig[role || 'load_owner'];
   const RoleIcon = config.icon;
 
@@ -136,14 +138,15 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-6">
+        <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3 md:gap-6">
             <div className="flex items-center gap-2">
-              <TruckIcon className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">TruckFin</span>
+              <TruckIcon className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+              <span className="text-lg md:text-xl font-bold">TruckFin</span>
             </div>
-            
-            <div className="hidden md:flex items-center gap-1">
+
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center gap-1">
               {config.nav.map((item) => {
                 const NavIcon = item.icon;
                 return (
@@ -161,19 +164,22 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
-              <RoleIcon className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">{config.title}</span>
+          <div className="flex items-center gap-2 md:gap-4">
+            {/* Role Badge - Hidden on small screens */}
+            <div className="hidden sm:flex items-center gap-2 px-2 md:px-3 py-1 md:py-1.5 bg-primary/10 rounded-full">
+              <RoleIcon className="h-3 w-3 md:h-4 md:w-4 text-primary" />
+              <span className="text-xs md:text-sm font-medium">{config.title}</span>
             </div>
 
+            {/* Notification Bell */}
             {user?.id && <NotificationBell userId={user.id} />}
 
+            {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-gradient-primary text-primary-foreground">
+                <Button variant="ghost" className="relative h-8 w-8 md:h-10 md:w-10 rounded-full">
+                  <Avatar className="h-8 w-8 md:h-10 md:w-10">
+                    <AvatarFallback className="bg-gradient-primary text-primary-foreground text-sm md:text-base">
                       {user?.name?.charAt(0).toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
@@ -216,12 +222,94 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Mobile Menu Trigger */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="lg:hidden">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[280px] sm:w-[350px]">
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <RoleIcon className="h-5 w-5 text-primary" />
+                    {config.title}
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="mt-6 flex flex-col gap-2">
+                  {config.nav.map((item) => {
+                    const NavIcon = item.icon;
+                    return (
+                      <Button
+                        key={item.path}
+                        variant="ghost"
+                        className="justify-start gap-3 h-12"
+                        onClick={() => {
+                          navigate(item.path);
+                          setMobileMenuOpen(false);
+                        }}
+                      >
+                        <NavIcon className="h-5 w-5" />
+                        <span className="text-base">{item.label}</span>
+                      </Button>
+                    );
+                  })}
+                  <div className="my-4 border-t" />
+                  <Button
+                    variant="ghost"
+                    className="justify-start gap-3 h-12"
+                    onClick={() => {
+                      navigate('/profile');
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <UserIcon className="h-5 w-5" />
+                    <span className="text-base">Profile</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="justify-start gap-3 h-12"
+                    onClick={() => {
+                      navigate('/reports');
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <FileText className="h-5 w-5" />
+                    <span className="text-base">Reports</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="justify-start gap-3 h-12"
+                    onClick={() => {
+                      navigate('/settings');
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <Settings className="h-5 w-5" />
+                    <span className="text-base">Settings</span>
+                  </Button>
+                  <div className="my-4 border-t" />
+                  <Button
+                    variant="destructive"
+                    className="justify-start gap-3 h-12"
+                    onClick={() => {
+                      handleLogout();
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <LogOut className="h-5 w-5" />
+                    <span className="text-base">Log out</span>
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8">
         {children}
       </main>
     </div>

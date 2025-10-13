@@ -228,16 +228,16 @@ const LenderDashboard = () => {
   return (
     <DashboardLayout role="lender">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">{user?.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : "User"}'s Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Invest in trips and earn returns</p>
+            <h1 className="text-2xl sm:text-3xl font-bold">{user?.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : "User"}'s Dashboard</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1">Invest in trips and earn returns</p>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={handleRefresh}
-            className="gap-2"
+            className="gap-2 self-start sm:self-auto"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh
@@ -245,7 +245,7 @@ const LenderDashboard = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -253,8 +253,8 @@ const LenderDashboard = () => {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">{stat.title}</p>
-                    <p className="text-3xl font-bold mt-2">{stat.value}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{stat.title}</p>
+                    <p className="text-2xl sm:text-3xl font-bold mt-2">{stat.value}</p>
                     {(stat as any).detail && (
                       <p className="text-xs text-muted-foreground mt-1">{(stat as any).detail}</p>
                     )}
@@ -353,7 +353,7 @@ const LenderDashboard = () => {
         </Card>
 
         {/* Portfolio Distribution & Monthly Returns */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Portfolio Distribution */}
           <Card>
             <CardHeader>

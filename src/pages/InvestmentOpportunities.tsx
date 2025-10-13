@@ -542,11 +542,11 @@ const InvestmentOpportunities = () => {
   return (
     <DashboardLayout role="lender">
       <TooltipProvider>
-      <div className="space-y-6">
-        <div className="flex justify-between items-start">
+      <div className="space-y-4 md:space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Lender Opportunities</h1>
-            <p className="text-muted-foreground mt-1">Browse and invest in available trips</p>
+            <h1 className="text-2xl sm:text-3xl font-bold">Lender Opportunities</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1">Browse and invest in available trips</p>
           </div>
           <div className="flex gap-2">
             <Button
@@ -556,9 +556,9 @@ const InvestmentOpportunities = () => {
               className="gap-2"
             >
               {isCompactView ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
-              {isCompactView ? 'Expand' : 'Compact'}
+              <span className="hidden sm:inline">{isCompactView ? 'Expand' : 'Compact'}</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={handleResetData}>
+            <Button variant="outline" size="sm" onClick={handleResetData} className="hidden sm:inline-flex">
               Reset Data
             </Button>
           </div>
@@ -567,34 +567,34 @@ const InvestmentOpportunities = () => {
         {/* Bulk Investment Panel */}
         {selectedTrips.length > 0 && (
           <Card className="border-2 border-primary bg-primary/5">
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between gap-4">
+            <CardContent className="pt-4 sm:pt-6">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-4">
-                      <h3 className="font-semibold text-lg">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
+                      <h3 className="font-semibold text-base sm:text-lg">
                         Bulk Investment: {selectedTrips.length} trip{selectedTrips.length > 1 ? 's' : ''} selected
                       </h3>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => setIsExpanded(!isExpanded)}
-                        className="gap-2"
+                        className="gap-2 self-start"
                       >
                         {isExpanded ? (
                           <>
                             <ChevronUp className="h-4 w-4" />
-                            Collapse
+                            <span className="text-sm">Collapse</span>
                           </>
                         ) : (
                           <>
                             <ChevronDown className="h-4 w-4" />
-                            Expand Trips
+                            <span className="text-sm">Expand Trips</span>
                           </>
                         )}
                       </Button>
                     </div>
-                    <div className="grid md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                       <div>
                         <Label htmlFor="bulkBidRate" className="text-xs">Average ARR (%) - Read Only</Label>
                         <Input
@@ -602,32 +602,32 @@ const InvestmentOpportunities = () => {
                           type="text"
                           value={`${averageARR.toFixed(2)}%`}
                           disabled
-                          className="mt-1 h-9 bg-muted cursor-not-allowed"
+                          className="mt-1 h-8 sm:h-9 text-sm bg-muted cursor-not-allowed"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Average annualized return rate of selected trips</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Average annualized return rate of selected trips</p>
                       </div>
                       <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-xs sm:text-sm">
                           <span className="text-muted-foreground">Total Investment:</span>
-                          <span className="font-semibold">{formatCurrency(totalInvestmentAmount)}</span>
+                          <span className="font-semibold">{formatCurrencyCompact(totalInvestmentAmount, true)}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-xs sm:text-sm">
                           <span className="text-muted-foreground">Total ARR:</span>
-                          <span className="font-semibold text-accent">{formatCurrency(totalExpectedReturn)}</span>
+                          <span className="font-semibold text-accent">{formatCurrencyCompact(totalExpectedReturn, true)}</span>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
                     <Button
-                      className="bg-gradient-primary"
+                      className="bg-gradient-primary flex-1 sm:flex-none text-sm h-9 sm:h-10"
                       onClick={handleBulkInvest}
                       disabled={wallet.balance < totalInvestmentAmount}
                     >
                       Confirm {selectedTrips.length} Bid{selectedTrips.length > 1 ? 's' : ''}
                     </Button>
-                    <Button variant="outline" onClick={() => { setSelectedTrips([]); setTripInterestRates({}); }}>
-                      Clear Selection
+                    <Button variant="outline" className="flex-1 sm:flex-none text-sm h-9 sm:h-10" onClick={() => { setSelectedTrips([]); setTripInterestRates({}); }}>
+                      Clear
                     </Button>
                   </div>
                 </div>
@@ -728,42 +728,46 @@ const InvestmentOpportunities = () => {
         )}
 
         {/* Available Trips */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h2 className="text-xl font-semibold">Available Trips ({filteredTrips.length})</h2>
-              <AdvancedFilter
-                filters={filterConfig}
-                currentFilters={advancedFilters}
-                onFilterChange={setAdvancedFilters}
-                onClearFilters={() => setAdvancedFilters({})}
-              />
-              {filteredTrips.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleSelectAll}
-                  className="flex items-center gap-2"
-                >
-                  {selectedTrips.length === filteredTrips.length ? (
-                    <>
-                      <CheckSquare className="h-4 w-4" />
-                      Deselect All
-                    </>
-                  ) : (
-                    <>
-                      <Square className="h-4 w-4" />
-                      Select All
-                    </>
-                  )}
-                </Button>
-              )}
+        <div className="space-y-3 sm:space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <h2 className="text-lg sm:text-xl font-semibold">Available Trips ({filteredTrips.length})</h2>
+              <div className="flex items-center gap-2">
+                <AdvancedFilter
+                  filters={filterConfig}
+                  currentFilters={advancedFilters}
+                  onFilterChange={setAdvancedFilters}
+                  onClearFilters={() => setAdvancedFilters({})}
+                />
+                {filteredTrips.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleSelectAll}
+                    className="flex items-center gap-2 text-xs sm:text-sm"
+                  >
+                    {selectedTrips.length === filteredTrips.length ? (
+                      <>
+                        <CheckSquare className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="hidden sm:inline">Deselect All</span>
+                        <span className="sm:hidden">Deselect</span>
+                      </>
+                    ) : (
+                      <>
+                        <Square className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="hidden sm:inline">Select All</span>
+                        <span className="sm:hidden">Select</span>
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-2 border-primary/30 rounded-lg px-4 py-2.5">
-              <Wallet className="h-5 w-5 text-primary" />
+            <div className="flex items-center gap-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-2 border-primary/30 rounded-lg px-3 sm:px-4 py-2">
+              <Wallet className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               <div className="flex flex-col">
-                <span className="text-xs text-muted-foreground font-medium">Available Balance</span>
-                <span className="text-xl font-bold text-primary">{formatCurrencyCompact(wallet.balance, true)}</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">Available Balance</span>
+                <span className="text-base sm:text-xl font-bold text-primary">{formatCurrencyCompact(wallet.balance, true)}</span>
               </div>
             </div>
           </div>
@@ -785,16 +789,56 @@ const InvestmentOpportunities = () => {
               const expectedReturn = trip.amount * (adjustedYearlyRate / 100);
 
               return (
-                <Card key={trip.id} className={`p-2.5 ${isMultiSelected ? 'ring-2 ring-primary' : ''}`}>
-                  <div className="flex items-center gap-3">
+                <Card key={trip.id} className={`p-2 sm:p-2.5 ${isMultiSelected ? 'ring-2 ring-primary' : ''}`}>
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <Checkbox
                       checked={isMultiSelected}
                       onCheckedChange={() => toggleTripSelection(trip.id)}
                       id={`select-compact-${trip.id}`}
+                      className="flex-shrink-0"
                     />
-                    <div className="flex-1 grid grid-cols-12 gap-3 items-center">
-                      {/* Load Owner (Client/Consignee) Logo - 1 column */}
-                      <div className="col-span-1 flex justify-center">
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-3 items-center">
+                      {/* Mobile: Single column layout */}
+                      <div className="md:hidden flex items-center gap-3 w-full">
+                        {/* Logos and Route */}
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {trip.clientLogo && (
+                            <img
+                              src={trip.clientLogo}
+                              alt={trip.clientCompany || 'Company'}
+                              className="h-6 w-auto object-contain flex-shrink-0"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <MapPin className="h-3 w-3 text-primary flex-shrink-0" />
+                              <p className="font-semibold text-xs truncate">{trip.origin} → {trip.destination}</p>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground truncate">{trip.loadType} • {trip.weight}kg</p>
+                          </div>
+                        </div>
+                        {/* Action Button */}
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {trip.riskLevel && (
+                            <Badge className={`text-[10px] px-1.5 py-0 ${
+                              trip.riskLevel === 'low' ? 'bg-green-600' :
+                              trip.riskLevel === 'medium' ? 'bg-yellow-600' : 'bg-red-600'
+                            } text-white`}>
+                              {trip.riskLevel === 'low' ? 'L' : trip.riskLevel === 'medium' ? 'M' : 'H'}
+                            </Badge>
+                          )}
+                          <Button
+                            size="sm"
+                            onClick={() => handleOpenBidDialog(trip)}
+                            className="bg-gradient-primary h-7 px-2 text-xs"
+                          >
+                            Bid
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Desktop: Grid layout - Load Owner (Client/Consignee) Logo - 1 column */}
+                      <div className="hidden md:flex md:col-span-1 justify-center">
                         {trip.clientLogo ? (
                           <Popover>
                             <PopoverTrigger asChild>
@@ -938,7 +982,7 @@ const InvestmentOpportunities = () => {
                       </div>
 
                       {/* Route & Load - 3 columns */}
-                      <div className="col-span-3">
+                      <div className="hidden md:block md:col-span-3">
                         <div className="flex items-center gap-1.5 mb-0.5">
                           <MapPin className="h-3 w-3 text-primary flex-shrink-0" />
                           <p className="font-semibold text-sm truncate">{trip.origin} → {trip.destination}</p>
@@ -947,7 +991,7 @@ const InvestmentOpportunities = () => {
                       </div>
 
                       {/* Load Owner (Borrower) Logo with Rating - 2 columns */}
-                      <div className="col-span-2 flex justify-center items-center gap-1.5">
+                      <div className="hidden md:flex md:col-span-2 justify-center items-center gap-1.5">
                         {trip.loadOwnerLogo && (
                           <>
                             <Popover>
@@ -1101,19 +1145,19 @@ const InvestmentOpportunities = () => {
                       </div>
 
                       {/* Trip Value - 2 columns */}
-                      <div className="col-span-2 text-center">
+                      <div className="hidden md:block md:col-span-2 text-center">
                         <p className="text-xs text-muted-foreground">Trip Value</p>
                         <p className="font-semibold">{formatCurrencyCompact(trip.amount, true)}</p>
                       </div>
 
                       {/* ARR - 2 columns */}
-                      <div className="col-span-2 text-center">
+                      <div className="hidden md:block md:col-span-2 text-center">
                         <p className="text-xs text-muted-foreground">ARR ({formatPercentage(((tripInterestRates[trip.id] || trip.interestRate || 12) * 365) / (trip.maturityDays || 30) * 0.8)}%)</p>
                         <p className="font-semibold text-green-600">{formatCurrencyCompact(trip.amount * ((((tripInterestRates[trip.id] || trip.interestRate || 12) * 365) / (trip.maturityDays || 30)) * 0.8 / 100), true)}</p>
                       </div>
 
                       {/* Risk & Bid - 2 columns */}
-                      <div className="col-span-2 flex gap-2 items-center justify-end">
+                      <div className="hidden md:flex md:col-span-2 gap-2 items-center justify-end">
                         {trip.riskLevel && (
                           <Badge className={`text-xs px-2 py-0.5 ${
                             trip.riskLevel === 'low' ? 'bg-green-600' :
@@ -1608,10 +1652,10 @@ const InvestmentOpportunities = () => {
 
           {/* Pagination Controls */}
           {filteredTrips.length > 0 && totalPages > 1 && (
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="itemsPerPage" className="text-sm">Items per page:</Label>
+            <Card className="p-3 sm:p-4">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+                  <Label htmlFor="itemsPerPage" className="text-xs sm:text-sm whitespace-nowrap">Items per page:</Label>
                   <select
                     id="itemsPerPage"
                     value={itemsPerPage}
@@ -1619,28 +1663,28 @@ const InvestmentOpportunities = () => {
                       setItemsPerPage(Number(e.target.value));
                       setCurrentPage(1);
                     }}
-                    className="border rounded px-2 py-1 text-sm"
+                    className="border rounded px-2 py-1 text-xs sm:text-sm"
                   >
                     <option value={10}>10</option>
                     <option value={25}>25</option>
                     <option value={50}>50</option>
                     <option value={100}>100</option>
                   </select>
-                  <span className="text-sm text-muted-foreground ml-4">
-                    Showing {startIndex + 1}-{Math.min(endIndex, filteredTrips.length)} of {filteredTrips.length}
+                  <span className="text-xs sm:text-sm text-muted-foreground">
+                    {startIndex + 1}-{Math.min(endIndex, filteredTrips.length)} of {filteredTrips.length}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto justify-center">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="gap-1"
+                    className="gap-1 h-8 px-2 sm:px-3"
                   >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
+                    <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Previous</span>
                   </Button>
 
                   <div className="flex gap-1">
@@ -1654,13 +1698,13 @@ const InvestmentOpportunities = () => {
                       .map((page, index, array) => (
                         <div key={page} className="flex items-center gap-1">
                           {index > 0 && array[index - 1] !== page - 1 && (
-                            <span className="px-2 text-muted-foreground">...</span>
+                            <span className="px-1 text-xs text-muted-foreground">...</span>
                           )}
                           <Button
                             variant={currentPage === page ? "default" : "outline"}
                             size="sm"
                             onClick={() => setCurrentPage(page)}
-                            className="w-8 h-8 p-0"
+                            className="w-7 h-7 sm:w-8 sm:h-8 p-0 text-xs sm:text-sm"
                           >
                             {page}
                           </Button>
@@ -1673,10 +1717,10 @@ const InvestmentOpportunities = () => {
                     size="sm"
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="gap-1"
+                    className="gap-1 h-8 px-2 sm:px-3"
                   >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
+                    <span className="hidden sm:inline">Next</span>
+                    <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </div>
               </div>

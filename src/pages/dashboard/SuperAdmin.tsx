@@ -117,24 +117,24 @@ const SuperAdminDashboard = () => {
     <DashboardLayout role="super_admin">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Shield className="h-8 w-8 text-primary" />
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+              <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
               Super Admin Dashboard
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-sm sm:text-base text-muted-foreground mt-1">
               System-wide overview and administrative controls
             </p>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-2 border-purple-500/50 rounded-lg">
-            <Shield className="h-5 w-5 text-purple-600" />
-            <span className="font-semibold text-purple-600">Super Admin Access</span>
+          <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-2 border-purple-500/50 rounded-lg">
+            <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+            <span className="text-sm sm:text-base font-semibold text-purple-600">Super Admin Access</span>
           </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {dashboardStats.map((stat) => {
             const Icon = stat.icon;
             return (
@@ -164,7 +164,7 @@ const SuperAdminDashboard = () => {
             <CardDescription>Administrative functions and system management</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
               <Button
                 variant="outline"
                 className="flex items-center gap-2 h-auto py-4"
@@ -216,7 +216,7 @@ const SuperAdminDashboard = () => {
         </Card>
 
         {/* System Information */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Platform Statistics</CardTitle>
