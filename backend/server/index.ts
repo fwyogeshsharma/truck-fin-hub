@@ -1,7 +1,9 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
-import { initDatabase } from '../src/db/database.ts';
+import swaggerUi from 'swagger-ui-express';
+import { initDatabase } from '../db/database.ts';
+import { swaggerSpec } from './config/swagger.ts';
 
 // Import API routes
 import authRoutes from './routes/auth.ts';
@@ -13,6 +15,7 @@ import transactionRoutes from './routes/transactions.ts';
 import bankAccountRoutes from './routes/bankAccounts.ts';
 import kycRoutes from './routes/kyc.ts';
 import notificationRoutes from './routes/notifications.ts';
+import publicApiRoutes from './routes/publicApi.ts';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -33,6 +36,18 @@ console.log('Initializing PostgreSQL database...');
 await initDatabase();
 console.log('PostgreSQL Database initialized successfully');
 
+// Swagger Documentation
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Truck Fin Hub - API Documentation',
+}));
+
+// Swagger JSON
+app.get('/api/docs.json', (req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -43,6 +58,9 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/bank-accounts', bankAccountRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+// Public API Routes (no authentication required on route level - handled by middleware)
+app.use('/api/public', publicApiRoutes);
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
@@ -70,6 +88,8 @@ app.use((err: Error, req: Request, res: Response, next: Function) => {
 app.listen(PORT, () => {
   console.log(`\n🚀 Server is running on port ${PORT}`);
   console.log(`📍 API endpoint: http://localhost:${PORT}/api`);
+  console.log(`📚 API Documentation: http://localhost:${PORT}/api/docs`);
+  console.log(`🔐 Public API: http://localhost:${PORT}/api/public/shippers/trips`);
   console.log(`🗄️  Database initialized successfully\n`);
 });
 

@@ -10,7 +10,7 @@ import {
   getTransactionCount,
   getTotalCreditedByUser,
   getTotalDebitedByUser,
-} from '../../src/db/queries/transactions.ts';
+} from '../../db/queries/transactions.ts';
 
 const router = Router();
 

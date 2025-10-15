@@ -14,7 +14,7 @@ import {
   getActiveInvestmentsCount,
   getTotalInvestedByLender,
   getTotalReturnsByLender,
-} from '../../src/db/queries/investments.ts';
+} from '../../db/queries/investments.ts';
 
 const router = Router();
 

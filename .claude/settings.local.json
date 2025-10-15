@@ -1,36 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run dev:*)",
-      "Bash(npm install:*)",
-      "Bash(npm run build:*)",
-      "Bash(cat:*)",
-      "Bash(node:*)",
-      "Bash(python:*)",
-      "Bash(ls:*)",
-      "Bash(netstat:*)",
-      "Bash(findstr:*)",
-      "Bash(npm run dev:server:*)",
-      "Bash(del add-load-owners.js)",
-      "Bash(tsx:*)",
-      "Bash(npx tsx:*)",
-      "Bash(curl http://localhost:3001/api/health)",
-      "Bash(curl:*)",
-      "Bash(kill:*)",
-      "Read(//d/**)",
-      "Bash(npx tsc:*)",
-      "Bash(sqlite3:*)",
-      "Bash(del nul)",
-      "Bash(npm run dev:all:*)",
-      "Bash(taskkill:*)",
-      "Bash(dir:*)",
-      "Bash(timeout:*)",
-      "Bash(psql:*)",
-      "Bash(where psql)",
-      "Bash(robocopy:*)",
-      "Bash(xcopy:*)",
-      "Bash(test:*)",
-      "Bash(pip install:*)"
+      "Bash(do sed -i \"s|from ''../../src/services/|from ''../services/|g\" \"$file\")",
+      "Bash(do sed -i \"s|from ''../services/notificationTemplates|from ''../../../src/services/notificationTemplates|g\" \"$file\")"
     ],
     "deny": [],
     "ask": []

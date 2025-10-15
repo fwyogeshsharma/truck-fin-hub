@@ -9,7 +9,7 @@ import {
   updateUser,
   deleteUser,
   updatePassword,
-} from '../../src/db/queries/users.ts';
+} from '../../db/queries/users.ts';
 
 const router = Router();
 

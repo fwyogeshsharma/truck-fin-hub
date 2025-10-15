@@ -25,6 +25,7 @@ import {
   TrendingUp,
   Award,
   Star,
+  Code,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
@@ -39,6 +40,7 @@ import ComplianceChecks from '@/components/kyc/ComplianceChecks';
 import ConsentsForm from '@/components/kyc/ConsentsForm';
 import KYCReview from '@/components/kyc/KYCReview';
 import BusinessEntityForm from '@/components/kyc/BusinessEntityForm';
+import ShipperAPIDocumentation from '@/components/ShipperAPIDocumentation';
 
 type Step = {
   id: number;
@@ -532,7 +534,6 @@ const ShipperKYC = () => {
   const scorePercentage = (credibilityScore.totalScore / credibilityScore.maxScore) * 100;
 
   const handleBasicKYCComplete = () => {
-    setKYCCompleted(true);
     localStorage.setItem(`kyc_completed_${user?.id}`, JSON.stringify(true));
     toast({
       title: 'KYC Completed',
@@ -561,7 +562,7 @@ const ShipperKYC = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="kyc" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               KYC Verification
@@ -569,6 +570,10 @@ const ShipperKYC = () => {
             <TabsTrigger value="credibility" className="flex items-center gap-2">
               <Award className="h-4 w-4" />
               Company Credibility
+            </TabsTrigger>
+            <TabsTrigger value="api" className="flex items-center gap-2">
+              <Code className="h-4 w-4" />
+              API Integration
             </TabsTrigger>
           </TabsList>
 
@@ -1115,6 +1120,11 @@ const ShipperKYC = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* API Integration Tab */}
+          <TabsContent value="api" className="space-y-6">
+            <ShipperAPIDocumentation />
           </TabsContent>
         </Tabs>
       </div>

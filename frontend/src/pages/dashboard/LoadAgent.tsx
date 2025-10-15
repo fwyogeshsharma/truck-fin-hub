@@ -48,9 +48,11 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  Code,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatPercentage } from '@/lib/currency';
+import ShipperAPIDocumentation from '@/components/ShipperAPIDocumentation';
 
 const LoadAgentDashboard = () => {
   const navigate = useNavigate();
@@ -88,8 +90,6 @@ const LoadAgentDashboard = () => {
   const [documentViewDialogOpen, setDocumentViewDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<{ type: string; data: string } | null>(null);
   const [uploadingExcel, setUploadingExcel] = useState(false);
-  const [apiEndpoint, setApiEndpoint] = useState('');
-  const [fetchingFromApi, setFetchingFromApi] = useState(false);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -484,128 +484,6 @@ const LoadAgentDashboard = () => {
     }
   };
 
-  const handleFetchFromApi = async () => {
-    if (!apiEndpoint.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid URL',
-        description: 'Please enter a valid API endpoint',
-      });
-      return;
-    }
-
-    setFetchingFromApi(true);
-
-    try {
-      const response = await fetch(apiEndpoint);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const apiData = await response.json();
-
-      // Handle both array and object with trips array
-      const trips = Array.isArray(apiData) ? apiData : (apiData.trips || apiData.data || []);
-
-      if (!Array.isArray(trips) || trips.length === 0) {
-        toast({
-          variant: 'destructive',
-          title: 'No Data Found',
-          description: 'No trip data found in the API response',
-        });
-        return;
-      }
-
-      let successCount = 0;
-      let errorCount = 0;
-
-      for (const tripData of trips) {
-        try {
-          // Extract and validate trip data
-          const clientCompany = tripData.clientCompany || tripData.client_company || tripData.consignee || '';
-          const origin = tripData.origin || tripData.from || tripData.source || '';
-          const destination = tripData.destination || tripData.to || tripData.target || '';
-          const distance = parseFloat(tripData.distance || tripData.distanceKm || tripData.distance_km || 0);
-          const loadType = tripData.loadType || tripData.load_type || tripData.cargoType || 'General Cargo';
-          const weight = parseFloat(tripData.weight || tripData.weightKg || tripData.weight_kg || 0);
-          const amount = parseFloat(tripData.amount || tripData.value || tripData.price || 0);
-          const interestRate = parseFloat(tripData.interestRate || tripData.interest_rate || tripData.rate || '12');
-          const maturityDays = parseInt(tripData.maturityDays || tripData.maturity_days || tripData.paymentTerm || '30');
-
-          // Find the client logo
-          const selectedClient = clientCompanies.find(c => c.name === clientCompany);
-
-          // Validation
-          if (!origin || !destination) {
-            errorCount++;
-            continue;
-          }
-
-          if (!selectedClient) {
-            console.warn(`Unknown client company: ${clientCompany}`);
-            errorCount++;
-            continue;
-          }
-
-          if (amount < 20000 || amount > 80000) {
-            errorCount++;
-            continue;
-          }
-
-          if (interestRate < 8 || interestRate > 18) {
-            console.warn(`Invalid interest rate: ${interestRate}`);
-            errorCount++;
-            continue;
-          }
-
-          await data.createTrip({
-            loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
-            loadOwnerName: user?.company || 'Shipper',
-            loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
-            loadOwnerRating: 4.5,
-            clientCompany,
-            clientLogo: selectedClient.logo,
-            origin,
-            destination,
-            distance,
-            loadType,
-            weight,
-            amount,
-            interestRate,
-            maturityDays,
-            riskLevel: tripData.riskLevel || 'low',
-            insuranceStatus: tripData.insuranceStatus !== undefined ? tripData.insuranceStatus : true,
-          });
-
-          successCount++;
-        } catch (error) {
-          console.error('Failed to create trip from API data:', tripData, error);
-          errorCount++;
-        }
-      }
-
-      toast({
-        title: 'API Import Complete!',
-        description: `${successCount} trips imported successfully${errorCount > 0 ? `, ${errorCount} failed` : ''}`,
-      });
-
-      if (successCount > 0) {
-        setCreateDialogOpen(false);
-        setRefreshKey(prev => prev + 1);
-        setApiEndpoint('');
-      }
-    } catch (error) {
-      console.error('API fetch error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'API Fetch Failed',
-        description: error instanceof Error ? error.message : 'Failed to fetch data from API',
-      });
-    } finally {
-      setFetchingFromApi(false);
-    }
-  };
 
   // Filter trips with advanced filters
   const filteredTrips = allTrips.filter((trip) => {
@@ -1324,8 +1202,8 @@ const LoadAgentDashboard = () => {
                   Bulk Upload
                 </TabsTrigger>
                 <TabsTrigger value="api" className="flex items-center gap-2">
-                  <Link className="h-4 w-4" />
-                  API Import
+                  <Code className="h-4 w-4" />
+                  API Support
                 </TabsTrigger>
               </TabsList>
 
@@ -1608,111 +1486,9 @@ const LoadAgentDashboard = () => {
               </TabsContent>
 
               <TabsContent value="api" className="space-y-4">
-                <div className="border-2 border-dashed rounded-lg p-8">
-                  <div className="text-center space-y-4">
-                    <div className="flex justify-center">
-                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Link className="h-8 w-8 text-primary" />
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="font-semibold text-lg mb-2">Import from API</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Fetch trip data from an external API endpoint and create trips automatically
-                      </p>
-                    </div>
-
-                    <div className="space-y-3 max-w-xl mx-auto">
-                      <div className="space-y-2">
-                        <Label htmlFor="api-endpoint" className="text-left block">
-                          API Endpoint URL
-                        </Label>
-                        <Input
-                          id="api-endpoint"
-                          type="url"
-                          placeholder="https://api.example.com/trips"
-                          value={apiEndpoint}
-                          onChange={(e) => setApiEndpoint(e.target.value)}
-                          disabled={fetchingFromApi}
-                          className="w-full"
-                        />
-                        <p className="text-xs text-muted-foreground text-left">
-                          Enter the full URL of your API endpoint that returns trip data
-                        </p>
-                      </div>
-
-                      <Button
-                        type="button"
-                        onClick={handleFetchFromApi}
-                        disabled={fetchingFromApi || !apiEndpoint.trim()}
-                        className="w-full bg-gradient-primary"
-                      >
-                        {fetchingFromApi ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                            Fetching Trips...
-                          </>
-                        ) : (
-                          <>
-                            <Download className="h-4 w-4 mr-2" />
-                            Fetch & Import Trips
-                          </>
-                        )}
-                      </Button>
-                    </div>
-
-                    <div className="mt-6 p-4 bg-muted rounded-lg text-left">
-                      <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                        <Shield className="h-4 w-4 text-primary" />
-                        API Response Format
-                      </h4>
-                      <p className="text-xs text-muted-foreground mb-3">
-                        Your API should return a JSON array of trips or an object with a "trips" or "data" field containing the array:
-                      </p>
-                      <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto">
-                        <pre>{`[
-  {
-    "clientCompany": "Berger Paints",
-    "origin": "Mumbai, Maharashtra",
-    "destination": "Delhi, NCR",
-    "distance": 1400,
-    "loadType": "Electronics",
-    "weight": 15000,
-    "amount": 50000,
-    "interestRate": 12,
-    "maturityDays": 30
-  }
-]`}</pre>
-                      </div>
-                      <div className="mt-3 space-y-1">
-                        <p className="text-xs font-semibold">Supported field names:</p>
-                        <ul className="text-xs text-muted-foreground space-y-1 ml-4">
-                          <li>• <strong>clientCompany:</strong> clientCompany, client_company, consignee (must match exactly from list)</li>
-                          <li>• <strong>origin:</strong> origin, from, source</li>
-                          <li>• <strong>destination:</strong> destination, to, target</li>
-                          <li>• <strong>distance:</strong> distance, distanceKm, distance_km</li>
-                          <li>• <strong>loadType:</strong> loadType, load_type, cargoType</li>
-                          <li>• <strong>weight:</strong> weight, weightKg, weight_kg</li>
-                          <li>• <strong>amount:</strong> amount, value, price (₹20,000 - ₹80,000)</li>
-                          <li>• <strong>interestRate:</strong> interestRate, interest_rate, rate (8% - 18%)</li>
-                          <li>• <strong>maturityDays:</strong> maturityDays, maturity_days, paymentTerm</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setCreateDialogOpen(false)}
-                  >
-                    Close
-                  </Button>
-                </DialogFooter>
+                <ShipperAPIDocumentation />
               </TabsContent>
+
             </Tabs>
           </DialogContent>
         </Dialog>

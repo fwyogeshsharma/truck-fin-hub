@@ -5,8 +5,8 @@ import {
   verifyPassword,
   getUserByEmail,
   updateUser
-} from '../../src/db/queries/users.ts';
-import { getWallet } from '../../src/db/queries/wallets.ts';
+} from '../../db/queries/users.ts';
+import { getWallet } from '../../db/queries/wallets.ts';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';

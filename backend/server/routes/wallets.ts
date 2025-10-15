@@ -7,8 +7,8 @@ import {
   moveToEscrow,
   moveFromEscrowToInvested,
   returnInvestment,
-} from '../../src/db/queries/wallets.ts';
-import { createTransaction } from '../../src/db/queries/transactions.ts';
+} from '../../db/queries/wallets.ts';
+import { createTransaction } from '../../db/queries/transactions.ts';
 
 const router = Router();
 

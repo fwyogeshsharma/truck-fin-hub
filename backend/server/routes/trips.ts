@@ -11,10 +11,10 @@ import {
   uploadDocument,
   getTripBids,
   deleteTrip,
-} from '../../src/db/queries/trips.ts';
-import { getUsersByRole } from '../../src/db/queries/users.ts';
-import { createNotification } from '../../src/db/queries/notifications.ts';
-import { getNotificationTemplate } from '../../src/services/notificationTemplates.ts';
+} from '../../db/queries/trips.ts';
+import { getUsersByRole } from '../../db/queries/users.ts';
+import { createNotification } from '../../db/queries/notifications.ts';
+import { getNotificationTemplate } from '../../../src/services/notificationTemplates.ts';
 
 const router = Router();
 

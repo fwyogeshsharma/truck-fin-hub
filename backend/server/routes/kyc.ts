@@ -12,7 +12,7 @@ import {
   hasApprovedKyc,
   getPendingKycCount,
   getUnderReviewKycCount,
-} from '../../src/db/queries/userKyc.ts';
+} from '../../db/queries/userKyc.ts';
 
 const router = Router();
 

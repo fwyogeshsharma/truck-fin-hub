@@ -9,7 +9,7 @@ import {
   deleteBankAccount,
   setPrimaryBankAccount,
   verifyBankAccount,
-} from '../../src/db/queries/bankAccounts.ts';
+} from '../../db/queries/bankAccounts.ts';
 
 const router = Router();
 

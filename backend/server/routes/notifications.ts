@@ -7,7 +7,7 @@ import {
   markAllAsRead,
   deleteNotification,
   deleteAllNotifications,
-} from '../../src/db/queries/notifications.ts';
+} from '../../db/queries/notifications.ts';
 
 const router = express.Router();
 
