@@ -2,7 +2,15 @@
   "permissions": {
     "allow": [
       "Bash(do sed -i \"s|from ''../../src/services/|from ''../services/|g\" \"$file\")",
-      "Bash(do sed -i \"s|from ''../services/notificationTemplates|from ''../../../src/services/notificationTemplates|g\" \"$file\")"
+      "Bash(do sed -i \"s|from ''../services/notificationTemplates|from ''../../../src/services/notificationTemplates|g\" \"$file\")",
+      "Bash(Get-Content package.json)",
+      "Bash(Select-String -Pattern '\"\"\"\"start\"\"\"\":|\"\"\"\"dev\"\"\"\":|\"\"\"\"server\"\"\"\":')",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(curl -X POST http://localhost:3001/api/trips -H \"Content-Type: application/json\" -d \"{\"\"test\"\": \"\"data\"\"}\")",
+      "Bash(curl:*)",
+      "Bash(tsx:*)",
+      "Bash(npx tsx:*)"
     ],
     "deny": [],
     "ask": []

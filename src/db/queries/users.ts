@@ -264,6 +264,44 @@ export const updatePassword = async (id: string, newPassword: string): Promise<b
   return (result.rowCount || 0) > 0;
 };
 
+/**
+ * Find user by name (searches both name and company fields)
+ */
+export const findUserByName = async (name: string): Promise<User | null> => {
+  const db = getDatabase();
+  const result = await db.query(
+    'SELECT * FROM users WHERE (name ILIKE $1 OR company ILIKE $1) AND is_active = TRUE LIMIT 1',
+    [name]
+  );
+  return result.rows[0] || null;
+};
+
+/**
+ * Find load owner by name (company or name)
+ */
+export const findLoadOwnerByName = async (name: string): Promise<User | null> => {
+  const db = getDatabase();
+  const result = await db.query(
+    `SELECT * FROM users WHERE (name ILIKE $1 OR company ILIKE $1)
+     AND role = 'load_owner' AND is_active = TRUE LIMIT 1`,
+    [name]
+  );
+  return result.rows[0] || null;
+};
+
+/**
+ * Find transporter by name (company or name)
+ */
+export const findTransporterByName = async (name: string): Promise<User | null> => {
+  const db = getDatabase();
+  const result = await db.query(
+    `SELECT * FROM users WHERE (name ILIKE $1 OR company ILIKE $1)
+     AND role = 'vehicle_owner' AND is_active = TRUE LIMIT 1`,
+    [name]
+  );
+  return result.rows[0] || null;
+};
+
 export default {
   getUserById,
   getUserByEmail,

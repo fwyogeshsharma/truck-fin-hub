@@ -11,10 +11,13 @@ import {
   uploadDocument,
   getTripBids,
   deleteTrip,
+  bulkCreateTrips,
+  BulkTripInput,
 } from '../../src/db/queries/trips.ts';
-import { getUsersByRole } from '../../src/db/queries/users.ts';
+import { getUsersByRole, findLoadOwnerByName, findTransporterByName } from '../../src/db/queries/users.ts';
 import { createNotification } from '../../src/db/queries/notifications.ts';
 import { getNotificationTemplate } from '../../src/services/notificationTemplates.ts';
+import { getCompanyInfo } from '../../src/data/companyInfo.ts';
 
 const router = Router();
 
@@ -42,6 +45,77 @@ router.get('/', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Get trips error:', error);
     res.status(500).json({ error: 'Failed to get trips', message: error.message });
+  }
+});
+
+// POST /api/trips/bulk - Bulk create trips (MUST be before /:id route)
+router.post('/bulk', async (req: Request, res: Response) => {
+  try {
+    const trips: BulkTripInput[] = req.body;
+
+    // Validate input
+    if (!Array.isArray(trips) || trips.length === 0) {
+      return res.status(400).json({
+        error: 'Invalid input',
+        message: 'Expected an array of trip objects'
+      });
+    }
+
+    // Validate required fields for each trip
+    const requiredFields = ['ewayBillNumber', 'pickup', 'destination', 'receiver', 'transporter',
+                            'loanAmount', 'loanInterestRate', 'maturityDays', 'distance',
+                            'loadType', 'weight'];
+
+    for (let i = 0; i < trips.length; i++) {
+      const trip = trips[i];
+      const missingFields = requiredFields.filter(field => !trip[field as keyof BulkTripInput]);
+
+      if (missingFields.length > 0) {
+        return res.status(400).json({
+          error: 'Validation error',
+          message: `Trip at index ${i} is missing required fields: ${missingFields.join(', ')}`
+        });
+      }
+    }
+
+    console.log(`Processing bulk creation of ${trips.length} trips...`);
+
+    // Process bulk creation
+    const result = await bulkCreateTrips(trips, findLoadOwnerByName, findTransporterByName, getCompanyInfo);
+
+    console.log(`Bulk creation completed: ${result.created} created, ${result.failed} failed`);
+
+    // Return appropriate status based on results
+    if (result.failed === 0) {
+      return res.status(201).json({
+        success: true,
+        message: `Successfully created ${result.created} trips`,
+        created: result.created,
+        failed: result.failed
+      });
+    } else if (result.created > 0) {
+      return res.status(207).json({ // 207 Multi-Status
+        success: false,
+        message: `Partially successful: ${result.created} created, ${result.failed} failed`,
+        created: result.created,
+        failed: result.failed,
+        errors: result.errors
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'Failed to create any trips',
+        created: result.created,
+        failed: result.failed,
+        errors: result.errors
+      });
+    }
+  } catch (error: any) {
+    console.error('Bulk create trips error:', error);
+    res.status(500).json({
+      error: 'Failed to process bulk creation',
+      message: error.message
+    });
   }
 });
 

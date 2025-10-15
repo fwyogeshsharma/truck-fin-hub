@@ -340,6 +340,164 @@ export const deleteTrip = async (id: string): Promise<boolean> => {
   return result.rowCount > 0;
 };
 
+/**
+ * Bulk create trips - input format for bulk creation
+ */
+export interface BulkTripInput {
+  ewayBillNumber: string;
+  pickup: string;
+  destination: string;
+  sender?: string;
+  receiver: string;
+  transporter: string;
+  loanAmount: number;
+  loanInterestRate: number;
+  maturityDays: number;
+  distance: number;
+  loadType: string;
+  weight: number;
+}
+
+/**
+ * Result of bulk trip creation
+ */
+export interface BulkCreateResult {
+  success: boolean;
+  created: number;
+  failed: number;
+  errors: Array<{
+    index: number;
+    data: BulkTripInput;
+    error: string;
+  }>;
+}
+
+/**
+ * Create trips in bulk from external data format
+ */
+export const bulkCreateTrips = async (
+  trips: BulkTripInput[],
+  findLoadOwnerByName: (name: string) => Promise<any>,
+  findTransporterByName: (name: string) => Promise<any>,
+  getCompanyInfo: (key: string) => any
+): Promise<BulkCreateResult> => {
+  const db = await getDatabase();
+  const result: BulkCreateResult = {
+    success: true,
+    created: 0,
+    failed: 0,
+    errors: []
+  };
+
+  for (let i = 0; i < trips.length; i++) {
+    const tripData = trips[i];
+
+    try {
+      // Try to get company info from companyDatabase first
+      let receiverCompanyInfo = null;
+      let loadOwner = null;
+
+      if (tripData.receiver) {
+        // Try to get from companyInfo database
+        receiverCompanyInfo = getCompanyInfo(tripData.receiver);
+
+        // Try to find load owner by the full company name or the key
+        if (receiverCompanyInfo) {
+          loadOwner = await findLoadOwnerByName(receiverCompanyInfo.name);
+        }
+
+        // If not found, try with the provided name directly
+        if (!loadOwner) {
+          loadOwner = await findLoadOwnerByName(tripData.receiver);
+        }
+
+        // If still not found, just use receiver as client company (not an error)
+        if (!loadOwner) {
+          console.log(`Load owner "${tripData.receiver}" not found in users database, using as client company`);
+        }
+      }
+
+      // Find transporter - try companyInfo database first, then users database
+      let transporterCompanyInfo = getCompanyInfo(tripData.transporter);
+      let transporter = null;
+
+      // Try to find transporter by full company name from companyInfo
+      if (transporterCompanyInfo) {
+        transporter = await findTransporterByName(transporterCompanyInfo.name);
+      }
+
+      // If not found, try with the provided name directly
+      if (!transporter) {
+        transporter = await findTransporterByName(tripData.transporter);
+      }
+
+      // If still not found, throw error (transporter is required)
+      if (!transporter) {
+        throw new Error(`Transporter "${tripData.transporter}" not found in database. Please use "Rolling Radius" or add the transporter to users database.`);
+      }
+
+      // Optional: sender is the client company (consignor)
+      let clientCompany = tripData.sender || (tripData.receiver && !loadOwner ? tripData.receiver : null);
+      let clientLogo = receiverCompanyInfo?.logo || null;
+
+      // Create trip
+      const id = `trip-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      //If no load owner found, we need a placeholder or use the transporter as load owner temporarily
+      const effectiveLoadOwner = loadOwner || {
+        id: transporter.id, // Use transporter as fallback
+        name: tripData.receiver || 'Unknown',
+        company: tripData.receiver,
+        company_logo: receiverCompanyInfo?.logo || null,
+        user_logo: null,
+        rating: receiverCompanyInfo?.rating || null
+      };
+
+      await db.query(`
+        INSERT INTO trips (
+          id, load_owner_id, load_owner_name, load_owner_logo, load_owner_rating,
+          client_company, client_logo, transporter_id, transporter_name,
+          origin, destination, distance, load_type,
+          weight, amount, interest_rate, maturity_days, risk_level, insurance_status, status
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, 'pending')
+      `, [
+        id,
+        effectiveLoadOwner.id,
+        effectiveLoadOwner.company || effectiveLoadOwner.name,
+        effectiveLoadOwner.company_logo || effectiveLoadOwner.user_logo || null,
+        effectiveLoadOwner.rating || null,
+        clientCompany,
+        clientLogo,
+        transporter.id,
+        transporter.company || transporter.name,
+        tripData.pickup,
+        tripData.destination,
+        tripData.distance,
+        tripData.loadType,
+        tripData.weight,
+        tripData.loanAmount,
+        tripData.loanInterestRate,
+        tripData.maturityDays,
+        'medium', // Default risk level
+        true // Default insurance status
+      ]);
+
+      result.created++;
+    } catch (error: any) {
+      result.failed++;
+      result.errors.push({
+        index: i,
+        data: tripData,
+        error: error.message || 'Unknown error occurred'
+      });
+      console.error(`Failed to create trip at index ${i}:`, error);
+    }
+  }
+
+  result.success = result.failed === 0;
+  return result;
+};
+
 export default {
   getTrip,
   getAllTrips,
@@ -352,4 +510,5 @@ export default {
   uploadDocument,
   getTripBids,
   deleteTrip,
+  bulkCreateTrips,
 };

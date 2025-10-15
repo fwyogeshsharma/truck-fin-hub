@@ -44,8 +44,10 @@ import {
   Upload,
   Download,
   FileSpreadsheet,
-  Link,
   RefreshCw,
+  Code,
+  Copy,
+  Link,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -88,8 +90,6 @@ const LoadAgentDashboard = () => {
   const [documentViewDialogOpen, setDocumentViewDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<{ type: string; data: string } | null>(null);
   const [uploadingExcel, setUploadingExcel] = useState(false);
-  const [apiEndpoint, setApiEndpoint] = useState('');
-  const [fetchingFromApi, setFetchingFromApi] = useState(false);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -170,16 +170,26 @@ const LoadAgentDashboard = () => {
 
   // Form states with today's date pre-filled
   const [formData, setFormData] = useState({
+    // Mandatory fields
+    ewayBillNumber: '',
+    ewayBillImage: null as File | null,
+    pickup: '',
+    destination: '',
+    sender: '',
+    receiver: '',
+    transporter: '',
+    loanAmount: '',
+    loanInterestRate: '12',
+    maturityDays: '30',
+    // Optional fields
     clientCompany: '',
     clientLogo: '',
     origin: '',
-    destination: '',
     distance: '',
     loadType: '',
     weight: '',
     amount: '',
     interestRate: '12',
-    maturityDays: '30',
     date: new Date().toISOString().split('T')[0], // Today's date
   });
 
@@ -197,10 +207,14 @@ const LoadAgentDashboard = () => {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    const { name, value, files } = e.target;
 
-    // Capitalize city names for origin and destination
-    if (name === 'origin' || name === 'destination') {
+    // Handle file upload for eway bill image
+    if (name === 'ewayBillImage' && files && files[0]) {
+      setFormData({ ...formData, ewayBillImage: files[0] });
+    }
+    // Capitalize city names for origin, destination, and pickup
+    else if (name === 'origin' || name === 'destination' || name === 'pickup') {
       setFormData({ ...formData, [name]: capitalizeCity(value) });
     } else {
       setFormData({ ...formData, [name]: value });
@@ -219,55 +233,85 @@ const LoadAgentDashboard = () => {
   const handleCreateTrip = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const amount = parseFloat(formData.amount);
-    if (amount < 20000 || amount > 80000) {
+    const loanAmount = parseFloat(formData.loanAmount);
+    if (loanAmount < 20000 || loanAmount > 80000) {
       toast({
         variant: 'destructive',
-        title: 'Invalid Amount',
-        description: 'Trip value must be between ₹20,000 and ₹80,000',
+        title: 'Invalid Loan Amount',
+        description: 'Loan amount must be between ₹20,000 and ₹80,000',
       });
       return;
     }
 
     try {
-      const interestRate = parseFloat(formData.interestRate);
+      const loanInterestRate = parseFloat(formData.loanInterestRate);
+
+      // Convert eway bill image to base64 if provided
+      let ewayBillImageBase64 = '';
+      if (formData.ewayBillImage) {
+        const reader = new FileReader();
+        ewayBillImageBase64 = await new Promise((resolve) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(formData.ewayBillImage!);
+        });
+      }
 
       const trip = await data.createTrip({
         loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
         loadOwnerName: user?.company || 'Shipper',
         loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
         loadOwnerRating: 4.5,
-        clientCompany: formData.clientCompany,
-        clientLogo: formData.clientLogo,
-        origin: formData.origin,
+        // Mandatory fields
+        ewayBillNumber: formData.ewayBillNumber,
+        ewayBillImage: ewayBillImageBase64,
+        pickup: formData.pickup,
         destination: formData.destination,
-        distance: parseFloat(formData.distance),
-        loadType: formData.loadType,
-        weight: parseFloat(formData.weight),
-        amount: parseFloat(formData.amount),
-        interestRate: interestRate,
+        sender: formData.sender,
+        receiver: formData.receiver,
+        transporter: formData.transporter,
+        loanAmount: loanAmount,
+        loanInterestRate: loanInterestRate,
         maturityDays: parseInt(formData.maturityDays),
+        // Legacy/optional fields
+        clientCompany: formData.clientCompany || formData.sender,
+        clientLogo: formData.clientLogo,
+        origin: formData.pickup,
+        distance: parseFloat(formData.distance || '0'),
+        loadType: formData.loadType || 'General Cargo',
+        weight: parseFloat(formData.weight || '0'),
+        amount: loanAmount,
+        interestRate: loanInterestRate,
         riskLevel: 'low', // Default risk level
         insuranceStatus: true, // Default insured
       });
 
       toast({
         title: 'Trip Created Successfully!',
-        description: `Trip from ${formData.origin} to ${formData.destination} is now live`,
+        description: `Trip from ${formData.pickup} to ${formData.destination} is now live`,
       });
 
       // Reset form
       setFormData({
+        // Mandatory fields
+        ewayBillNumber: '',
+        ewayBillImage: null,
+        pickup: '',
+        destination: '',
+        sender: '',
+        receiver: '',
+        transporter: '',
+        loanAmount: '',
+        loanInterestRate: '12',
+        maturityDays: '30',
+        // Optional fields
         clientCompany: '',
         clientLogo: '',
         origin: '',
-        destination: '',
         distance: '',
         loadType: '',
         weight: '',
         amount: '',
         interestRate: '12',
-        maturityDays: '30',
         date: new Date().toISOString().split('T')[0],
       });
 
@@ -288,12 +332,64 @@ const LoadAgentDashboard = () => {
   };
 
   const handleDownloadSampleExcel = () => {
-    // Create sample Excel data with proper CSV formatting
+    // Create sample Excel data with proper CSV formatting including new mandatory fields
     const sampleData = [
-      ['Consignee Company', 'Origin', 'Destination', 'Distance (km)', 'Load Type', 'Weight (kg)', 'Amount (₹)', 'Interest Rate (%)', 'Maturity Days', 'Date'],
-      ['Berger Paints', '"Mumbai, Maharashtra"', '"Delhi, NCR"', '1400', 'Electronics', '15000', '50000', '12', '30', '2025-10-06'],
-      ['Emami', '"Bangalore, Karnataka"', '"Chennai, Tamil Nadu"', '350', 'FMCG', '12000', '35000', '11', '25', '2025-10-07'],
-      ['Greenply', '"Pune, Maharashtra"', '"Hyderabad, Telangana"', '560', 'Machinery', '20000', '75000', '12.5', '45', '2025-10-08'],
+      [
+        'E-way Bill Number*',
+        'Pickup*',
+        'Destination*',
+        'Sender*',
+        'Receiver*',
+        'Transporter*',
+        'Loan Amount (₹)*',
+        'Loan Interest Rate (%)*',
+        'Maturity Days*',
+        'Distance (km)',
+        'Load Type',
+        'Weight (kg)'
+      ],
+      [
+        '123456789012',
+        '"Mumbai, Maharashtra"',
+        '"Delhi, NCR"',
+        'ABC Company Pvt Ltd',
+        'XYZ Industries Ltd',
+        'Fast Transport Services',
+        '50000',
+        '12',
+        '30',
+        '1400',
+        'Electronics',
+        '15000'
+      ],
+      [
+        '987654321098',
+        '"Bangalore, Karnataka"',
+        '"Chennai, Tamil Nadu"',
+        'Emami Ltd',
+        'Southern Distributors',
+        'Express Logistics',
+        '35000',
+        '11',
+        '25',
+        '350',
+        'FMCG',
+        '12000'
+      ],
+      [
+        '456789012345',
+        '"Pune, Maharashtra"',
+        '"Hyderabad, Telangana"',
+        'Greenply Industries',
+        'AP Trading Co',
+        'Swift Cargo',
+        '75000',
+        '12.5',
+        '45',
+        '560',
+        'Machinery',
+        '20000'
+      ],
     ];
 
     // Convert to CSV format (fields with commas are already quoted)
@@ -303,7 +399,7 @@ const LoadAgentDashboard = () => {
     const url = URL.createObjectURL(blob);
 
     link.setAttribute('href', url);
-    link.setAttribute('download', 'trip_upload_template.csv');
+    link.setAttribute('download', 'trip_upload_template_new.csv');
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -311,7 +407,7 @@ const LoadAgentDashboard = () => {
 
     toast({
       title: 'Sample Downloaded!',
-      description: 'Use this template to upload multiple trips',
+      description: 'Use this template to upload multiple trips with new mandatory fields',
     });
   };
 
@@ -367,61 +463,61 @@ const LoadAgentDashboard = () => {
           // Log parsed row for debugging
           console.log('Parsed row:', row);
 
-          // Handle case where origin/destination have unquoted commas (e.g., "Mumbai, Maharashtra" becomes 2 fields)
-          // If we have 12 fields instead of 10, merge fields to fix it
-          if (row.length === 12) {
-            console.log('Detected 12 fields - merging origin and destination parts');
+          // Handle case where pickup/destination have unquoted commas
+          // Expected: 12 fields (9 mandatory + 3 optional)
+          if (row.length === 14) {
+            console.log('Detected 14 fields - merging pickup and destination parts');
             row = [
-              row[0], // clientCompany
-              `${row[1]}, ${row[2]}`, // Merge "Mumbai" + "Maharashtra" -> "Mumbai, Maharashtra"
-              `${row[3]}, ${row[4]}`, // Merge "Delhi" + "NCR" -> "Delhi, NCR"
-              row[5],  // distance
-              row[6],  // loadType
-              row[7],  // weight
-              row[8],  // amount
-              row[9],  // interestRate
+              row[0],  // ewayBillNumber
+              `${row[1]}, ${row[2]}`, // Merge pickup location
+              `${row[3]}, ${row[4]}`, // Merge destination
+              row[5],  // sender
+              row[6],  // receiver
+              row[7],  // transporter
+              row[8],  // loanAmount
+              row[9],  // loanInterestRate
               row[10], // maturityDays
-              row[11], // date
+              row[11], // distance
+              row[12], // loadType
+              row[13], // weight
             ];
             console.log('Merged to:', row);
           }
 
-          // Ensure we have exactly 9-10 fields
+          // Ensure we have at least 9 mandatory fields
           if (row.length < 9 || !row[0]) {
             console.warn(`Invalid row length (${row.length}) for: ${rowText}`);
             errorCount++;
             continue;
           }
 
-          const clientCompany = row[0];
-          const origin = row[1];
+          // Map CSV columns to variables
+          const ewayBillNumber = row[0];
+          const pickup = row[1];
           const destination = row[2];
-          const distance = row[3];
-          const loadType = row[4];
-          const weight = row[5];
-          const amount = row[6];
-          const interestRate = row[7];
+          const sender = row[3];
+          const receiver = row[4];
+          const transporter = row[5];
+          const loanAmount = row[6];
+          const loanInterestRate = row[7];
           const maturityDays = row[8];
-          // row[9] is date (optional)
+          // Optional fields
+          const distance = row[9] || '0';
+          const loadType = row[10] || 'General Cargo';
+          const weight = row[11] || '0';
 
-          // Find the client logo
-          const selectedClient = clientCompanies.find(c => c.name === clientCompany);
-          if (!selectedClient) {
-            console.warn(`Unknown client company (${clientCompany}) for row: ${rowText}`);
+          // Validate loan amount
+          const tripLoanAmount = parseFloat(loanAmount);
+          if (isNaN(tripLoanAmount) || tripLoanAmount < 20000 || tripLoanAmount > 80000) {
+            console.warn(`Invalid loan amount (${loanAmount}) for row: ${rowText}`);
             errorCount++;
             continue;
           }
 
-          const tripAmount = parseFloat(amount);
-          if (isNaN(tripAmount) || tripAmount < 20000 || tripAmount > 80000) {
-            console.warn(`Invalid amount (${amount}) for row: ${rowText}`);
-            errorCount++;
-            continue;
-          }
-
-          const parsedInterestRate = parseFloat(interestRate);
+          // Validate interest rate
+          const parsedInterestRate = parseFloat(loanInterestRate);
           if (isNaN(parsedInterestRate) || parsedInterestRate < 8 || parsedInterestRate > 18) {
-            console.warn(`Invalid interest rate (${interestRate}) for row: ${rowText}`);
+            console.warn(`Invalid interest rate (${loanInterestRate}) for row: ${rowText}`);
             errorCount++;
             continue;
           }
@@ -430,8 +526,8 @@ const LoadAgentDashboard = () => {
           const parsedWeight = parseFloat(weight);
           const parsedMaturityDays = parseInt(maturityDays);
 
-          if (isNaN(parsedDistance) || isNaN(parsedWeight) || isNaN(parsedMaturityDays)) {
-            console.warn(`Invalid number format in row: ${rowText}`);
+          if (isNaN(parsedMaturityDays)) {
+            console.warn(`Invalid maturity days (${maturityDays}) in row: ${rowText}`);
             errorCount++;
             continue;
           }
@@ -441,16 +537,26 @@ const LoadAgentDashboard = () => {
             loadOwnerName: user?.company || 'Shipper',
             loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
             loadOwnerRating: 4.5,
-            clientCompany,
-            clientLogo: selectedClient.logo,
-            origin,
+            // Mandatory fields
+            ewayBillNumber,
+            ewayBillImage: '',
+            pickup,
             destination,
+            sender,
+            receiver,
+            transporter,
+            loanAmount: tripLoanAmount,
+            loanInterestRate: parsedInterestRate,
+            maturityDays: parsedMaturityDays,
+            // Legacy/optional fields
+            clientCompany: sender,
+            clientLogo: '',
+            origin: pickup,
             distance: parsedDistance,
             loadType,
             weight: parsedWeight,
-            amount: tripAmount,
+            amount: tripLoanAmount,
             interestRate: parsedInterestRate,
-            maturityDays: parsedMaturityDays,
             riskLevel: 'low',
             insuranceStatus: true,
           });
@@ -484,128 +590,6 @@ const LoadAgentDashboard = () => {
     }
   };
 
-  const handleFetchFromApi = async () => {
-    if (!apiEndpoint.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid URL',
-        description: 'Please enter a valid API endpoint',
-      });
-      return;
-    }
-
-    setFetchingFromApi(true);
-
-    try {
-      const response = await fetch(apiEndpoint);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const apiData = await response.json();
-
-      // Handle both array and object with trips array
-      const trips = Array.isArray(apiData) ? apiData : (apiData.trips || apiData.data || []);
-
-      if (!Array.isArray(trips) || trips.length === 0) {
-        toast({
-          variant: 'destructive',
-          title: 'No Data Found',
-          description: 'No trip data found in the API response',
-        });
-        return;
-      }
-
-      let successCount = 0;
-      let errorCount = 0;
-
-      for (const tripData of trips) {
-        try {
-          // Extract and validate trip data
-          const clientCompany = tripData.clientCompany || tripData.client_company || tripData.consignee || '';
-          const origin = tripData.origin || tripData.from || tripData.source || '';
-          const destination = tripData.destination || tripData.to || tripData.target || '';
-          const distance = parseFloat(tripData.distance || tripData.distanceKm || tripData.distance_km || 0);
-          const loadType = tripData.loadType || tripData.load_type || tripData.cargoType || 'General Cargo';
-          const weight = parseFloat(tripData.weight || tripData.weightKg || tripData.weight_kg || 0);
-          const amount = parseFloat(tripData.amount || tripData.value || tripData.price || 0);
-          const interestRate = parseFloat(tripData.interestRate || tripData.interest_rate || tripData.rate || '12');
-          const maturityDays = parseInt(tripData.maturityDays || tripData.maturity_days || tripData.paymentTerm || '30');
-
-          // Find the client logo
-          const selectedClient = clientCompanies.find(c => c.name === clientCompany);
-
-          // Validation
-          if (!origin || !destination) {
-            errorCount++;
-            continue;
-          }
-
-          if (!selectedClient) {
-            console.warn(`Unknown client company: ${clientCompany}`);
-            errorCount++;
-            continue;
-          }
-
-          if (amount < 20000 || amount > 80000) {
-            errorCount++;
-            continue;
-          }
-
-          if (interestRate < 8 || interestRate > 18) {
-            console.warn(`Invalid interest rate: ${interestRate}`);
-            errorCount++;
-            continue;
-          }
-
-          await data.createTrip({
-            loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
-            loadOwnerName: user?.company || 'Shipper',
-            loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
-            loadOwnerRating: 4.5,
-            clientCompany,
-            clientLogo: selectedClient.logo,
-            origin,
-            destination,
-            distance,
-            loadType,
-            weight,
-            amount,
-            interestRate,
-            maturityDays,
-            riskLevel: tripData.riskLevel || 'low',
-            insuranceStatus: tripData.insuranceStatus !== undefined ? tripData.insuranceStatus : true,
-          });
-
-          successCount++;
-        } catch (error) {
-          console.error('Failed to create trip from API data:', tripData, error);
-          errorCount++;
-        }
-      }
-
-      toast({
-        title: 'API Import Complete!',
-        description: `${successCount} trips imported successfully${errorCount > 0 ? `, ${errorCount} failed` : ''}`,
-      });
-
-      if (successCount > 0) {
-        setCreateDialogOpen(false);
-        setRefreshKey(prev => prev + 1);
-        setApiEndpoint('');
-      }
-    } catch (error) {
-      console.error('API fetch error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'API Fetch Failed',
-        description: error instanceof Error ? error.message : 'Failed to fetch data from API',
-      });
-    } finally {
-      setFetchingFromApi(false);
-    }
-  };
 
   // Filter trips with advanced filters
   const filteredTrips = allTrips.filter((trip) => {
@@ -1324,171 +1308,210 @@ const LoadAgentDashboard = () => {
                   Bulk Upload
                 </TabsTrigger>
                 <TabsTrigger value="api" className="flex items-center gap-2">
-                  <Link className="h-4 w-4" />
-                  API Import
+                  <Code className="h-4 w-4" />
+                  API Support
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="form">
                 <form onSubmit={handleCreateTrip} className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="clientCompany">Consignee Company *</Label>
-                  <select
-                    id="clientCompany"
-                    value={formData.clientCompany}
-                    onChange={(e) => handleClientCompanyChange(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md"
-                    required
-                  >
-                    <option value="">Select Company</option>
-                    {clientCompanies.map((company) => (
-                      <option key={company.name} value={company.name}>
-                        {company.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              {/* Mandatory Fields Section */}
+              <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <h3 className="font-semibold text-sm mb-3 text-blue-900 dark:text-blue-100">Mandatory Fields *</h3>
 
-                <div className="space-y-2">
-                  <Label htmlFor="date">Trip Date</Label>
-                  <Input
-                    id="date"
-                    name="date"
-                    type="date"
-                    value={formData.date}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
+                <div className="space-y-4">
+                  {/* E-way Bill Number */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="ewayBillNumber">E-way Bill Number *</Label>
+                      <Input
+                        id="ewayBillNumber"
+                        name="ewayBillNumber"
+                        placeholder="e.g., 123456789012"
+                        value={formData.ewayBillNumber}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
 
-              {formData.clientLogo && (
-                <div className="p-3 border rounded-lg bg-muted/30 flex items-center gap-3">
-                  <img
-                    src={formData.clientLogo}
-                    alt={formData.clientCompany}
-                    className="h-12 w-auto object-contain"
-                  />
-                  <div>
-                    <p className="text-sm font-medium">{formData.clientCompany}</p>
-                    <p className="text-xs text-muted-foreground">Selected consignee</p>
+                    <div className="space-y-2">
+                      <Label htmlFor="ewayBillImage">E-way Bill Image (Optional)</Label>
+                      <Input
+                        id="ewayBillImage"
+                        name="ewayBillImage"
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={handleChange}
+                        className="cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Pickup & Destination */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="pickup">Pickup Location *</Label>
+                      <Input
+                        id="pickup"
+                        name="pickup"
+                        placeholder="e.g., Mumbai, Maharashtra"
+                        value={formData.pickup}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="destination">Destination *</Label>
+                      <Input
+                        id="destination"
+                        name="destination"
+                        placeholder="e.g., Delhi, NCR"
+                        value={formData.destination}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Sender & Receiver */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="sender">Sender (Consignee) *</Label>
+                      <Input
+                        id="sender"
+                        name="sender"
+                        placeholder="e.g., ABC Company Pvt Ltd"
+                        value={formData.sender}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="receiver">Receiver *</Label>
+                      <Input
+                        id="receiver"
+                        name="receiver"
+                        placeholder="e.g., XYZ Industries Ltd"
+                        value={formData.receiver}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Transporter */}
+                  <div className="space-y-2">
+                    <Label htmlFor="transporter">Transporter *</Label>
+                    <Input
+                      id="transporter"
+                      name="transporter"
+                      placeholder="e.g., Fast Transport Services"
+                      value={formData.transporter}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+
+                  {/* Loan Amount & Interest Rate */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="loanAmount">Loan Amount (₹) *</Label>
+                      <Input
+                        id="loanAmount"
+                        name="loanAmount"
+                        type="number"
+                        placeholder="e.g., 50000"
+                        value={formData.loanAmount}
+                        onChange={handleChange}
+                        min="20000"
+                        max="80000"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">Between ₹20,000 and ₹80,000</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="loanInterestRate">Loan Interest Rate (%) *</Label>
+                      <Input
+                        id="loanInterestRate"
+                        name="loanInterestRate"
+                        type="number"
+                        placeholder="e.g., 12"
+                        value={formData.loanInterestRate}
+                        onChange={handleChange}
+                        step="0.5"
+                        min="8"
+                        max="18"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">Between 8% and 18%</p>
+                    </div>
+                  </div>
+
+                  {/* Maturity Days */}
+                  <div className="space-y-2">
+                    <Label htmlFor="maturityDays">Maturity Days *</Label>
+                    <Input
+                      id="maturityDays"
+                      name="maturityDays"
+                      type="number"
+                      placeholder="30"
+                      value={formData.maturityDays}
+                      onChange={handleChange}
+                      min="1"
+                      max="365"
+                      required
+                      className="max-w-xs"
+                    />
+                    <p className="text-xs text-muted-foreground">Payment term (1-365 days)</p>
                   </div>
                 </div>
-              )}
-
-              <div className="space-y-2">
-                <Label>Loan Required on Interest rate & Duration</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="interestRate"
-                    name="interestRate"
-                    type="number"
-                    placeholder="12"
-                    value={formData.interestRate}
-                    onChange={handleChange}
-                    step="0.5"
-                    required
-                    className="w-20"
-                  />
-                  <span className="text-sm">% Interest rate in</span>
-                  <Input
-                    id="maturityDays"
-                    name="maturityDays"
-                    type="number"
-                    placeholder="30"
-                    value={formData.maturityDays}
-                    onChange={handleChange}
-                    min="1"
-                    max="365"
-                    required
-                    className="w-20"
-                  />
-                  <span className="text-sm">days</span>
-                </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="origin">Origin</Label>
-                  <Input
-                    id="origin"
-                    name="origin"
-                    placeholder="e.g., Mumbai, Maharashtra"
-                    value={formData.origin}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
+              {/* Optional Fields Section */}
+              <div className="p-4 bg-muted/50 rounded-lg border">
+                <h3 className="font-semibold text-sm mb-3">Optional Fields</h3>
 
-                <div className="space-y-2">
-                  <Label htmlFor="destination">Destination</Label>
-                  <Input
-                    id="destination"
-                    name="destination"
-                    placeholder="e.g., Delhi, NCR"
-                    value={formData.destination}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
+                <div className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="distance">Distance (km)</Label>
+                      <Input
+                        id="distance"
+                        name="distance"
+                        type="number"
+                        placeholder="e.g., 1400"
+                        value={formData.distance}
+                        onChange={handleChange}
+                      />
+                    </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="distance">Distance (km)</Label>
-                  <Input
-                    id="distance"
-                    name="distance"
-                    type="number"
-                    placeholder="e.g., 1400"
-                    value={formData.distance}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="loadType">Load Type</Label>
+                      <Input
+                        id="loadType"
+                        name="loadType"
+                        placeholder="e.g., Electronics, FMCG"
+                        value={formData.loadType}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="loadType">Load Type</Label>
-                  <Input
-                    id="loadType"
-                    name="loadType"
-                    placeholder="e.g., Electronics, FMCG"
-                    value={formData.loadType}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="weight">Weight (kg)</Label>
-                  <Input
-                    id="weight"
-                    name="weight"
-                    type="number"
-                    placeholder="e.g., 15000"
-                    value={formData.weight}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Trip Value (₹)</Label>
-                  <Input
-                    id="amount"
-                    name="amount"
-                    type="number"
-                    placeholder="e.g., 50000"
-                    value={formData.amount}
-                    onChange={handleChange}
-                    min="20000"
-                    max="80000"
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">Between ₹20,000 and ₹80,000</p>
+                  <div className="space-y-2">
+                    <Label htmlFor="weight">Weight (kg)</Label>
+                    <Input
+                      id="weight"
+                      name="weight"
+                      type="number"
+                      placeholder="e.g., 15000"
+                      value={formData.weight}
+                      onChange={handleChange}
+                      className="max-w-xs"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1584,119 +1607,34 @@ const LoadAgentDashboard = () => {
                       <Shield className="h-4 w-4 text-primary" />
                       File Format Requirements
                     </h4>
-                    <ul className="text-xs text-muted-foreground space-y-1">
-                      <li>• CSV format with comma-separated values</li>
-                      <li>• First row must be headers (will be skipped)</li>
-                      <li>• Columns: Consignee Company, Origin, Destination, Distance (km), Load Type, Weight (kg), Amount (₹), Interest Rate (%), Maturity Days, Date</li>
-                      <li>• Consignee Company must match exactly from the list (e.g., "Berger Paints", "Emami")</li>
-                      <li>• Trip amount must be between ₹20,000 and ₹80,000</li>
-                      <li>• Interest rate must be between 8% and 18%</li>
-                      <li>• Download the sample template for reference</li>
-                    </ul>
-                  </div>
-                </div>
-
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setCreateDialogOpen(false)}
-                  >
-                    Close
-                  </Button>
-                </DialogFooter>
-              </TabsContent>
-
-              <TabsContent value="api" className="space-y-4">
-                <div className="border-2 border-dashed rounded-lg p-8">
-                  <div className="text-center space-y-4">
-                    <div className="flex justify-center">
-                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Link className="h-8 w-8 text-primary" />
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs font-semibold mb-1 text-blue-600">Mandatory Columns (Required*)</p>
+                        <ul className="text-xs text-muted-foreground space-y-1">
+                          <li>• E-way Bill Number* - Unique 12-digit number</li>
+                          <li>• Pickup* - Origin/pickup location (e.g., "Mumbai, Maharashtra")</li>
+                          <li>• Destination* - Delivery destination</li>
+                          <li>• Sender* - Consignee/sender company name</li>
+                          <li>• Receiver* - Receiver company name</li>
+                          <li>• Transporter* - Transport service provider name</li>
+                          <li>• Loan Amount (₹)* - Between ₹20,000 and ₹80,000</li>
+                          <li>• Loan Interest Rate (%)* - Between 8% and 18%</li>
+                          <li>• Maturity Days* - Payment term (1-365 days)</li>
+                        </ul>
                       </div>
-                    </div>
-
-                    <div>
-                      <h3 className="font-semibold text-lg mb-2">Import from API</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Fetch trip data from an external API endpoint and create trips automatically
-                      </p>
-                    </div>
-
-                    <div className="space-y-3 max-w-xl mx-auto">
-                      <div className="space-y-2">
-                        <Label htmlFor="api-endpoint" className="text-left block">
-                          API Endpoint URL
-                        </Label>
-                        <Input
-                          id="api-endpoint"
-                          type="url"
-                          placeholder="https://api.example.com/trips"
-                          value={apiEndpoint}
-                          onChange={(e) => setApiEndpoint(e.target.value)}
-                          disabled={fetchingFromApi}
-                          className="w-full"
-                        />
-                        <p className="text-xs text-muted-foreground text-left">
-                          Enter the full URL of your API endpoint that returns trip data
-                        </p>
+                      <div>
+                        <p className="text-xs font-semibold mb-1 text-gray-600">Optional Columns</p>
+                        <ul className="text-xs text-muted-foreground space-y-1">
+                          <li>• Distance (km) - Trip distance</li>
+                          <li>• Load Type - Type of cargo</li>
+                          <li>• Weight (kg) - Cargo weight</li>
+                        </ul>
                       </div>
-
-                      <Button
-                        type="button"
-                        onClick={handleFetchFromApi}
-                        disabled={fetchingFromApi || !apiEndpoint.trim()}
-                        className="w-full bg-gradient-primary"
-                      >
-                        {fetchingFromApi ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                            Fetching Trips...
-                          </>
-                        ) : (
-                          <>
-                            <Download className="h-4 w-4 mr-2" />
-                            Fetch & Import Trips
-                          </>
-                        )}
-                      </Button>
-                    </div>
-
-                    <div className="mt-6 p-4 bg-muted rounded-lg text-left">
-                      <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                        <Shield className="h-4 w-4 text-primary" />
-                        API Response Format
-                      </h4>
-                      <p className="text-xs text-muted-foreground mb-3">
-                        Your API should return a JSON array of trips or an object with a "trips" or "data" field containing the array:
-                      </p>
-                      <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto">
-                        <pre>{`[
-  {
-    "clientCompany": "Berger Paints",
-    "origin": "Mumbai, Maharashtra",
-    "destination": "Delhi, NCR",
-    "distance": 1400,
-    "loadType": "Electronics",
-    "weight": 15000,
-    "amount": 50000,
-    "interestRate": 12,
-    "maturityDays": 30
-  }
-]`}</pre>
-                      </div>
-                      <div className="mt-3 space-y-1">
-                        <p className="text-xs font-semibold">Supported field names:</p>
-                        <ul className="text-xs text-muted-foreground space-y-1 ml-4">
-                          <li>• <strong>clientCompany:</strong> clientCompany, client_company, consignee (must match exactly from list)</li>
-                          <li>• <strong>origin:</strong> origin, from, source</li>
-                          <li>• <strong>destination:</strong> destination, to, target</li>
-                          <li>• <strong>distance:</strong> distance, distanceKm, distance_km</li>
-                          <li>• <strong>loadType:</strong> loadType, load_type, cargoType</li>
-                          <li>• <strong>weight:</strong> weight, weightKg, weight_kg</li>
-                          <li>• <strong>amount:</strong> amount, value, price (₹20,000 - ₹80,000)</li>
-                          <li>• <strong>interestRate:</strong> interestRate, interest_rate, rate (8% - 18%)</li>
-                          <li>• <strong>maturityDays:</strong> maturityDays, maturity_days, paymentTerm</li>
+                      <div className="pt-2 border-t">
+                        <ul className="text-xs text-muted-foreground space-y-1">
+                          <li>• CSV format with comma-separated values</li>
+                          <li>• First row must be headers (will be skipped)</li>
+                          <li>• Download the sample template for exact format</li>
                         </ul>
                       </div>
                     </div>
@@ -1713,6 +1651,541 @@ const LoadAgentDashboard = () => {
                   </Button>
                 </DialogFooter>
               </TabsContent>
+
+              <TabsContent value="api" className="space-y-4">
+                <div className="space-y-6">
+                  {/* Header Section */}
+                  <div className="text-center space-y-2">
+                    <div className="flex justify-center">
+                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Code className="h-8 w-8 text-primary" />
+                      </div>
+                    </div>
+                    <h3 className="font-semibold text-lg">API Integration</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Integrate our API into your system to automatically create trips
+                    </p>
+                  </div>
+
+                  {/* API Documentation */}
+                  <div className="space-y-4">
+                    {/* Endpoint Information */}
+                    <div className="p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                        <Link className="h-4 w-4 text-primary" />
+                        API Endpoint
+                      </h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-3 bg-background rounded border font-mono text-sm">
+                          <div>
+                            <span className="text-green-600 font-semibold">POST</span>
+                            <span className="ml-2">https://api.truckfinhub.com/v1/trips/create</span>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              navigator.clipboard.writeText('https://api.truckfinhub.com/v1/trips/create');
+                              toast({
+                                title: 'Copied!',
+                                description: 'API endpoint copied to clipboard',
+                              });
+                            }}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Authentication */}
+                    <div className="p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-primary" />
+                        Authentication
+                      </h4>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Include your API key in the request headers:
+                      </p>
+                      <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                        <pre>{`Authorization: Bearer YOUR_API_KEY
+Content-Type: application/json`}</pre>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => {
+                            navigator.clipboard.writeText('Authorization: Bearer YOUR_API_KEY\nContent-Type: application/json');
+                            toast({
+                              title: 'Copied!',
+                              description: 'Headers copied to clipboard',
+                            });
+                          }}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Contact support to get your API key: support@truckfinhub.com
+                      </p>
+                    </div>
+
+                    {/* Request Body */}
+                    <div className="p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                        <Code className="h-4 w-4 text-primary" />
+                        Request Body (JSON)
+                      </h4>
+                      <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                        <pre>{`{
+  "ewayBillNumber": "123456789012",
+  "pickup": "Mumbai, Maharashtra",
+  "destination": "Delhi, NCR",
+  "sender": "ABC Company Pvt Ltd",
+  "receiver": "XYZ Industries Ltd",
+  "transporter": "Fast Transport Services",
+  "loanAmount": 50000,
+  "loanInterestRate": 12,
+  "maturityDays": 30,
+  "distance": 1400,
+  "loadType": "Electronics",
+  "weight": 15000
+}`}</pre>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => {
+                            const payload = {
+                              ewayBillNumber: "123456789012",
+                              pickup: "Mumbai, Maharashtra",
+                              destination: "Delhi, NCR",
+                              sender: "ABC Company Pvt Ltd",
+                              receiver: "XYZ Industries Ltd",
+                              transporter: "Fast Transport Services",
+                              loanAmount: 50000,
+                              loanInterestRate: 12,
+                              maturityDays: 30,
+                              distance: 1400,
+                              loadType: "Electronics",
+                              weight: 15000
+                            };
+                            navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+                            toast({
+                              title: 'Copied!',
+                              description: 'Request body copied to clipboard',
+                            });
+                          }}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Field Descriptions */}
+                    <div className="p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-sm mb-3">Field Descriptions</h4>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-xs font-semibold mb-2 text-blue-600">Mandatory Fields (Required*)</p>
+                          <div className="space-y-2 text-xs">
+                            <div className="grid grid-cols-3 gap-2 font-semibold pb-2 border-b">
+                              <span>Field</span>
+                              <span>Type</span>
+                              <span>Description</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">ewayBillNumber*</span>
+                              <span className="text-muted-foreground">string</span>
+                              <span className="text-muted-foreground">E-way bill number (12-digit unique number)</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">pickup*</span>
+                              <span className="text-muted-foreground">string</span>
+                              <span className="text-muted-foreground">Pickup/origin location</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">destination*</span>
+                              <span className="text-muted-foreground">string</span>
+                              <span className="text-muted-foreground">Delivery destination location</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">sender*</span>
+                              <span className="text-muted-foreground">string</span>
+                              <span className="text-muted-foreground">Sender/consignee company name</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">receiver*</span>
+                              <span className="text-muted-foreground">string</span>
+                              <span className="text-muted-foreground">Receiver company name</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">transporter*</span>
+                              <span className="text-muted-foreground">string</span>
+                              <span className="text-muted-foreground">Transport service provider name</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">loanAmount*</span>
+                              <span className="text-muted-foreground">number</span>
+                              <span className="text-muted-foreground">Loan amount in ₹ (20,000 - 80,000)</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">loanInterestRate*</span>
+                              <span className="text-muted-foreground">number</span>
+                              <span className="text-muted-foreground">Interest rate percentage (8% - 18%)</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">maturityDays*</span>
+                              <span className="text-muted-foreground">number</span>
+                              <span className="text-muted-foreground">Payment term in days (1-365)</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="pt-2 border-t">
+                          <p className="text-xs font-semibold mb-2 text-gray-600">Optional Fields</p>
+                          <div className="space-y-2 text-xs">
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">distance</span>
+                              <span className="text-muted-foreground">number</span>
+                              <span className="text-muted-foreground">Distance in kilometers</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">loadType</span>
+                              <span className="text-muted-foreground">string</span>
+                              <span className="text-muted-foreground">Type of cargo (e.g., Electronics, FMCG)</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">weight</span>
+                              <span className="text-muted-foreground">number</span>
+                              <span className="text-muted-foreground">Weight in kilograms</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Response Examples */}
+                    <div className="p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-sm mb-3">Response Examples</h4>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-xs font-semibold mb-1 text-green-600">Success (200 OK)</p>
+                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                            <pre>{`{
+  "success": true,
+  "tripId": "trip_abc123xyz",
+  "message": "Trip created successfully",
+  "data": {
+    "id": "trip_abc123xyz",
+    "status": "pending",
+    "createdAt": "2025-10-15T12:00:00Z"
+  }
+}`}</pre>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => {
+                                const response = {
+                                  success: true,
+                                  tripId: "trip_abc123xyz",
+                                  message: "Trip created successfully",
+                                  data: {
+                                    id: "trip_abc123xyz",
+                                    status: "pending",
+                                    createdAt: "2025-10-15T12:00:00Z"
+                                  }
+                                };
+                                navigator.clipboard.writeText(JSON.stringify(response, null, 2));
+                                toast({
+                                  title: 'Copied!',
+                                  description: 'Success response copied to clipboard',
+                                });
+                              }}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold mb-1 text-red-600">Error (400 Bad Request)</p>
+                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                            <pre>{`{
+  "success": false,
+  "error": "Validation Error",
+  "message": "Trip amount must be between ₹20,000 and ₹80,000",
+  "fields": {
+    "amount": "Invalid amount"
+  }
+}`}</pre>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => {
+                                const response = {
+                                  success: false,
+                                  error: "Validation Error",
+                                  message: "Trip amount must be between ₹20,000 and ₹80,000",
+                                  fields: {
+                                    amount: "Invalid amount"
+                                  }
+                                };
+                                navigator.clipboard.writeText(JSON.stringify(response, null, 2));
+                                toast({
+                                  title: 'Copied!',
+                                  description: 'Error response copied to clipboard',
+                                });
+                              }}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Code Examples */}
+                    <div className="p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-sm mb-3">Code Examples</h4>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-xs font-semibold mb-1">JavaScript (Fetch)</p>
+                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                            <pre>{`fetch('https://api.truckfinhub.com/v1/trips/create', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    ewayBillNumber: "123456789012",
+    pickup: "Mumbai, Maharashtra",
+    destination: "Delhi, NCR",
+    sender: "ABC Company Pvt Ltd",
+    receiver: "XYZ Industries Ltd",
+    transporter: "Fast Transport Services",
+    loanAmount: 50000,
+    loanInterestRate: 12,
+    maturityDays: 30,
+    distance: 1400,
+    loadType: "Electronics",
+    weight: 15000
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data))
+.catch(error => console.error('Error:', error));`}</pre>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => {
+                                const code = `fetch('https://api.truckfinhub.com/v1/trips/create', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    ewayBillNumber: "123456789012",
+    pickup: "Mumbai, Maharashtra",
+    destination: "Delhi, NCR",
+    sender: "ABC Company Pvt Ltd",
+    receiver: "XYZ Industries Ltd",
+    transporter: "Fast Transport Services",
+    loanAmount: 50000,
+    loanInterestRate: 12,
+    maturityDays: 30,
+    distance: 1400,
+    loadType: "Electronics",
+    weight: 15000
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data))
+.catch(error => console.error('Error:', error));`;
+                                navigator.clipboard.writeText(code);
+                                toast({
+                                  title: 'Copied!',
+                                  description: 'JavaScript code copied to clipboard',
+                                });
+                              }}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold mb-1">Python (Requests)</p>
+                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                            <pre>{`import requests
+
+url = "https://api.truckfinhub.com/v1/trips/create"
+headers = {
+    "Authorization": "Bearer YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+payload = {
+    "ewayBillNumber": "123456789012",
+    "pickup": "Mumbai, Maharashtra",
+    "destination": "Delhi, NCR",
+    "sender": "ABC Company Pvt Ltd",
+    "receiver": "XYZ Industries Ltd",
+    "transporter": "Fast Transport Services",
+    "loanAmount": 50000,
+    "loanInterestRate": 12,
+    "maturityDays": 30,
+    "distance": 1400,
+    "loadType": "Electronics",
+    "weight": 15000
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())`}</pre>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => {
+                                const code = `import requests
+
+url = "https://api.truckfinhub.com/v1/trips/create"
+headers = {
+    "Authorization": "Bearer YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+payload = {
+    "ewayBillNumber": "123456789012",
+    "pickup": "Mumbai, Maharashtra",
+    "destination": "Delhi, NCR",
+    "sender": "ABC Company Pvt Ltd",
+    "receiver": "XYZ Industries Ltd",
+    "transporter": "Fast Transport Services",
+    "loanAmount": 50000,
+    "loanInterestRate": 12,
+    "maturityDays": 30,
+    "distance": 1400,
+    "loadType": "Electronics",
+    "weight": 15000
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())`;
+                                navigator.clipboard.writeText(code);
+                                toast({
+                                  title: 'Copied!',
+                                  description: 'Python code copied to clipboard',
+                                });
+                              }}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold mb-1">cURL</p>
+                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                            <pre>{`curl -X POST https://api.truckfinhub.com/v1/trips/create \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "ewayBillNumber": "123456789012",
+    "pickup": "Mumbai, Maharashtra",
+    "destination": "Delhi, NCR",
+    "sender": "ABC Company Pvt Ltd",
+    "receiver": "XYZ Industries Ltd",
+    "transporter": "Fast Transport Services",
+    "loanAmount": 50000,
+    "loanInterestRate": 12,
+    "maturityDays": 30,
+    "distance": 1400,
+    "loadType": "Electronics",
+    "weight": 15000
+  }'`}</pre>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => {
+                                const code = `curl -X POST https://api.truckfinhub.com/v1/trips/create \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type": "application/json" \\
+  -d '{
+    "ewayBillNumber": "123456789012",
+    "pickup": "Mumbai, Maharashtra",
+    "destination": "Delhi, NCR",
+    "sender": "ABC Company Pvt Ltd",
+    "receiver": "XYZ Industries Ltd",
+    "transporter": "Fast Transport Services",
+    "loanAmount": 50000,
+    "loanInterestRate": 12,
+    "maturityDays": 30,
+    "distance": 1400,
+    "loadType": "Electronics",
+    "weight": 15000
+  }'`;
+                                navigator.clipboard.writeText(code);
+                                toast({
+                                  title: 'Copied!',
+                                  description: 'cURL command copied to clipboard',
+                                });
+                              }}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Supported Companies */}
+                    <div className="p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-sm mb-3">Supported Consignee Companies</h4>
+                      <div className="bg-background p-3 rounded border text-xs max-h-40 overflow-y-auto">
+                        <div className="grid grid-cols-2 gap-2">
+                          {clientCompanies.map((company) => (
+                            <div key={company.name} className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                              <span>{company.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Support Information */}
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <h4 className="font-semibold text-sm mb-2 text-blue-900 dark:text-blue-100">Need Help?</h4>
+                      <p className="text-xs text-blue-800 dark:text-blue-200 mb-2">
+                        Contact our support team for API key generation and integration assistance:
+                      </p>
+                      <div className="space-y-1 text-xs">
+                        <p className="text-blue-900 dark:text-blue-100">
+                          <strong>Email:</strong> support@truckfinhub.com
+                        </p>
+                        <p className="text-blue-900 dark:text-blue-100">
+                          <strong>Phone:</strong> +91 1800-XXX-XXXX
+                        </p>
+                        <p className="text-blue-900 dark:text-blue-100">
+                          <strong>Documentation:</strong> https://docs.truckfinhub.com
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setCreateDialogOpen(false)}
+                  >
+                    Close
+                  </Button>
+                </DialogFooter>
+              </TabsContent>
+
             </Tabs>
           </DialogContent>
         </Dialog>

@@ -11,16 +11,26 @@ export interface Trip {
   loadOwnerRating?: number;
   clientCompany?: string;
   clientLogo?: string;
+  // Mandatory fields
+  ewayBillNumber: string; // Required*
+  ewayBillImage?: string; // Optional image
+  pickup: string; // Required* (origin/pickup location)
+  destination: string; // Required*
+  sender: string; // Required* (consignee/sender)
+  receiver: string; // Required* (receiver name)
+  transporter: string; // Required* (transporter name)
+  loanAmount: number; // Required* (loan amount in ₹)
+  loanInterestRate: number; // Required* (interest rate %)
+  maturityDays: number; // Required* (payment term in days)
+  // Legacy/optional fields for backward compatibility
   transporterId?: string;
   transporterName?: string;
-  origin: string;
-  destination: string;
+  origin: string; // Same as pickup, kept for backward compatibility
   distance: number;
   loadType: string;
   weight: number;
-  amount: number;
-  interestRate?: number;
-  maturityDays?: number;
+  amount: number; // Same as loanAmount, kept for backward compatibility
+  interestRate?: number; // Same as loanInterestRate, kept for backward compatibility
   riskLevel?: 'low' | 'medium' | 'high';
   insuranceStatus?: boolean;
   status: 'pending' | 'escrowed' | 'funded' | 'in_transit' | 'completed' | 'cancelled';
