@@ -1,4 +1,4 @@
-import { getDatabase } from '../database';
+import { getDatabase } from '../database.js';
 
 export interface UserKyc {
   id: string;
@@ -86,67 +86,65 @@ export interface UpdateUserKycInput {
 /**
  * Get KYC by user ID
  */
-export const getUserKyc = (userId: string): UserKyc | null => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM user_kyc WHERE user_id = ?');
-  return stmt.get(userId) as UserKyc | null;
+export const getUserKyc = async (userId: string): Promise<UserKyc | null> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM user_kyc WHERE user_id = $1', [userId]);
+  return result.rows[0] || null;
 };
 
 /**
  * Get KYC by ID
  */
-export const getKycById = (id: string): UserKyc | null => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM user_kyc WHERE id = ?');
-  return stmt.get(id) as UserKyc | null;
+export const getKycById = async (id: string): Promise<UserKyc | null> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM user_kyc WHERE id = $1', [id]);
+  return result.rows[0] || null;
 };
 
 /**
  * Get all KYC records
  */
-export const getAllKyc = (): UserKyc[] => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM user_kyc ORDER BY created_at DESC');
-  return stmt.all() as UserKyc[];
+export const getAllKyc = async (): Promise<UserKyc[]> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM user_kyc ORDER BY created_at DESC');
+  return result.rows;
 };
 
 /**
  * Get KYC records by status
  */
-export const getKycByStatus = (status: UserKyc['kyc_status']): UserKyc[] => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM user_kyc WHERE kyc_status = ? ORDER BY created_at DESC');
-  return stmt.all(status) as UserKyc[];
+export const getKycByStatus = async (status: UserKyc['kyc_status']): Promise<UserKyc[]> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM user_kyc WHERE kyc_status = $1 ORDER BY created_at DESC', [status]);
+  return result.rows;
 };
 
 /**
  * Create or update KYC
  */
-export const createOrUpdateUserKyc = (input: CreateUserKycInput): UserKyc => {
-  const db = getDatabase();
+export const createOrUpdateUserKyc = async (input: CreateUserKycInput): Promise<UserKyc> => {
+  const db = await getDatabase();
 
   // Check if KYC exists
-  const existing = getUserKyc(input.user_id);
+  const existing = await getUserKyc(input.user_id);
 
   if (existing) {
     // Update existing
-    return updateUserKyc(input.user_id, input as UpdateUserKycInput)!;
+    return (await updateUserKyc(input.user_id, input as UpdateUserKycInput))!;
   }
 
   // Create new
   const id = `kyc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-  const stmt = db.prepare(`
+  await db.query(`
     INSERT INTO user_kyc (
       id, user_id, pan_number, pan_document, aadhar_number, aadhar_document,
       address_line1, address_line2, city, state, pincode, address_proof_type, address_proof_document,
       gst_number, gst_certificate, company_registration_number, company_registration_document,
       vehicle_registration_number, vehicle_registration_document, vehicle_insurance_document,
       vehicle_fitness_certificate, kyc_status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
-  `);
-
-  stmt.run(
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, 'pending')
+  `, [
     id,
     input.user_id,
     input.pan_number || null,
@@ -168,9 +166,9 @@ export const createOrUpdateUserKyc = (input: CreateUserKycInput): UserKyc => {
     input.vehicle_registration_document || null,
     input.vehicle_insurance_document || null,
     input.vehicle_fitness_certificate || null
-  );
+  ]);
 
-  const kyc = getUserKyc(input.user_id);
+  const kyc = await getUserKyc(input.user_id);
   if (!kyc) {
     throw new Error('Failed to create KYC');
   }
@@ -181,104 +179,99 @@ export const createOrUpdateUserKyc = (input: CreateUserKycInput): UserKyc => {
 /**
  * Update KYC
  */
-export const updateUserKyc = (userId: string, input: UpdateUserKycInput): UserKyc | null => {
-  const db = getDatabase();
+export const updateUserKyc = async (userId: string, input: UpdateUserKycInput): Promise<UserKyc | null> => {
+  const db = await getDatabase();
 
-  const kyc = getUserKyc(userId);
+  const kyc = await getUserKyc(userId);
   if (!kyc) return null;
 
   const updates: string[] = [];
   const values: any[] = [];
+  let paramIndex = 1;
 
   // Build update query dynamically
   Object.entries(input).forEach(([key, value]) => {
     if (value !== undefined) {
-      updates.push(`${key} = ?`);
+      updates.push(`${key} = $${paramIndex}`);
       values.push(value);
+      paramIndex++;
     }
   });
 
   if (updates.length === 0) return kyc;
 
-  updates.push('updated_at = datetime(\'now\')');
+  updates.push(`updated_at = NOW()`);
   values.push(userId);
 
-  const stmt = db.prepare(`
-    UPDATE user_kyc SET ${updates.join(', ')} WHERE user_id = ?
-  `);
+  await db.query(`
+    UPDATE user_kyc SET ${updates.join(', ')} WHERE user_id = $${paramIndex}
+  `, values);
 
-  stmt.run(...values);
-
-  return getUserKyc(userId);
+  return await getUserKyc(userId);
 };
 
 /**
  * Submit KYC for review
  */
-export const submitKycForReview = (userId: string): UserKyc | null => {
-  const db = getDatabase();
-  const stmt = db.prepare(`
-    UPDATE user_kyc SET kyc_status = 'under_review', submitted_at = datetime('now'), updated_at = datetime('now')
-    WHERE user_id = ?
-  `);
-  stmt.run(userId);
-  return getUserKyc(userId);
+export const submitKycForReview = async (userId: string): Promise<UserKyc | null> => {
+  const db = await getDatabase();
+  await db.query(`
+    UPDATE user_kyc SET kyc_status = 'under_review', submitted_at = NOW(), updated_at = NOW()
+    WHERE user_id = $1
+  `, [userId]);
+  return await getUserKyc(userId);
 };
 
 /**
  * Approve KYC
  */
-export const approveKyc = (userId: string, verifiedBy: string): UserKyc | null => {
-  const db = getDatabase();
-  const stmt = db.prepare(`
+export const approveKyc = async (userId: string, verifiedBy: string): Promise<UserKyc | null> => {
+  const db = await getDatabase();
+  await db.query(`
     UPDATE user_kyc
-    SET kyc_status = 'approved', verified_by = ?, verified_at = datetime('now'), updated_at = datetime('now'), rejection_reason = NULL
-    WHERE user_id = ?
-  `);
-  stmt.run(verifiedBy, userId);
-  return getUserKyc(userId);
+    SET kyc_status = 'approved', verified_by = $1, verified_at = NOW(), updated_at = NOW(), rejection_reason = NULL
+    WHERE user_id = $2
+  `, [verifiedBy, userId]);
+  return await getUserKyc(userId);
 };
 
 /**
  * Reject KYC
  */
-export const rejectKyc = (userId: string, verifiedBy: string, rejectionReason: string): UserKyc | null => {
-  const db = getDatabase();
-  const stmt = db.prepare(`
+export const rejectKyc = async (userId: string, verifiedBy: string, rejectionReason: string): Promise<UserKyc | null> => {
+  const db = await getDatabase();
+  await db.query(`
     UPDATE user_kyc
-    SET kyc_status = 'rejected', verified_by = ?, verified_at = datetime('now'), rejection_reason = ?, updated_at = datetime('now')
-    WHERE user_id = ?
-  `);
-  stmt.run(verifiedBy, rejectionReason, userId);
-  return getUserKyc(userId);
+    SET kyc_status = 'rejected', verified_by = $1, verified_at = NOW(), rejection_reason = $2, updated_at = NOW()
+    WHERE user_id = $3
+  `, [verifiedBy, rejectionReason, userId]);
+  return await getUserKyc(userId);
 };
 
 /**
  * Check if user has approved KYC
  */
-export const hasApprovedKyc = (userId: string): boolean => {
-  const kyc = getUserKyc(userId);
+export const hasApprovedKyc = async (userId: string): Promise<boolean> => {
+  const kyc = await getUserKyc(userId);
   return kyc?.kyc_status === 'approved';
 };
 
 /**
  * Get pending KYC count
  */
-export const getPendingKycCount = (): number => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT COUNT(*) as count FROM user_kyc WHERE kyc_status = ?');
-  const result = stmt.get('pending') as { count: number };
-  return result.count;
+export const getPendingKycCount = async (): Promise<number> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT COUNT(*) as count FROM user_kyc WHERE kyc_status = $1', ['pending']);
+  return parseInt(result.rows[0].count);
 };
 
 /**
  * Get under review KYC count
  */
-export const getUnderReviewKycCount = (): number => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT COUNT(*) as count FROM user_kyc WHERE kyc_status = ?');
-  const result = stmt.get('under_review') as { count: number };
-  return result.count;
+export const getUnderReviewKycCount = async (): Promise<number> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT COUNT(*) as count FROM user_kyc WHERE kyc_status = $1', ['under_review']);
+  return parseInt(result.rows[0].count);
 };
 
 export default {

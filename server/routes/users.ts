@@ -14,15 +14,15 @@ import {
 const router = Router();
 
 // GET /api/users - Get all users or filter by role
-router.get('/', (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const { role } = req.query;
 
     let users;
     if (role) {
-      users = getUsersByRole(role as any);
+      users = await getUsersByRole(role as any);
     } else {
-      users = getAllUsers();
+      users = await getAllUsers();
     }
 
     // Remove password hashes from response
@@ -39,9 +39,9 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 // GET /api/users/:id - Get user by ID
-router.get('/:id', (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const user = getUserById(req.params.id);
+    const user = await getUserById(req.params.id);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -56,9 +56,9 @@ router.get('/:id', (req: Request, res: Response) => {
 });
 
 // GET /api/users/email/:email - Get user by email
-router.get('/email/:email', (req: Request, res: Response) => {
+router.get('/email/:email', async (req: Request, res: Response) => {
   try {
-    const user = getUserByEmail(req.params.email);
+    const user = await getUserByEmail(req.params.email);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -73,9 +73,9 @@ router.get('/email/:email', (req: Request, res: Response) => {
 });
 
 // GET /api/users/userId/:userId - Get user by userId
-router.get('/userId/:userId', (req: Request, res: Response) => {
+router.get('/userId/:userId', async (req: Request, res: Response) => {
   try {
-    const user = getUserByUserId(req.params.userId);
+    const user = await getUserByUserId(req.params.userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -90,9 +90,9 @@ router.get('/userId/:userId', (req: Request, res: Response) => {
 });
 
 // POST /api/users - Create new user
-router.post('/', (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
-    const user = createUser(req.body);
+    const user = await createUser(req.body);
 
     // Remove password hash
     const { password_hash, ...sanitizedUser } = user;
@@ -107,9 +107,9 @@ router.post('/', (req: Request, res: Response) => {
 });
 
 // PUT /api/users/:id - Update user
-router.put('/:id', (req: Request, res: Response) => {
+router.put('/:id', async (req: Request, res: Response) => {
   try {
-    const user = updateUser(req.params.id, req.body);
+    const user = await updateUser(req.params.id, req.body);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -124,7 +124,7 @@ router.put('/:id', (req: Request, res: Response) => {
 });
 
 // PUT /api/users/:id/password - Update password
-router.put('/:id/password', (req: Request, res: Response) => {
+router.put('/:id/password', async (req: Request, res: Response) => {
   try {
     const { newPassword } = req.body;
 
@@ -132,7 +132,7 @@ router.put('/:id/password', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'New password is required' });
     }
 
-    const updated = updatePassword(req.params.id, newPassword);
+    const updated = await updatePassword(req.params.id, newPassword);
     if (!updated) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -145,9 +145,9 @@ router.put('/:id/password', (req: Request, res: Response) => {
 });
 
 // DELETE /api/users/:id - Soft delete user
-router.delete('/:id', (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const deleted = deleteUser(req.params.id);
+    const deleted = await deleteUser(req.params.id);
     if (!deleted) {
       return res.status(404).json({ error: 'User not found' });
     }

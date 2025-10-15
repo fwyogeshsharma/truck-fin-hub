@@ -5,8 +5,8 @@ import {
   verifyPassword,
   getUserByEmail,
   updateUser
-} from '../../src/db/queries/users.ts';
-import { getWallet } from '../../src/db/queries/wallets.ts';
+} from '../../src/db/queries/users.js';
+import { getWallet } from '../../src/db/queries/wallets.js';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -97,7 +97,7 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     // Regular user authentication
-    const user = verifyPassword(email, password);
+    const user = await verifyPassword(email, password);
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -110,7 +110,7 @@ router.post('/login', async (req: Request, res: Response) => {
     );
 
     // Get wallet
-    const wallet = getWallet(user.id);
+    const wallet = await getWallet(user.id);
 
     res.json({
       user: {
@@ -137,6 +137,7 @@ router.post('/login', async (req: Request, res: Response) => {
 // Signup
 router.post('/signup', async (req: Request, res: Response) => {
   try {
+    console.log('1. Signup started');
     const { email, password, name, phone } = req.body;
 
     if (!email || !password || !name || !phone) {
@@ -145,14 +146,17 @@ router.post('/signup', async (req: Request, res: Response) => {
 
     // Generate user_id
     const userId = `USR${Date.now().toString().slice(-6)}`;
+    console.log('2. Generated userId:', userId);
 
-    const user = createUser({
+    console.log('3. Creating user...');
+    const user = await createUser({
       user_id: userId,
       email,
       phone,
       name,
       password,
     });
+    console.log('4. User created:', user.id);
 
     // Generate JWT token
     const token = jwt.sign(
@@ -160,9 +164,12 @@ router.post('/signup', async (req: Request, res: Response) => {
       JWT_SECRET,
       { expiresIn: '7d' }
     );
+    console.log('5. JWT token generated');
 
     // Get wallet (auto-created)
-    const wallet = getWallet(user.id);
+    console.log('6. Getting wallet for user:', user.id);
+    const wallet = await getWallet(user.id);
+    console.log('7. Wallet retrieved:', wallet);
 
     res.status(201).json({
       user: {
@@ -182,6 +189,7 @@ router.post('/signup', async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Signup error:', error);
+    console.error('Error stack:', error.stack);
     if (error.message.includes('already exists')) {
       return res.status(409).json({ error: error.message });
     }
@@ -198,7 +206,7 @@ router.put('/role', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'User ID and role are required' });
     }
 
-    const user = updateUser(userId, {
+    const user = await updateUser(userId, {
       role,
       company,
       company_logo: companyLogo,
@@ -235,8 +243,8 @@ router.put('/accept-terms', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
-    const user = updateUser(userId, {
-      terms_accepted: 1,
+    const user = await updateUser(userId, {
+      terms_accepted: true,
       terms_accepted_at: new Date().toISOString(),
     });
 
@@ -316,13 +324,13 @@ router.get('/me', async (req: Request, res: Response) => {
     }
 
     // Regular user
-    const user = getUserByEmail(decoded.email);
+    const user = await getUserByEmail(decoded.email);
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const wallet = getWallet(user.id);
+    const wallet = await getWallet(user.id);
 
     res.json({
       user: {

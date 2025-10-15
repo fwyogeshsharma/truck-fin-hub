@@ -1,4 +1,4 @@
-import { getDatabase } from '../database';
+import { getDatabase } from '../database.js';
 
 export interface BankAccount {
   id: string;
@@ -8,8 +8,8 @@ export interface BankAccount {
   ifsc_code: string;
   bank_name: string;
   account_type: 'savings' | 'current';
-  is_verified: number;
-  is_primary: number;
+  is_verified: boolean;
+  is_primary: boolean;
   created_at: string;
 }
 
@@ -36,59 +36,56 @@ export interface UpdateBankAccountInput {
 /**
  * Get bank account by ID
  */
-export const getBankAccount = (id: string): BankAccount | null => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM bank_accounts WHERE id = ?');
-  return stmt.get(id) as BankAccount | null;
+export const getBankAccount = async (id: string): Promise<BankAccount | null> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM bank_accounts WHERE id = $1', [id]);
+  return result.rows[0] || null;
 };
 
 /**
  * Get all bank accounts for a user
  */
-export const getBankAccountsByUser = (userId: string): BankAccount[] => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM bank_accounts WHERE user_id = ? ORDER BY is_primary DESC, created_at DESC');
-  return stmt.all(userId) as BankAccount[];
+export const getBankAccountsByUser = async (userId: string): Promise<BankAccount[]> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM bank_accounts WHERE user_id = $1 ORDER BY is_primary DESC, created_at DESC', [userId]);
+  return result.rows;
 };
 
 /**
  * Get primary bank account for a user
  */
-export const getPrimaryBankAccount = (userId: string): BankAccount | null => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM bank_accounts WHERE user_id = ? AND is_primary = 1 LIMIT 1');
-  return stmt.get(userId) as BankAccount | null;
+export const getPrimaryBankAccount = async (userId: string): Promise<BankAccount | null> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM bank_accounts WHERE user_id = $1 AND is_primary = TRUE LIMIT 1', [userId]);
+  return result.rows[0] || null;
 };
 
 /**
  * Get verified bank accounts for a user
  */
-export const getVerifiedBankAccounts = (userId: string): BankAccount[] => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM bank_accounts WHERE user_id = ? AND is_verified = 1 ORDER BY is_primary DESC, created_at DESC');
-  return stmt.all(userId) as BankAccount[];
+export const getVerifiedBankAccounts = async (userId: string): Promise<BankAccount[]> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM bank_accounts WHERE user_id = $1 AND is_verified = TRUE ORDER BY is_primary DESC, created_at DESC', [userId]);
+  return result.rows;
 };
 
 /**
  * Create bank account
  */
-export const createBankAccount = (input: CreateBankAccountInput): BankAccount => {
-  const db = getDatabase();
+export const createBankAccount = async (input: CreateBankAccountInput): Promise<BankAccount> => {
+  const db = await getDatabase();
   const id = `ba-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   // If setting as primary, unset other primary accounts
   if (input.is_primary) {
-    const unsetStmt = db.prepare('UPDATE bank_accounts SET is_primary = 0 WHERE user_id = ?');
-    unsetStmt.run(input.user_id);
+    await db.query('UPDATE bank_accounts SET is_primary = FALSE WHERE user_id = $1', [input.user_id]);
   }
 
-  const stmt = db.prepare(`
+  await db.query(`
     INSERT INTO bank_accounts (
       id, user_id, account_holder_name, account_number, ifsc_code, bank_name, account_type, is_primary
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  stmt.run(
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+  `, [
     id,
     input.user_id,
     input.account_holder_name,
@@ -96,10 +93,10 @@ export const createBankAccount = (input: CreateBankAccountInput): BankAccount =>
     input.ifsc_code,
     input.bank_name,
     input.account_type,
-    input.is_primary ? 1 : 0
-  );
+    input.is_primary || false
+  ]);
 
-  const account = getBankAccount(id);
+  const account = await getBankAccount(id);
   if (!account) {
     throw new Error('Failed to create bank account');
   }
@@ -110,87 +107,91 @@ export const createBankAccount = (input: CreateBankAccountInput): BankAccount =>
 /**
  * Update bank account
  */
-export const updateBankAccount = (id: string, input: UpdateBankAccountInput): BankAccount | null => {
-  const db = getDatabase();
+export const updateBankAccount = async (id: string, input: UpdateBankAccountInput): Promise<BankAccount | null> => {
+  const db = await getDatabase();
 
-  const account = getBankAccount(id);
+  const account = await getBankAccount(id);
   if (!account) return null;
 
   const updates: string[] = [];
   const values: any[] = [];
+  let paramIndex = 1;
 
   if (input.account_holder_name !== undefined) {
-    updates.push('account_holder_name = ?');
+    updates.push(`account_holder_name = $${paramIndex}`);
     values.push(input.account_holder_name);
+    paramIndex++;
   }
   if (input.account_number !== undefined) {
-    updates.push('account_number = ?');
+    updates.push(`account_number = $${paramIndex}`);
     values.push(input.account_number);
+    paramIndex++;
   }
   if (input.ifsc_code !== undefined) {
-    updates.push('ifsc_code = ?');
+    updates.push(`ifsc_code = $${paramIndex}`);
     values.push(input.ifsc_code);
+    paramIndex++;
   }
   if (input.bank_name !== undefined) {
-    updates.push('bank_name = ?');
+    updates.push(`bank_name = $${paramIndex}`);
     values.push(input.bank_name);
+    paramIndex++;
   }
   if (input.account_type !== undefined) {
-    updates.push('account_type = ?');
+    updates.push(`account_type = $${paramIndex}`);
     values.push(input.account_type);
+    paramIndex++;
   }
   if (input.is_verified !== undefined) {
-    updates.push('is_verified = ?');
-    values.push(input.is_verified ? 1 : 0);
+    updates.push(`is_verified = $${paramIndex}`);
+    values.push(input.is_verified);
+    paramIndex++;
   }
   if (input.is_primary !== undefined) {
     // If setting as primary, unset other primary accounts
     if (input.is_primary) {
-      const unsetStmt = db.prepare('UPDATE bank_accounts SET is_primary = 0 WHERE user_id = ?');
-      unsetStmt.run(account.user_id);
+      await db.query('UPDATE bank_accounts SET is_primary = FALSE WHERE user_id = $1', [account.user_id]);
     }
-    updates.push('is_primary = ?');
-    values.push(input.is_primary ? 1 : 0);
+    updates.push(`is_primary = $${paramIndex}`);
+    values.push(input.is_primary);
+    paramIndex++;
   }
 
   if (updates.length === 0) return account;
 
   values.push(id);
 
-  const stmt = db.prepare(`
-    UPDATE bank_accounts SET ${updates.join(', ')} WHERE id = ?
-  `);
+  await db.query(`
+    UPDATE bank_accounts SET ${updates.join(', ')} WHERE id = $${paramIndex}
+  `, values);
 
-  stmt.run(...values);
-
-  return getBankAccount(id);
+  return await getBankAccount(id);
 };
 
 /**
  * Delete bank account
  */
-export const deleteBankAccount = (id: string): boolean => {
-  const db = getDatabase();
-  const stmt = db.prepare('DELETE FROM bank_accounts WHERE id = ?');
-  const result = stmt.run(id);
-  return result.changes > 0;
+export const deleteBankAccount = async (id: string): Promise<boolean> => {
+  const db = await getDatabase();
+  const result = await db.query('DELETE FROM bank_accounts WHERE id = $1', [id]);
+  return result.rowCount > 0;
 };
 
 /**
  * Set bank account as primary
  */
-export const setPrimaryBankAccount = (id: string): BankAccount | null => {
-  const account = getBankAccount(id);
+export const setPrimaryBankAccount = async (id: string): Promise<BankAccount | null> => {
+  const account = await getBankAccount(id);
   if (!account) return null;
 
-  return updateBankAccount(id, { is_primary: true });
+  return await updateBankAccount(id, { is_primary: true });
 };
 
 /**
  * Verify bank account
  */
-export const verifyBankAccount = (id: string): BankAccount | null => {
-  return updateBankAccount(id, { is_verified: true });
+export const verifyBankAccount = async (id: string): Promise<BankAccount | null> => {
+  return await updateBankAccount(id, { is_verified: true });
 };
 
 export default {

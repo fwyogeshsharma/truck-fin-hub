@@ -19,19 +19,19 @@ import { getNotificationTemplate } from '../../src/services/notificationTemplate
 const router = Router();
 
 // GET /api/trips - Get all trips or filter by query params
-router.get('/', (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const { status, loadOwnerId, lenderId } = req.query;
 
     let trips;
     if (status) {
-      trips = getTripsByStatus(status as any);
+      trips = await getTripsByStatus(status as any);
     } else if (loadOwnerId) {
-      trips = getTripsByLoadOwner(loadOwnerId as string);
+      trips = await getTripsByLoadOwner(loadOwnerId as string);
     } else if (lenderId) {
-      trips = getTripsByLender(lenderId as string);
+      trips = await getTripsByLender(lenderId as string);
     } else {
-      trips = getAllTrips();
+      trips = await getAllTrips();
       console.log('getAllTrips returned', trips.length, 'trips');
       if (trips.length > 0) {
         console.log('First trip has bids:', trips[0].bids);
@@ -46,9 +46,9 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 // GET /api/trips/:id - Get single trip with bids and documents
-router.get('/:id', (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const trip = getTrip(req.params.id);
+    const trip = await getTrip(req.params.id);
     if (!trip) {
       return res.status(404).json({ error: 'Trip not found' });
     }
@@ -62,11 +62,11 @@ router.get('/:id', (req: Request, res: Response) => {
 // POST /api/trips - Create new trip
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const trip = createTrip(req.body);
+    const trip = await createTrip(req.body);
 
     // Notify all lenders about the new investment opportunity
     try {
-      const lenders = getUsersByRole('lender');
+      const lenders = await getUsersByRole('lender');
       const template = getNotificationTemplate('investment_opportunity');
 
       if (template) {
@@ -83,8 +83,8 @@ router.post('/', async (req: Request, res: Response) => {
         };
 
         // Create notifications for all lenders
-        lenders.forEach(lender => {
-          createNotification({
+        for (const lender of lenders) {
+          await createNotification({
             userId: lender.id,
             type: 'investment_opportunity',
             title: template.subject,
@@ -93,7 +93,7 @@ router.post('/', async (req: Request, res: Response) => {
             actionUrl: `/investment-opportunities`,
             metadata: tripData,
           });
-        });
+        }
 
         console.log(`Notified ${lenders.length} lenders about new trip ${trip.id}`);
       }
@@ -110,9 +110,9 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 // PUT /api/trips/:id - Update trip
-router.put('/:id', (req: Request, res: Response) => {
+router.put('/:id', async (req: Request, res: Response) => {
   try {
-    const trip = updateTrip(req.params.id, req.body);
+    const trip = await updateTrip(req.params.id, req.body);
     if (!trip) {
       return res.status(404).json({ error: 'Trip not found' });
     }
@@ -124,9 +124,9 @@ router.put('/:id', (req: Request, res: Response) => {
 });
 
 // DELETE /api/trips/:id - Delete trip
-router.delete('/:id', (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const deleted = deleteTrip(req.params.id);
+    const deleted = await deleteTrip(req.params.id);
     if (!deleted) {
       return res.status(404).json({ error: 'Trip not found' });
     }
@@ -138,9 +138,9 @@ router.delete('/:id', (req: Request, res: Response) => {
 });
 
 // GET /api/trips/:id/bids - Get bids for a trip
-router.get('/:id/bids', (req: Request, res: Response) => {
+router.get('/:id/bids', async (req: Request, res: Response) => {
   try {
-    const bids = getTripBids(req.params.id);
+    const bids = await getTripBids(req.params.id);
     res.json(bids);
   } catch (error: any) {
     console.error('Get bids error:', error);
@@ -157,11 +157,11 @@ router.post('/:id/bids', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const bid = addBid(req.params.id, lenderId, lenderName, amount, interestRate);
+    const bid = await addBid(req.params.id, lenderId, lenderName, amount, interestRate);
 
     // Notify the trip owner (shipper/load owner) about the new bid
     try {
-      const trip = getTrip(req.params.id);
+      const trip = await getTrip(req.params.id);
       if (trip) {
         const template = getNotificationTemplate('bid_received');
 
@@ -175,7 +175,7 @@ router.post('/:id/bids', async (req: Request, res: Response) => {
             interestRate,
           };
 
-          createNotification({
+          await createNotification({
             userId: trip.load_owner_id,
             type: 'bid_received',
             title: template.subject,
@@ -201,7 +201,7 @@ router.post('/:id/bids', async (req: Request, res: Response) => {
 });
 
 // POST /api/trips/:id/documents - Upload document
-router.post('/:id/documents', (req: Request, res: Response) => {
+router.post('/:id/documents', async (req: Request, res: Response) => {
   try {
     const { documentType, documentData, uploadedBy } = req.body;
 
@@ -209,7 +209,7 @@ router.post('/:id/documents', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const doc = uploadDocument(req.params.id, documentType, documentData, uploadedBy);
+    const doc = await uploadDocument(req.params.id, documentType, documentData, uploadedBy);
     res.status(201).json(doc);
   } catch (error: any) {
     console.error('Upload document error:', error);

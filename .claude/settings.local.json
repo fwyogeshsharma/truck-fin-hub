@@ -24,7 +24,12 @@
       "Bash(npm run dev:all:*)",
       "Bash(taskkill:*)",
       "Bash(dir:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(psql:*)",
+      "Bash(where psql)",
+      "Bash(robocopy:*)",
+      "Bash(xcopy:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

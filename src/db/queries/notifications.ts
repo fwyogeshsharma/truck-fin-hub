@@ -1,4 +1,4 @@
-import { getDatabase } from '../database';
+import { getDatabase } from '../database.js';
 import { NotificationType, NotificationPriority } from '@/types/notification';
 
 export interface DbNotification {
@@ -8,7 +8,7 @@ export interface DbNotification {
   title: string;
   message: string;
   priority: NotificationPriority;
-  read: number;
+  read: boolean;
   action_url?: string;
   metadata?: string;
   created_at: string;
@@ -28,17 +28,15 @@ export interface CreateNotificationInput {
 /**
  * Create a new notification
  */
-export const createNotification = (input: CreateNotificationInput): DbNotification => {
-  const db = getDatabase();
+export const createNotification = async (input: CreateNotificationInput): Promise<DbNotification> => {
+  const db = await getDatabase();
   const id = `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-  const stmt = db.prepare(`
+  await db.query(`
     INSERT INTO notifications (
       id, user_id, type, title, message, priority, read, link, action_url, metadata
-    ) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
-  `);
-
-  stmt.run(
+    ) VALUES ($1, $2, $3, $4, $5, $6, FALSE, $7, $8, $9)
+  `, [
     id,
     input.userId,
     input.type,
@@ -48,9 +46,9 @@ export const createNotification = (input: CreateNotificationInput): DbNotificati
     input.actionUrl || null,
     input.actionUrl || null,
     input.metadata ? JSON.stringify(input.metadata) : null
-  );
+  ]);
 
-  const notification = getNotificationById(id);
+  const notification = await getNotificationById(id);
   if (!notification) {
     throw new Error('Failed to create notification');
   }
@@ -61,95 +59,90 @@ export const createNotification = (input: CreateNotificationInput): DbNotificati
 /**
  * Get notification by ID
  */
-export const getNotificationById = (id: string): DbNotification | null => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM notifications WHERE id = ?');
-  return stmt.get(id) as DbNotification | null;
+export const getNotificationById = async (id: string): Promise<DbNotification | null> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM notifications WHERE id = $1', [id]);
+  return result.rows[0] || null;
 };
 
 /**
  * Get all notifications for a user
  */
-export const getUserNotifications = (userId: string, limit: number = 50): DbNotification[] => {
-  const db = getDatabase();
-  const stmt = db.prepare(`
+export const getUserNotifications = async (userId: string, limit: number = 50): Promise<DbNotification[]> => {
+  const db = await getDatabase();
+  const result = await db.query(`
     SELECT * FROM notifications
-    WHERE user_id = ?
+    WHERE user_id = $1
     ORDER BY created_at DESC
-    LIMIT ?
-  `);
-  return stmt.all(userId, limit) as DbNotification[];
+    LIMIT $2
+  `, [userId, limit]);
+  return result.rows;
 };
 
 /**
  * Get unread notifications count for a user
  */
-export const getUnreadCount = (userId: string): number => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND read = 0');
-  const result = stmt.get(userId) as { count: number };
-  return result.count;
+export const getUnreadCount = async (userId: string): Promise<number> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT COUNT(*) as count FROM notifications WHERE user_id = $1 AND read = FALSE', [userId]);
+  return parseInt(result.rows[0].count);
 };
 
 /**
  * Mark notification as read
  */
-export const markAsRead = (userId: string, notificationId: string): boolean => {
-  const db = getDatabase();
-  const stmt = db.prepare(`
+export const markAsRead = async (userId: string, notificationId: string): Promise<boolean> => {
+  const db = await getDatabase();
+  const result = await db.query(`
     UPDATE notifications
-    SET read = 1, read_at = datetime('now')
-    WHERE id = ? AND user_id = ?
-  `);
-  const result = stmt.run(notificationId, userId);
-  return result.changes > 0;
+    SET read = TRUE, read_at = NOW()
+    WHERE id = $1 AND user_id = $2
+  `, [notificationId, userId]);
+  return result.rowCount > 0;
 };
 
 /**
  * Mark all notifications as read for a user
  */
-export const markAllAsRead = (userId: string): boolean => {
-  const db = getDatabase();
-  const stmt = db.prepare(`
+export const markAllAsRead = async (userId: string): Promise<boolean> => {
+  const db = await getDatabase();
+  const result = await db.query(`
     UPDATE notifications
-    SET read = 1, read_at = datetime('now')
-    WHERE user_id = ? AND read = 0
-  `);
-  const result = stmt.run(userId);
-  return result.changes > 0;
+    SET read = TRUE, read_at = NOW()
+    WHERE user_id = $1 AND read = FALSE
+  `, [userId]);
+  return result.rowCount > 0;
 };
 
 /**
  * Delete a notification
  */
-export const deleteNotification = (userId: string, notificationId: string): boolean => {
-  const db = getDatabase();
-  const stmt = db.prepare('DELETE FROM notifications WHERE id = ? AND user_id = ?');
-  const result = stmt.run(notificationId, userId);
-  return result.changes > 0;
+export const deleteNotification = async (userId: string, notificationId: string): Promise<boolean> => {
+  const db = await getDatabase();
+  const result = await db.query('DELETE FROM notifications WHERE id = $1 AND user_id = $2', [notificationId, userId]);
+  return result.rowCount > 0;
 };
 
 /**
  * Delete all notifications for a user
  */
-export const deleteAllNotifications = (userId: string): boolean => {
-  const db = getDatabase();
-  const stmt = db.prepare('DELETE FROM notifications WHERE user_id = ?');
-  const result = stmt.run(userId);
-  return result.changes > 0;
+export const deleteAllNotifications = async (userId: string): Promise<boolean> => {
+  const db = await getDatabase();
+  const result = await db.query('DELETE FROM notifications WHERE user_id = $1', [userId]);
+  return result.rowCount > 0;
 };
 
 /**
  * Get notifications by type
  */
-export const getNotificationsByType = (userId: string, type: NotificationType): DbNotification[] => {
-  const db = getDatabase();
-  const stmt = db.prepare(`
+export const getNotificationsByType = async (userId: string, type: NotificationType): Promise<DbNotification[]> => {
+  const db = await getDatabase();
+  const result = await db.query(`
     SELECT * FROM notifications
-    WHERE user_id = ? AND type = ?
+    WHERE user_id = $1 AND type = $2
     ORDER BY created_at DESC
-  `);
-  return stmt.all(userId, type) as DbNotification[];
+  `, [userId, type]);
+  return result.rows;
 };
 
 export default {

@@ -19,23 +19,23 @@ import {
 const router = Router();
 
 // GET /api/investments - Get all investments or filter by query params
-router.get('/', (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const { lenderId, tripId, status } = req.query;
 
     let investments;
     if (lenderId && tripId) {
-      investments = getInvestmentsByTripAndLender(tripId as string, lenderId as string);
+      investments = await getInvestmentsByTripAndLender(tripId as string, lenderId as string);
     } else if (lenderId && status) {
-      investments = getInvestmentsByLenderAndStatus(lenderId as string, status as any);
+      investments = await getInvestmentsByLenderAndStatus(lenderId as string, status as any);
     } else if (lenderId) {
-      investments = getInvestmentsByLender(lenderId as string);
+      investments = await getInvestmentsByLender(lenderId as string);
     } else if (tripId) {
-      investments = getInvestmentsByTrip(tripId as string);
+      investments = await getInvestmentsByTrip(tripId as string);
     } else if (status) {
-      investments = getInvestmentsByStatus(status as any);
+      investments = await getInvestmentsByStatus(status as any);
     } else {
-      investments = getAllInvestments();
+      investments = await getAllInvestments();
     }
 
     res.json(investments);
@@ -46,9 +46,9 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 // GET /api/investments/:id - Get single investment
-router.get('/:id', (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const investment = getInvestment(req.params.id);
+    const investment = await getInvestment(req.params.id);
     if (!investment) {
       return res.status(404).json({ error: 'Investment not found' });
     }
@@ -60,9 +60,9 @@ router.get('/:id', (req: Request, res: Response) => {
 });
 
 // POST /api/investments - Create new investment
-router.post('/', (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
-    const investment = createInvestment(req.body);
+    const investment = await createInvestment(req.body);
     res.status(201).json(investment);
   } catch (error: any) {
     console.error('Create investment error:', error);
@@ -71,9 +71,9 @@ router.post('/', (req: Request, res: Response) => {
 });
 
 // PUT /api/investments/:id - Update investment
-router.put('/:id', (req: Request, res: Response) => {
+router.put('/:id', async (req: Request, res: Response) => {
   try {
-    const investment = updateInvestment(req.params.id, req.body);
+    const investment = await updateInvestment(req.params.id, req.body);
     if (!investment) {
       return res.status(404).json({ error: 'Investment not found' });
     }
@@ -85,7 +85,7 @@ router.put('/:id', (req: Request, res: Response) => {
 });
 
 // PUT /api/investments/:id/status - Update investment status
-router.put('/:id/status', (req: Request, res: Response) => {
+router.put('/:id/status', async (req: Request, res: Response) => {
   try {
     const { status } = req.body;
 
@@ -93,7 +93,7 @@ router.put('/:id/status', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Status is required' });
     }
 
-    const investment = updateInvestmentStatus(req.params.id, status);
+    const investment = await updateInvestmentStatus(req.params.id, status);
     if (!investment) {
       return res.status(404).json({ error: 'Investment not found' });
     }
@@ -105,9 +105,9 @@ router.put('/:id/status', (req: Request, res: Response) => {
 });
 
 // DELETE /api/investments/:id - Delete investment
-router.delete('/:id', (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const deleted = deleteInvestment(req.params.id);
+    const deleted = await deleteInvestment(req.params.id);
     if (!deleted) {
       return res.status(404).json({ error: 'Investment not found' });
     }
@@ -119,11 +119,11 @@ router.delete('/:id', (req: Request, res: Response) => {
 });
 
 // GET /api/investments/stats/:lenderId - Get lender statistics
-router.get('/stats/:lenderId', (req: Request, res: Response) => {
+router.get('/stats/:lenderId', async (req: Request, res: Response) => {
   try {
-    const activeCount = getActiveInvestmentsCount(req.params.lenderId);
-    const totalInvested = getTotalInvestedByLender(req.params.lenderId);
-    const totalReturns = getTotalReturnsByLender(req.params.lenderId);
+    const activeCount = await getActiveInvestmentsCount(req.params.lenderId);
+    const totalInvested = await getTotalInvestedByLender(req.params.lenderId);
+    const totalReturns = await getTotalReturnsByLender(req.params.lenderId);
 
     res.json({
       activeCount,

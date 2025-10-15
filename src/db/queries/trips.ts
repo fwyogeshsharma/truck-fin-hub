@@ -1,4 +1,4 @@
-import { getDatabase } from '../database';
+import { getDatabase } from '../database.js';
 
 export interface Trip {
   id: string;
@@ -19,7 +19,7 @@ export interface Trip {
   interest_rate?: number;
   maturity_days?: number;
   risk_level?: 'low' | 'medium' | 'high';
-  insurance_status: number;
+  insurance_status: boolean;
   status: 'pending' | 'escrowed' | 'funded' | 'in_transit' | 'completed' | 'cancelled';
   lender_id?: string;
   lender_name?: string;
@@ -69,28 +69,39 @@ export interface CreateTripInput {
 /**
  * Get trip by ID with bids and documents
  */
-export const getTrip = (id: string): (Trip & { bids?: TripBid[], documents?: Record<string, string> }) | null => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM trips WHERE id = ?');
-  const trip = stmt.get(id) as Trip | undefined;
+export const getTrip = async (id: string): Promise<(Trip & { bids?: TripBid[], documents?: Record<string, string> }) | null> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM trips WHERE id = $1', [id]);
+  const trip = result.rows[0];
 
   if (!trip) return null;
 
   // Get bids
-  const bidsStmt = db.prepare('SELECT * FROM trip_bids WHERE trip_id = ? ORDER BY created_at DESC');
-  const bids = bidsStmt.all(id) as TripBid[];
+  const bidsResult = await db.query('SELECT * FROM trip_bids WHERE trip_id = $1 ORDER BY created_at DESC', [id]);
+  const bids = bidsResult.rows as TripBid[];
 
   // Get documents
-  const docsStmt = db.prepare('SELECT * FROM trip_documents WHERE trip_id = ?');
-  const docs = docsStmt.all(id) as TripDocument[];
+  const docsResult = await db.query('SELECT * FROM trip_documents WHERE trip_id = $1', [id]);
+  const docs = docsResult.rows as TripDocument[];
   const documents: Record<string, string> = {};
   docs.forEach(doc => {
     documents[doc.document_type] = doc.document_data;
   });
 
+  // Convert numeric fields to numbers
   return {
     ...trip,
-    bids: bids.length > 0 ? bids : undefined,
+    distance: Number(trip.distance),
+    weight: Number(trip.weight),
+    amount: Number(trip.amount),
+    interest_rate: trip.interest_rate ? Number(trip.interest_rate) : undefined,
+    maturity_days: trip.maturity_days ? Number(trip.maturity_days) : undefined,
+    load_owner_rating: trip.load_owner_rating ? Number(trip.load_owner_rating) : undefined,
+    bids: bids.length > 0 ? bids.map(bid => ({
+      ...bid,
+      amount: Number(bid.amount),
+      interest_rate: Number(bid.interest_rate),
+    })) : undefined,
     documents: Object.keys(documents).length > 0 ? documents : undefined,
   };
 };
@@ -98,80 +109,120 @@ export const getTrip = (id: string): (Trip & { bids?: TripBid[], documents?: Rec
 /**
  * Get all trips with bids
  */
-export const getAllTrips = (): (Trip & { bids?: TripBid[] })[] => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM trips ORDER BY created_at DESC');
-  const trips = stmt.all() as Trip[];
+export const getAllTrips = async (): Promise<(Trip & { bids?: TripBid[] })[]> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM trips ORDER BY created_at DESC');
+  const trips = result.rows as Trip[];
 
   try {
     // Get all bids for all trips in a single query for efficiency
-    const bidsStmt = db.prepare('SELECT * FROM trip_bids ORDER BY created_at DESC');
-    const allBids = bidsStmt.all() as TripBid[];
+    const bidsResult = await db.query('SELECT * FROM trip_bids ORDER BY created_at DESC');
+    const allBids = bidsResult.rows as TripBid[];
 
-    // Group bids by trip_id
+    // Group bids by trip_id and convert numeric fields
     const bidsByTrip = allBids.reduce((acc, bid) => {
       if (!acc[bid.trip_id]) {
         acc[bid.trip_id] = [];
       }
-      acc[bid.trip_id].push(bid);
+      acc[bid.trip_id].push({
+        ...bid,
+        amount: Number(bid.amount),
+        interest_rate: Number(bid.interest_rate),
+      });
       return acc;
     }, {} as Record<string, TripBid[]>);
 
-    // Add bids to each trip
+    // Add bids to each trip and convert numeric fields
     return trips.map(trip => ({
       ...trip,
+      distance: Number(trip.distance),
+      weight: Number(trip.weight),
+      amount: Number(trip.amount),
+      interest_rate: trip.interest_rate ? Number(trip.interest_rate) : undefined,
+      maturity_days: trip.maturity_days ? Number(trip.maturity_days) : undefined,
+      load_owner_rating: trip.load_owner_rating ? Number(trip.load_owner_rating) : undefined,
       bids: bidsByTrip[trip.id] || undefined,
     }));
   } catch (error) {
     console.error('Error loading bids:', error);
-    // Return trips without bids if there's an error
-    return trips;
+    // Return trips with numeric conversions even if bids fail
+    return trips.map(trip => ({
+      ...trip,
+      distance: Number(trip.distance),
+      weight: Number(trip.weight),
+      amount: Number(trip.amount),
+      interest_rate: trip.interest_rate ? Number(trip.interest_rate) : undefined,
+      maturity_days: trip.maturity_days ? Number(trip.maturity_days) : undefined,
+      load_owner_rating: trip.load_owner_rating ? Number(trip.load_owner_rating) : undefined,
+    }));
   }
 };
 
 /**
  * Get trips by status
  */
-export const getTripsByStatus = (status: Trip['status']): Trip[] => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM trips WHERE status = ? ORDER BY created_at DESC');
-  return stmt.all(status) as Trip[];
+export const getTripsByStatus = async (status: Trip['status']): Promise<Trip[]> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM trips WHERE status = $1 ORDER BY created_at DESC', [status]);
+  return result.rows.map(trip => ({
+    ...trip,
+    distance: Number(trip.distance),
+    weight: Number(trip.weight),
+    amount: Number(trip.amount),
+    interest_rate: trip.interest_rate ? Number(trip.interest_rate) : undefined,
+    maturity_days: trip.maturity_days ? Number(trip.maturity_days) : undefined,
+    load_owner_rating: trip.load_owner_rating ? Number(trip.load_owner_rating) : undefined,
+  }));
 };
 
 /**
  * Get trips by load owner
  */
-export const getTripsByLoadOwner = (loadOwnerId: string): Trip[] => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM trips WHERE load_owner_id = ? ORDER BY created_at DESC');
-  return stmt.all(loadOwnerId) as Trip[];
+export const getTripsByLoadOwner = async (loadOwnerId: string): Promise<Trip[]> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM trips WHERE load_owner_id = $1 ORDER BY created_at DESC', [loadOwnerId]);
+  return result.rows.map(trip => ({
+    ...trip,
+    distance: Number(trip.distance),
+    weight: Number(trip.weight),
+    amount: Number(trip.amount),
+    interest_rate: trip.interest_rate ? Number(trip.interest_rate) : undefined,
+    maturity_days: trip.maturity_days ? Number(trip.maturity_days) : undefined,
+    load_owner_rating: trip.load_owner_rating ? Number(trip.load_owner_rating) : undefined,
+  }));
 };
 
 /**
  * Get trips by lender
  */
-export const getTripsByLender = (lenderId: string): Trip[] => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM trips WHERE lender_id = ? ORDER BY created_at DESC');
-  return stmt.all(lenderId) as Trip[];
+export const getTripsByLender = async (lenderId: string): Promise<Trip[]> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM trips WHERE lender_id = $1 ORDER BY created_at DESC', [lenderId]);
+  return result.rows.map(trip => ({
+    ...trip,
+    distance: Number(trip.distance),
+    weight: Number(trip.weight),
+    amount: Number(trip.amount),
+    interest_rate: trip.interest_rate ? Number(trip.interest_rate) : undefined,
+    maturity_days: trip.maturity_days ? Number(trip.maturity_days) : undefined,
+    load_owner_rating: trip.load_owner_rating ? Number(trip.load_owner_rating) : undefined,
+  }));
 };
 
 /**
  * Create trip
  */
-export const createTrip = (input: CreateTripInput): Trip => {
-  const db = getDatabase();
+export const createTrip = async (input: CreateTripInput): Promise<Trip> => {
+  const db = await getDatabase();
   const id = `trip-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-  const stmt = db.prepare(`
+  await db.query(`
     INSERT INTO trips (
       id, load_owner_id, load_owner_name, load_owner_logo, load_owner_rating,
       client_company, client_logo, origin, destination, distance, load_type,
       weight, amount, interest_rate, maturity_days, risk_level, insurance_status, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
-  `);
-
-  stmt.run(
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'pending')
+  `, [
     id,
     input.load_owner_id,
     input.load_owner_name,
@@ -188,10 +239,10 @@ export const createTrip = (input: CreateTripInput): Trip => {
     input.interest_rate || null,
     input.maturity_days || 30,
     input.risk_level || 'low',
-    input.insurance_status ? 1 : 0
-  );
+    input.insurance_status || false
+  ]);
 
-  const trip = getTrip(id);
+  const trip = await getTrip(id);
   if (!trip) {
     throw new Error('Failed to create trip');
   }
@@ -202,19 +253,21 @@ export const createTrip = (input: CreateTripInput): Trip => {
 /**
  * Update trip
  */
-export const updateTrip = (id: string, updates: Partial<Trip>): Trip | null => {
-  const db = getDatabase();
+export const updateTrip = async (id: string, updates: Partial<Trip>): Promise<Trip | null> => {
+  const db = await getDatabase();
 
-  const trip = getTrip(id);
+  const trip = await getTrip(id);
   if (!trip) return null;
 
   const fields: string[] = [];
   const values: any[] = [];
+  let paramIndex = 1;
 
   Object.entries(updates).forEach(([key, value]) => {
     if (value !== undefined && key !== 'id') {
-      fields.push(`${key} = ?`);
+      fields.push(`${key} = $${paramIndex}`);
       values.push(value);
+      paramIndex++;
     }
   });
 
@@ -222,77 +275,69 @@ export const updateTrip = (id: string, updates: Partial<Trip>): Trip | null => {
 
   values.push(id);
 
-  const stmt = db.prepare(`
-    UPDATE trips SET ${fields.join(', ')} WHERE id = ?
-  `);
+  await db.query(`
+    UPDATE trips SET ${fields.join(', ')} WHERE id = $${paramIndex}
+  `, values);
 
-  stmt.run(...values);
-
-  return getTrip(id);
+  return await getTrip(id);
 };
 
 /**
  * Add bid to trip
  */
-export const addBid = (tripId: string, lenderId: string, lenderName: string, amount: number, interestRate: number): TripBid => {
-  const db = getDatabase();
+export const addBid = async (tripId: string, lenderId: string, lenderName: string, amount: number, interestRate: number): Promise<TripBid> => {
+  const db = await getDatabase();
   const id = `bid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-  const stmt = db.prepare(`
+  await db.query(`
     INSERT INTO trip_bids (id, trip_id, lender_id, lender_name, amount, interest_rate)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `);
+    VALUES ($1, $2, $3, $4, $5, $6)
+  `, [id, tripId, lenderId, lenderName, amount, interestRate]);
 
-  stmt.run(id, tripId, lenderId, lenderName, amount, interestRate);
-
-  const bidStmt = db.prepare('SELECT * FROM trip_bids WHERE id = ?');
-  return bidStmt.get(id) as TripBid;
+  const result = await db.query('SELECT * FROM trip_bids WHERE id = $1', [id]);
+  return result.rows[0] as TripBid;
 };
 
 /**
  * Upload document
  */
-export const uploadDocument = (
+export const uploadDocument = async (
   tripId: string,
   documentType: 'bilty' | 'ewaybill' | 'invoice',
   documentData: string,
   uploadedBy: string
-): TripDocument => {
-  const db = getDatabase();
+): Promise<TripDocument> => {
+  const db = await getDatabase();
   const id = `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   // Delete existing document of same type
-  const deleteStmt = db.prepare('DELETE FROM trip_documents WHERE trip_id = ? AND document_type = ?');
-  deleteStmt.run(tripId, documentType);
+  await db.query('DELETE FROM trip_documents WHERE trip_id = $1 AND document_type = $2', [tripId, documentType]);
 
-  const stmt = db.prepare(`
+  await db.query(`
     INSERT INTO trip_documents (id, trip_id, document_type, document_data, uploaded_by)
-    VALUES (?, ?, ?, ?, ?)
-  `);
+    VALUES ($1, $2, $3, $4, $5)
+  `, [id, tripId, documentType, documentData, uploadedBy]);
 
-  stmt.run(id, tripId, documentType, documentData, uploadedBy);
-
-  const docStmt = db.prepare('SELECT * FROM trip_documents WHERE id = ?');
-  return docStmt.get(id) as TripDocument;
+  const result = await db.query('SELECT * FROM trip_documents WHERE id = $1', [id]);
+  return result.rows[0] as TripDocument;
 };
 
 /**
  * Get bids for trip
  */
-export const getTripBids = (tripId: string): TripBid[] => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM trip_bids WHERE trip_id = ? ORDER BY created_at DESC');
-  return stmt.all(tripId) as TripBid[];
+export const getTripBids = async (tripId: string): Promise<TripBid[]> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM trip_bids WHERE trip_id = $1 ORDER BY created_at DESC', [tripId]);
+  return result.rows;
 };
 
 /**
  * Delete trip
  */
-export const deleteTrip = (id: string): boolean => {
-  const db = getDatabase();
-  const stmt = db.prepare('DELETE FROM trips WHERE id = ?');
-  const result = stmt.run(id);
-  return result.changes > 0;
+export const deleteTrip = async (id: string): Promise<boolean> => {
+  const db = await getDatabase();
+  const result = await db.query('DELETE FROM trips WHERE id = $1', [id]);
+  return result.rowCount > 0;
 };
 
 export default {

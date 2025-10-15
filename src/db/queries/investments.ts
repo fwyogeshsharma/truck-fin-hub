@@ -1,4 +1,4 @@
-import { getDatabase } from '../database';
+import { getDatabase } from '../database.js';
 
 export interface Investment {
   id: string;
@@ -25,80 +25,116 @@ export interface CreateInvestmentInput {
 /**
  * Get investment by ID
  */
-export const getInvestment = (id: string): Investment | null => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM investments WHERE id = ?');
-  return stmt.get(id) as Investment | null;
+export const getInvestment = async (id: string): Promise<Investment | null> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM investments WHERE id = $1', [id]);
+  const investment = result.rows[0];
+  if (!investment) return null;
+
+  return {
+    ...investment,
+    amount: Number(investment.amount),
+    interest_rate: Number(investment.interest_rate),
+    expected_return: Number(investment.expected_return),
+  };
 };
 
 /**
  * Get all investments
  */
-export const getAllInvestments = (): Investment[] => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM investments ORDER BY invested_at DESC');
-  return stmt.all() as Investment[];
+export const getAllInvestments = async (): Promise<Investment[]> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM investments ORDER BY invested_at DESC');
+  return result.rows.map(inv => ({
+    ...inv,
+    amount: Number(inv.amount),
+    interest_rate: Number(inv.interest_rate),
+    expected_return: Number(inv.expected_return),
+  }));
 };
 
 /**
  * Get investments by lender
  */
-export const getInvestmentsByLender = (lenderId: string): Investment[] => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM investments WHERE lender_id = ? ORDER BY invested_at DESC');
-  return stmt.all(lenderId) as Investment[];
+export const getInvestmentsByLender = async (lenderId: string): Promise<Investment[]> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM investments WHERE lender_id = $1 ORDER BY invested_at DESC', [lenderId]);
+  return result.rows.map(inv => ({
+    ...inv,
+    amount: Number(inv.amount),
+    interest_rate: Number(inv.interest_rate),
+    expected_return: Number(inv.expected_return),
+  }));
 };
 
 /**
  * Get investments by trip
  */
-export const getInvestmentsByTrip = (tripId: string): Investment[] => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM investments WHERE trip_id = ? ORDER BY invested_at DESC');
-  return stmt.all(tripId) as Investment[];
+export const getInvestmentsByTrip = async (tripId: string): Promise<Investment[]> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM investments WHERE trip_id = $1 ORDER BY invested_at DESC', [tripId]);
+  return result.rows.map(inv => ({
+    ...inv,
+    amount: Number(inv.amount),
+    interest_rate: Number(inv.interest_rate),
+    expected_return: Number(inv.expected_return),
+  }));
 };
 
 /**
  * Get investments by status
  */
-export const getInvestmentsByStatus = (status: Investment['status']): Investment[] => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM investments WHERE status = ? ORDER BY invested_at DESC');
-  return stmt.all(status) as Investment[];
+export const getInvestmentsByStatus = async (status: Investment['status']): Promise<Investment[]> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM investments WHERE status = $1 ORDER BY invested_at DESC', [status]);
+  return result.rows.map(inv => ({
+    ...inv,
+    amount: Number(inv.amount),
+    interest_rate: Number(inv.interest_rate),
+    expected_return: Number(inv.expected_return),
+  }));
 };
 
 /**
  * Get investments by lender and status
  */
-export const getInvestmentsByLenderAndStatus = (lenderId: string, status: Investment['status']): Investment[] => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM investments WHERE lender_id = ? AND status = ? ORDER BY invested_at DESC');
-  return stmt.all(lenderId, status) as Investment[];
+export const getInvestmentsByLenderAndStatus = async (lenderId: string, status: Investment['status']): Promise<Investment[]> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM investments WHERE lender_id = $1 AND status = $2 ORDER BY invested_at DESC', [lenderId, status]);
+  return result.rows.map(inv => ({
+    ...inv,
+    amount: Number(inv.amount),
+    interest_rate: Number(inv.interest_rate),
+    expected_return: Number(inv.expected_return),
+  }));
 };
 
 /**
  * Get investments by trip and lender
  */
-export const getInvestmentsByTripAndLender = (tripId: string, lenderId: string): Investment[] => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM investments WHERE trip_id = ? AND lender_id = ? ORDER BY invested_at DESC');
-  return stmt.all(tripId, lenderId) as Investment[];
+export const getInvestmentsByTripAndLender = async (tripId: string, lenderId: string): Promise<Investment[]> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM investments WHERE trip_id = $1 AND lender_id = $2 ORDER BY invested_at DESC', [tripId, lenderId]);
+  return result.rows.map(inv => ({
+    ...inv,
+    amount: Number(inv.amount),
+    interest_rate: Number(inv.interest_rate),
+    expected_return: Number(inv.expected_return),
+  }));
 };
 
 /**
  * Create investment
  */
-export const createInvestment = (input: CreateInvestmentInput): Investment => {
-  const db = getDatabase();
+export const createInvestment = async (input: CreateInvestmentInput): Promise<Investment> => {
+  const db = await getDatabase();
   const id = `inv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-  const stmt = db.prepare(`
+  await db.query(`
     INSERT INTO investments (
       id, lender_id, trip_id, amount, interest_rate, expected_return, status, maturity_date
-    ) VALUES (?, ?, ?, ?, ?, ?, 'escrowed', ?)
-  `);
-
-  stmt.run(
+    ) VALUES ($1, $2, $3, $4, $5, $6, 'escrowed', $7)
+  `, [
     id,
     input.lender_id,
     input.trip_id,
@@ -106,9 +142,9 @@ export const createInvestment = (input: CreateInvestmentInput): Investment => {
     input.interest_rate,
     input.expected_return,
     input.maturity_date
-  );
+  ]);
 
-  const investment = getInvestment(id);
+  const investment = await getInvestment(id);
   if (!investment) {
     throw new Error('Failed to create investment');
   }
@@ -119,46 +155,43 @@ export const createInvestment = (input: CreateInvestmentInput): Investment => {
 /**
  * Update investment status
  */
-export const updateInvestmentStatus = (id: string, status: Investment['status']): Investment | null => {
-  const db = getDatabase();
+export const updateInvestmentStatus = async (id: string, status: Investment['status']): Promise<Investment | null> => {
+  const db = await getDatabase();
 
-  const investment = getInvestment(id);
+  const investment = await getInvestment(id);
   if (!investment) return null;
 
-  const updates = ['status = ?'];
-  const values: any[] = [status];
-
   if (status === 'completed') {
-    updates.push('completed_at = datetime(\'now\')');
+    await db.query(`
+      UPDATE investments SET status = $1, completed_at = NOW() WHERE id = $2
+    `, [status, id]);
+  } else {
+    await db.query(`
+      UPDATE investments SET status = $1 WHERE id = $2
+    `, [status, id]);
   }
 
-  values.push(id);
-
-  const stmt = db.prepare(`
-    UPDATE investments SET ${updates.join(', ')} WHERE id = ?
-  `);
-
-  stmt.run(...values);
-
-  return getInvestment(id);
+  return await getInvestment(id);
 };
 
 /**
  * Update investment
  */
-export const updateInvestment = (id: string, updates: Partial<Investment>): Investment | null => {
-  const db = getDatabase();
+export const updateInvestment = async (id: string, updates: Partial<Investment>): Promise<Investment | null> => {
+  const db = await getDatabase();
 
-  const investment = getInvestment(id);
+  const investment = await getInvestment(id);
   if (!investment) return null;
 
   const fields: string[] = [];
   const values: any[] = [];
+  let paramIndex = 1;
 
   Object.entries(updates).forEach(([key, value]) => {
     if (value !== undefined && key !== 'id') {
-      fields.push(`${key} = ?`);
+      fields.push(`${key} = $${paramIndex}`);
       values.push(value);
+      paramIndex++;
     }
   });
 
@@ -166,59 +199,53 @@ export const updateInvestment = (id: string, updates: Partial<Investment>): Inve
 
   values.push(id);
 
-  const stmt = db.prepare(`
-    UPDATE investments SET ${fields.join(', ')} WHERE id = ?
-  `);
+  await db.query(`
+    UPDATE investments SET ${fields.join(', ')} WHERE id = $${paramIndex}
+  `, values);
 
-  stmt.run(...values);
-
-  return getInvestment(id);
+  return await getInvestment(id);
 };
 
 /**
  * Delete investment
  */
-export const deleteInvestment = (id: string): boolean => {
-  const db = getDatabase();
-  const stmt = db.prepare('DELETE FROM investments WHERE id = ?');
-  const result = stmt.run(id);
-  return result.changes > 0;
+export const deleteInvestment = async (id: string): Promise<boolean> => {
+  const db = await getDatabase();
+  const result = await db.query('DELETE FROM investments WHERE id = $1', [id]);
+  return result.rowCount > 0;
 };
 
 /**
  * Get active investments count by lender
  */
-export const getActiveInvestmentsCount = (lenderId: string): number => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT COUNT(*) as count FROM investments WHERE lender_id = ? AND status = ?');
-  const result = stmt.get(lenderId, 'active') as { count: number };
-  return result.count;
+export const getActiveInvestmentsCount = async (lenderId: string): Promise<number> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT COUNT(*) as count FROM investments WHERE lender_id = $1 AND status = $2', [lenderId, 'active']);
+  return parseInt(result.rows[0].count);
 };
 
 /**
  * Get total invested amount by lender
  */
-export const getTotalInvestedByLender = (lenderId: string): number => {
-  const db = getDatabase();
-  const stmt = db.prepare(`
+export const getTotalInvestedByLender = async (lenderId: string): Promise<number> => {
+  const db = await getDatabase();
+  const result = await db.query(`
     SELECT SUM(amount) as total FROM investments
-    WHERE lender_id = ? AND status IN ('active', 'completed')
-  `);
-  const result = stmt.get(lenderId) as { total: number | null };
-  return result.total || 0;
+    WHERE lender_id = $1 AND status IN ('active', 'completed')
+  `, [lenderId]);
+  return Number(result.rows[0].total) || 0;
 };
 
 /**
  * Get total returns by lender
  */
-export const getTotalReturnsByLender = (lenderId: string): number => {
-  const db = getDatabase();
-  const stmt = db.prepare(`
+export const getTotalReturnsByLender = async (lenderId: string): Promise<number> => {
+  const db = await getDatabase();
+  const result = await db.query(`
     SELECT SUM(expected_return) as total FROM investments
-    WHERE lender_id = ? AND status = 'completed'
-  `);
-  const result = stmt.get(lenderId) as { total: number | null };
-  return result.total || 0;
+    WHERE lender_id = $1 AND status = 'completed'
+  `, [lenderId]);
+  return Number(result.rows[0].total) || 0;
 };
 
 export default {

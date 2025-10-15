@@ -13,9 +13,9 @@ import { createTransaction } from '../../src/db/queries/transactions.ts';
 const router = Router();
 
 // GET /api/wallets/:userId - Get wallet
-router.get('/:userId', (req: Request, res: Response) => {
+router.get('/:userId', async (req: Request, res: Response) => {
   try {
-    const wallet = getWallet(req.params.userId);
+    const wallet = await getWallet(req.params.userId);
     res.json(wallet);
   } catch (error: any) {
     console.error('Get wallet error:', error);
@@ -24,18 +24,22 @@ router.get('/:userId', (req: Request, res: Response) => {
 });
 
 // PUT /api/wallets/:userId - Update wallet
-router.put('/:userId', (req: Request, res: Response) => {
+router.put('/:userId', async (req: Request, res: Response) => {
   try {
-    const wallet = updateWallet(req.params.userId, req.body);
+    console.log('PUT /api/wallets/:userId - Request body:', JSON.stringify(req.body));
+    console.log('PUT /api/wallets/:userId - User ID:', req.params.userId);
+    const wallet = await updateWallet(req.params.userId, req.body);
+    console.log('PUT /api/wallets/:userId - Updated wallet:', JSON.stringify(wallet));
     res.json(wallet);
   } catch (error: any) {
     console.error('Update wallet error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ error: 'Failed to update wallet', message: error.message });
   }
 });
 
 // POST /api/wallets/:userId/add-money - Add money to wallet
-router.post('/:userId/add-money', (req: Request, res: Response) => {
+router.post('/:userId/add-money', async (req: Request, res: Response) => {
   try {
     const { amount } = req.body;
 
@@ -43,10 +47,10 @@ router.post('/:userId/add-money', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Valid amount required' });
     }
 
-    const wallet = addToBalance(req.params.userId, amount);
+    const wallet = await addToBalance(req.params.userId, amount);
 
     // Create transaction record
-    createTransaction({
+    await createTransaction({
       user_id: req.params.userId,
       type: 'credit',
       amount,
@@ -63,7 +67,7 @@ router.post('/:userId/add-money', (req: Request, res: Response) => {
 });
 
 // POST /api/wallets/:userId/withdraw - Withdraw from wallet
-router.post('/:userId/withdraw', (req: Request, res: Response) => {
+router.post('/:userId/withdraw', async (req: Request, res: Response) => {
   try {
     const { amount } = req.body;
 
@@ -71,10 +75,10 @@ router.post('/:userId/withdraw', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Valid amount required' });
     }
 
-    const wallet = deductFromBalance(req.params.userId, amount);
+    const wallet = await deductFromBalance(req.params.userId, amount);
 
     // Create transaction record
-    createTransaction({
+    await createTransaction({
       user_id: req.params.userId,
       type: 'debit',
       amount,
@@ -94,7 +98,7 @@ router.post('/:userId/withdraw', (req: Request, res: Response) => {
 });
 
 // POST /api/wallets/:userId/escrow - Move money to escrow
-router.post('/:userId/escrow', (req: Request, res: Response) => {
+router.post('/:userId/escrow', async (req: Request, res: Response) => {
   try {
     const { amount } = req.body;
 
@@ -102,10 +106,10 @@ router.post('/:userId/escrow', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Valid amount required' });
     }
 
-    const wallet = moveToEscrow(req.params.userId, amount);
+    const wallet = await moveToEscrow(req.params.userId, amount);
 
     // Create transaction record
-    createTransaction({
+    await createTransaction({
       user_id: req.params.userId,
       type: 'debit',
       amount,
@@ -125,7 +129,7 @@ router.post('/:userId/escrow', (req: Request, res: Response) => {
 });
 
 // POST /api/wallets/:userId/invest - Move from escrow to invested
-router.post('/:userId/invest', (req: Request, res: Response) => {
+router.post('/:userId/invest', async (req: Request, res: Response) => {
   try {
     const { amount, tripId } = req.body;
 
@@ -133,10 +137,10 @@ router.post('/:userId/invest', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Valid amount required' });
     }
 
-    const wallet = moveFromEscrowToInvested(req.params.userId, amount);
+    const wallet = await moveFromEscrowToInvested(req.params.userId, amount);
 
     // Create transaction record
-    createTransaction({
+    await createTransaction({
       user_id: req.params.userId,
       type: 'debit',
       amount,
@@ -156,7 +160,7 @@ router.post('/:userId/invest', (req: Request, res: Response) => {
 });
 
 // POST /api/wallets/:userId/return - Return investment with returns
-router.post('/:userId/return', (req: Request, res: Response) => {
+router.post('/:userId/return', async (req: Request, res: Response) => {
   try {
     const { principal, returns } = req.body;
 
@@ -164,10 +168,10 @@ router.post('/:userId/return', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Valid principal amount required' });
     }
 
-    const wallet = returnInvestment(req.params.userId, principal, returns || 0);
+    const wallet = await returnInvestment(req.params.userId, principal, returns || 0);
 
     // Create transaction record
-    createTransaction({
+    await createTransaction({
       user_id: req.params.userId,
       type: 'credit',
       amount: principal + (returns || 0),
