@@ -41,20 +41,23 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/users/:id - Get user by ID
-router.get('/:id', async (req: Request, res: Response) => {
+// GET /api/users/pending-approvals - Get pending user approvals
+// IMPORTANT: This MUST be before /:id route to avoid route conflict
+router.get('/pending-approvals', async (req: Request, res: Response) => {
   try {
-    const user = await getUserById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+    const { companyId } = req.query;
+    const pendingUsers = await getPendingUserApprovals(companyId as string);
 
-    // Remove password hash
-    const { password_hash, ...sanitizedUser } = user;
-    res.json(sanitizedUser);
+    // Remove password hashes from response
+    const sanitizedUsers = pendingUsers.map(user => {
+      const { password_hash, ...rest } = user;
+      return rest;
+    });
+
+    res.json(sanitizedUsers);
   } catch (error: any) {
-    console.error('Get user error:', error);
-    res.status(500).json({ error: 'Failed to get user', message: error.message });
+    console.error('Get pending approvals error:', error);
+    res.status(500).json({ error: 'Failed to get pending approvals', message: error.message });
   }
 });
 
@@ -88,6 +91,24 @@ router.get('/userId/:userId', async (req: Request, res: Response) => {
     res.json(sanitizedUser);
   } catch (error: any) {
     console.error('Get user by userId error:', error);
+    res.status(500).json({ error: 'Failed to get user', message: error.message });
+  }
+});
+
+// GET /api/users/:id - Get user by ID
+// IMPORTANT: This MUST be AFTER all specific routes like /pending-approvals, /email/:email, etc.
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    const user = await getUserById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Remove password hash
+    const { password_hash, ...sanitizedUser } = user;
+    res.json(sanitizedUser);
+  } catch (error: any) {
+    console.error('Get user error:', error);
     res.status(500).json({ error: 'Failed to get user', message: error.message });
   }
 });
@@ -215,25 +236,6 @@ router.delete('/:id', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Delete user error:', error);
     res.status(500).json({ error: 'Failed to delete user', message: error.message });
-  }
-});
-
-// GET /api/users/pending-approvals - Get pending user approvals
-router.get('/pending-approvals', async (req: Request, res: Response) => {
-  try {
-    const { companyId } = req.query;
-    const pendingUsers = await getPendingUserApprovals(companyId as string);
-
-    // Remove password hashes from response
-    const sanitizedUsers = pendingUsers.map(user => {
-      const { password_hash, ...rest } = user;
-      return rest;
-    });
-
-    res.json(sanitizedUsers);
-  } catch (error: any) {
-    console.error('Get pending approvals error:', error);
-    res.status(500).json({ error: 'Failed to get pending approvals', message: error.message });
   }
 });
 

@@ -76,21 +76,53 @@ const LoadAgentDashboard = () => {
 
   const fetchPendingApprovals = async () => {
     try {
+      console.log('🔍 [LoadAgent] Current user details:', {
+        name: user?.name,
+        email: user?.email,
+        role: user?.role,
+        is_admin: user?.is_admin,
+        company: user?.company,
+        company_id: user?.company_id
+      });
+
       // For company admins (is_admin), only fetch pending approvals for their company
       const isCompanyAdmin = user?.is_admin === true && user?.company_id;
       const companyId = isCompanyAdmin ? user.company_id : undefined;
+
+      console.log('🔍 [LoadAgent] Filtering logic:', {
+        isCompanyAdmin,
+        companyId,
+        willFilterByCompany: !!companyId
+      });
 
       const url = companyId
         ? `/api/users/pending-approvals?companyId=${companyId}`
         : '/api/users/pending-approvals';
 
+      console.log('📡 [LoadAgent] Fetching from:', url);
+
       const response = await fetch(url);
+      console.log('📡 [LoadAgent] Response status:', response.status);
+
       if (response.ok) {
         const pendingUsers = await response.json();
+        console.log('✅ [LoadAgent] Received pending users:', {
+          count: pendingUsers.length,
+          users: pendingUsers.map((u: any) => ({
+            name: u.name,
+            email: u.email,
+            company: u.company,
+            company_id: u.company_id,
+            approval_status: u.approval_status
+          }))
+        });
         setPendingApprovals(pendingUsers);
+      } else {
+        const errorText = await response.text();
+        console.error('❌ [LoadAgent] API error:', response.status, errorText);
       }
     } catch (error) {
-      console.error('Failed to fetch pending approvals:', error);
+      console.error('❌ [LoadAgent] Failed to fetch pending approvals:', error);
     }
   };
 

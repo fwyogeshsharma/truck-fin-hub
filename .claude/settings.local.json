@@ -20,7 +20,8 @@
       "Bash(npm run dev:*)",
       "Bash(timeout:*)",
       "Bash(cat:*)",
-      "Bash(python -m json.tool:*)"
+      "Bash(python -m json.tool:*)",
+      "Bash(node debug-pending-approvals.js:*)"
     ],
     "deny": [],
     "ask": []

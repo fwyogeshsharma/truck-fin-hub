@@ -102,6 +102,22 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // Check if user is pending approval
+    if (user.approval_status === 'pending') {
+      return res.status(403).json({
+        error: 'Account pending approval',
+        message: 'Your account is awaiting approval from a company administrator. Please check back later.'
+      });
+    }
+
+    // Check if user was rejected
+    if (user.approval_status === 'rejected') {
+      return res.status(403).json({
+        error: 'Account access denied',
+        message: user.rejection_reason || 'Your access request was denied by the administrator.'
+      });
+    }
+
     // Generate JWT token
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
@@ -120,8 +136,13 @@ router.post('/login', async (req: Request, res: Response) => {
         name: user.name,
         role: user.role,
         company: user.company,
+        company_id: user.company_id,
         companyLogo: user.company_logo,
         userLogo: user.user_logo,
+        approval_status: user.approval_status,
+        approved_by: user.approved_by,
+        approved_at: user.approved_at,
+        is_admin: user.is_admin,
         termsAccepted: user.terms_accepted,
         termsAcceptedAt: user.terms_accepted_at,
       },
@@ -192,17 +213,25 @@ router.post('/signup', async (req: Request, res: Response) => {
 // Update user role (one-time selection)
 router.put('/role', async (req: Request, res: Response) => {
   try {
-    const { userId, role, company, companyLogo } = req.body;
+    const { userId, role, company, companyLogo, companyId, approvalStatus } = req.body;
 
     if (!userId || !role) {
       return res.status(400).json({ error: 'User ID and role are required' });
     }
 
-    const user = await updateUser(userId, {
+    const updateData: any = {
       role,
       company,
       company_logo: companyLogo,
-    });
+      company_id: companyId,
+    };
+
+    // If approval status is provided, set it
+    if (approvalStatus) {
+      updateData.approval_status = approvalStatus;
+    }
+
+    const user = await updateUser(userId, updateData);
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -216,8 +245,15 @@ router.put('/role', async (req: Request, res: Response) => {
         name: user.name,
         role: user.role,
         company: user.company,
+        company_id: user.company_id,
         companyLogo: user.company_logo,
         userLogo: user.user_logo,
+        approval_status: user.approval_status,
+        approved_by: user.approved_by,
+        approved_at: user.approved_at,
+        is_admin: user.is_admin,
+        termsAccepted: user.terms_accepted,
+        termsAcceptedAt: user.terms_accepted_at,
       },
     });
   } catch (error: any) {

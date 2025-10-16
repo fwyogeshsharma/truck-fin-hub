@@ -124,8 +124,8 @@ const RoleSelection = () => {
 
     const user = auth.getCurrentUser();
 
-    // If load_agent is selected and user doesn't have a company yet (first time role selection)
-    if (selectedRole === 'load_agent' && !user?.company) {
+    // If load_agent or lender is selected and user doesn't have a company yet (first time role selection)
+    if ((selectedRole === 'load_agent' || selectedRole === 'lender') && !user?.company) {
       setShowCompanyDialog(true);
       return;
     }
@@ -168,8 +168,8 @@ const RoleSelection = () => {
     setSelectedCompany(company);
     setShowCompanyDialog(false);
 
-    // For shipper role, set status to pending and show approval message
-    if (selectedRole === 'load_agent') {
+    // For shipper and lender roles, set status to pending and show approval message
+    if (selectedRole === 'load_agent' || selectedRole === 'lender') {
       setIsLoading(true);
       try {
         // Update user with company and pending status
@@ -181,6 +181,8 @@ const RoleSelection = () => {
           'pending' // Set approval status to pending
         );
 
+        const roleTitle = selectedRole === 'load_agent' ? 'shipper' : 'lender';
+
         toast({
           title: "Request Submitted",
           description: "Your request has been sent to the company admin for approval.",
@@ -190,7 +192,7 @@ const RoleSelection = () => {
         auth.logout();
         navigate('/auth', {
           state: {
-            message: `Your shipper request for ${company.display_name || company.name} has been submitted. Please wait for admin approval before logging in again.`
+            message: `Your ${roleTitle} request for ${company.display_name || company.name} has been submitted. Please wait for admin approval before logging in again.`
           }
         });
       } catch (error: any) {
@@ -301,7 +303,9 @@ const RoleSelection = () => {
           <DialogHeader>
             <DialogTitle>Select Your Company</DialogTitle>
             <DialogDescription>
-              Choose the logistics company you represent as a Shipper
+              {selectedRole === 'load_agent'
+                ? 'Choose the logistics company you represent as a Shipper'
+                : 'Choose the lending company you want to work for'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
