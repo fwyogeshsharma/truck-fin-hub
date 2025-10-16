@@ -54,18 +54,13 @@ const roles = [
   // They are accessible only through direct login with specific credentials
 ];
 
-const companies = [
-  {
-    id: "rollingradius",
-    name: "RollingRadius",
-    logo: "/rr_full_transp_old.png",
-  },
-  {
-    id: "cjdarcl",
-    name: "CJ Darcl Logistics",
-    logo: "/CJ-Darcl-01.png",
-  },
-];
+interface Company {
+  id: string;
+  name: string;
+  display_name: string;
+  logo?: string;
+  is_active: boolean;
+}
 
 const RoleSelection = () => {
   const navigate = useNavigate();
@@ -73,7 +68,9 @@ const RoleSelection = () => {
   const [selectedRole, setSelectedRole] = useState<User['role'] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showCompanyDialog, setShowCompanyDialog] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState<typeof companies[0] | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
 
   // Check if user has accepted terms on component mount
   useEffect(() => {
@@ -94,6 +91,33 @@ const RoleSelection = () => {
       navigate("/terms");
     }
   }, [navigate, toast]);
+
+  // Fetch companies from API
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      setLoadingCompanies(true);
+      try {
+        const response = await fetch('/api/companies?active=true');
+        if (response.ok) {
+          const data = await response.json();
+          setCompanies(data);
+        } else {
+          throw new Error('Failed to fetch companies');
+        }
+      } catch (error) {
+        console.error('Failed to fetch companies:', error);
+        toast({
+          variant: "destructive",
+          title: "Failed to load companies",
+          description: "Could not load companies list. Please try again.",
+        });
+      } finally {
+        setLoadingCompanies(false);
+      }
+    };
+
+    fetchCompanies();
+  }, [toast]);
 
   const handleConfirm = () => {
     if (!selectedRole) return;
@@ -117,8 +141,9 @@ const RoleSelection = () => {
     try {
       const updatedUser = await auth.updateUserRole(
         selectedRole,
-        selectedCompany?.name,
-        selectedCompany?.logo
+        selectedCompany?.display_name || selectedCompany?.name,
+        selectedCompany?.logo,
+        selectedCompany?.id
       );
 
       if (updatedUser) {
@@ -139,10 +164,47 @@ const RoleSelection = () => {
     }
   };
 
-  const handleCompanySelect = (company: typeof companies[0]) => {
+  const handleCompanySelect = async (company: Company) => {
     setSelectedCompany(company);
     setShowCompanyDialog(false);
-    proceedWithRoleSelection();
+
+    // For shipper role, set status to pending and show approval message
+    if (selectedRole === 'load_agent') {
+      setIsLoading(true);
+      try {
+        // Update user with company and pending status
+        await auth.updateUserRole(
+          selectedRole,
+          company.display_name || company.name,
+          company.logo,
+          company.id,
+          'pending' // Set approval status to pending
+        );
+
+        toast({
+          title: "Request Submitted",
+          description: "Your request has been sent to the company admin for approval.",
+        });
+
+        // Logout user and redirect to auth page with message
+        auth.logout();
+        navigate('/auth', {
+          state: {
+            message: `Your shipper request for ${company.display_name || company.name} has been submitted. Please wait for admin approval before logging in again.`
+          }
+        });
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Failed to submit request",
+          description: error.message || "Something went wrong",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      proceedWithRoleSelection();
+    }
   };
 
   return (
@@ -235,7 +297,7 @@ const RoleSelection = () => {
 
       {/* Company Selection Dialog */}
       <Dialog open={showCompanyDialog} onOpenChange={setShowCompanyDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Select Your Company</DialogTitle>
             <DialogDescription>
@@ -243,27 +305,39 @@ const RoleSelection = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            {companies.map((company) => (
-              <Card
-                key={company.id}
-                className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 hover:border-primary"
-                onClick={() => handleCompanySelect(company)}
-              >
-                <CardContent className="p-6 flex items-center gap-4">
-                  <div className="w-24 h-24 flex items-center justify-center bg-white rounded-lg p-2">
-                    <img
-                      src={company.logo}
-                      alt={company.name}
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">{company.name}</h3>
-                    <p className="text-sm text-muted-foreground">Click to select</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {loadingCompanies ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-muted-foreground">Loading companies...</p>
+              </div>
+            ) : companies.length === 0 ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-muted-foreground">No companies available</p>
+              </div>
+            ) : (
+              companies.map((company) => (
+                <Card
+                  key={company.id}
+                  className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 hover:border-primary"
+                  onClick={() => handleCompanySelect(company)}
+                >
+                  <CardContent className="p-6 flex items-center gap-4">
+                    {company.logo && (
+                      <div className="w-24 h-24 flex items-center justify-center bg-white rounded-lg p-2">
+                        <img
+                          src={company.logo}
+                          alt={company.display_name || company.name}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg">{company.display_name || company.name}</h3>
+                      <p className="text-sm text-muted-foreground">Click to select</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </DialogContent>
       </Dialog>

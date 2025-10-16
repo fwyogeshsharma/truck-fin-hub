@@ -7,10 +7,16 @@ export interface User {
   name: string;
   role?: 'load_owner' | 'vehicle_owner' | 'lender' | 'admin' | 'super_admin' | 'load_agent' | 'vehicle_agent';
   company?: string;
+  company_id?: string;
   companyLogo?: string;
   userLogo?: string;
+  approval_status?: 'approved' | 'pending' | 'rejected';
+  approved_by?: string;
+  approved_at?: string;
+  rejection_reason?: string;
   termsAccepted?: boolean;
   termsAcceptedAt?: string;
+  is_admin?: boolean;
 }
 
 export interface LoginResponse {
@@ -30,7 +36,9 @@ export interface UpdateRoleData {
   userId: string;
   role: User['role'];
   company?: string;
+  companyId?: string;
   companyLogo?: string;
+  approvalStatus?: 'approved' | 'pending' | 'rejected';
 }
 
 export const authAPI = {

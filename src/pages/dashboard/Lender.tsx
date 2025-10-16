@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, TrendingUp, Package, IndianRupee, Lock, ArrowUpRight, ArrowDownRight, Sparkles, Brain, RefreshCw } from "lucide-react";
+import { Wallet, TrendingUp, Package, IndianRupee, Lock, ArrowUpRight, ArrowDownRight, Sparkles, Brain, RefreshCw, Clock, UserCheck, UserX, CheckCircle2 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data, type Trip, type Investment, type Wallet as WalletType } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -28,6 +28,95 @@ const LenderDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [chartColors, setChartColors] = useState(getChartColors());
   const [colorPalette, setColorPalette] = useState(getChartColorPalette());
+  const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
+  const [approvingUserId, setApprovingUserId] = useState<string | null>(null);
+
+  const fetchPendingApprovals = async () => {
+    try {
+      // For company admins (is_admin), only fetch pending approvals for their company
+      const isCompanyAdmin = user?.is_admin === true && user?.company_id;
+      const companyId = isCompanyAdmin ? user.company_id : undefined;
+
+      const url = companyId
+        ? `/api/users/pending-approvals?companyId=${companyId}`
+        : '/api/users/pending-approvals';
+
+      const response = await fetch(url);
+      if (response.ok) {
+        const pendingUsers = await response.json();
+        setPendingApprovals(pendingUsers);
+      }
+    } catch (error) {
+      console.error('Failed to fetch pending approvals:', error);
+    }
+  };
+
+  const handleApprove = async (userId: string) => {
+    if (!user?.id) return;
+
+    setApprovingUserId(userId);
+    try {
+      const response = await fetch(`/api/users/${userId}/approve`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approvedBy: user.id }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "User Approved",
+          description: "The user has been approved and can now log in.",
+        });
+        await fetchPendingApprovals();
+      } else {
+        throw new Error('Failed to approve user');
+      }
+    } catch (error) {
+      console.error('Failed to approve user:', error);
+      toast({
+        variant: "destructive",
+        title: "Approval Failed",
+        description: "Failed to approve user. Please try again.",
+      });
+    } finally {
+      setApprovingUserId(null);
+    }
+  };
+
+  const handleReject = async (userId: string) => {
+    if (!user?.id) return;
+
+    const reason = prompt('Please provide a reason for rejection:');
+    if (!reason) return;
+
+    setApprovingUserId(userId);
+    try {
+      const response = await fetch(`/api/users/${userId}/reject`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rejectedBy: user.id, reason }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "User Rejected",
+          description: "The user request has been rejected.",
+        });
+        await fetchPendingApprovals();
+      } else {
+        throw new Error('Failed to reject user');
+      }
+    } catch (error) {
+      console.error('Failed to reject user:', error);
+      toast({
+        variant: "destructive",
+        title: "Rejection Failed",
+        description: "Failed to reject user. Please try again.",
+      });
+    } finally {
+      setApprovingUserId(null);
+    }
+  };
 
   // Update chart colors when theme changes
   useEffect(() => {
@@ -70,6 +159,11 @@ const LenderDashboard = () => {
         setTrips(tripsData);
         setMyInvestments(investmentsData.filter(i => i.lenderId === user.id));
         setWallet(walletData);
+
+        // Fetch pending approvals if user is admin
+        if (user.is_admin) {
+          await fetchPendingApprovals();
+        }
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
       } finally {
@@ -271,6 +365,83 @@ const LenderDashboard = () => {
 
         {/* Wallet */}
         {user?.id && <WalletCard userId={user.id} showDetails={true} />}
+
+        {/* Grant Access - Pending Approvals (Only for Admin users) */}
+        {user?.is_admin && (
+          <Card className={pendingApprovals.length > 0 ? "border-yellow-200 dark:border-yellow-800 bg-yellow-50/50 dark:bg-yellow-950/20" : ""}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-yellow-600" />
+                Grant Access - Pending User Approvals
+              </CardTitle>
+              <CardDescription>
+                {user?.company ?
+                  `Review and approve new user access requests for ${user.company}` :
+                  'Review and approve new user access requests'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pendingApprovals.length === 0 ? (
+                <div className="text-center py-8 px-4 border rounded-lg bg-muted/50">
+                  <CheckCircle2 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                    No Pending Approvals
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {user?.company
+                      ? `No user access requests for ${user.company} at this time.`
+                      : 'All user requests have been processed.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pendingApprovals.map((pendingUser) => (
+                    <div key={pendingUser.id} className="flex items-center justify-between p-4 border rounded-lg bg-white dark:bg-background shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <UserCheck className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold">{pendingUser.name}</p>
+                            <p className="text-xs text-muted-foreground">{pendingUser.email}</p>
+                          </div>
+                        </div>
+                        <div className="ml-12 space-y-1">
+                          <p className="text-xs text-muted-foreground">Phone: {pendingUser.phone || 'N/A'}</p>
+                          <p className="text-xs text-muted-foreground">Company: <span className="font-medium text-foreground">{pendingUser.company}</span></p>
+                          <p className="text-xs text-muted-foreground">Role: <span className="font-medium text-foreground">{pendingUser.role?.replace('_', ' ')}</span></p>
+                          <p className="text-xs text-muted-foreground">Requested: {new Date(pendingUser.created_at).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleApprove(pendingUser.id)}
+                          disabled={approvingUserId === pendingUser.id}
+                          className="bg-green-600 hover:bg-green-700 min-w-[120px]"
+                        >
+                          <UserCheck className="h-4 w-4 mr-1" />
+                          {approvingUserId === pendingUser.id ? 'Approving...' : 'Grant Access'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleReject(pendingUser.id)}
+                          disabled={approvingUserId === pendingUser.id}
+                          className="min-w-[120px]"
+                        >
+                          <UserX className="h-4 w-4 mr-1" />
+                          Deny Access
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* AI Insights */}
         <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">

@@ -12,6 +12,10 @@ export interface User {
   company_id?: string;
   companyLogo?: string;
   userLogo?: string;
+  approval_status?: 'approved' | 'pending' | 'rejected';
+  approved_by?: string;
+  approved_at?: string;
+  rejection_reason?: string;
   termsAccepted?: boolean;
   termsAcceptedAt?: string;
   is_admin?: boolean;
@@ -66,7 +70,7 @@ export const auth = {
   },
 
   // Update user role (one-time selection)
-  updateUserRole: async (role: User['role'], company?: string, companyLogo?: string): Promise<User | null> => {
+  updateUserRole: async (role: User['role'], company?: string, companyLogo?: string, companyId?: string, approvalStatus?: 'approved' | 'pending' | 'rejected'): Promise<User | null> => {
     const user = auth.getCurrentUser();
     if (!user) return null;
 
@@ -76,6 +80,8 @@ export const auth = {
         role,
         company,
         companyLogo,
+        companyId,
+        approvalStatus,
       });
 
       // Store in sessionStorage (tab-specific)

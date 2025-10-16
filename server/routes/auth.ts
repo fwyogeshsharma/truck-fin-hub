@@ -125,6 +125,10 @@ router.post('/login', async (req: Request, res: Response) => {
         company_id: user.company_id,
         companyLogo: user.company_logo,
         userLogo: user.user_logo,
+        approval_status: user.approval_status,
+        approved_by: user.approved_by,
+        approved_at: user.approved_at,
+        rejection_reason: user.rejection_reason,
         termsAccepted: user.terms_accepted,
         termsAcceptedAt: user.terms_accepted_at,
         is_admin: user.is_admin,
@@ -206,21 +210,48 @@ router.post('/signup', async (req: Request, res: Response) => {
 // Update user role (one-time selection)
 router.put('/role', async (req: Request, res: Response) => {
   try {
-    const { userId, role, company, companyLogo } = req.body;
+    console.log('📝 Update role request received:', {
+      userId: req.body.userId,
+      role: req.body.role,
+      company: req.body.company,
+      companyId: req.body.companyId,
+      approvalStatus: req.body.approvalStatus
+    });
+
+    const { userId, role, company, companyId, companyLogo, approvalStatus } = req.body;
 
     if (!userId || !role) {
+      console.error('❌ Missing required fields:', { userId, role });
       return res.status(400).json({ error: 'User ID and role are required' });
     }
 
-    const user = await updateUser(userId, {
+    const updateData: any = {
       role,
       company,
+      company_id: companyId,
       company_logo: companyLogo,
-    });
+    };
+
+    // If approval status is provided, set it (for shipper role requiring approval)
+    if (approvalStatus) {
+      updateData.approval_status = approvalStatus;
+      console.log('✅ Setting approval status to:', approvalStatus);
+    }
+
+    console.log('🔄 Calling updateUser with:', { userId, updateData });
+    const user = await updateUser(userId, updateData);
 
     if (!user) {
+      console.error('❌ User not found for ID:', userId);
       return res.status(404).json({ error: 'User not found' });
     }
+
+    console.log('✅ User updated successfully:', {
+      id: user.id,
+      role: user.role,
+      company: user.company,
+      approval_status: user.approval_status
+    });
 
     res.json({
       user: {
@@ -230,13 +261,26 @@ router.put('/role', async (req: Request, res: Response) => {
         name: user.name,
         role: user.role,
         company: user.company,
+        company_id: user.company_id,
         companyLogo: user.company_logo,
         userLogo: user.user_logo,
+        approval_status: user.approval_status,
+        approved_by: user.approved_by,
+        approved_at: user.approved_at,
+        rejection_reason: user.rejection_reason,
+        termsAccepted: user.terms_accepted,
+        termsAcceptedAt: user.terms_accepted_at,
+        is_admin: user.is_admin,
       },
     });
   } catch (error: any) {
-    console.error('Update role error:', error);
-    res.status(500).json({ error: 'Role update failed', message: error.message });
+    console.error('❌ Update role error:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({
+      error: 'Role update failed',
+      message: error.message,
+      details: error.stack
+    });
   }
 });
 
@@ -351,6 +395,10 @@ router.get('/me', async (req: Request, res: Response) => {
         company_id: user.company_id,
         companyLogo: user.company_logo,
         userLogo: user.user_logo,
+        approval_status: user.approval_status,
+        approved_by: user.approved_by,
+        approved_at: user.approved_at,
+        rejection_reason: user.rejection_reason,
         termsAccepted: user.terms_accepted,
         termsAcceptedAt: user.terms_accepted_at,
         is_admin: user.is_admin,

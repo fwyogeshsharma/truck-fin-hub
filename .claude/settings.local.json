@@ -16,7 +16,11 @@
       "Bash(psql:*)",
       "Bash(npx tsc:*)",
       "Bash(Get-Content server/routes/transaction_requests.ts)",
-      "Bash(Select-String -Pattern \"getWallet\")"
+      "Bash(Select-String -Pattern \"getWallet\")",
+      "Bash(npm run dev:*)",
+      "Bash(timeout:*)",
+      "Bash(cat:*)",
+      "Bash(python -m json.tool:*)"
     ],
     "deny": [],
     "ask": []

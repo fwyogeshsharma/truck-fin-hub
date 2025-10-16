@@ -13,6 +13,10 @@ export interface User {
   company_id?: string;  // Foreign key to companies table
   company_logo?: string;  // Deprecated: use companies.logo
   user_logo?: string;
+  approval_status?: 'approved' | 'pending' | 'rejected';
+  approved_by?: string;
+  approved_at?: string;
+  rejection_reason?: string;
   terms_accepted?: boolean;
   terms_accepted_at?: string;
   is_admin?: boolean;  // Indicates if user has admin privileges for their company
@@ -52,6 +56,10 @@ export interface UpdateUserInput {
   company_id?: string;  // Foreign key to companies table
   company_logo?: string;  // Deprecated
   user_logo?: string;
+  approval_status?: 'approved' | 'pending' | 'rejected';
+  approved_by?: string;
+  approved_at?: string;
+  rejection_reason?: string;
   terms_accepted?: boolean;
   terms_accepted_at?: string;
   is_admin?: boolean;  // Admin privileges for company
@@ -289,6 +297,22 @@ export const updateUser = async (id: string, input: UpdateUserInput): Promise<Us
     updates.push(`is_admin = $${paramCount++}`);
     values.push(input.is_admin);
   }
+  if (input.approval_status !== undefined) {
+    updates.push(`approval_status = $${paramCount++}`);
+    values.push(input.approval_status);
+  }
+  if (input.approved_by !== undefined) {
+    updates.push(`approved_by = $${paramCount++}`);
+    values.push(input.approved_by);
+  }
+  if (input.approved_at !== undefined) {
+    updates.push(`approved_at = $${paramCount++}`);
+    values.push(input.approved_at);
+  }
+  if (input.rejection_reason !== undefined) {
+    updates.push(`rejection_reason = $${paramCount++}`);
+    values.push(input.rejection_reason);
+  }
 
   if (updates.length === 0) {
     return user;
@@ -391,6 +415,64 @@ export const findTransporterByName = async (name: string): Promise<User | null> 
   return result.rows[0] || null;
 };
 
+/**
+ * Get pending user approval requests
+ * Optionally filter by company_id for company admins
+ */
+export const getPendingUserApprovals = async (companyId?: string): Promise<User[]> => {
+  const db = getDatabase();
+  let query = `SELECT * FROM users WHERE approval_status = 'pending' AND is_active = TRUE`;
+  const values: any[] = [];
+
+  if (companyId) {
+    query += ` AND company_id = $1`;
+    values.push(companyId);
+  }
+
+  query += ` ORDER BY created_at DESC`;
+
+  const result = await db.query(query, values);
+  return result.rows;
+};
+
+/**
+ * Approve a user
+ */
+export const approveUser = async (userId: string, approvedBy: string): Promise<User | null> => {
+  const db = getDatabase();
+  const result = await db.query(
+    `UPDATE users
+     SET approval_status = 'approved',
+         approved_by = $1,
+         approved_at = CURRENT_TIMESTAMP,
+         rejection_reason = NULL,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $2
+     RETURNING *`,
+    [approvedBy, userId]
+  );
+  return result.rows[0] || null;
+};
+
+/**
+ * Reject a user
+ */
+export const rejectUser = async (userId: string, rejectedBy: string, reason: string): Promise<User | null> => {
+  const db = getDatabase();
+  const result = await db.query(
+    `UPDATE users
+     SET approval_status = 'rejected',
+         approved_by = $1,
+         approved_at = CURRENT_TIMESTAMP,
+         rejection_reason = $2,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $3
+     RETURNING *`,
+    [rejectedBy, reason, userId]
+  );
+  return result.rows[0] || null;
+};
+
 export default {
   getUserById,
   getUserByEmail,
@@ -403,4 +485,7 @@ export default {
   deleteUser,
   verifyPassword,
   updatePassword,
+  getPendingUserApprovals,
+  approveUser,
+  rejectUser,
 };

@@ -9,6 +9,9 @@ import {
   updateUser,
   deleteUser,
   updatePassword,
+  getPendingUserApprovals,
+  approveUser,
+  rejectUser,
 } from '../../src/db/queries/users.ts';
 
 const router = Router();
@@ -212,6 +215,81 @@ router.delete('/:id', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Delete user error:', error);
     res.status(500).json({ error: 'Failed to delete user', message: error.message });
+  }
+});
+
+// GET /api/users/pending-approvals - Get pending user approvals
+router.get('/pending-approvals', async (req: Request, res: Response) => {
+  try {
+    const { companyId } = req.query;
+    const pendingUsers = await getPendingUserApprovals(companyId as string);
+
+    // Remove password hashes from response
+    const sanitizedUsers = pendingUsers.map(user => {
+      const { password_hash, ...rest } = user;
+      return rest;
+    });
+
+    res.json(sanitizedUsers);
+  } catch (error: any) {
+    console.error('Get pending approvals error:', error);
+    res.status(500).json({ error: 'Failed to get pending approvals', message: error.message });
+  }
+});
+
+// PUT /api/users/:id/approve - Approve a user
+router.put('/:id/approve', async (req: Request, res: Response) => {
+  try {
+    const { approvedBy } = req.body;
+
+    if (!approvedBy) {
+      return res.status(400).json({ error: 'Approver ID is required' });
+    }
+
+    const user = await approveUser(req.params.id, approvedBy);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Remove password hash
+    const { password_hash, ...sanitizedUser } = user;
+    res.json({
+      message: 'User approved successfully',
+      user: sanitizedUser,
+    });
+  } catch (error: any) {
+    console.error('Approve user error:', error);
+    res.status(500).json({ error: 'Failed to approve user', message: error.message });
+  }
+});
+
+// PUT /api/users/:id/reject - Reject a user
+router.put('/:id/reject', async (req: Request, res: Response) => {
+  try {
+    const { rejectedBy, reason } = req.body;
+
+    if (!rejectedBy) {
+      return res.status(400).json({ error: 'Rejecter ID is required' });
+    }
+
+    if (!reason) {
+      return res.status(400).json({ error: 'Rejection reason is required' });
+    }
+
+    const user = await rejectUser(req.params.id, rejectedBy, reason);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Remove password hash
+    const { password_hash, ...sanitizedUser } = user;
+    res.json({
+      message: 'User rejected successfully',
+      user: sanitizedUser,
+    });
+  } catch (error: any) {
+    console.error('Reject user error:', error);
+    res.status(500).json({ error: 'Failed to reject user', message: error.message });
   }
 });
 

@@ -24,6 +24,29 @@ const Auth = () => {
       const user = await auth.login(loginData.email, loginData.password);
 
       if (user) {
+        // Check approval status for users who need it
+        if (user.approval_status === 'pending') {
+          auth.logout();
+          toast({
+            variant: "destructive",
+            title: "Approval Pending",
+            description: `Your account is awaiting approval from your company admin at ${user.company || 'your company'}. Please try again later.`,
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        if (user.approval_status === 'rejected') {
+          auth.logout();
+          toast({
+            variant: "destructive",
+            title: "Access Denied",
+            description: user.rejection_reason || "Your account request has been rejected by the company admin.",
+          });
+          setIsLoading(false);
+          return;
+        }
+
         toast({
           title: "Welcome back!",
           description: "Successfully logged in",

@@ -14,19 +14,27 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   role TEXT CHECK(role IN ('load_owner', 'vehicle_owner', 'lender', 'admin', 'super_admin', 'load_agent', 'vehicle_agent')),
   company TEXT,
+  company_id TEXT,
   company_logo TEXT,
   user_logo TEXT,
+  approval_status TEXT CHECK(approval_status IN ('approved', 'pending', 'rejected')) DEFAULT 'approved',
+  approved_by TEXT,
+  approved_at TEXT,
+  rejection_reason TEXT,
   terms_accepted INTEGER DEFAULT 0,
   terms_accepted_at TEXT,
   is_active INTEGER DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now'))
+  updated_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (approved_by) REFERENCES users(id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
 CREATE INDEX IF NOT EXISTS idx_users_user_id ON users(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_approval_status ON users(approval_status);
+CREATE INDEX IF NOT EXISTS idx_users_company_id ON users(company_id);
 
 -- ============================================================
 -- Table 2: trips
