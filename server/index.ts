@@ -6,10 +6,12 @@ import { initDatabase } from '../src/db/database.ts';
 // Import API routes
 import authRoutes from './routes/auth.ts';
 import userRoutes from './routes/users.ts';
+import companyRoutes from './routes/companies.ts';
 import tripRoutes from './routes/trips.ts';
 import investmentRoutes from './routes/investments.ts';
 import walletRoutes from './routes/wallets.ts';
 import transactionRoutes from './routes/transactions.ts';
+import transactionRequestRoutes from './routes/transaction_requests.ts';
 import bankAccountRoutes from './routes/bankAccounts.ts';
 import kycRoutes from './routes/kyc.ts';
 import notificationRoutes from './routes/notifications.ts';
@@ -37,10 +39,12 @@ console.log('PostgreSQL Database initialized successfully');
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/companies', companyRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/investments', investmentRoutes);
 app.use('/api/wallets', walletRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/transaction-requests', transactionRequestRoutes);
 app.use('/api/bank-accounts', bankAccountRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/notifications', notificationRoutes);

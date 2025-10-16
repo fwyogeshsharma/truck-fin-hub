@@ -9,14 +9,25 @@ export interface User {
   name: string;
   password_hash: string;
   role?: 'load_owner' | 'vehicle_owner' | 'lender' | 'admin' | 'super_admin' | 'load_agent' | 'vehicle_agent';
-  company?: string;
-  company_logo?: string;
+  company?: string;  // Deprecated: use company_id and join with companies table
+  company_id?: string;  // Foreign key to companies table
+  company_logo?: string;  // Deprecated: use companies.logo
   user_logo?: string;
   terms_accepted?: boolean;
   terms_accepted_at?: string;
+  is_admin?: boolean;  // Indicates if user has admin privileges for their company
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  // Joined company data
+  companyData?: {
+    id: string;
+    name: string;
+    display_name: string;
+    logo?: string;
+    email?: string;
+    phone?: string;
+  };
 }
 
 export interface CreateUserInput {
@@ -26,8 +37,9 @@ export interface CreateUserInput {
   name: string;
   password: string;
   role?: User['role'];
-  company?: string;
-  company_logo?: string;
+  company?: string;  // Deprecated: use company_id
+  company_id?: string;  // Foreign key to companies table
+  company_logo?: string;  // Deprecated
   user_logo?: string;
 }
 
@@ -36,11 +48,13 @@ export interface UpdateUserInput {
   phone?: string;
   name?: string;
   role?: User['role'];
-  company?: string;
-  company_logo?: string;
+  company?: string;  // Deprecated: use company_id
+  company_id?: string;  // Foreign key to companies table
+  company_logo?: string;  // Deprecated
   user_logo?: string;
   terms_accepted?: boolean;
   terms_accepted_at?: string;
+  is_admin?: boolean;  // Admin privileges for company
   is_active?: boolean;
 }
 
@@ -81,26 +95,85 @@ export const getUserByPhone = async (phone: string): Promise<User | null> => {
 };
 
 /**
- * Get all users
+ * Get all users (excluding company records and joining with companies table)
  */
 export const getAllUsers = async (): Promise<User[]> => {
   const db = getDatabase();
   const result = await db.query(
-    'SELECT * FROM users WHERE is_active = TRUE ORDER BY created_at DESC'
+    `SELECT
+      u.*,
+      c.id as company_data_id,
+      c.name as company_data_name,
+      c.display_name as company_data_display_name,
+      c.logo as company_data_logo,
+      c.email as company_data_email,
+      c.phone as company_data_phone
+    FROM users u
+    LEFT JOIN companies c ON u.company_id = c.id
+    WHERE u.is_active = TRUE AND u.id NOT LIKE 'company-%'
+    ORDER BY u.created_at DESC`
   );
-  return result.rows;
+
+  // Transform the flat result into nested structure
+  return result.rows.map(row => ({
+    ...row,
+    companyData: row.company_data_id ? {
+      id: row.company_data_id,
+      name: row.company_data_name,
+      display_name: row.company_data_display_name,
+      logo: row.company_data_logo,
+      email: row.company_data_email,
+      phone: row.company_data_phone,
+    } : undefined,
+    // Remove the flat company_data_* fields
+    company_data_id: undefined,
+    company_data_name: undefined,
+    company_data_display_name: undefined,
+    company_data_logo: undefined,
+    company_data_email: undefined,
+    company_data_phone: undefined,
+  }));
 };
 
 /**
- * Get users by role
+ * Get users by role (excluding company records and joining with companies table)
  */
 export const getUsersByRole = async (role: User['role']): Promise<User[]> => {
   const db = getDatabase();
   const result = await db.query(
-    'SELECT * FROM users WHERE role = $1 AND is_active = TRUE ORDER BY created_at DESC',
+    `SELECT
+      u.*,
+      c.id as company_data_id,
+      c.name as company_data_name,
+      c.display_name as company_data_display_name,
+      c.logo as company_data_logo,
+      c.email as company_data_email,
+      c.phone as company_data_phone
+    FROM users u
+    LEFT JOIN companies c ON u.company_id = c.id
+    WHERE u.role = $1 AND u.is_active = TRUE AND u.id NOT LIKE 'company-%'
+    ORDER BY u.created_at DESC`,
     [role]
   );
-  return result.rows;
+
+  // Transform the flat result into nested structure
+  return result.rows.map(row => ({
+    ...row,
+    companyData: row.company_data_id ? {
+      id: row.company_data_id,
+      name: row.company_data_name,
+      display_name: row.company_data_display_name,
+      logo: row.company_data_logo,
+      email: row.company_data_email,
+      phone: row.company_data_phone,
+    } : undefined,
+    company_data_id: undefined,
+    company_data_name: undefined,
+    company_data_display_name: undefined,
+    company_data_logo: undefined,
+    company_data_email: undefined,
+    company_data_phone: undefined,
+  }));
 };
 
 /**
@@ -134,8 +207,8 @@ export const createUser = async (input: CreateUserInput): Promise<User> => {
   const db = getDatabase();
   const result = await db.query(
     `INSERT INTO users (
-      id, user_id, email, phone, name, password_hash, role, company, company_logo, user_logo, is_active
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, TRUE)
+      id, user_id, email, phone, name, password_hash, role, company, company_id, company_logo, user_logo, is_active
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, TRUE)
     RETURNING *`,
     [
       id,
@@ -146,6 +219,7 @@ export const createUser = async (input: CreateUserInput): Promise<User> => {
       passwordHash,
       input.role || null,
       input.company || null,
+      input.company_id || null,
       input.company_logo || null,
       input.user_logo || null,
     ]
@@ -187,6 +261,10 @@ export const updateUser = async (id: string, input: UpdateUserInput): Promise<Us
     updates.push(`company = $${paramCount++}`);
     values.push(input.company);
   }
+  if (input.company_id !== undefined) {
+    updates.push(`company_id = $${paramCount++}`);
+    values.push(input.company_id);
+  }
   if (input.company_logo !== undefined) {
     updates.push(`company_logo = $${paramCount++}`);
     values.push(input.company_logo);
@@ -206,6 +284,10 @@ export const updateUser = async (id: string, input: UpdateUserInput): Promise<Us
   if (input.is_active !== undefined) {
     updates.push(`is_active = $${paramCount++}`);
     values.push(input.is_active);
+  }
+  if (input.is_admin !== undefined) {
+    updates.push(`is_admin = $${paramCount++}`);
+    values.push(input.is_admin);
   }
 
   if (updates.length === 0) {
@@ -266,11 +348,16 @@ export const updatePassword = async (id: string, newPassword: string): Promise<b
 
 /**
  * Find user by name (searches both name and company fields)
+ * Excludes company records from users table
  */
 export const findUserByName = async (name: string): Promise<User | null> => {
   const db = getDatabase();
   const result = await db.query(
-    'SELECT * FROM users WHERE (name ILIKE $1 OR company ILIKE $1) AND is_active = TRUE LIMIT 1',
+    `SELECT * FROM users
+     WHERE (name ILIKE $1 OR company ILIKE $1)
+     AND is_active = TRUE
+     AND id NOT LIKE 'company-%'
+     LIMIT 1`,
     [name]
   );
   return result.rows[0] || null;
@@ -278,12 +365,13 @@ export const findUserByName = async (name: string): Promise<User | null> => {
 
 /**
  * Find load owner by name (company or name)
+ * Excludes company records from users table
  */
 export const findLoadOwnerByName = async (name: string): Promise<User | null> => {
   const db = getDatabase();
   const result = await db.query(
     `SELECT * FROM users WHERE (name ILIKE $1 OR company ILIKE $1)
-     AND role = 'load_owner' AND is_active = TRUE LIMIT 1`,
+     AND role = 'load_owner' AND is_active = TRUE AND id NOT LIKE 'company-%' LIMIT 1`,
     [name]
   );
   return result.rows[0] || null;
@@ -291,12 +379,13 @@ export const findLoadOwnerByName = async (name: string): Promise<User | null> =>
 
 /**
  * Find transporter by name (company or name)
+ * Excludes company records from users table
  */
 export const findTransporterByName = async (name: string): Promise<User | null> => {
   const db = getDatabase();
   const result = await db.query(
     `SELECT * FROM users WHERE (name ILIKE $1 OR company ILIKE $1)
-     AND role = 'vehicle_owner' AND is_active = TRUE LIMIT 1`,
+     AND role = 'vehicle_owner' AND is_active = TRUE AND id NOT LIKE 'company-%' LIMIT 1`,
     [name]
   );
   return result.rows[0] || null;

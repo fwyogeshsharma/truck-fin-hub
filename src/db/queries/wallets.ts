@@ -28,7 +28,9 @@ export const getWallet = async (userId: string): Promise<Wallet> => {
 
   // Create wallet if it doesn't exist
   if (!wallet) {
-    const INITIAL_BALANCE = 500000; // ₹5,00,000 starting balance
+    // No initial balance - wallets start at 0
+    // Users must request to add money through super admin verification
+    const INITIAL_BALANCE = 0;
 
     const insertResult = await db.query(
       `INSERT INTO wallets (user_id, balance, locked_amount, escrowed_amount, total_invested, total_returns)

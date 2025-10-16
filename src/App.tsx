@@ -27,6 +27,8 @@ import PlatformConfiguration from "./pages/PlatformConfig";
 import NotificationSettings from "./pages/NotificationSettings";
 import Reports from "./pages/Reports";
 import Users from "./pages/Users";
+import AdminPanel from "./pages/AdminPanel";
+import TransactionRequests from "./pages/TransactionRequests";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +68,8 @@ const App = () => {
           <Route path="/settings/notifications" element={<NotificationSettings />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/admin/users" element={<Users />} />
+          <Route path="/admin-panel" element={<AdminPanel />} />
+          <Route path="/transaction-requests" element={<TransactionRequests />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

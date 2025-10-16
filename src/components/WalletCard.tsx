@@ -40,6 +40,8 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
   const [topUpAmount, setTopUpAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [transactionImage, setTransactionImage] = useState<string>('');
+  const [transactionImageFile, setTransactionImageFile] = useState<File | null>(null);
 
   // Bank account states
   const [bankAccountForm, setBankAccountForm] = useState({
@@ -121,16 +123,6 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
   };
 
   const handleTopUp = async () => {
-    if (!hasBankAccount) {
-      toast({
-        variant: 'destructive',
-        title: 'No Bank Account',
-        description: 'Please add a bank account first to add money',
-      });
-      setBankAccountDialogOpen(true);
-      return;
-    }
-
     const amount = parseFloat(topUpAmount);
 
     if (!amount || amount <= 0) {
@@ -160,52 +152,58 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
       return;
     }
 
-    // Simulate payment processing
+    if (!transactionImage) {
+      toast({
+        variant: 'destructive',
+        title: 'Transaction Image Required',
+        description: 'Please upload a screenshot of your bank transaction',
+      });
+      return;
+    }
+
     setIsProcessing(true);
 
-    setTimeout(async () => {
-      try {
-        const newBalance = wallet.balance + amount;
-
-        // Update wallet balance
-        const updatedWallet = await data.updateWallet(userId, {
-          balance: newBalance,
-        });
-
-        // Create transaction record
-        await data.createTransaction({
-          userId,
-          type: 'credit',
+    try {
+      // Create transaction request
+      const response = await fetch('/api/transaction-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          request_type: 'add_money',
           amount,
-          category: 'payment',
-          description: 'Wallet top-up via payment gateway',
-          balanceAfter: newBalance,
-        });
+          transaction_image_url: transactionImage,
+        }),
+      });
 
-        setWallet(updatedWallet);
-
-        toast({
-          title: 'Payment Successful!',
-          description: `${formatCurrency(amount)} added to your wallet`,
-        });
-
-        setTopUpDialogOpen(false);
-        setTopUpAmount('');
-
-        // Notify parent component of balance update
-        if (onBalanceUpdate) {
-          onBalanceUpdate();
-        }
-      } catch (error: any) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: error.message || 'Failed to add money',
-        });
-      } finally {
-        setIsProcessing(false);
+      if (!response.ok) {
+        throw new Error('Failed to create transaction request');
       }
-    }, 2000); // 2 second simulated payment processing
+
+      toast({
+        title: 'Request Submitted!',
+        description: 'Your add money request has been submitted for verification. You will receive the funds within 24-48 hours.',
+      });
+
+      setIsProcessing(false);
+      setTopUpDialogOpen(false);
+      setTopUpAmount('');
+      setTransactionImage('');
+      setTransactionImageFile(null);
+
+      // Notify parent component
+      if (onBalanceUpdate) {
+        onBalanceUpdate();
+      }
+    } catch (error) {
+      console.error('Failed to submit request:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Request Failed',
+        description: 'Failed to submit add money request. Please try again.',
+      });
+      setIsProcessing(false);
+    }
   };
 
   const handleWithdraw = async () => {
@@ -374,42 +372,59 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
 
       {/* Top-Up Dialog */}
       <Dialog open={topUpDialogOpen} onOpenChange={setTopUpDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ArrowUpCircle className="h-5 w-5 text-primary" />
               Add Money to Wallet
             </DialogTitle>
             <DialogDescription>
-              Top up your wallet to invest in more opportunities
+              Transfer money to LogiFin bank account and submit proof
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            {/* Quick Amount Selection */}
-            <div>
-              <Label className="text-sm mb-2 block">Quick Select</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {quickAmounts.map((amount) => (
-                  <Button
-                    key={amount}
-                    variant="outline"
-                    onClick={() => setTopUpAmount(amount.toString())}
-                    className={topUpAmount === amount.toString() ? 'border-primary bg-primary/10' : ''}
-                  >
-                    {formatCurrencyCompact(amount, true)}
-                  </Button>
-                ))}
-              </div>
-            </div>
+          <div className="space-y-6">
+            {/* LogiFin Bank Details */}
+            <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-blue-600" />
+                  LogiFin Bank Account Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Account Holder Name</p>
+                    <p className="font-semibold">LogiFin Private Limited</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Account Number</p>
+                    <p className="font-semibold font-mono">1234567890123456</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">IFSC Code</p>
+                    <p className="font-semibold font-mono">SBIN0001234</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Bank Name</p>
+                    <p className="font-semibold">State Bank of India</p>
+                  </div>
+                </div>
+                <div className="p-3 bg-white dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-200">⏰ Processing Time: 24-48 hours</p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">Your request will be verified by our team within 24-48 hours</p>
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Custom Amount */}
+            {/* Deposited Amount */}
             <div>
-              <Label htmlFor="topUpAmount">Enter Amount (₹)</Label>
+              <Label htmlFor="topUpAmount">Deposited Amount (₹)</Label>
               <Input
                 id="topUpAmount"
                 type="number"
-                placeholder="Enter amount (min ₹1,000)"
+                placeholder="Enter deposited amount (min ₹1,000)"
                 value={topUpAmount}
                 onChange={(e) => setTopUpAmount(e.target.value)}
                 min="1000"
@@ -421,29 +436,55 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
               </p>
             </div>
 
-            {/* Payment Method Info */}
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="text-sm font-medium mb-2">Payment Gateway</p>
-              <p className="text-xs text-muted-foreground">
-                This is a simulated payment system. In production, this would integrate with payment gateways like Razorpay, PayU, or bank UPI.
+            {/* Transaction Image Upload */}
+            <div>
+              <Label htmlFor="transactionImage">Upload Transaction Screenshot *</Label>
+              <Input
+                id="transactionImage"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setTransactionImageFile(file);
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      setTransactionImage(reader.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Upload a screenshot of your bank transaction as proof
               </p>
+              {transactionImage && (
+                <div className="mt-3">
+                  <img src={transactionImage} alt="Transaction proof" className="max-w-full h-auto rounded-lg border" />
+                </div>
+              )}
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setTopUpDialogOpen(false)} disabled={isProcessing}>
+            <Button variant="outline" onClick={() => {
+              setTopUpDialogOpen(false);
+              setTransactionImage('');
+              setTransactionImageFile(null);
+            }} disabled={isProcessing}>
               Cancel
             </Button>
             <Button onClick={handleTopUp} disabled={isProcessing} className="bg-gradient-primary">
               {isProcessing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Processing...
+                  Submitting...
                 </>
               ) : (
                 <>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add {topUpAmount ? formatCurrencyCompact(parseFloat(topUpAmount), true) : '₹0'}
+                  Submit Request
                 </>
               )}
             </Button>

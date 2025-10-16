@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { TruckIcon, LogOut, Home, Package, Wallet, Shield, Users, User as UserIcon, Settings, FileCheck, Bell as BellIcon, FileText, Menu, X } from "lucide-react";
+import { TruckIcon, LogOut, Home, Package, Wallet, Shield, Users, User as UserIcon, Settings, FileCheck, Bell as BellIcon, FileText, Menu, X, ArrowLeftRight } from "lucide-react";
 import { auth, User } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -63,6 +63,7 @@ const roleConfig = {
     icon: Shield,
     nav: [
       { label: "Dashboard", path: "/dashboard/admin", icon: Home },
+      { label: "Admin Panel", path: "/admin-panel", icon: Shield },
       { label: "Users", path: "/admin/users", icon: Users },
       { label: "System", path: "/admin/system", icon: Shield },
     ],
@@ -73,6 +74,7 @@ const roleConfig = {
     nav: [
       { label: "Dashboard", path: "/dashboard/super_admin", icon: Home },
       { label: "Platform Config", path: "/platform-config", icon: Settings },
+      { label: "Transaction Requests", path: "/transaction-requests", icon: ArrowLeftRight },
       { label: "Admin Panel", path: "/dashboard/admin", icon: Shield },
       { label: "Users", path: "/admin/users", icon: Users },
       { label: "System", path: "/admin/system", icon: Shield },
@@ -87,6 +89,12 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const config = roleConfig[role || 'load_owner'];
   const RoleIcon = config.icon;
+
+  // Add Admin Panel tab to navigation if user is an admin (based on is_admin flag)
+  const navigationItems = [...config.nav];
+  if (user?.is_admin && role !== 'admin' && role !== 'super_admin') {
+    navigationItems.push({ label: "Admin Panel", path: "/admin-panel", icon: Shield });
+  }
 
   // Sync user data from API on mount and when role changes
   useEffect(() => {
@@ -146,7 +154,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-1">
-              {config.nav.map((item) => {
+              {navigationItems.map((item) => {
                 const NavIcon = item.icon;
                 return (
                   <Button
@@ -237,7 +245,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                   </SheetTitle>
                 </SheetHeader>
                 <div className="mt-6 flex flex-col gap-2">
-                  {config.nav.map((item) => {
+                  {navigationItems.map((item) => {
                     const NavIcon = item.icon;
                     return (
                       <Button

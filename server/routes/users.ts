@@ -123,6 +123,63 @@ router.put('/:id', async (req: Request, res: Response) => {
   }
 });
 
+// PUT /api/users/:id/make-admin - Make user an admin for a company
+router.put('/:id/make-admin', async (req: Request, res: Response) => {
+  try {
+    const { company, company_id } = req.body;
+
+    // Prefer company_id, fall back to company for backward compatibility
+    if (!company_id && !company) {
+      return res.status(400).json({ error: 'Company ID or company name is required' });
+    }
+
+    // Update user: set is_admin to true and assign company
+    const user = await updateUser(req.params.id, {
+      is_admin: true,
+      company_id: company_id || undefined,
+      company: company || undefined,
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Remove password hash
+    const { password_hash, ...sanitizedUser } = user;
+    res.json({
+      message: 'User successfully promoted to admin',
+      user: sanitizedUser,
+    });
+  } catch (error: any) {
+    console.error('Make admin error:', error);
+    res.status(500).json({ error: 'Failed to make user admin', message: error.message });
+  }
+});
+
+// PUT /api/users/:id/remove-admin - Remove admin privileges from user
+router.put('/:id/remove-admin', async (req: Request, res: Response) => {
+  try {
+    // Update user: set is_admin to false
+    const user = await updateUser(req.params.id, {
+      is_admin: false,
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Remove password hash
+    const { password_hash, ...sanitizedUser } = user;
+    res.json({
+      message: 'Admin privileges removed successfully',
+      user: sanitizedUser,
+    });
+  } catch (error: any) {
+    console.error('Remove admin error:', error);
+    res.status(500).json({ error: 'Failed to remove admin privileges', message: error.message });
+  }
+});
+
 // PUT /api/users/:id/password - Update password
 router.put('/:id/password', async (req: Request, res: Response) => {
   try {

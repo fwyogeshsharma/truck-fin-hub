@@ -83,6 +83,8 @@ const WalletPage = () => {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [selectedBankId, setSelectedBankId] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [transactionImage, setTransactionImage] = useState<string>('');
+  const [transactionImageFile, setTransactionImageFile] = useState<File | null>(null);
 
   // Bank form states
   const [bankForm, setBankForm] = useState({
@@ -167,34 +169,55 @@ const WalletPage = () => {
       return;
     }
 
+    if (!transactionImage) {
+      toast({
+        variant: 'destructive',
+        title: 'Transaction Image Required',
+        description: 'Please upload a screenshot of your bank transaction',
+      });
+      return;
+    }
+
     if (!user?.id) return;
 
     setIsProcessing(true);
 
-    setTimeout(async () => {
-      await data.updateWallet(user.id, {
-        balance: walletData.balance + amount,
+    try {
+      // Create transaction request
+      const response = await fetch('/api/transaction-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.id,
+          request_type: 'add_money',
+          amount,
+          transaction_image_url: transactionImage,
+        }),
       });
 
-      await data.createTransaction({
-        userId: user.id,
-        type: 'credit',
-        amount,
-        category: 'payment',
-        description: 'Wallet top-up via payment gateway',
-        balanceAfter: walletData.balance + amount,
-      });
+      if (!response.ok) {
+        throw new Error('Failed to create transaction request');
+      }
 
       toast({
-        title: 'Payment Successful!',
-        description: `${formatCurrency(amount)} added to your wallet`,
+        title: 'Request Submitted!',
+        description: 'Your add money request has been submitted for verification. You will receive the funds within 24-48 hours.',
       });
 
       setIsProcessing(false);
       setTopUpDialogOpen(false);
       setTopUpAmount('');
-      await refreshData();
-    }, 2000);
+      setTransactionImage('');
+      setTransactionImageFile(null);
+    } catch (error) {
+      console.error('Failed to submit request:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Request Failed',
+        description: 'Failed to submit add money request. Please try again.',
+      });
+      setIsProcessing(false);
+    }
   };
 
   const handleWithdraw = async () => {
@@ -242,31 +265,44 @@ const WalletPage = () => {
 
     setIsProcessing(true);
 
-    setTimeout(async () => {
-      await data.updateWallet(user.id, {
-        balance: walletData.balance - amount,
+    try {
+      // Create withdrawal request
+      const response = await fetch('/api/transaction-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.id,
+          request_type: 'withdrawal',
+          amount,
+          bank_account_id: selectedBank?.id,
+          bank_account_number: selectedBank?.accountNumber,
+          bank_ifsc_code: selectedBank?.ifscCode,
+          bank_name: selectedBank?.bankName,
+        }),
       });
 
-      await data.createTransaction({
-        userId: user.id,
-        type: 'debit',
-        amount,
-        category: 'payment',
-        description: `Withdrawal to ${selectedBank?.bankName} A/C ${selectedBank?.accountNumber.slice(-4)}`,
-        balanceAfter: walletData.balance - amount,
-      });
+      if (!response.ok) {
+        throw new Error('Failed to create withdrawal request');
+      }
 
       toast({
-        title: 'Withdrawal Successful!',
-        description: `${formatCurrency(amount)} withdrawn to your bank account`,
+        title: 'Request Submitted!',
+        description: 'Your withdrawal request has been submitted. Funds will be transferred to your bank account within 24-48 hours.',
       });
 
       setIsProcessing(false);
       setWithdrawDialogOpen(false);
       setWithdrawAmount('');
       setSelectedBankId('');
-      await refreshData();
-    }, 2000);
+    } catch (error) {
+      console.error('Failed to submit request:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Request Failed',
+        description: 'Failed to submit withdrawal request. Please try again.',
+      });
+      setIsProcessing(false);
+    }
   };
 
   const handleAddBank = () => {
@@ -383,10 +419,13 @@ const WalletPage = () => {
             <p className="text-muted-foreground mt-1">Manage your funds and transactions</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => setTopUpDialogOpen(true)} className="bg-gradient-primary">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Money
-            </Button>
+            {/* Hide Add Money button only for shipper role */}
+            {user?.role !== 'load_agent' && (
+              <Button onClick={() => setTopUpDialogOpen(true)} className="bg-gradient-primary">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Money
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => setWithdrawDialogOpen(true)}
@@ -646,39 +685,57 @@ const WalletPage = () => {
 
         {/* Top-Up Dialog */}
         <Dialog open={topUpDialogOpen} onOpenChange={setTopUpDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <ArrowUpCircle className="h-5 w-5 text-primary" />
                 Add Money to Wallet
               </DialogTitle>
-              <DialogDescription>Top up your wallet to invest in opportunities</DialogDescription>
+              <DialogDescription>Transfer money to LogiFin bank account and submit proof</DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4">
-              <div>
-                <Label className="text-sm mb-2 block">Quick Select</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[10000, 25000, 50000, 100000, 250000, 500000].map((amount) => (
-                    <Button
-                      key={amount}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setTopUpAmount(amount.toString())}
-                      className={topUpAmount === amount.toString() ? 'border-primary bg-primary/10' : ''}
-                    >
-                      {formatCurrencyCompact(amount, true)}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+            <div className="space-y-6">
+              {/* LogiFin Bank Details */}
+              <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-blue-600" />
+                    LogiFin Bank Account Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Account Holder Name</p>
+                      <p className="font-semibold">LogiFin Private Limited</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Account Number</p>
+                      <p className="font-semibold font-mono">1234567890123456</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">IFSC Code</p>
+                      <p className="font-semibold font-mono">SBIN0001234</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Bank Name</p>
+                      <p className="font-semibold">State Bank of India</p>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-white dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-200">⏰ Processing Time: 24-48 hours</p>
+                    <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">Your request will be verified by our team within 24-48 hours</p>
+                  </div>
+                </CardContent>
+              </Card>
 
+              {/* Deposited Amount */}
               <div>
-                <Label htmlFor="topUpAmount">Enter Amount (₹)</Label>
+                <Label htmlFor="topUpAmount">Deposited Amount (₹)</Label>
                 <Input
                   id="topUpAmount"
                   type="number"
-                  placeholder="Enter amount (min ₹1,000)"
+                  placeholder="Enter deposited amount (min ₹1,000)"
                   value={topUpAmount}
                   onChange={(e) => setTopUpAmount(e.target.value)}
                   min="1000"
@@ -686,22 +743,56 @@ const WalletPage = () => {
                   className="mt-1"
                 />
               </div>
+
+              {/* Transaction Image Upload */}
+              <div>
+                <Label htmlFor="transactionImage">Upload Transaction Screenshot *</Label>
+                <Input
+                  id="transactionImage"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setTransactionImageFile(file);
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setTransactionImage(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Upload a screenshot of your bank transaction as proof
+                </p>
+                {transactionImage && (
+                  <div className="mt-3">
+                    <img src={transactionImage} alt="Transaction proof" className="max-w-full h-auto rounded-lg border" />
+                  </div>
+                )}
+              </div>
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setTopUpDialogOpen(false)} disabled={isProcessing}>
+              <Button variant="outline" onClick={() => {
+                setTopUpDialogOpen(false);
+                setTransactionImage('');
+                setTransactionImageFile(null);
+              }} disabled={isProcessing}>
                 Cancel
               </Button>
               <Button onClick={handleTopUp} disabled={isProcessing} className="bg-gradient-primary">
                 {isProcessing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
+                    Submitting...
                   </>
                 ) : (
                   <>
                     <Plus className="h-4 w-4 mr-2" />
-                    Add {topUpAmount ? formatCurrencyCompact(parseFloat(topUpAmount), true) : '₹0'}
+                    Submit Request
                   </>
                 )}
               </Button>
@@ -715,9 +806,9 @@ const WalletPage = () => {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <ArrowDownCircle className="h-5 w-5 text-primary" />
-                Withdraw Money
+                Request Withdrawal
               </DialogTitle>
-              <DialogDescription>Transfer money from wallet to your bank account</DialogDescription>
+              <DialogDescription>Submit a withdrawal request. Funds will be transferred to your bank account within 24-48 hours after verification.</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
@@ -797,17 +888,17 @@ const WalletPage = () => {
               <Button
                 onClick={handleWithdraw}
                 disabled={isProcessing || bankAccounts.length === 0}
-                variant="destructive"
+                className="bg-gradient-primary"
               >
                 {isProcessing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
+                    Submitting...
                   </>
                 ) : (
                   <>
                     <ArrowDownCircle className="h-4 w-4 mr-2" />
-                    Withdraw {withdrawAmount ? formatCurrencyCompact(parseFloat(withdrawAmount), true) : '₹0'}
+                    Submit Request
                   </>
                 )}
               </Button>

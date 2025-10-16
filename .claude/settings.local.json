@@ -10,7 +10,13 @@
       "Bash(curl -X POST http://localhost:3001/api/trips -H \"Content-Type: application/json\" -d \"{\"\"test\"\": \"\"data\"\"}\")",
       "Bash(curl:*)",
       "Bash(tsx:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(dir:*)",
+      "Bash(taskkill:*)",
+      "Bash(psql:*)",
+      "Bash(npx tsc:*)",
+      "Bash(Get-Content server/routes/transaction_requests.ts)",
+      "Bash(Select-String -Pattern \"getWallet\")"
     ],
     "deny": [],
     "ask": []

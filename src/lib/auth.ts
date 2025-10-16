@@ -9,10 +9,12 @@ export interface User {
   name: string;
   role?: 'load_owner' | 'vehicle_owner' | 'lender' | 'admin' | 'super_admin' | 'load_agent' | 'vehicle_agent';
   company?: string;
+  company_id?: string;
   companyLogo?: string;
   userLogo?: string;
   termsAccepted?: boolean;
   termsAcceptedAt?: string;
+  is_admin?: boolean;
 }
 
 const AUTH_KEY = 'current_user';
