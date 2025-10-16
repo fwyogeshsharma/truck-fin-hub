@@ -34,16 +34,16 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
         // Convert database format to client format
         const clientNotifs = dbNotifs.map((n: any) => ({
           id: n.id,
-          userId: n.user_id,
-          type: n.type,
-          title: n.title,
-          message: n.message,
+          userId: n.user_id || n.userId,
+          type: n.type || 'info',
+          title: n.title || 'Notification',
+          message: n.message || '',
           priority: n.priority || 'medium',
-          read: n.read === 1,
-          actionUrl: n.action_url || n.link,
-          metadata: n.metadata ? JSON.parse(n.metadata) : undefined,
-          createdAt: n.created_at,
-          readAt: n.read_at,
+          read: n.read === 1 || n.read === true,
+          actionUrl: n.action_url || n.actionUrl || n.link,
+          metadata: n.metadata || undefined,
+          createdAt: n.created_at || n.createdAt,
+          readAt: n.read_at || n.readAt,
         }));
         setNotifications(clientNotifs);
       }

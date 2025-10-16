@@ -50,6 +50,13 @@ import {
   Link,
   ChevronLeft,
   ChevronRight,
+  FileText,
+  Truck,
+  Building2,
+  DollarSign,
+  Percent,
+  Navigation,
+  Weight,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatPercentage } from '@/lib/currency';
@@ -1314,35 +1321,47 @@ const LoadAgentDashboard = () => {
               </TabsList>
 
               <TabsContent value="form">
-                <form onSubmit={handleCreateTrip} className="space-y-4">
+                <form onSubmit={handleCreateTrip} className="space-y-6">
               {/* Mandatory Fields Section */}
-              <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <h3 className="font-semibold text-sm mb-3 text-blue-900 dark:text-blue-100">Mandatory Fields *</h3>
+              <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl border-2 border-blue-200 dark:border-blue-800 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                    <FileText className="h-4 w-4 text-white" />
+                  </div>
+                  <h3 className="font-bold text-base text-blue-900 dark:text-blue-100">Trip & Documentation Details</h3>
+                </div>
 
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {/* E-way Bill Number */}
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="ewayBillNumber">E-way Bill Number *</Label>
+                      <Label htmlFor="ewayBillNumber" className="text-sm font-semibold flex items-center gap-1.5">
+                        <FileText className="h-3.5 w-3.5 text-blue-600" />
+                        E-way Bill Number *
+                      </Label>
                       <Input
                         id="ewayBillNumber"
                         name="ewayBillNumber"
-                        placeholder="e.g., 123456789012"
+                        placeholder="Enter 12-digit bill number"
                         value={formData.ewayBillNumber}
                         onChange={handleChange}
                         required
+                        className="h-11 border-2 focus:border-blue-500"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="ewayBillImage">E-way Bill Image (Optional)</Label>
+                      <Label htmlFor="ewayBillImage" className="text-sm font-semibold flex items-center gap-1.5">
+                        <Upload className="h-3.5 w-3.5 text-gray-600" />
+                        E-way Bill Image (Optional)
+                      </Label>
                       <Input
                         id="ewayBillImage"
                         name="ewayBillImage"
                         type="file"
                         accept="image/*,.pdf"
                         onChange={handleChange}
-                        className="cursor-pointer"
+                        className="cursor-pointer h-11 border-2"
                       />
                     </div>
                   </div>
@@ -1350,7 +1369,10 @@ const LoadAgentDashboard = () => {
                   {/* Pickup & Destination */}
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="pickup">Pickup Location *</Label>
+                      <Label htmlFor="pickup" className="text-sm font-semibold flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 text-green-600" />
+                        Pickup Location *
+                      </Label>
                       <Input
                         id="pickup"
                         name="pickup"
@@ -1358,11 +1380,15 @@ const LoadAgentDashboard = () => {
                         value={formData.pickup}
                         onChange={handleChange}
                         required
+                        className="h-11 border-2 focus:border-green-500"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="destination">Destination *</Label>
+                      <Label htmlFor="destination" className="text-sm font-semibold flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 text-red-600" />
+                        Destination *
+                      </Label>
                       <Input
                         id="destination"
                         name="destination"
@@ -1370,6 +1396,7 @@ const LoadAgentDashboard = () => {
                         value={formData.destination}
                         onChange={handleChange}
                         required
+                        className="h-11 border-2 focus:border-red-500"
                       />
                     </div>
                   </div>
@@ -1377,7 +1404,10 @@ const LoadAgentDashboard = () => {
                   {/* Sender & Receiver */}
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="sender">Sender (Consignee) *</Label>
+                      <Label htmlFor="sender" className="text-sm font-semibold flex items-center gap-1.5">
+                        <Building2 className="h-3.5 w-3.5 text-purple-600" />
+                        Sender (Consignee) *
+                      </Label>
                       <Input
                         id="sender"
                         name="sender"
@@ -1385,11 +1415,15 @@ const LoadAgentDashboard = () => {
                         value={formData.sender}
                         onChange={handleChange}
                         required
+                        className="h-11 border-2 focus:border-purple-500"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="receiver">Receiver *</Label>
+                      <Label htmlFor="receiver" className="text-sm font-semibold flex items-center gap-1.5">
+                        <Building2 className="h-3.5 w-3.5 text-orange-600" />
+                        Receiver *
+                      </Label>
                       <Input
                         id="receiver"
                         name="receiver"
@@ -1397,13 +1431,17 @@ const LoadAgentDashboard = () => {
                         value={formData.receiver}
                         onChange={handleChange}
                         required
+                        className="h-11 border-2 focus:border-orange-500"
                       />
                     </div>
                   </div>
 
                   {/* Transporter */}
                   <div className="space-y-2">
-                    <Label htmlFor="transporter">Transporter *</Label>
+                    <Label htmlFor="transporter" className="text-sm font-semibold flex items-center gap-1.5">
+                      <Truck className="h-3.5 w-3.5 text-blue-600" />
+                      Transporter *
+                    </Label>
                     <Input
                       id="transporter"
                       name="transporter"
@@ -1411,48 +1449,72 @@ const LoadAgentDashboard = () => {
                       value={formData.transporter}
                       onChange={handleChange}
                       required
+                      className="h-11 border-2 focus:border-blue-500"
                     />
                   </div>
+                </div>
+              </div>
 
+              {/* Financial Details Section */}
+              <div className="p-6 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-xl border-2 border-emerald-200 dark:border-emerald-800 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center">
+                    <DollarSign className="h-4 w-4 text-white" />
+                  </div>
+                  <h3 className="font-bold text-base text-emerald-900 dark:text-emerald-100">Financial Details</h3>
+                </div>
+
+                <div className="space-y-5">
                   {/* Loan Amount & Interest Rate */}
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="loanAmount">Loan Amount (₹) *</Label>
+                      <Label htmlFor="loanAmount" className="text-sm font-semibold flex items-center gap-1.5">
+                        <IndianRupee className="h-3.5 w-3.5 text-emerald-600" />
+                        Loan Amount (₹) *
+                      </Label>
                       <Input
                         id="loanAmount"
                         name="loanAmount"
                         type="number"
-                        placeholder="e.g., 50000"
+                        placeholder="50000"
                         value={formData.loanAmount}
                         onChange={handleChange}
                         min="20000"
                         max="80000"
                         required
+                        className="h-11 border-2 focus:border-emerald-500 text-lg font-semibold"
                       />
-                      <p className="text-xs text-muted-foreground">Between ₹20,000 and ₹80,000</p>
+                      <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Range: ₹20,000 - ₹80,000</p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="loanInterestRate">Loan Interest Rate (%) *</Label>
+                      <Label htmlFor="loanInterestRate" className="text-sm font-semibold flex items-center gap-1.5">
+                        <Percent className="h-3.5 w-3.5 text-emerald-600" />
+                        Interest Rate (%) *
+                      </Label>
                       <Input
                         id="loanInterestRate"
                         name="loanInterestRate"
                         type="number"
-                        placeholder="e.g., 12"
+                        placeholder="12"
                         value={formData.loanInterestRate}
                         onChange={handleChange}
                         step="0.5"
                         min="8"
                         max="18"
                         required
+                        className="h-11 border-2 focus:border-emerald-500 text-lg font-semibold"
                       />
-                      <p className="text-xs text-muted-foreground">Between 8% and 18%</p>
+                      <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Range: 8% - 18%</p>
                     </div>
                   </div>
 
                   {/* Maturity Days */}
                   <div className="space-y-2">
-                    <Label htmlFor="maturityDays">Maturity Days *</Label>
+                    <Label htmlFor="maturityDays" className="text-sm font-semibold flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-emerald-600" />
+                      Maturity Period (Days) *
+                    </Label>
                     <Input
                       id="maturityDays"
                       name="maturityDays"
@@ -1463,53 +1525,69 @@ const LoadAgentDashboard = () => {
                       min="1"
                       max="365"
                       required
-                      className="max-w-xs"
+                      className="max-w-xs h-11 border-2 focus:border-emerald-500 text-lg font-semibold"
                     />
-                    <p className="text-xs text-muted-foreground">Payment term (1-365 days)</p>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Payment term: 1-365 days</p>
                   </div>
                 </div>
               </div>
 
               {/* Optional Fields Section */}
-              <div className="p-4 bg-muted/50 rounded-lg border">
-                <h3 className="font-semibold text-sm mb-3">Optional Fields</h3>
+              <div className="p-6 bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-950/30 dark:to-gray-950/30 rounded-xl border-2 border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center">
+                    <Package className="h-4 w-4 text-white" />
+                  </div>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">Additional Information (Optional)</h3>
+                </div>
 
-                <div className="space-y-4">
+                <div className="space-y-5">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="distance">Distance (km)</Label>
+                      <Label htmlFor="distance" className="text-sm font-semibold flex items-center gap-1.5">
+                        <Navigation className="h-3.5 w-3.5 text-slate-600" />
+                        Distance (km)
+                      </Label>
                       <Input
                         id="distance"
                         name="distance"
                         type="number"
-                        placeholder="e.g., 1400"
+                        placeholder="1400"
                         value={formData.distance}
                         onChange={handleChange}
+                        className="h-11 border-2"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="loadType">Load Type</Label>
+                      <Label htmlFor="loadType" className="text-sm font-semibold flex items-center gap-1.5">
+                        <Package className="h-3.5 w-3.5 text-slate-600" />
+                        Load Type
+                      </Label>
                       <Input
                         id="loadType"
                         name="loadType"
                         placeholder="e.g., Electronics, FMCG"
                         value={formData.loadType}
                         onChange={handleChange}
+                        className="h-11 border-2"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="weight">Weight (kg)</Label>
+                    <Label htmlFor="weight" className="text-sm font-semibold flex items-center gap-1.5">
+                      <Weight className="h-3.5 w-3.5 text-slate-600" />
+                      Weight (kg)
+                    </Label>
                     <Input
                       id="weight"
                       name="weight"
                       type="number"
-                      placeholder="e.g., 15000"
+                      placeholder="15000"
                       value={formData.weight}
                       onChange={handleChange}
-                      className="max-w-xs"
+                      className="max-w-xs h-11 border-2"
                     />
                   </div>
                 </div>
