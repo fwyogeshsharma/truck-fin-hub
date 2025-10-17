@@ -42,11 +42,11 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-postgres123}
       DB_NAME: ${DB_NAME:-logifin}
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
-      SMTP_FROM: ${SMTP_FROM}
+#      SMTP_HOST: ${SMTP_HOST}
+#      SMTP_PORT: ${SMTP_PORT}
+#      SMTP_USER: ${SMTP_USER}
+#      SMTP_PASSWORD: ${SMTP_PASSWORD}
+#      SMTP_FROM: ${SMTP_FROM}
     ports:
       - "${PORT:-3001}:3001"
     volumes:
