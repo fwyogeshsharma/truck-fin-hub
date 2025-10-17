@@ -25,7 +25,7 @@ COPY --chown=nodejs:nodejs server/tsconfig.json ./server/
 # Copy application source files
 COPY --chown=nodejs:nodejs server ./server
 COPY --chown=nodejs:nodejs scripts ./scripts
-COPY --chown=nodejs:nodejs src/db ./src/db
+COPY --chown=nodejs:nodejs src ./src
 
 # Copy startup script
 COPY --chown=nodejs:nodejs start.sh ./
