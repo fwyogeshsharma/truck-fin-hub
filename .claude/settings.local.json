@@ -26,7 +26,9 @@
       "Bash(Select-Object -Property Id, ProcessName, CPU)",
       "Bash(npm run dev:server:*)",
       "Bash(node:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker system prune:*)"
     ],
     "deny": [],
     "ask": []
