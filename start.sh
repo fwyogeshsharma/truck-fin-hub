@@ -41,16 +41,6 @@ done
 
 echo "✅ PostgreSQL is ready!"
 
-# Run database migrations
-echo ""
-echo "📦 Running database migrations..."
-npx tsx scripts/run-migrations.ts || {
-  echo "⚠️  Migration warnings detected, continuing..."
-}
-
-echo ""
-echo "✅ Database migrations completed!"
-
 # Start the server
 echo ""
 echo "🚀 Starting API server..."
