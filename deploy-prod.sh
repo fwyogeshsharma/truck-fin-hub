@@ -72,22 +72,25 @@ if ! docker info &> /dev/null; then
 fi
 log_success "Docker daemon is running"
 
-# Check if Node.js is installed
-if ! command -v node &> /dev/null; then
-    log_error "Node.js is not installed. Please install Node.js 18+ first."
-    log_info "Visit: https://nodejs.org/"
-    exit 1
+# Check if Node.js is installed (optional - Docker will handle builds)
+if command -v node &> /dev/null; then
+    NODE_VERSION=$(node -v)
+    log_success "Node.js is installed (${NODE_VERSION})"
+    HAS_NODE=true
+else
+    log_warning "Node.js not found on host - Docker will handle all builds"
+    HAS_NODE=false
 fi
-NODE_VERSION=$(node -v)
-log_success "Node.js is installed (${NODE_VERSION})"
 
-# Check if npm is installed
-if ! command -v npm &> /dev/null; then
-    log_error "npm is not installed. Please install npm first."
-    exit 1
+# Check if npm is installed (optional)
+if command -v npm &> /dev/null; then
+    NPM_VERSION=$(npm -v)
+    log_success "npm is installed (v${NPM_VERSION})"
+    HAS_NPM=true
+else
+    log_warning "npm not found on host - Docker will handle all builds"
+    HAS_NPM=false
 fi
-NPM_VERSION=$(npm -v)
-log_success "npm is installed (v${NPM_VERSION})"
 
 # ============================================
 # Step 2: Environment Configuration
@@ -144,7 +147,11 @@ fi
 # Warn about default JWT secret
 if [ "${JWT_SECRET}" = "your-super-secret-jwt-key-change-in-production-min-32-chars" ]; then
     log_warning "You're using the default JWT_SECRET! This is insecure for production."
-    log_info "Generate a secure secret with: node -e \"console.log(require('crypto').randomBytes(64).toString('hex'))\""
+    if [ "$HAS_NODE" = true ]; then
+        log_info "Generate a secure secret with: node -e \"console.log(require('crypto').randomBytes(64).toString('hex'))\""
+    else
+        log_info "Generate a secure secret with: openssl rand -hex 64"
+    fi
     read -p "Continue anyway? (y/N): " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -153,37 +160,16 @@ if [ "${JWT_SECRET}" = "your-super-secret-jwt-key-change-in-production-min-32-ch
 fi
 
 # ============================================
-# Step 3: Install Dependencies
-# ============================================
-print_header "Installing Dependencies"
-
-if [ ! -d "node_modules" ]; then
-    log_info "node_modules not found. Installing dependencies..."
-    npm install
-    log_success "Dependencies installed"
-else
-    log_info "node_modules found. Checking for updates..."
-    npm ci
-    log_success "Dependencies verified"
-fi
-
-# ============================================
-# Step 4: Build Application
+# Step 3: Build Application (Docker handles this)
 # ============================================
 print_header "Building Application"
 
-log_info "Building frontend and backend..."
-npm run build
-
-if [ ! -d "dist" ]; then
-    log_error "Build failed - dist directory not created"
-    exit 1
-fi
-
-log_success "Application built successfully"
+log_info "Docker will build the application inside containers"
+log_info "Skipping host-based npm install and build steps"
+log_success "Build will be handled by Docker"
 
 # ============================================
-# Step 5: Stop Existing Services
+# Step 4: Stop Existing Services
 # ============================================
 print_header "Stopping Existing Services"
 
@@ -192,7 +178,7 @@ docker-compose down --remove-orphans || true
 log_success "Existing services stopped"
 
 # ============================================
-# Step 6: Start Docker Services
+# Step 5: Start Docker Services
 # ============================================
 print_header "Starting Docker Services"
 
@@ -220,7 +206,7 @@ fi
 log_success "PostgreSQL is healthy and ready"
 
 # ============================================
-# Step 7: Start Backend Service
+# Step 6: Start Backend Service
 # ============================================
 print_header "Starting Backend Service"
 
@@ -248,7 +234,7 @@ fi
 log_success "Backend is healthy and ready"
 
 # ============================================
-# Step 8: Deployment Summary
+# Step 7: Deployment Summary
 # ============================================
 print_header "Deployment Summary"
 

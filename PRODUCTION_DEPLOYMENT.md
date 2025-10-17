@@ -6,20 +6,23 @@ This guide will help you deploy LogiFin to production using Docker and Docker Co
 
 Before deploying, ensure you have the following installed:
 
-- **Docker** (version 20.10+)
-- **Docker Compose** (version 2.0+)
-- **Node.js** (version 18+)
-- **npm** (version 8+)
+- **Docker** (version 20.10+) - **REQUIRED**
+- **Docker Compose** (version 2.0+) - **REQUIRED**
+- **Node.js** (version 18+) - **OPTIONAL** (only for local development)
+- **npm** (version 8+) - **OPTIONAL** (only for local development)
+
+> **Important**: Node.js is NOT required on the host machine for production deployment. Docker will handle all building and running of the application. Node.js is only needed if you want to run the application locally for development.
 
 ### Installing Prerequisites
 
-#### Docker
+#### Docker (Required)
 - **Linux**: Follow [Docker installation guide](https://docs.docker.com/engine/install/)
 - **macOS**: Install [Docker Desktop](https://docs.docker.com/desktop/install/mac-install/)
 - **Windows**: Install [Docker Desktop](https://docs.docker.com/desktop/install/windows-install/)
 
-#### Node.js
+#### Node.js (Optional)
 - Download from [nodejs.org](https://nodejs.org/) or use a version manager like `nvm`
+- Only needed for local development, not for Docker-based production deployment
 
 ## 🚀 Quick Start
 
@@ -35,7 +38,9 @@ nano .env  # or use your preferred editor
 
 **Critical variables to update:**
 - `DB_PASSWORD` - Set a strong database password
-- `JWT_SECRET` - Generate with: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`
+- `JWT_SECRET` - Generate with:
+  - Using openssl: `openssl rand -hex 64`
+  - Or using Node.js (if installed): `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`
 - `SMTP_*` - Configure your email service (optional)
 
 ### 2. Deploy the Application
@@ -46,13 +51,14 @@ nano .env  # or use your preferred editor
 ```
 
 This script will:
-- ✅ Check all prerequisites
+- ✅ Check all prerequisites (Docker, Docker Compose)
 - ✅ Validate environment configuration
-- ✅ Install dependencies
-- ✅ Build the application
+- ✅ Build the application (inside Docker containers)
 - ✅ Start PostgreSQL database
 - ✅ Run database migrations
 - ✅ Start the backend server
+
+> **Note**: The script builds everything inside Docker, so you don't need Node.js installed on your host machine!
 
 ### 3. Verify Deployment
 
