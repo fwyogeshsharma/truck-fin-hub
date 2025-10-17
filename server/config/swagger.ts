@@ -18,7 +18,7 @@ const options = {
         description: 'Development server',
       },
       {
-        url: 'https://api.truckfinhub.com',
+        url: 'http://34.31.185.19:3001',
         description: 'Production server',
       },
     ],
