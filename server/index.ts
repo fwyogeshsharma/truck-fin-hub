@@ -1,12 +1,6 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { initDatabase } from '../src/db/database.ts';
-
-// ES module __dirname equivalent
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Import API routes
 import authRoutes from './routes/auth.ts';
@@ -94,15 +88,6 @@ app.use('/api/migrations', migrationRoutes);
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
-
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../dist')));
-
-  app.get('*', (req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
-  });
-}
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: Function) => {
