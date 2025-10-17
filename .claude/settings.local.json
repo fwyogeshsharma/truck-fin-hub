@@ -21,7 +21,11 @@
       "Bash(timeout:*)",
       "Bash(cat:*)",
       "Bash(python -m json.tool:*)",
-      "Bash(node debug-pending-approvals.js:*)"
+      "Bash(node debug-pending-approvals.js:*)",
+      "Bash(Get-Process -Name \"node\" -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -Property Id, ProcessName, CPU)",
+      "Bash(npm run dev:server:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

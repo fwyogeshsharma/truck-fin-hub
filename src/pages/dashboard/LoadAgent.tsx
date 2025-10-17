@@ -392,7 +392,7 @@ const LoadAgentDashboard = () => {
       }
 
       const trip = await data.createTrip({
-        loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
+        loadOwnerId: user?.id || user?.userId || '',
         loadOwnerName: user?.company || 'Shipper',
         loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
         loadOwnerRating: 4.5,
@@ -668,7 +668,7 @@ const LoadAgentDashboard = () => {
           }
 
           await data.createTrip({
-            loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
+            loadOwnerId: user?.id || user?.userId || '',
             loadOwnerName: user?.company || 'Shipper',
             loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
             loadOwnerRating: 4.5,
@@ -783,12 +783,19 @@ const LoadAgentDashboard = () => {
   }, [advancedFilters]);
 
   const handleAllotTrip = async (tripId: string, lenderId: string, lenderName: string) => {
-    const result = await data.allotTrip(tripId, lenderId, lenderName);
+    // Get trip details before allotment to know the amount
+    const trip = allTrips.find(t => t.id === tripId);
+    const bid = trip?.bids?.find(b => b.lenderId === lenderId);
+    const amount = bid?.amount || 0;
+
+    // Pass current user ID so the money goes to the user who is allotting (not trip creator)
+    const result = await data.allotTrip(tripId, lenderId, lenderName, user?.id);
 
     if (result) {
       toast({
         title: 'Trip Allotted Successfully!',
-        description: `Trip has been allotted to ${lenderName}`,
+        description: `Trip allotted to ${lenderName}. ₹${amount.toLocaleString('en-IN')} has been credited to your wallet. Check your wallet to see the transaction.`,
+        duration: 6000, // Show for 6 seconds
       });
       setRefreshKey(prev => prev + 1); // Refresh trip list
     } else {
@@ -914,7 +921,7 @@ const LoadAgentDashboard = () => {
 
         // Allot to the first bidder (or you can add logic to choose the best bid)
         const bid = trip.bids[0];
-        const result = await data.allotTrip(trip.id, bid.lenderId, bid.lenderName);
+        const result = await data.allotTrip(trip.id, bid.lenderId, bid.lenderName, user?.id);
 
         if (result) {
           console.log(`✓ Trip ${trip.id} allotted successfully`);

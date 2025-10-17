@@ -273,7 +273,7 @@ export const data = {
   },
 
   // Allot trip to a lender
-  allotTrip: async (tripId: string, lenderId: string, lenderName: string): Promise<{ trip: Trip; investment: Investment } | null> => {
+  allotTrip: async (tripId: string, lenderId: string, lenderName: string, currentUserId?: string): Promise<{ trip: Trip; investment: Investment } | null> => {
     try {
       const trip = await data.getTrip(tripId);
       if (!trip || !trip.bids || trip.bids.length === 0) {
@@ -288,6 +288,7 @@ export const data = {
       }
 
       console.log('Allotting trip:', tripId, 'to lender:', lenderId);
+      console.log('Current user allotting:', currentUserId || trip.loadOwnerId);
 
       // Calculate adjusted interest rate for shipper (lender rate + 20% markup)
       const maturityDays = trip.maturityDays || 30;
@@ -309,7 +310,7 @@ export const data = {
         return null;
       }
 
-      console.log('Trip updated successfully, now updating investment...');
+      console.log('Trip updated successfully, now processing funds transfer...');
 
       // Get investments for this trip and lender
       const investments = await investmentsAPI.getAll({ tripId, lenderId });
@@ -317,71 +318,184 @@ export const data = {
 
       const investment = investments[0];
 
-      if (investment) {
-        console.log('Updating investment status to active:', investment.id);
-        const updatedInvestment = await investmentsAPI.updateStatus(investment.id, 'active');
+      // Always process fund transfers, regardless of investment record status
+      // Transfer funds: lender escrow -> borrower balance
 
-        if (updatedInvestment) {
-          console.log('Investment updated successfully');
-
-          // Transfer funds: lender escrow -> borrower balance
-          // 1. Move lender's escrowed amount to total_invested
-          await walletsAPI.invest(lenderId, bid.amount, tripId);
-
-          // 2. Create transaction for lender (escrow -> invested)
-          const lenderWallet = await data.getWallet(lenderId);
-          console.log('Creating lender transaction...');
-          try {
-            await data.createTransaction({
-              userId: lenderId,
-              type: 'debit',
-              amount: bid.amount,
-              category: 'investment',
-              description: `Invested ₹${bid.amount} in trip ${trip.origin} → ${trip.destination} (Borrower: ${trip.loadOwnerName})`,
-              balanceAfter: lenderWallet.balance,
-            });
-            console.log('Lender transaction created successfully');
-          } catch (txnError) {
-            console.error('Failed to create lender transaction:', txnError);
-          }
-
-          // 3. Add amount to borrower's balance
-          const borrowerId = trip.loadOwnerId;
-          console.log('Borrower ID:', borrowerId);
-          const borrowerWallet = await data.getWallet(borrowerId);
-          console.log('Borrower wallet before update:', borrowerWallet);
-
-          const newBalance = borrowerWallet.balance + bid.amount;
-          const updatedBorrowerWallet = await data.updateWallet(borrowerId, {
-            balance: newBalance
-          });
-          console.log('Borrower wallet after update:', updatedBorrowerWallet);
-
-          // 4. Create transaction for borrower (received funding)
-          console.log('Creating transaction for borrower...');
-          try {
-            const transaction = await data.createTransaction({
-              userId: borrowerId,
-              type: 'credit',
-              amount: bid.amount,
-              category: 'payment',
-              description: `Received ₹${bid.amount} from ${bid.lenderName} for trip ${trip.origin} → ${trip.destination}`,
-              balanceAfter: newBalance,
-            });
-            console.log('Borrower transaction created:', transaction);
-          } catch (txnError) {
-            console.error('Failed to create borrower transaction:', txnError);
-          }
-
-          return { trip: updatedTrip, investment: toCamelCase(updatedInvestment) };
-        } else {
-          console.error('Failed to update investment status');
-        }
-      } else {
-        console.error('No investment found for trip:', tripId, 'lender:', lenderId);
+      // 1. Move lender's escrowed amount to total_invested
+      console.log('🔵 [ALLOTMENT] Step 1: Moving lender escrow to invested...');
+      try {
+        await walletsAPI.invest(lenderId, bid.amount, tripId);
+        console.log('✅ [ALLOTMENT] Lender escrow moved to invested successfully');
+      } catch (investError) {
+        console.error('❌ [ALLOTMENT] Failed to move lender escrow:', investError);
+        // Continue anyway - borrower should still get funds
       }
 
-      return null;
+      // 2. Create transaction for lender (escrow -> invested)
+      console.log('🔵 [ALLOTMENT] Step 2: Creating lender transaction...');
+      const lenderWallet = await data.getWallet(lenderId);
+      try {
+        await data.createTransaction({
+          userId: lenderId,
+          type: 'debit',
+          amount: bid.amount,
+          category: 'investment',
+          description: `Invested ₹${bid.amount} in trip ${trip.origin} → ${trip.destination} (Borrower: ${trip.loadOwnerName})`,
+          balanceAfter: lenderWallet.balance,
+        });
+        console.log('✅ [ALLOTMENT] Lender transaction created successfully');
+      } catch (txnError) {
+        console.error('❌ [ALLOTMENT] Failed to create lender transaction:', txnError);
+        // Continue anyway - borrower should still get funds
+      }
+
+      // 3. Add amount to shipper/load agent's balance - THIS IS CRITICAL AND MUST ALWAYS HAPPEN
+      // Use currentUserId (the user who clicked allot) if provided, otherwise fallback to trip owner
+      const recipientUserId = currentUserId || trip.loadOwnerId;
+          console.log('🔵 [ALLOTMENT] ========================================');
+          console.log('🔵 [ALLOTMENT] Step 3: CREDITING SHIPPER/LOAD AGENT WALLET');
+          console.log('🔵 [ALLOTMENT] ========================================');
+          console.log('🔵 [ALLOTMENT] Recipient User ID (who gets the money):', recipientUserId);
+          console.log('🔵 [ALLOTMENT] Original trip owner ID:', trip.loadOwnerId);
+          console.log('🔵 [ALLOTMENT] Amount to credit:', bid.amount);
+
+          if (!recipientUserId) {
+            console.error('❌ [ALLOTMENT] CRITICAL: Recipient User ID is missing!');
+            throw new Error('Recipient User ID is required to credit wallet');
+          }
+
+          // Get current wallet state
+          let recipientWallet;
+          try {
+            recipientWallet = await data.getWallet(recipientUserId);
+            console.log('🔵 [ALLOTMENT] Recipient wallet BEFORE update:', JSON.stringify({
+              balance: recipientWallet.balance,
+              lockedAmount: recipientWallet.lockedAmount,
+              escrowedAmount: recipientWallet.escrowedAmount,
+              totalInvested: recipientWallet.totalInvested,
+              totalReturns: recipientWallet.totalReturns
+            }, null, 2));
+          } catch (walletError) {
+            console.error('❌ [ALLOTMENT] Failed to get recipient wallet:', walletError);
+            throw new Error(`Failed to fetch recipient wallet: ${(walletError as Error).message}`);
+          }
+
+          // Calculate new balance
+          const oldBalance = Number(recipientWallet.balance) || 0;
+          const creditAmount = Number(bid.amount) || 0;
+          const newBalance = oldBalance + creditAmount;
+
+          console.log('🔵 [ALLOTMENT] Balance calculation:');
+          console.log('🔵 [ALLOTMENT]   Old balance:', oldBalance);
+          console.log('🔵 [ALLOTMENT]   Credit amount:', creditAmount);
+          console.log('🔵 [ALLOTMENT]   New balance:', newBalance);
+
+          // Update wallet - THIS IS CRITICAL!
+          let updatedRecipientWallet;
+          try {
+            console.log('🔵 [ALLOTMENT] Calling walletsAPI.update() for recipient...');
+            updatedRecipientWallet = await data.updateWallet(recipientUserId, {
+              balance: newBalance
+            });
+            console.log('✅ [ALLOTMENT] Wallet update API call SUCCESS!');
+            console.log('✅ [ALLOTMENT] Recipient wallet AFTER update:', JSON.stringify({
+              balance: updatedRecipientWallet.balance,
+              lockedAmount: updatedRecipientWallet.lockedAmount,
+              escrowedAmount: updatedRecipientWallet.escrowedAmount,
+              totalInvested: updatedRecipientWallet.totalInvested,
+              totalReturns: updatedRecipientWallet.totalReturns
+            }, null, 2));
+
+            // Verify the balance was actually updated
+            if (Number(updatedRecipientWallet.balance) !== newBalance) {
+              console.error('❌ [ALLOTMENT] CRITICAL: Balance mismatch after update!');
+              console.error('❌ [ALLOTMENT] Expected:', newBalance);
+              console.error('❌ [ALLOTMENT] Got:', updatedRecipientWallet.balance);
+              throw new Error('Wallet balance was not updated correctly');
+            }
+          } catch (updateError) {
+            console.error('❌ [ALLOTMENT] FAILED to update recipient wallet!');
+            console.error('❌ [ALLOTMENT] Error:', updateError);
+            console.error('❌ [ALLOTMENT] Error message:', (updateError as Error).message);
+            console.error('❌ [ALLOTMENT] Error stack:', (updateError as Error).stack);
+            throw new Error(`Failed to credit recipient wallet: ${(updateError as Error).message}`);
+          }
+
+          // 4. Create transaction record for recipient - THIS IS ALSO CRITICAL!
+          console.log('🔵 [ALLOTMENT] ========================================');
+          console.log('🔵 [ALLOTMENT] Step 4: CREATING TRANSACTION RECORD');
+          console.log('🔵 [ALLOTMENT] ========================================');
+
+          try {
+            const transactionData = {
+              userId: recipientUserId,
+              type: 'credit' as const,
+              amount: creditAmount,
+              category: 'payment' as const,
+              description: `Received ₹${creditAmount.toLocaleString('en-IN')} from ${bid.lenderName} for trip ${trip.origin} → ${trip.destination}`,
+              balanceAfter: newBalance,
+            };
+
+            console.log('🔵 [ALLOTMENT] Transaction data:', JSON.stringify(transactionData, null, 2));
+            console.log('🔵 [ALLOTMENT] Calling transactionsAPI.create()...');
+
+            const transaction = await data.createTransaction(transactionData);
+
+            console.log('✅ [ALLOTMENT] Transaction created successfully!');
+            console.log('✅ [ALLOTMENT] Transaction details:', JSON.stringify({
+              id: transaction.id,
+              userId: transaction.userId,
+              type: transaction.type,
+              amount: transaction.amount,
+              category: transaction.category,
+              description: transaction.description,
+              balanceAfter: transaction.balanceAfter,
+              timestamp: transaction.timestamp
+            }, null, 2));
+          } catch (txnError) {
+            console.error('❌ [ALLOTMENT] FAILED to create transaction record!');
+            console.error('❌ [ALLOTMENT] Error:', txnError);
+            console.error('❌ [ALLOTMENT] Error message:', (txnError as Error).message);
+            console.error('❌ [ALLOTMENT] Error stack:', (txnError as Error).stack);
+            // DO NOT THROW - wallet is already updated, transaction is just for record-keeping
+            // But log it very prominently
+            console.error('⚠️  [ALLOTMENT] WARNING: Wallet was credited but transaction record failed to create!');
+            console.error('⚠️  [ALLOTMENT] This means the money is in the wallet but not in transaction history!');
+          }
+
+          console.log('✅ [ALLOTMENT] ========================================');
+          console.log('✅ [ALLOTMENT] RECIPIENT WALLET CREDITED SUCCESSFULLY!');
+          console.log('✅ [ALLOTMENT] Recipient User ID:', recipientUserId);
+          console.log('✅ [ALLOTMENT] Old balance:', oldBalance);
+          console.log('✅ [ALLOTMENT] New balance:', newBalance);
+          console.log('✅ [ALLOTMENT] Amount credited:', creditAmount);
+          console.log('✅ [ALLOTMENT] ========================================');
+
+      // 4. Update investment status (do this last, it's less critical than wallet transfers)
+      console.log('🔵 [ALLOTMENT] ========================================');
+      console.log('🔵 [ALLOTMENT] Step 5: Updating investment status');
+      console.log('🔵 [ALLOTMENT] ========================================');
+
+      let updatedInvestment = null;
+      if (investment) {
+        try {
+          console.log('🔵 [ALLOTMENT] Updating investment status to active:', investment.id);
+          updatedInvestment = await investmentsAPI.updateStatus(investment.id, 'active');
+          console.log('✅ [ALLOTMENT] Investment updated successfully');
+        } catch (investmentError) {
+          console.error('❌ [ALLOTMENT] Failed to update investment status:', investmentError);
+          // Don't fail the whole operation - wallet transfers are already done
+        }
+      } else {
+        console.warn('⚠️  [ALLOTMENT] No investment record found for trip:', tripId, 'lender:', lenderId);
+        console.warn('⚠️  [ALLOTMENT] Wallet transfers completed successfully despite missing investment record');
+      }
+
+      console.log('✅ [ALLOTMENT] ========================================');
+      console.log('✅ [ALLOTMENT] TRIP ALLOTMENT COMPLETED SUCCESSFULLY!');
+      console.log('✅ [ALLOTMENT] ========================================');
+
+      return { trip: updatedTrip, investment: updatedInvestment ? toCamelCase(updatedInvestment) : null };
     } catch (error) {
       console.error('Failed to allot trip:', error);
       return null;

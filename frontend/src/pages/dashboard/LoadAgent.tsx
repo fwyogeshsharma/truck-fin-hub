@@ -233,7 +233,7 @@ const LoadAgentDashboard = () => {
       const interestRate = parseFloat(formData.interestRate);
 
       const trip = await data.createTrip({
-        loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
+        loadOwnerId: user?.id || user?.userId || '',
         loadOwnerName: user?.company || 'Shipper',
         loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
         loadOwnerRating: 4.5,
@@ -437,7 +437,7 @@ const LoadAgentDashboard = () => {
           }
 
           await data.createTrip({
-            loadOwnerId: user?.company === 'RollingRadius' ? 'rr' : 'darcl',
+            loadOwnerId: user?.id || user?.userId || '',
             loadOwnerName: user?.company || 'Shipper',
             loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
             loadOwnerRating: 4.5,
