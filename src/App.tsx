@@ -28,6 +28,7 @@ import NotificationSettings from "./pages/NotificationSettings";
 import Reports from "./pages/Reports";
 import Users from "./pages/Users";
 import AdminPanel from "./pages/AdminPanel";
+import UserManagement from "./pages/UserManagement";
 import TransactionRequests from "./pages/TransactionRequests";
 import AdminSetupDebug from "./pages/AdminSetupDebug";
 import NotFound from "./pages/NotFound";
@@ -70,6 +71,7 @@ const App = () => {
           <Route path="/reports" element={<Reports />} />
           <Route path="/admin/users" element={<Users />} />
           <Route path="/admin-panel" element={<AdminPanel />} />
+          <Route path="/user-management" element={<UserManagement />} />
           <Route path="/transaction-requests" element={<TransactionRequests />} />
           <Route path="/admin/setup-debug" element={<AdminSetupDebug />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

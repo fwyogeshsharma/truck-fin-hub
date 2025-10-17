@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, TrendingUp, Package, IndianRupee, Lock, ArrowUpRight, ArrowDownRight, Sparkles, Brain, RefreshCw, Clock, UserCheck, UserX, CheckCircle2 } from "lucide-react";
+import { Wallet, TrendingUp, Package, IndianRupee, Lock, ArrowUpRight, ArrowDownRight, Sparkles, Brain, RefreshCw } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data, type Trip, type Investment, type Wallet as WalletType } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -28,95 +28,6 @@ const LenderDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [chartColors, setChartColors] = useState(getChartColors());
   const [colorPalette, setColorPalette] = useState(getChartColorPalette());
-  const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
-  const [approvingUserId, setApprovingUserId] = useState<string | null>(null);
-
-  const fetchPendingApprovals = async () => {
-    try {
-      // For company admins (is_admin), only fetch pending approvals for their company
-      const isCompanyAdmin = user?.is_admin === true && user?.company_id;
-      const companyId = isCompanyAdmin ? user.company_id : undefined;
-
-      const url = companyId
-        ? `/api/users/pending-approvals?companyId=${companyId}`
-        : '/api/users/pending-approvals';
-
-      const response = await fetch(url);
-      if (response.ok) {
-        const pendingUsers = await response.json();
-        setPendingApprovals(pendingUsers);
-      }
-    } catch (error) {
-      console.error('Failed to fetch pending approvals:', error);
-    }
-  };
-
-  const handleApprove = async (userId: string) => {
-    if (!user?.id) return;
-
-    setApprovingUserId(userId);
-    try {
-      const response = await fetch(`/api/users/${userId}/approve`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approvedBy: user.id }),
-      });
-
-      if (response.ok) {
-        toast({
-          title: "User Approved",
-          description: "The user has been approved and can now log in.",
-        });
-        await fetchPendingApprovals();
-      } else {
-        throw new Error('Failed to approve user');
-      }
-    } catch (error) {
-      console.error('Failed to approve user:', error);
-      toast({
-        variant: "destructive",
-        title: "Approval Failed",
-        description: "Failed to approve user. Please try again.",
-      });
-    } finally {
-      setApprovingUserId(null);
-    }
-  };
-
-  const handleReject = async (userId: string) => {
-    if (!user?.id) return;
-
-    const reason = prompt('Please provide a reason for rejection:');
-    if (!reason) return;
-
-    setApprovingUserId(userId);
-    try {
-      const response = await fetch(`/api/users/${userId}/reject`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rejectedBy: user.id, reason }),
-      });
-
-      if (response.ok) {
-        toast({
-          title: "User Rejected",
-          description: "The user request has been rejected.",
-        });
-        await fetchPendingApprovals();
-      } else {
-        throw new Error('Failed to reject user');
-      }
-    } catch (error) {
-      console.error('Failed to reject user:', error);
-      toast({
-        variant: "destructive",
-        title: "Rejection Failed",
-        description: "Failed to reject user. Please try again.",
-      });
-    } finally {
-      setApprovingUserId(null);
-    }
-  };
 
   // Update chart colors when theme changes
   useEffect(() => {
@@ -159,11 +70,6 @@ const LenderDashboard = () => {
         setTrips(tripsData);
         setMyInvestments(investmentsData.filter(i => i.lenderId === user.id));
         setWallet(walletData);
-
-        // Fetch pending approvals if user is admin
-        if (user.is_admin) {
-          await fetchPendingApprovals();
-        }
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
       } finally {

@@ -82,15 +82,12 @@ const AdminPanel = () => {
     },
     {
       title: "User Management",
-      description: "View and manage company users and their permissions",
+      description: "View and manage company users, approve access requests",
       icon: Users,
       color: "text-purple-600",
       bgColor: "bg-purple-50 dark:bg-purple-950/20",
       onClick: () => {
-        toast({
-          title: "Coming Soon",
-          description: "User management features will be available soon",
-        });
+        navigate('/user-management');
       },
     },
     {
