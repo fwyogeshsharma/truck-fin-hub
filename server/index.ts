@@ -17,16 +17,16 @@ import notificationRoutes from './routes/notifications.ts';
 import migrationRoutes from './routes/migrations.ts';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 
 // CORS configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
   : [
       'http://localhost:8080',
-      'http://localhost:3000',
+      'http://localhost:4000',
       'http://34.31.185.19',
-      'http://34.31.185.19:3000',
+      'http://34.31.185.19:4000',
       'http://34.31.185.19:8080',
       'https://*.netlify.app'
     ];
