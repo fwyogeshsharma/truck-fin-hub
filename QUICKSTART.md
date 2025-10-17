@@ -2,12 +2,18 @@
 
 ## 🚀 Deploy to Production in 3 Steps
 
+> **Note**: Node.js is NOT required on the host machine. Docker handles all builds!
+
 ### 1️⃣ Setup Environment
 ```bash
 # Copy environment template
 cp .env.production.example .env
 
-# Generate secure JWT secret
+# Generate secure JWT secret (choose one method):
+# Method 1: Using openssl (available on most systems)
+openssl rand -hex 64
+
+# Method 2: Using Node.js (if you have it installed)
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 
 # Edit .env and set:

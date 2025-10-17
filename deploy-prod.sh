@@ -103,9 +103,14 @@ if [ ! -f .env ]; then
     if [ -f .env.production.example ]; then
         log_info "Copying .env.production.example to .env"
         cp .env.production.example .env
-        log_warning "Please update .env with your production values before continuing"
-        log_info "Edit .env file and press Enter to continue..."
-        read -p ""
+        log_success ".env file created from template"
+        log_warning "IMPORTANT: Update .env with your production values!"
+        log_info "Required changes:"
+        echo "  - DB_PASSWORD: Set a strong password"
+        echo "  - JWT_SECRET: Generate with 'openssl rand -hex 64'"
+        echo ""
+        log_info "Continuing with default values for now..."
+        sleep 2
     else
         log_error "No .env.production.example found. Cannot create .env file."
         exit 1
@@ -144,19 +149,23 @@ if [ $MISSING_VARS -gt 0 ]; then
     exit 1
 fi
 
+# Warn about default values
+if [ "${DB_PASSWORD}" = "your-strong-database-password-here" ]; then
+    log_warning "Using default DB_PASSWORD! This is insecure for production."
+    log_info "Update DB_PASSWORD in .env with a strong password"
+    log_warning "Continuing with default password (NOT recommended for production)"
+fi
+
 # Warn about default JWT secret
 if [ "${JWT_SECRET}" = "your-super-secret-jwt-key-change-in-production-min-32-chars" ]; then
-    log_warning "You're using the default JWT_SECRET! This is insecure for production."
+    log_warning "Using default JWT_SECRET! This is insecure for production."
     if [ "$HAS_NODE" = true ]; then
         log_info "Generate a secure secret with: node -e \"console.log(require('crypto').randomBytes(64).toString('hex'))\""
     else
         log_info "Generate a secure secret with: openssl rand -hex 64"
     fi
-    read -p "Continue anyway? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-    fi
+    log_warning "Continuing with default secret (NOT recommended for production)"
+    sleep 2
 fi
 
 # ============================================
