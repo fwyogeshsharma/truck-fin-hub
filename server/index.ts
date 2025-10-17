@@ -1,7 +1,12 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { initDatabase } from '../src/db/database.ts';
+
+// ES module __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Import API routes
 import authRoutes from './routes/auth.ts';
