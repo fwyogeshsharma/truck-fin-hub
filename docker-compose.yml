@@ -42,6 +42,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-postgres123}
       DB_NAME: ${DB_NAME:-logifin}
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080,http://34.31.185.19,http://34.31.185.19:8080,https://*.netlify.app}
 #      SMTP_HOST: ${SMTP_HOST}
 #      SMTP_PORT: ${SMTP_PORT}
 #      SMTP_USER: ${SMTP_USER}
