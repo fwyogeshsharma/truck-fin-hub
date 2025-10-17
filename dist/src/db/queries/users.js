@@ -1,0 +1,358 @@
+import { getDatabase } from '../database.js';
+import bcrypt from 'bcryptjs';
+/**
+ * Get user by ID
+ */
+export const getUserById = async (id) => {
+    const db = getDatabase();
+    const result = await db.query('SELECT * FROM users WHERE id = $1', [id]);
+    return result.rows[0] || null;
+};
+/**
+ * Get user by email
+ */
+export const getUserByEmail = async (email) => {
+    const db = getDatabase();
+    const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    return result.rows[0] || null;
+};
+/**
+ * Get user by user_id
+ */
+export const getUserByUserId = async (userId) => {
+    const db = getDatabase();
+    const result = await db.query('SELECT * FROM users WHERE user_id = $1', [userId]);
+    return result.rows[0] || null;
+};
+/**
+ * Get user by phone
+ */
+export const getUserByPhone = async (phone) => {
+    const db = getDatabase();
+    const result = await db.query('SELECT * FROM users WHERE phone = $1', [phone]);
+    return result.rows[0] || null;
+};
+/**
+ * Get all users (excluding company records and joining with companies table)
+ */
+export const getAllUsers = async () => {
+    const db = getDatabase();
+    const result = await db.query(`SELECT
+      u.*,
+      c.id as company_data_id,
+      c.name as company_data_name,
+      c.display_name as company_data_display_name,
+      c.logo as company_data_logo,
+      c.email as company_data_email,
+      c.phone as company_data_phone
+    FROM users u
+    LEFT JOIN companies c ON u.company_id = c.id
+    WHERE u.is_active = TRUE AND u.id NOT LIKE 'company-%'
+    ORDER BY u.created_at DESC`);
+    // Transform the flat result into nested structure
+    return result.rows.map(row => ({
+        ...row,
+        companyData: row.company_data_id ? {
+            id: row.company_data_id,
+            name: row.company_data_name,
+            display_name: row.company_data_display_name,
+            logo: row.company_data_logo,
+            email: row.company_data_email,
+            phone: row.company_data_phone,
+        } : undefined,
+        // Remove the flat company_data_* fields
+        company_data_id: undefined,
+        company_data_name: undefined,
+        company_data_display_name: undefined,
+        company_data_logo: undefined,
+        company_data_email: undefined,
+        company_data_phone: undefined,
+    }));
+};
+/**
+ * Get users by role (excluding company records and joining with companies table)
+ */
+export const getUsersByRole = async (role) => {
+    const db = getDatabase();
+    const result = await db.query(`SELECT
+      u.*,
+      c.id as company_data_id,
+      c.name as company_data_name,
+      c.display_name as company_data_display_name,
+      c.logo as company_data_logo,
+      c.email as company_data_email,
+      c.phone as company_data_phone
+    FROM users u
+    LEFT JOIN companies c ON u.company_id = c.id
+    WHERE u.role = $1 AND u.is_active = TRUE AND u.id NOT LIKE 'company-%'
+    ORDER BY u.created_at DESC`, [role]);
+    // Transform the flat result into nested structure
+    return result.rows.map(row => ({
+        ...row,
+        companyData: row.company_data_id ? {
+            id: row.company_data_id,
+            name: row.company_data_name,
+            display_name: row.company_data_display_name,
+            logo: row.company_data_logo,
+            email: row.company_data_email,
+            phone: row.company_data_phone,
+        } : undefined,
+        company_data_id: undefined,
+        company_data_name: undefined,
+        company_data_display_name: undefined,
+        company_data_logo: undefined,
+        company_data_email: undefined,
+        company_data_phone: undefined,
+    }));
+};
+/**
+ * Create new user
+ */
+export const createUser = async (input) => {
+    // Check if email already exists
+    const existingEmail = await getUserByEmail(input.email);
+    if (existingEmail) {
+        throw new Error('Email already exists');
+    }
+    // Check if phone already exists
+    const existingPhone = await getUserByPhone(input.phone);
+    if (existingPhone) {
+        throw new Error('Phone number already exists');
+    }
+    // Check if user_id already exists
+    const existingUserId = await getUserByUserId(input.user_id);
+    if (existingUserId) {
+        throw new Error('User ID already exists');
+    }
+    // Hash password
+    const passwordHash = bcrypt.hashSync(input.password, 10);
+    // Generate ID
+    const id = `u-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const db = getDatabase();
+    const result = await db.query(`INSERT INTO users (
+      id, user_id, email, phone, name, password_hash, role, company, company_id, company_logo, user_logo, is_active
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, TRUE)
+    RETURNING *`, [
+        id,
+        input.user_id,
+        input.email,
+        input.phone,
+        input.name,
+        passwordHash,
+        input.role || null,
+        input.company || null,
+        input.company_id || null,
+        input.company_logo || null,
+        input.user_logo || null,
+    ]);
+    return result.rows[0];
+};
+/**
+ * Update user
+ */
+export const updateUser = async (id, input) => {
+    const user = await getUserById(id);
+    if (!user) {
+        return null;
+    }
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+    if (input.email !== undefined) {
+        updates.push(`email = $${paramCount++}`);
+        values.push(input.email);
+    }
+    if (input.phone !== undefined) {
+        updates.push(`phone = $${paramCount++}`);
+        values.push(input.phone);
+    }
+    if (input.name !== undefined) {
+        updates.push(`name = $${paramCount++}`);
+        values.push(input.name);
+    }
+    if (input.role !== undefined) {
+        updates.push(`role = $${paramCount++}`);
+        values.push(input.role);
+    }
+    if (input.company !== undefined) {
+        updates.push(`company = $${paramCount++}`);
+        values.push(input.company);
+    }
+    if (input.company_id !== undefined) {
+        updates.push(`company_id = $${paramCount++}`);
+        values.push(input.company_id);
+    }
+    if (input.company_logo !== undefined) {
+        updates.push(`company_logo = $${paramCount++}`);
+        values.push(input.company_logo);
+    }
+    if (input.user_logo !== undefined) {
+        updates.push(`user_logo = $${paramCount++}`);
+        values.push(input.user_logo);
+    }
+    if (input.terms_accepted !== undefined) {
+        updates.push(`terms_accepted = $${paramCount++}`);
+        values.push(input.terms_accepted);
+    }
+    if (input.terms_accepted_at !== undefined) {
+        updates.push(`terms_accepted_at = $${paramCount++}`);
+        values.push(input.terms_accepted_at);
+    }
+    if (input.is_active !== undefined) {
+        updates.push(`is_active = $${paramCount++}`);
+        values.push(input.is_active);
+    }
+    if (input.is_admin !== undefined) {
+        updates.push(`is_admin = $${paramCount++}`);
+        values.push(input.is_admin);
+    }
+    if (input.approval_status !== undefined) {
+        updates.push(`approval_status = $${paramCount++}`);
+        values.push(input.approval_status);
+    }
+    if (input.approved_by !== undefined) {
+        updates.push(`approved_by = $${paramCount++}`);
+        values.push(input.approved_by);
+    }
+    if (input.approved_at !== undefined) {
+        updates.push(`approved_at = $${paramCount++}`);
+        values.push(input.approved_at);
+    }
+    if (input.rejection_reason !== undefined) {
+        updates.push(`rejection_reason = $${paramCount++}`);
+        values.push(input.rejection_reason);
+    }
+    if (updates.length === 0) {
+        return user;
+    }
+    values.push(id);
+    const db = getDatabase();
+    const result = await db.query(`UPDATE users SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${paramCount} RETURNING *`, values);
+    return result.rows[0] || null;
+};
+/**
+ * Delete user (soft delete - set is_active to FALSE)
+ */
+export const deleteUser = async (id) => {
+    const db = getDatabase();
+    const result = await db.query('UPDATE users SET is_active = FALSE WHERE id = $1', [id]);
+    return (result.rowCount || 0) > 0;
+};
+/**
+ * Verify user password
+ */
+export const verifyPassword = async (email, password) => {
+    const user = await getUserByEmail(email);
+    if (!user) {
+        return null;
+    }
+    const isValid = bcrypt.compareSync(password, user.password_hash);
+    if (!isValid) {
+        return null;
+    }
+    return user;
+};
+/**
+ * Update user password
+ */
+export const updatePassword = async (id, newPassword) => {
+    const db = getDatabase();
+    const passwordHash = bcrypt.hashSync(newPassword, 10);
+    const result = await db.query(`UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`, [passwordHash, id]);
+    return (result.rowCount || 0) > 0;
+};
+/**
+ * Find user by name (searches both name and company fields)
+ * Excludes company records from users table
+ */
+export const findUserByName = async (name) => {
+    const db = getDatabase();
+    const result = await db.query(`SELECT * FROM users
+     WHERE (name ILIKE $1 OR company ILIKE $1)
+     AND is_active = TRUE
+     AND id NOT LIKE 'company-%'
+     LIMIT 1`, [name]);
+    return result.rows[0] || null;
+};
+/**
+ * Find load owner by name (company or name)
+ * Excludes company records from users table
+ */
+export const findLoadOwnerByName = async (name) => {
+    const db = getDatabase();
+    const result = await db.query(`SELECT * FROM users WHERE (name ILIKE $1 OR company ILIKE $1)
+     AND role = 'load_owner' AND is_active = TRUE AND id NOT LIKE 'company-%' LIMIT 1`, [name]);
+    return result.rows[0] || null;
+};
+/**
+ * Find transporter by name (company or name)
+ * Excludes company records from users table
+ */
+export const findTransporterByName = async (name) => {
+    const db = getDatabase();
+    const result = await db.query(`SELECT * FROM users WHERE (name ILIKE $1 OR company ILIKE $1)
+     AND role = 'vehicle_owner' AND is_active = TRUE AND id NOT LIKE 'company-%' LIMIT 1`, [name]);
+    return result.rows[0] || null;
+};
+/**
+ * Get pending user approval requests
+ * Optionally filter by company_id for company admins
+ */
+export const getPendingUserApprovals = async (companyId) => {
+    const db = getDatabase();
+    let query = `SELECT * FROM users WHERE approval_status = 'pending' AND is_active = TRUE`;
+    const values = [];
+    if (companyId) {
+        query += ` AND company_id = $1`;
+        values.push(companyId);
+    }
+    query += ` ORDER BY created_at DESC`;
+    const result = await db.query(query, values);
+    return result.rows;
+};
+/**
+ * Approve a user
+ */
+export const approveUser = async (userId, approvedBy) => {
+    const db = getDatabase();
+    const result = await db.query(`UPDATE users
+     SET approval_status = 'approved',
+         approved_by = $1,
+         approved_at = CURRENT_TIMESTAMP,
+         rejection_reason = NULL,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $2
+     RETURNING *`, [approvedBy, userId]);
+    return result.rows[0] || null;
+};
+/**
+ * Reject a user
+ */
+export const rejectUser = async (userId, rejectedBy, reason) => {
+    const db = getDatabase();
+    const result = await db.query(`UPDATE users
+     SET approval_status = 'rejected',
+         approved_by = $1,
+         approved_at = CURRENT_TIMESTAMP,
+         rejection_reason = $2,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $3
+     RETURNING *`, [rejectedBy, reason, userId]);
+    return result.rows[0] || null;
+};
+export default {
+    getUserById,
+    getUserByEmail,
+    getUserByUserId,
+    getUserByPhone,
+    getAllUsers,
+    getUsersByRole,
+    createUser,
+    updateUser,
+    deleteUser,
+    verifyPassword,
+    updatePassword,
+    getPendingUserApprovals,
+    approveUser,
+    rejectUser,
+};

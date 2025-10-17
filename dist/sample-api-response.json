@@ -1,0 +1,57 @@
+[
+  {
+    "origin": "Mumbai, Maharashtra",
+    "destination": "Delhi, NCR",
+    "distance": 1400,
+    "loadType": "Electronics",
+    "weight": 15000,
+    "amount": 50000,
+    "maturityDays": 30,
+    "riskLevel": "low",
+    "insuranceStatus": true
+  },
+  {
+    "origin": "Bangalore, Karnataka",
+    "destination": "Chennai, Tamil Nadu",
+    "distance": 350,
+    "loadType": "FMCG",
+    "weight": 12000,
+    "amount": 35000,
+    "maturityDays": 25,
+    "riskLevel": "low",
+    "insuranceStatus": true
+  },
+  {
+    "origin": "Pune, Maharashtra",
+    "destination": "Hyderabad, Telangana",
+    "distance": 560,
+    "loadType": "Machinery",
+    "weight": 20000,
+    "amount": 75000,
+    "maturityDays": 45,
+    "riskLevel": "medium",
+    "insuranceStatus": true
+  },
+  {
+    "origin": "Kolkata, West Bengal",
+    "destination": "Guwahati, Assam",
+    "distance": 1000,
+    "loadType": "Consumer Goods",
+    "weight": 18000,
+    "amount": 60000,
+    "maturityDays": 35,
+    "riskLevel": "low",
+    "insuranceStatus": true
+  },
+  {
+    "origin": "Ahmedabad, Gujarat",
+    "destination": "Jaipur, Rajasthan",
+    "distance": 650,
+    "loadType": "Textiles",
+    "weight": 14000,
+    "amount": 45000,
+    "maturityDays": 30,
+    "riskLevel": "low",
+    "insuranceStatus": true
+  }
+]

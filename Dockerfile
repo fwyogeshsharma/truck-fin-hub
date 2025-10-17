@@ -1,23 +1,4 @@
-# Multi-stage build for LogiFin Backend
-FROM node:20-alpine AS builder
-RUN mkdir /app
-# Set working directory
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install ALL dependencies (including dev dependencies for building)
-RUN npm ci && \
-    npm cache clean --force
-
-# Copy application source
-COPY . .
-
-# Build the application (frontend and backend)
-RUN npm run build
-
-# Production stage
+# Production image for LogiFin Backend
 FROM node:20-alpine
 
 # Install dumb-init for proper signal handling
@@ -33,13 +14,18 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install only production dependencies
-RUN npm ci --omit=dev && \
+# Install ALL dependencies (including tsx for running TypeScript)
+RUN npm ci && \
     npm cache clean --force
 
-# Copy built application from builder
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/src/db ./src/db
+# Copy TypeScript configuration
+COPY --chown=nodejs:nodejs tsconfig*.json ./
+COPY --chown=nodejs:nodejs server/tsconfig.json ./server/
+
+# Copy application source files
+COPY --chown=nodejs:nodejs server ./server
+COPY --chown=nodejs:nodejs scripts ./scripts
+COPY --chown=nodejs:nodejs src/db ./src/db
 
 # Copy startup script
 COPY --chown=nodejs:nodejs start.sh ./

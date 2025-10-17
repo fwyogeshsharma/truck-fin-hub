@@ -1,0 +1,4 @@
+Origin,Destination,Distance (km),Load Type,Weight (kg),Amount (₹),Maturity Days,Date
+"Mumbai, Maharashtra","Delhi, NCR",1400,Electronics,15000,50000,30,2025-10-06
+"Bangalore, Karnataka","Chennai, Tamil Nadu",350,FMCG,12000,35000,25,2025-10-07
+"Pune, Maharashtra","Hyderabad, Telangana",560,Machinery,20000,75000,45,2025-10-08

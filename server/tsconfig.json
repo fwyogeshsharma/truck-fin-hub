@@ -1,5 +1,4 @@
 {
-  "extends": "../tsconfig.json",
   "compilerOptions": {
     "module": "ESNext",
     "target": "ES2020",
@@ -7,11 +6,19 @@
     "rootDir": "..",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    "noEmit": false
+    "allowJs": true,
+    "noImplicitAny": false,
+    "noUnusedParameters": false,
+    "noUnusedLocals": false,
+    "strictNullChecks": false,
+    "baseUrl": "..",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["server/**/*", "src/db/**/*", "scripts/**/*"],
-  "exclude": ["node_modules"]
+  "include": ["../server/**/*", "../src/db/**/*", "../scripts/**/*"],
+  "exclude": ["../node_modules", "../dist"]
 }

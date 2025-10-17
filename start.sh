@@ -44,7 +44,7 @@ echo "✅ PostgreSQL is ready!"
 # Run database migrations
 echo ""
 echo "📦 Running database migrations..."
-node dist/scripts/run-migrations.js || {
+npx tsx scripts/run-migrations.ts || {
   echo "⚠️  Migration warnings detected, continuing..."
 }
 
@@ -59,4 +59,4 @@ echo "📍 Port: ${PORT:-3001}"
 echo "📍 Database: ${DB_NAME:-logifin}@${DB_HOST:-localhost}"
 echo ""
 
-exec node dist/server/index.js
+exec npx tsx server/index.ts
