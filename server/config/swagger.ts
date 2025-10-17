@@ -14,11 +14,11 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:3001',
+        url: 'http://localhost:3000',
         description: 'Development server',
       },
       {
-        url: 'http://34.31.185.19:3001',
+        url: 'http://34.31.185.19:3000',
         description: 'Production server',
       },
     ],

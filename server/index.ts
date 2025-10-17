@@ -17,7 +17,7 @@ import notificationRoutes from './routes/notifications.ts';
 import migrationRoutes from './routes/migrations.ts';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // CORS configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -26,6 +26,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
       'http://localhost:8080',
       'http://localhost:3000',
       'http://34.31.185.19',
+      'http://34.31.185.19:3000',
       'http://34.31.185.19:8080',
       'https://*.netlify.app'
     ];
@@ -101,6 +102,7 @@ app.use((err: Error, req: Request, res: Response, next: Function) => {
 app.listen(PORT, () => {
   console.log(`\n🚀 Server is running on port ${PORT}`);
   console.log(`📍 API endpoint: http://localhost:${PORT}/api`);
+  console.log(`📍 Production: http://34.31.185.19:${PORT}/api`);
   console.log(`🗄️  Database initialized successfully\n`);
 });
 
