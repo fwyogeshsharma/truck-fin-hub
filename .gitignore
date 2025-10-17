@@ -12,6 +12,25 @@ dist
 dist-ssr
 *.local
 
+# Environment files (keep example files)
+.env
+.env.local
+.env.production
+.env.development
+!.env.example
+!.env.production.example
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+data/
+backups/
+postgres_data/
+
+# Docker
+docker-compose.override.yml
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
