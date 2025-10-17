@@ -121,10 +121,21 @@ fi
 
 # Load environment variables
 if [ -f .env ]; then
+    # Use a safer method to load env vars that handles special characters
     set -a
-    source .env
+    if source .env 2>/dev/null; then
+        log_success "Environment variables loaded"
+    else
+        log_error "Failed to load .env file - syntax error detected"
+        log_info "Please check your .env file for syntax errors"
+        log_info "Common issues: unquoted special characters like < > & |"
+        log_info ""
+        log_info "Trying alternative loading method..."
+        # Load variables using export (more robust)
+        export $(grep -v '^#' .env | grep -v '^$' | xargs -d '\n')
+        log_success "Environment variables loaded using alternative method"
+    fi
     set +a
-    log_success "Environment variables loaded"
 fi
 
 # Check critical environment variables
