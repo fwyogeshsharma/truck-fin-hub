@@ -1,6 +1,6 @@
 # Multi-stage build for LogiFin Backend
 FROM node:20-alpine AS builder
-RUN MKDIR /app
+RUN mkdir /app
 # Set working directory
 WORKDIR /app
 
