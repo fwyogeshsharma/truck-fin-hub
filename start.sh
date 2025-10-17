@@ -55,8 +55,11 @@ echo "✅ Database migrations completed!"
 echo ""
 echo "🚀 Starting API server..."
 echo "📍 Environment: ${NODE_ENV:-production}"
-echo "📍 Port: ${PORT:-3001}"
+echo "📍 Port: ${PORT:-4000}"
 echo "📍 Database: ${DB_NAME:-logifin}@${DB_HOST:-localhost}"
 echo ""
+
+# Ensure PORT is set
+export PORT=${PORT:-4000}
 
 exec npx tsx server/index.ts
