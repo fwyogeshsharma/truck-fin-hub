@@ -25,9 +25,9 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   : [
       'http://localhost:8080',
       'http://localhost:4000',
-      'http://34.31.185.19',
-      'http://34.31.185.19:4000',
-      'http://34.31.185.19:8080',
+      'http://34.93.247.3',
+      'http://34.93.247.3:4000',
+      'http://34.93.247.3:8080',
       'https://*.netlify.app'
     ];
 
@@ -102,7 +102,7 @@ app.use((err: Error, req: Request, res: Response, next: Function) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🚀 Server is running on port ${PORT}`);
   console.log(`📍 API endpoint: http://localhost:${PORT}/api`);
-  console.log(`📍 Production: http://34.31.185.19:${PORT}/api`);
+  console.log(`📍 Production: http://34.93.247.3:${PORT}/api`);
   console.log(`🗄️  Database initialized successfully\n`);
 });
 
