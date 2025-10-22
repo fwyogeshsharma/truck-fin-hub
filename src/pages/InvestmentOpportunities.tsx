@@ -247,9 +247,8 @@ const InvestmentOpportunities = () => {
   const totalExpectedReturn = selectedTripsData.reduce((sum, trip) => {
     const rate = tripInterestRates[trip.id] || trip.interestRate || 12;
     const maturityDays = trip.maturityDays || 30;
-    const yearlyRate = (rate * 365) / maturityDays;
-    const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.3);
-    return sum + (trip.amount * (adjustedYearlyRate / 100));
+    // rate is ARR, calculate return for maturity period
+    return sum + (trip.amount * (rate / 365) * maturityDays / 100);
   }, 0);
 
   // Calculate average interest rate (raw rate) from selected trips
@@ -266,10 +265,8 @@ const InvestmentOpportunities = () => {
         const trip = trips.find(t => t.id === tripId);
         if (!trip) return sum;
         const rate = tripInterestRates[tripId] || trip?.interestRate || 12;
-        const maturityDays = trip.maturityDays || 30;
-        const yearlyRate = (rate * 365) / maturityDays;
-        const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.3);
-        return sum + adjustedYearlyRate;
+        // rate is already ARR, no conversion needed
+        return sum + rate;
       }, 0) / selectedTrips.length
     : 0;
 
@@ -370,10 +367,9 @@ const InvestmentOpportunities = () => {
     }
 
     const maturityDays = trip.maturityDays || 30;
-    //const yearlyRate = (interestRate * 365) / maturityDays;
-    const yearlyRate = interestRate;
-    const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.3);
-    const expectedReturn = investmentAmount * (adjustedYearlyRate / 100);
+    // interestRate is already the Annual Rate of Return (ARR)
+    // Calculate return for the maturity period: (ARR / 365) * days
+    const expectedReturn = investmentAmount * (interestRate / 365) * maturityDays / 100;
 
     try {
       // Move amount to escrow
@@ -498,9 +494,8 @@ const InvestmentOpportunities = () => {
         const investmentAmount = trip.amount;
         const tripRate = tripInterestRates[tripId] || trip.interestRate || 12; // Use individual trip rate
         const maturityDays = trip.maturityDays || 30;
-        const yearlyRate = (tripRate * 365) / maturityDays;
-        const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.3);
-        const expectedReturn = investmentAmount * (adjustedYearlyRate / 100);
+        // tripRate is ARR, calculate return for maturity period
+        const expectedReturn = investmentAmount * (tripRate / 365) * maturityDays / 100;
 
         // Create investment
         await data.createInvestment({
@@ -665,17 +660,13 @@ const InvestmentOpportunities = () => {
                     {selectedTripsData.map((trip) => {
                       const tripRate = tripInterestRates[trip.id] || trip.interestRate || 12;
                       const maturityDays = trip.maturityDays || 30;
-                      const yearlyRate = (tripRate * 365) / maturityDays;
-                      const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.3);
-                      const tripReturn = trip.amount * (adjustedYearlyRate / 100);
+                      // tripRate is ARR, calculate return for maturity period
+                      const tripReturn = trip.amount * (tripRate / 365) * maturityDays / 100;
 
-                      // Handler to convert slider yearly rate back to monthly rate for storage
+                      // Handler to update ARR directly
                       const handleYearlyRateChange = (yearlyARR: number) => {
-                        // Convert yearly ARR back to monthly rate
-                        // yearlyARR = (monthlyRate * 365 / maturityDays) * 0.7
-                        // monthlyRate = yearlyARR / 0.7 * maturityDays / 365
-                        const monthlyRate = (yearlyARR / 0.7) * (maturityDays / 365);
-                        updateTripInterestRate(trip.id, monthlyRate);
+                        // yearlyARR is already the ARR, store it directly
+                        updateTripInterestRate(trip.id, yearlyARR);
                       };
 
                       return (
@@ -716,7 +707,7 @@ const InvestmentOpportunities = () => {
                                   <input
                                     id={`rate-${trip.id}`}
                                     type="range"
-                                    value={adjustedYearlyRate}
+                                    value={tripRate}
                                     onChange={(e) => handleYearlyRateChange(parseFloat(e.target.value))}
                                     min="0"
                                     max="100"
@@ -734,7 +725,7 @@ const InvestmentOpportunities = () => {
                             {/* ARR % Display - Compact */}
                             <div className="w-16 flex-shrink-0 text-center">
                               <p className="text-xs text-muted-foreground">ARR %</p>
-                              <p className="font-bold text-sm text-primary">{adjustedYearlyRate.toFixed(1)}%</p>
+                              <p className="font-bold text-sm text-primary">{tripRate.toFixed(1)}%</p>
                             </div>
 
                             {/* ARR Amount - Compact */}
@@ -810,9 +801,9 @@ const InvestmentOpportunities = () => {
             paginatedTrips.map((trip) => {
               const isMultiSelected = selectedTrips.includes(trip.id);
               const tripRate = tripInterestRates[trip.id] || trip.interestRate || 12;
-              const yearlyRate = (tripRate * 365) / (trip.maturityDays || 30);
-              const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.3);
-              const expectedReturn = trip.amount * (adjustedYearlyRate / 100);
+              const maturityDays = trip.maturityDays || 30;
+              // tripRate is ARR, calculate return for maturity period
+              const expectedReturn = trip.amount * (tripRate / 365) * maturityDays / 100;
 
               return (
                 <Card key={trip.id} className={`p-2 sm:p-2.5 ${isMultiSelected ? 'ring-2 ring-primary' : ''}`}>
@@ -1211,9 +1202,8 @@ const InvestmentOpportunities = () => {
               const isSelected = selectedTrip === trip.id;
               const daysToMaturity = trip.maturityDays || 30;
               const tripRate = tripInterestRates[trip.id] || trip.interestRate || 12;
-              const yearlyRate = (tripRate * 365) / daysToMaturity;
-              const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.3);
-              const expectedReturn = trip.amount * (adjustedYearlyRate / 100);
+              // tripRate is ARR, calculate return for maturity period
+              const expectedReturn = trip.amount * (tripRate / 365) * daysToMaturity / 100;
 
               const isMultiSelected = selectedTrips.includes(trip.id);
 
