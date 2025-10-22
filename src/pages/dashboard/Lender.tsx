@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, TrendingUp, Package, IndianRupee, Lock, ArrowUpRight, ArrowDownRight, Sparkles, Brain, RefreshCw } from "lucide-react";
+import { Wallet, TrendingUp, Package, IndianRupee, Lock, ArrowUpRight, ArrowDownRight, Sparkles, Brain, RefreshCw, Clock, CheckCircle2, UserCheck, UserX } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data, type Trip, type Investment, type Wallet as WalletType } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { formatCurrency, formatCurrencyCompact } from "@/lib/currency";
 import { getChartColors, getChartColorPalette } from "@/lib/chartColors";
+import { apiClient } from '@/api/client';
 
 const LenderDashboard = () => {
   const { toast } = useToast();
@@ -28,6 +29,8 @@ const LenderDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [chartColors, setChartColors] = useState(getChartColors());
   const [colorPalette, setColorPalette] = useState(getChartColorPalette());
+  const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
+  const [approvingUserId, setApprovingUserId] = useState<string | null>(null);
 
   // Update chart colors when theme changes
   useEffect(() => {
@@ -52,6 +55,24 @@ const LenderDashboard = () => {
     return () => observer.disconnect();
   }, []);
 
+  const fetchPendingApprovals = async () => {
+    if (!user?.is_admin) return; // Only fetch if user is admin
+
+    try {
+      const isCompanyAdmin = user?.is_admin === true && user?.company_id;
+      const companyId = isCompanyAdmin ? user.company_id : undefined;
+
+      const url = companyId
+        ? `/users/pending-approvals?companyId=${companyId}`
+        : '/users/pending-approvals';
+
+      const pendingUsers = await apiClient.get(url);
+      setPendingApprovals(pendingUsers);
+    } catch (error) {
+      console.error('Failed to fetch pending approvals:', error);
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       if (!user?.id) {
@@ -70,6 +91,11 @@ const LenderDashboard = () => {
         setTrips(tripsData);
         setMyInvestments(investmentsData.filter(i => i.lenderId === user.id));
         setWallet(walletData);
+
+        // Fetch pending approvals if user is admin
+        if (user?.is_admin) {
+          await fetchPendingApprovals();
+        }
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
       } finally {
@@ -85,6 +111,57 @@ const LenderDashboard = () => {
       title: 'Refreshed!',
       description: 'Investment data has been updated',
     });
+  };
+
+  const handleApprove = async (userId: string) => {
+    if (!user?.id) return;
+
+    setApprovingUserId(userId);
+    try {
+      await apiClient.put(`/users/${userId}/approve`, { approvedBy: user.id });
+
+      toast({
+        title: "User Approved",
+        description: "The user has been approved and can now log in.",
+      });
+      await fetchPendingApprovals();
+    } catch (error) {
+      console.error('Failed to approve user:', error);
+      toast({
+        variant: "destructive",
+        title: "Approval Failed",
+        description: "Failed to approve user. Please try again.",
+      });
+    } finally {
+      setApprovingUserId(null);
+    }
+  };
+
+  const handleReject = async (userId: string) => {
+    if (!user?.id) return;
+
+    const reason = prompt('Please provide a reason for rejection:');
+    if (!reason) return;
+
+    setApprovingUserId(userId);
+    try {
+      await apiClient.put(`/users/${userId}/reject`, { rejectedBy: user.id, reason });
+
+      toast({
+        title: "User Rejected",
+        description: "The user request has been rejected.",
+      });
+      await fetchPendingApprovals();
+    } catch (error) {
+      console.error('Failed to reject user:', error);
+      toast({
+        variant: "destructive",
+        title: "Rejection Failed",
+        description: "Failed to reject user. Please try again.",
+      });
+    } finally {
+      setApprovingUserId(null);
+    }
   };
 
   // User-specific investment growth data - only show if user has investments
@@ -274,7 +351,7 @@ const LenderDashboard = () => {
 
         {/* Grant Access - Pending Approvals (Only for Admin users) */}
         {user?.is_admin && (
-          <Card className={pendingApprovals.length > 0 ? "border-yellow-200 dark:border-yellow-800 bg-yellow-50/50 dark:bg-yellow-950/20" : ""}>
+          <Card className={pendingApprovals && pendingApprovals.length > 0 ? "border-yellow-200 dark:border-yellow-800 bg-yellow-50/50 dark:bg-yellow-950/20" : ""}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-yellow-600" />
@@ -287,7 +364,7 @@ const LenderDashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {pendingApprovals.length === 0 ? (
+              {!pendingApprovals || pendingApprovals.length === 0 ? (
                 <div className="text-center py-8 px-4 border rounded-lg bg-muted/50">
                   <CheckCircle2 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm font-medium text-muted-foreground mb-1">

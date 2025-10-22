@@ -142,6 +142,20 @@ docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "\d users" 2>/
 
 echo ""
 
+# Fix admin approval status
+echo "🔧 Fixing admin approval status..."
+docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "
+UPDATE users
+SET
+  approval_status = 'approved',
+  approved_at = COALESCE(approved_at, CURRENT_TIMESTAMP),
+  approved_by = COALESCE(approved_by, 'system')
+WHERE is_admin = TRUE
+  AND (approval_status != 'approved' OR approval_status IS NULL);
+" 2>/dev/null && echo "   ✅ Admin users approved" || echo "   ⚠️  Could not update admin approval status"
+
+echo ""
+
 # Show table counts
 echo "📈 Record Counts:"
 docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -t -c "
@@ -154,6 +168,22 @@ UNION ALL
 SELECT
   'Trips: ' || COUNT(*) FROM trips;
 " 2>/dev/null || echo "   Unable to fetch counts"
+
+echo ""
+
+# Show admin users status
+echo "👥 Admin Users Status:"
+docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "
+SELECT
+  name,
+  email,
+  is_admin,
+  approval_status,
+  company
+FROM users
+WHERE is_admin = TRUE
+ORDER BY created_at DESC;
+" 2>/dev/null || echo "   Unable to fetch admin users"
 
 echo ""
 echo "🎉 All done! Database is ready."
