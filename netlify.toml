@@ -10,7 +10,7 @@
   # Environment variables for build
   [build.environment]
     NODE_VERSION = "20"
-    VITE_API_URL = "http://34.93.247.3:4000/api"
+    VITE_API_URL = "https://34.93.247.3/api"
 
 # SPA redirect rules - send all routes to index.html
 [[redirects]]
@@ -21,14 +21,14 @@
 # Production environment specific settings
 [context.production]
   [context.production.environment]
-    VITE_API_URL = "http://34.93.247.3:4000/api"
+    VITE_API_URL = "https://34.93.247.3/api"
 
 # Deploy preview environment (for pull requests)
 [context.deploy-preview]
   [context.deploy-preview.environment]
-    VITE_API_URL = "http://34.93.247.3:4000/api"
+    VITE_API_URL = "https://34.93.247.3/api"
 
 # Branch deploy environment
 [context.branch-deploy]
   [context.branch-deploy.environment]
-    VITE_API_URL = "http://34.93.247.3:4000/api"
+    VITE_API_URL = "https://34.93.247.3/api"
