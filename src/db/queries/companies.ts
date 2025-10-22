@@ -6,7 +6,6 @@ export interface Company {
   display_name: string;
   logo?: string;
   description?: string;
-  industry?: string;
   website?: string;
   email?: string;
   phone?: string;
@@ -33,7 +32,6 @@ export interface CreateCompanyInput {
   display_name: string;
   logo?: string;
   description?: string;
-  industry?: string;
   website?: string;
   email?: string;
   phone?: string;
@@ -112,33 +110,32 @@ export async function createCompany(data: CreateCompanyInput): Promise<Company> 
     }
   }
 
+  // Generate company ID if not provided
+  const companyId = data.id || `company_${Date.now()}`;
+
+  // Combine address fields into single address field if provided
+  const address = data.address_line1
+    ? [data.address_line1, data.address_line2, data.city, data.state, data.pincode, data.country]
+        .filter(Boolean)
+        .join(', ')
+    : '';
+
   const db = getDatabase();
   const result = await db.query(
     `INSERT INTO companies (
-      id, name, display_name, logo, description, industry, website,
-      email, phone, address_line1, address_line2, city, state, pincode,
-      country, gst_number, pan_number, company_registration_number
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      id, name, display_name, logo, description, email, phone, address, gst_number, is_active
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE)
     RETURNING *`,
     [
-      data.id,
+      companyId,
       data.name,
       data.display_name,
-      data.logo,
-      data.description,
-      data.industry,
-      data.website,
-      data.email,
-      data.phone,
-      data.address_line1,
-      data.address_line2,
-      data.city,
-      data.state,
-      data.pincode,
-      data.country || 'India',
-      data.gst_number,
-      data.pan_number,
-      data.company_registration_number,
+      data.logo || null,
+      data.description || null,
+      data.email || '',
+      data.phone || '',
+      address || '',
+      data.gst_number || null,
     ]
   );
 
