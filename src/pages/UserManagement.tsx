@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { auth } from "@/lib/auth";
+import { apiClient } from "@/api/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -65,28 +66,22 @@ const UserManagement = () => {
       });
 
       const url = companyId
-        ? `/api/users/pending-approvals?companyId=${companyId}`
-        : '/api/users/pending-approvals';
+        ? `/users/pending-approvals?companyId=${companyId}`
+        : '/users/pending-approvals';
 
       console.log('📡 [UserManagement] Fetching from:', url);
 
-      const response = await fetch(url);
-      if (response.ok) {
-        const pendingUsers = await response.json();
-        console.log('✅ [UserManagement] Fetched pending approvals:', {
-          count: pendingUsers.length,
-          users: pendingUsers.map((u: any) => ({
-            name: u.name,
-            company: u.company,
-            company_id: u.company_id,
-            approval_status: u.approval_status
-          }))
-        });
-        setPendingApprovals(pendingUsers);
-      } else {
-        const errorText = await response.text();
-        console.error('❌ [UserManagement] API error:', response.status, errorText);
-      }
+      const pendingUsers = await apiClient.get(url);
+      console.log('✅ [UserManagement] Fetched pending approvals:', {
+        count: pendingUsers.length,
+        users: pendingUsers.map((u: any) => ({
+          name: u.name,
+          company: u.company,
+          company_id: u.company_id,
+          approval_status: u.approval_status
+        }))
+      });
+      setPendingApprovals(pendingUsers);
     } catch (error) {
       console.error('❌ [UserManagement] Failed to fetch pending approvals:', error);
     }
@@ -129,21 +124,13 @@ const UserManagement = () => {
 
     setApprovingUserId(userId);
     try {
-      const response = await fetch(`/api/users/${userId}/approve`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approvedBy: user.id }),
-      });
+      await apiClient.put(`/users/${userId}/approve`, { approvedBy: user.id });
 
-      if (response.ok) {
-        toast({
-          title: "User Approved",
-          description: "The user has been approved and can now log in.",
-        });
-        await fetchPendingApprovals();
-      } else {
-        throw new Error('Failed to approve user');
-      }
+      toast({
+        title: "User Approved",
+        description: "The user has been approved and can now log in.",
+      });
+      await fetchPendingApprovals();
     } catch (error) {
       console.error('Failed to approve user:', error);
       toast({
@@ -164,21 +151,13 @@ const UserManagement = () => {
 
     setApprovingUserId(userId);
     try {
-      const response = await fetch(`/api/users/${userId}/reject`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rejectedBy: user.id, reason }),
-      });
+      await apiClient.put(`/users/${userId}/reject`, { rejectedBy: user.id, reason });
 
-      if (response.ok) {
-        toast({
-          title: "User Rejected",
-          description: "The user request has been rejected.",
-        });
-        await fetchPendingApprovals();
-      } else {
-        throw new Error('Failed to reject user');
-      }
+      toast({
+        title: "User Rejected",
+        description: "The user request has been rejected.",
+      });
+      await fetchPendingApprovals();
     } catch (error) {
       console.error('Failed to reject user:', error);
       toast({

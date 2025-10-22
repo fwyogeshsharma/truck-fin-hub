@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { auth } from '@/lib/auth';
 import { data } from '@/lib/data';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -184,20 +185,12 @@ const WalletPage = () => {
 
     try {
       // Create transaction request
-      const response = await fetch('/api/transaction-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: user.id,
-          request_type: 'add_money',
-          amount,
-          transaction_image_url: transactionImage,
-        }),
+      await apiClient.post('/transaction-requests', {
+        user_id: user.id,
+        request_type: 'add_money',
+        amount,
+        transaction_image_url: transactionImage,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to create transaction request');
-      }
 
       toast({
         title: 'Request Submitted!',
@@ -267,23 +260,15 @@ const WalletPage = () => {
 
     try {
       // Create withdrawal request
-      const response = await fetch('/api/transaction-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: user.id,
-          request_type: 'withdrawal',
-          amount,
-          bank_account_id: selectedBank?.id,
-          bank_account_number: selectedBank?.accountNumber,
-          bank_ifsc_code: selectedBank?.ifscCode,
-          bank_name: selectedBank?.bankName,
-        }),
+      await apiClient.post('/transaction-requests', {
+        user_id: user.id,
+        request_type: 'withdrawal',
+        amount,
+        bank_account_id: selectedBank?.id,
+        bank_account_number: selectedBank?.accountNumber,
+        bank_ifsc_code: selectedBank?.ifscCode,
+        bank_name: selectedBank?.bankName,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to create withdrawal request');
-      }
 
       toast({
         title: 'Request Submitted!',

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { auth } from "@/lib/auth";
+import { apiClient } from "@/api/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -109,13 +110,7 @@ const Users = () => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/users');
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch users');
-        }
-
-        const users = await response.json();
+        const users = await apiClient.get('/users');
         setAllUsers(users);
         setFilteredUsers(users);
       } catch (error) {
@@ -212,13 +207,7 @@ const Users = () => {
   const handleRefreshUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/users');
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
-      }
-
-      const users = await response.json();
+      const users = await apiClient.get('/users');
       setAllUsers(users);
 
       toast({
@@ -240,13 +229,7 @@ const Users = () => {
   const fetchCompanies = async () => {
     try {
       setLoadingCompanies(true);
-      const response = await fetch('/api/companies?active=true');
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch companies');
-      }
-
-      const companiesData = await response.json();
+      const companiesData = await apiClient.get('/companies?active=true');
       setCompanies(companiesData);
     } catch (error) {
       console.error('Error fetching companies:', error);
@@ -284,23 +267,10 @@ const Users = () => {
       // Generate ID from company name
       const companyId = newCompany.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
-      const response = await fetch('/api/companies', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...newCompany,
-          id: companyId,
-        }),
+      const createdCompany = await apiClient.post('/companies', {
+        ...newCompany,
+        id: companyId,
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create company');
-      }
-
-      const createdCompany = await response.json();
 
       toast({
         title: 'Success!',
@@ -352,26 +322,13 @@ const Users = () => {
 
     try {
       // Call API to update user role
-      const response = await fetch(`/api/users/${selectedUser.id}/make-admin`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          company_id: selectedCompany,
-        }),
+      await apiClient.put(`/users/${selectedUser.id}/make-admin`, {
+        company_id: selectedCompany,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to update user role');
-      }
-
       // Refresh users from database
-      const usersResponse = await fetch('/api/users');
-      if (usersResponse.ok) {
-        const users = await usersResponse.json();
-        setAllUsers(users);
-      }
+      const users = await apiClient.get('/users');
+      setAllUsers(users);
 
       const selectedCompanyData = companies.find(c => c.id === selectedCompany);
 
@@ -397,23 +354,11 @@ const Users = () => {
   const handleRemoveAdmin = async (userToRemove: any) => {
     try {
       // Call API to remove admin privileges
-      const response = await fetch(`/api/users/${userToRemove.id}/remove-admin`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to remove admin privileges');
-      }
+      await apiClient.put(`/users/${userToRemove.id}/remove-admin`);
 
       // Refresh users from database
-      const usersResponse = await fetch('/api/users');
-      if (usersResponse.ok) {
-        const users = await usersResponse.json();
-        setAllUsers(users);
-      }
+      const users = await apiClient.get('/users');
+      setAllUsers(users);
 
       toast({
         title: 'Success!',

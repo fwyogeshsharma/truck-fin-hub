@@ -32,7 +32,8 @@
       "Bash(docker compose:*)",
       "Bash(npm run build:server:*)",
       "Bash(test:*)",
-      "Bash(powershell -Command:*)"
+      "Bash(powershell -Command:*)",
+      "Bash(Select-String -Pattern \"start|dev|server\")"
     ],
     "deny": [],
     "ask": []

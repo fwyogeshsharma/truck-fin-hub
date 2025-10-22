@@ -33,6 +33,7 @@ import { useNavigate } from "react-router-dom";
 import { formatCurrency, formatCurrencyCompact, formatPercentage } from "@/lib/currency";
 import AdvancedFilter, { type FilterConfig } from "@/components/AdvancedFilter";
 import { getCompanyInfo } from "@/data/companyInfo";
+import { apiClient } from '@/api/client';
 
 const InvestmentOpportunities = () => {
   const { toast } = useToast();
@@ -317,20 +318,12 @@ const InvestmentOpportunities = () => {
 
     try {
       // Create transaction request
-      const response = await fetch('/api/transaction-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: user.id,
-          request_type: 'add_money',
-          amount,
-          transaction_image_url: transactionImage,
-        }),
+      await apiClient.post('/transaction-requests', {
+        user_id: user.id,
+        request_type: 'add_money',
+        amount,
+        transaction_image_url: transactionImage,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to create transaction request');
-      }
 
       toast({
         title: 'Request Submitted!',

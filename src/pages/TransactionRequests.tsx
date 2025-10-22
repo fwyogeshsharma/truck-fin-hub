@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { auth } from '@/lib/auth';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -90,11 +91,8 @@ const TransactionRequestsPage = () => {
     try {
       setLoading(true);
       const statusParam = activeTab === 'all' ? '' : `?status=${activeTab}`;
-      const response = await fetch(`/api/transaction-requests${statusParam}`);
-      if (response.ok) {
-        const data = await response.json();
-        setRequests(data);
-      }
+      const data = await apiClient.get(`/transaction-requests${statusParam}`);
+      setRequests(data);
     } catch (error) {
       console.error('Error fetching requests:', error);
       toast({
@@ -128,23 +126,12 @@ const TransactionRequestsPage = () => {
     }
 
     try {
-      const response = await fetch(`/api/transaction-requests/${selectedRequest.id}/process`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: processingAction,
-          processed_by: user?.id,
-          transaction_id: transactionId || undefined,
-          admin_notes: adminNotes || undefined,
-        }),
+      const result = await apiClient.put(`/transaction-requests/${selectedRequest.id}/process`, {
+        status: processingAction,
+        processed_by: user?.id,
+        transaction_id: transactionId || undefined,
+        admin_notes: adminNotes || undefined,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || errorData.error || 'Failed to process request');
-      }
-
-      const result = await response.json();
 
       toast({
         title: 'Success',

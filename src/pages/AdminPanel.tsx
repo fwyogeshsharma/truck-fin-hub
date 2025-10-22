@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { auth } from "@/lib/auth";
+import { apiClient } from "@/api/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,11 +54,8 @@ const AdminPanel = () => {
       }
 
       try {
-        const response = await fetch(`/api/companies/${user.company_id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setCompanyData(data);
-        }
+        const data = await apiClient.get(`/companies/${user.company_id}`);
+        setCompanyData(data);
       } catch (error) {
         console.error('Error fetching company data:', error);
       }

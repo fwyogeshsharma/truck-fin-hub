@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { apiClient } from '@/api/client';
 
 const NotificationSettings = () => {
   const { toast } = useToast();
@@ -43,13 +44,7 @@ const NotificationSettings = () => {
       emailConfigService.saveConfig(config);
 
       // Initialize email service on backend
-      const response = await fetch('/api/notifications/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
-      });
-
-      const data = await response.json();
+      const data = await apiClient.post('/notifications/config', config);
 
       if (data.success && data.verified) {
         toast({
@@ -98,20 +93,10 @@ const NotificationSettings = () => {
       emailConfigService.saveConfig(config);
 
       // Initialize email service
-      await fetch('/api/notifications/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
-      });
+      await apiClient.post('/notifications/config', config);
 
       // Send test email
-      const response = await fetch('/api/notifications/test-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: user.email }),
-      });
-
-      const data = await response.json();
+      const data = await apiClient.post('/notifications/test-email', { to: user.email });
 
       if (data.success) {
         toast({

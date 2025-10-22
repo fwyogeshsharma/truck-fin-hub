@@ -7,6 +7,7 @@ import { data, Trip, Investment } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { apiClient } from '@/api/client';
 
 const AdminDashboard = () => {
   const user = auth.getCurrentUser();
@@ -41,26 +42,21 @@ const AdminDashboard = () => {
       });
 
       const url = companyId
-        ? `/api/users/pending-approvals?companyId=${companyId}`
-        : '/api/users/pending-approvals';
+        ? `/users/pending-approvals?companyId=${companyId}`
+        : '/users/pending-approvals';
 
       console.log('📡 Fetching pending approvals from:', url);
 
-      const response = await fetch(url);
-      if (response.ok) {
-        const pendingUsers = await response.json();
-        console.log('✅ Fetched pending approvals:', {
-          count: pendingUsers.length,
-          users: pendingUsers.map((u: any) => ({
-            name: u.name,
-            company: u.company,
-            company_id: u.company_id
-          }))
-        });
-        setPendingApprovals(pendingUsers);
-      } else {
-        console.error('❌ Failed to fetch pending approvals, status:', response.status);
-      }
+      const pendingUsers = await apiClient.get(url);
+      console.log('✅ Fetched pending approvals:', {
+        count: pendingUsers.length,
+        users: pendingUsers.map((u: any) => ({
+          name: u.name,
+          company: u.company,
+          company_id: u.company_id
+        }))
+      });
+      setPendingApprovals(pendingUsers);
     } catch (error) {
       console.error('❌ Failed to fetch pending approvals:', error);
     }
@@ -96,22 +92,14 @@ const AdminDashboard = () => {
 
     setApprovingUserId(userId);
     try {
-      const response = await fetch(`/api/users/${userId}/approve`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approvedBy: user.id }),
-      });
+      await apiClient.put(`/users/${userId}/approve`, { approvedBy: user.id });
 
-      if (response.ok) {
-        toast({
-          title: "User Approved",
-          description: "The shipper has been approved and can now log in.",
-        });
-        // Refresh pending approvals
-        await fetchPendingApprovals();
-      } else {
-        throw new Error('Failed to approve user');
-      }
+      toast({
+        title: "User Approved",
+        description: "The shipper has been approved and can now log in.",
+      });
+      // Refresh pending approvals
+      await fetchPendingApprovals();
     } catch (error) {
       console.error('Failed to approve user:', error);
       toast({
@@ -132,22 +120,14 @@ const AdminDashboard = () => {
 
     setApprovingUserId(userId);
     try {
-      const response = await fetch(`/api/users/${userId}/reject`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rejectedBy: user.id, reason }),
-      });
+      await apiClient.put(`/users/${userId}/reject`, { rejectedBy: user.id, reason });
 
-      if (response.ok) {
-        toast({
-          title: "User Rejected",
-          description: "The shipper request has been rejected.",
-        });
-        // Refresh pending approvals
-        await fetchPendingApprovals();
-      } else {
-        throw new Error('Failed to reject user');
-      }
+      toast({
+        title: "User Rejected",
+        description: "The shipper request has been rejected.",
+      });
+      // Refresh pending approvals
+      await fetchPendingApprovals();
     } catch (error) {
       console.error('Failed to reject user:', error);
       toast({

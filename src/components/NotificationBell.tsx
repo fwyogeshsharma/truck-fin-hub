@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { apiClient } from '@/api/client';
 import {
   Popover,
   PopoverContent,
@@ -24,34 +25,27 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
   const loadNotifications = async () => {
     try {
       // Fetch notifications from API
-      const [notifsResponse, countResponse] = await Promise.all([
-        fetch(`/api/notifications/${userId}?limit=20`),
-        fetch(`/api/notifications/${userId}/unread-count`)
+      const [dbNotifs, countData] = await Promise.all([
+        apiClient.get(`/notifications/${userId}?limit=20`),
+        apiClient.get(`/notifications/${userId}/unread-count`)
       ]);
 
-      if (notifsResponse.ok) {
-        const dbNotifs = await notifsResponse.json();
-        // Convert database format to client format
-        const clientNotifs = dbNotifs.map((n: any) => ({
-          id: n.id,
-          userId: n.user_id || n.userId,
-          type: n.type || 'info',
-          title: n.title || 'Notification',
-          message: n.message || '',
-          priority: n.priority || 'medium',
-          read: n.read === 1 || n.read === true,
-          actionUrl: n.action_url || n.actionUrl || n.link,
-          metadata: n.metadata || undefined,
-          createdAt: n.created_at || n.createdAt,
-          readAt: n.read_at || n.readAt,
-        }));
-        setNotifications(clientNotifs);
-      }
-
-      if (countResponse.ok) {
-        const countData = await countResponse.json();
-        setUnreadCount(countData.count);
-      }
+      // Convert database format to client format
+      const clientNotifs = dbNotifs.map((n: any) => ({
+        id: n.id,
+        userId: n.user_id || n.userId,
+        type: n.type || 'info',
+        title: n.title || 'Notification',
+        message: n.message || '',
+        priority: n.priority || 'medium',
+        read: n.read === 1 || n.read === true,
+        actionUrl: n.action_url || n.actionUrl || n.link,
+        metadata: n.metadata || undefined,
+        createdAt: n.created_at || n.createdAt,
+        readAt: n.read_at || n.readAt,
+      }));
+      setNotifications(clientNotifs);
+      setUnreadCount(countData.count);
     } catch (error) {
       console.error('Failed to load notifications:', error);
     }
@@ -81,7 +75,7 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
   const handleMarkAsRead = async (notificationId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await fetch(`/api/notifications/${userId}/${notificationId}/read`, { method: 'PUT' });
+      await apiClient.put(`/notifications/${userId}/${notificationId}/read`);
       loadNotifications();
     } catch (error) {
       console.error('Failed to mark as read:', error);
@@ -90,7 +84,7 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await fetch(`/api/notifications/${userId}/read-all`, { method: 'PUT' });
+      await apiClient.put(`/notifications/${userId}/read-all`);
       loadNotifications();
     } catch (error) {
       console.error('Failed to mark all as read:', error);
@@ -100,7 +94,7 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
   const handleDelete = async (notificationId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await fetch(`/api/notifications/${userId}/${notificationId}`, { method: 'DELETE' });
+      await apiClient.delete(`/notifications/${userId}/${notificationId}`);
       loadNotifications();
     } catch (error) {
       console.error('Failed to delete notification:', error);
@@ -110,7 +104,7 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.read) {
       try {
-        await fetch(`/api/notifications/${userId}/${notification.id}/read`, { method: 'PUT' });
+        await apiClient.put(`/notifications/${userId}/${notification.id}/read`);
         loadNotifications();
       } catch (error) {
         console.error('Failed to mark as read:', error);
@@ -271,7 +265,7 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
               className="w-full"
               onClick={async () => {
                 try {
-                  await fetch(`/api/notifications/${userId}`, { method: 'DELETE' });
+                  await apiClient.delete(`/notifications/${userId}`);
                   loadNotifications();
                 } catch (error) {
                   console.error('Failed to clear notifications:', error);

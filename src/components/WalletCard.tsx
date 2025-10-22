@@ -15,6 +15,7 @@ import { Wallet as WalletIcon, Plus, ArrowUpCircle, ArrowDownCircle, Loader2, Bu
 import { useToast } from '@/hooks/use-toast';
 import { data, type Wallet, type BankAccount } from '@/lib/data';
 import { formatCurrency, formatCurrencyCompact } from '@/lib/currency';
+import { apiClient } from '@/api/client';
 
 interface WalletCardProps {
   userId: string;
@@ -165,20 +166,12 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
 
     try {
       // Create transaction request
-      const response = await fetch('/api/transaction-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userId,
-          request_type: 'add_money',
-          amount,
-          transaction_image_url: transactionImage,
-        }),
+      await apiClient.post('/transaction-requests', {
+        user_id: userId,
+        request_type: 'add_money',
+        amount,
+        transaction_image_url: transactionImage,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to create transaction request');
-      }
 
       toast({
         title: 'Request Submitted!',

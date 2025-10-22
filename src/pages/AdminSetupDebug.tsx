@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, AlertTriangle, RefreshCw } from "lucide-react";
 import { auth } from "@/lib/auth";
 import DashboardLayout from "@/components/DashboardLayout";
+import { apiClient } from '@/api/client';
 
 interface DebugInfo {
   currentUser: any;
@@ -24,19 +25,14 @@ const AdminSetupDebug = () => {
     setError(null);
     try {
       // Fetch all data in parallel
-      const [usersRes, companiesRes, allPendingRes, companyPendingRes] = await Promise.all([
-        fetch('/api/migrations/list-users'),
-        fetch('/api/companies?active=true'),
-        fetch('/api/users/pending-approvals'),
+      const [users, companies, allPending, companyPending] = await Promise.all([
+        apiClient.get('/migrations/list-users'),
+        apiClient.get('/companies?active=true'),
+        apiClient.get('/users/pending-approvals'),
         user?.company_id
-          ? fetch(`/api/users/pending-approvals?companyId=${user.company_id}`)
-          : Promise.resolve(null)
+          ? apiClient.get(`/users/pending-approvals?companyId=${user.company_id}`)
+          : Promise.resolve([])
       ]);
-
-      const users = usersRes.ok ? await usersRes.json() : { users: [] };
-      const companies = companiesRes.ok ? await companiesRes.json() : [];
-      const allPending = allPendingRes.ok ? await allPendingRes.json() : [];
-      const companyPending = companyPendingRes ? (companyPendingRes.ok ? await companyPendingRes.json() : []) : [];
 
       setDebugInfo({
         currentUser: user,
