@@ -13,10 +13,11 @@ CREATE TABLE IF NOT EXISTS companies (
   description TEXT,
   industry VARCHAR(100),
   website VARCHAR(255),
-  email VARCHAR(255),
-  phone VARCHAR(20),
+  email VARCHAR(255) NOT NULL,
+  phone VARCHAR(20) NOT NULL,
 
-  -- Address Information
+  -- Address Information (simplified)
+  address TEXT,
   address_line1 VARCHAR(255),
   address_line2 VARCHAR(255),
   city VARCHAR(100),
@@ -37,9 +38,9 @@ CREATE TABLE IF NOT EXISTS companies (
 
   -- Timestamps
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
-  FOREIGN KEY (verified_by) REFERENCES users(id)
+  -- Note: Foreign key to users(id) for verified_by will be added after users table exists
 );
 
 CREATE INDEX IF NOT EXISTS idx_companies_name ON companies(name);

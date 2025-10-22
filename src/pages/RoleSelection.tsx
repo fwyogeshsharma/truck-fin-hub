@@ -161,8 +161,8 @@ const RoleSelection = () => {
       // Individual lender - go directly to dashboard
       proceedWithRoleSelection();
     } else {
-      // Company lender - show company selection
-      setShowCompanyDialog(true);
+      // Company lender - show create/select company dialog (same as shipper)
+      setShowShipperActionDialog(true);
     }
   };
 
@@ -414,13 +414,15 @@ const RoleSelection = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Shipper Action Selection Dialog */}
+      {/* Company Action Selection Dialog (for both Shipper and Company Lender) */}
       <Dialog open={showShipperActionDialog} onOpenChange={setShowShipperActionDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Company Setup</DialogTitle>
             <DialogDescription>
-              Select an existing company or create a new one
+              {selectedRole === 'lender'
+                ? 'Select an existing lending company or create a new one'
+                : 'Select an existing company or create a new one'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -432,7 +434,9 @@ const RoleSelection = () => {
                 <Package className="h-12 w-12 mx-auto mb-3 text-primary" />
                 <h3 className="font-semibold text-lg mb-2">Select Existing Company</h3>
                 <p className="text-sm text-muted-foreground">
-                  Choose from registered logistics companies
+                  {selectedRole === 'lender'
+                    ? 'Choose from registered lending companies'
+                    : 'Choose from registered logistics companies'}
                 </p>
               </CardContent>
             </Card>
@@ -441,10 +445,12 @@ const RoleSelection = () => {
               onClick={() => handleShipperActionSelect('create')}
             >
               <CardContent className="p-6 text-center">
-                <TruckIcon className="h-12 w-12 mx-auto mb-3 text-primary" />
+                <Wallet className="h-12 w-12 mx-auto mb-3 text-primary" />
                 <h3 className="font-semibold text-lg mb-2">Create New Company</h3>
                 <p className="text-sm text-muted-foreground">
-                  Register your own logistics company
+                  {selectedRole === 'lender'
+                    ? 'Register your own lending company'
+                    : 'Register your own logistics company'}
                 </p>
               </CardContent>
             </Card>
@@ -458,7 +464,9 @@ const RoleSelection = () => {
           <DialogHeader>
             <DialogTitle>Create New Company</DialogTitle>
             <DialogDescription>
-              Fill in your company details to get started
+              {selectedRole === 'lender'
+                ? 'Fill in your lending company details to get started'
+                : 'Fill in your company details to get started'}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCompanyFormSubmit} className="space-y-4 py-4">
@@ -562,7 +570,9 @@ const RoleSelection = () => {
             <DialogDescription>
               {selectedRole === 'load_agent'
                 ? 'Choose the logistics company you represent as a Shipper'
-                : 'Choose the lending company you want to work for'}
+                : selectedRole === 'lender'
+                ? 'Choose the lending company you want to represent'
+                : 'Choose the company you want to work for'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
