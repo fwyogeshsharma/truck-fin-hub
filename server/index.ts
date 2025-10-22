@@ -27,6 +27,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
       'http://localhost:4000',
       'http://34.93.247.3',
       'http://34.93.247.3:4000',
+      'https://34.93.247.3:4000',
       'http://34.93.247.3:8080',
       'https://*.netlify.app'
     ];

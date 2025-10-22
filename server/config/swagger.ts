@@ -18,7 +18,7 @@ const options = {
         description: 'Development server',
       },
       {
-        url: 'http://34.93.247.3:4000',
+        url: 'https://34.93.247.3:4000',
         description: 'Production server',
       },
     ],
