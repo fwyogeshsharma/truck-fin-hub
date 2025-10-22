@@ -413,9 +413,10 @@ const InvestmentOpportunities = () => {
         interestRate
       );
 
-      // Update trip status to escrowed
+      // Update trip status to escrowed and set the accepted bid's interest rate
       await data.updateTrip(tripId, {
         status: 'escrowed',
+        interestRate: interestRate,
       });
 
       // Refresh trips list
@@ -520,9 +521,10 @@ const InvestmentOpportunities = () => {
           tripRate
         );
 
-        // Update trip status to escrowed
+        // Update trip status to escrowed and set the accepted bid's interest rate
         await data.updateTrip(tripId, {
           status: 'escrowed',
+          interestRate: tripRate,
         });
       }
 
