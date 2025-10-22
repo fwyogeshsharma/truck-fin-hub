@@ -157,11 +157,15 @@ router.put('/:id/make-admin', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Company ID or company name is required' });
     }
 
-    // Update user: set is_admin to true and assign company
+    // Update user: set is_admin to true, assign company, and auto-approve
+    // When a super admin makes someone an admin, they should be able to login immediately
     const user = await updateUser(req.params.id, {
       is_admin: true,
       company_id: company_id || undefined,
       company: company || undefined,
+      approval_status: 'approved', // Auto-approve admins
+      approved_at: new Date().toISOString(),
+      approved_by: req.body.approved_by || 'system', // Track who made them admin
     });
 
     if (!user) {
@@ -171,7 +175,7 @@ router.put('/:id/make-admin', async (req: Request, res: Response) => {
     // Remove password hash
     const { password_hash, ...sanitizedUser } = user;
     res.json({
-      message: 'User successfully promoted to admin',
+      message: 'User successfully promoted to admin and approved for login',
       user: sanitizedUser,
     });
   } catch (error: any) {

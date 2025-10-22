@@ -321,9 +321,10 @@ const Users = () => {
     }
 
     try {
-      // Call API to update user role
+      // Call API to update user role and auto-approve them
       await apiClient.put(`/users/${selectedUser.id}/make-admin`, {
         company_id: selectedCompany,
+        approved_by: user?.id, // Track who made them admin
       });
 
       // Refresh users from database
@@ -334,7 +335,7 @@ const Users = () => {
 
       toast({
         title: 'Success!',
-        description: `${selectedUser.name} has been made admin for ${selectedCompanyData?.display_name || selectedCompany}`,
+        description: `${selectedUser.name} has been made admin for ${selectedCompanyData?.display_name || selectedCompany} and can now login immediately`,
       });
 
       setAdminDialogOpen(false);
