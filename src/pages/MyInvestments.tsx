@@ -201,7 +201,7 @@ const MyInvestments = () => {
                 {trip.loadType} • {trip.weight}kg • {trip.distance}km
               </CardDescription>
               <p className="text-sm text-muted-foreground mt-1">
-                Load Provider: {trip.loadOwnerName}
+                Borrower: {trip.loadOwnerName}
               </p>
             </div>
             <Badge variant="outline" className="bg-primary/10 text-primary">
@@ -274,7 +274,7 @@ const MyInvestments = () => {
                 {trip.loadType} • {trip.weight}kg • {trip.distance}km
               </CardDescription>
               <p className="text-sm text-muted-foreground mt-1">
-                Load Provider: {trip.loadOwnerName}
+                Borrower: {trip.loadOwnerName}
               </p>
               {trip.transporterName && (
                 <p className="text-sm text-muted-foreground">
