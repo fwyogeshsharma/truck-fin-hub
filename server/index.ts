@@ -99,7 +99,7 @@ app.use((err: Error, req: Request, res: Response, next: Function) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🚀 Server is running on port ${PORT}`);
   console.log(`📍 API endpoint: http://localhost:${PORT}/api`);
   console.log(`📍 Production: http://34.31.185.19:${PORT}/api`);
