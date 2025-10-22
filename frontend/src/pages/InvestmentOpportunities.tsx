@@ -349,8 +349,8 @@ const InvestmentOpportunities = () => {
     const maturityDays = trip.maturityDays || 30;
 //     const yearlyRate = (interestRate * 365) / maturityDays;
     const yearlyRate = interestRate;
-    const interestRateShipperYearly = yearlyRate + (yearlyRate * 0.3);
-    const shipperInterestRate = (interestRateShipperYearly * maturityDays) / 365;
+
+    const lenderInterestRate = (interestRate * maturityDays) / 365;
 
     const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.3);
     const expectedReturn = investmentAmount * (adjustedYearlyRate / 100);
@@ -379,7 +379,7 @@ const InvestmentOpportunities = () => {
         lenderId: user.id,
         tripId,
         amount: investmentAmount,
-        interestRate: shipperInterestRate,
+        interestRate: lenderInterestRate,
         expectedReturn,
         status: 'escrowed',
         maturityDate: new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toISOString(),
@@ -391,7 +391,7 @@ const InvestmentOpportunities = () => {
         user.id,
         user.name || 'Lender',
         investmentAmount,
-        shipperInterestRate
+        lenderInterestRate
       );
 
       // Update trip status to escrowed
