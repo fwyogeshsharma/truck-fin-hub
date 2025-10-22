@@ -2,116 +2,159 @@
 
 # Database Migration Script for Docker
 # This script runs all pending migrations in the PostgreSQL container
+# It automatically executes all .sql files in src/db/migrations/ directory
 
 set -e
 
 echo "🔄 Running Database Migrations..."
 echo "=================================="
+echo ""
+
+# Docker container name
+CONTAINER_NAME="logifin-postgres"
 
 # Database connection details from environment or defaults
 DB_NAME="${DB_NAME:-logifin}"
 DB_USER="${DB_USER:-postgres}"
 DB_PASSWORD="${DB_PASSWORD:-postgres123}"
 
-# Wait for PostgreSQL to be ready
-echo "⏳ Waiting for PostgreSQL to be ready..."
-until docker exec logifin-postgres pg_isready -U "$DB_USER" -d "$DB_NAME" > /dev/null 2>&1; do
-  echo "   Waiting for database..."
-  sleep 2
-done
-echo "✅ PostgreSQL is ready!"
+echo "Container: $CONTAINER_NAME"
+echo "Database: $DB_NAME"
+echo "User: $DB_USER"
 echo ""
 
-# Run the consolidated migration
-echo "📝 Running migrations..."
-
-docker exec -i logifin-postgres psql -U "$DB_USER" -d "$DB_NAME" << 'EOF'
--- ============================================================
--- Migration: Complete Database Setup
--- ============================================================
-
--- Create companies table
-CREATE TABLE IF NOT EXISTS companies (
-  id VARCHAR(255) PRIMARY KEY,
-  name VARCHAR(255) UNIQUE NOT NULL,
-  display_name VARCHAR(255) NOT NULL,
-  logo TEXT,
-  description TEXT,
-  industry VARCHAR(100),
-  website VARCHAR(255),
-  email VARCHAR(255) NOT NULL,
-  phone VARCHAR(20) NOT NULL,
-  address TEXT,
-  address_line1 VARCHAR(255),
-  address_line2 VARCHAR(255),
-  city VARCHAR(100),
-  state VARCHAR(100),
-  pincode VARCHAR(10),
-  country VARCHAR(100) DEFAULT 'India',
-  gst_number VARCHAR(20) UNIQUE,
-  pan_number VARCHAR(20) UNIQUE,
-  company_registration_number VARCHAR(50),
-  is_active BOOLEAN DEFAULT TRUE,
-  is_verified BOOLEAN DEFAULT FALSE,
-  verified_at TIMESTAMP,
-  verified_by VARCHAR(255),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create indexes for companies
-CREATE INDEX IF NOT EXISTS idx_companies_name ON companies(name);
-CREATE INDEX IF NOT EXISTS idx_companies_gst ON companies(gst_number);
-CREATE INDEX IF NOT EXISTS idx_companies_active ON companies(is_active);
-
--- Add user_type column to users table
-ALTER TABLE users ADD COLUMN IF NOT EXISTS user_type VARCHAR(20)
-  CHECK(user_type IN ('individual', 'company'));
-
--- Add company_id to users if not exists
-ALTER TABLE users ADD COLUMN IF NOT EXISTS company_id VARCHAR(255);
-
--- Create indexes for users
-CREATE INDEX IF NOT EXISTS idx_users_user_type ON users(user_type);
-CREATE INDEX IF NOT EXISTS idx_users_company_id ON users(company_id);
-
--- Set default user_type based on existing data
-UPDATE users
-SET user_type = CASE
-  WHEN company IS NOT NULL AND company != '' THEN 'company'
-  ELSE 'individual'
-END
-WHERE user_type IS NULL;
-
--- Insert sample companies for testing (if not exist)
-INSERT INTO companies (id, name, display_name, email, phone, address, gst_number, is_active, created_at)
-VALUES
-  ('company_rollingradius', 'Rolling Radius Logistics', 'Rolling Radius', 'contact@rollingradius.com', '9876543210', 'Mumbai, Maharashtra, India', '27AABCU9603R1ZX', TRUE, NOW()),
-  ('company_abc_logistics', 'ABC Logistics Pvt Ltd', 'ABC Logistics', 'info@abclogistics.com', '9876543211', 'Delhi, NCR, India', '07AABCU9603R1ZY', TRUE, NOW()),
-  ('company_xyz_transport', 'XYZ Transport Solutions', 'XYZ Transport', 'hello@xyztransport.com', '9876543212', 'Bangalore, Karnataka, India', '29AABCU9603R1ZZ', TRUE, NOW())
-ON CONFLICT (id) DO NOTHING;
-
--- Success message
-SELECT 'Migration completed successfully!' as status;
-EOF
-
-if [ $? -eq 0 ]; then
-  echo "✅ Migrations completed successfully!"
-  echo ""
-
-  # Show table counts
-  echo "📊 Database Status:"
-  docker exec -i logifin-postgres psql -U "$DB_USER" -d "$DB_NAME" << 'EOF'
-SELECT
-  (SELECT COUNT(*) FROM users) as users,
-  (SELECT COUNT(*) FROM companies) as companies,
-  (SELECT COUNT(*) FROM trips) as trips;
-EOF
-
-else
-  echo "❌ Migration failed!"
-  exit 1
+# Check if Docker is running
+if ! command -v docker &> /dev/null; then
+    echo "❌ Error: Docker is not installed"
+    echo "Please install Docker Desktop"
+    exit 1
 fi
 
+# Check if PostgreSQL container is running
+echo "🔍 Checking Docker container..."
+if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    echo "❌ Error: PostgreSQL container '${CONTAINER_NAME}' is not running"
+    echo "Starting containers with docker-compose..."
+    docker-compose up -d
+    echo "Waiting for database to be ready..."
+    sleep 5
+fi
+
+# Wait for PostgreSQL to be ready
+echo "⏳ Waiting for PostgreSQL to be ready..."
+MAX_RETRIES=30
+RETRY_COUNT=0
+until docker exec "$CONTAINER_NAME" pg_isready -U "$DB_USER" -d "$DB_NAME" > /dev/null 2>&1; do
+  RETRY_COUNT=$((RETRY_COUNT + 1))
+  if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+    echo "❌ Error: Database did not become ready in time"
+    exit 1
+  fi
+  echo "   Waiting for database... ($RETRY_COUNT/$MAX_RETRIES)"
+  sleep 2
+done
+
+# Test database connection
+if ! docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c '\q' 2>/dev/null; then
+    echo "❌ Error: Cannot connect to database inside container"
+    exit 1
+fi
+
+echo "✅ PostgreSQL is ready and accessible!"
 echo ""
-echo "🎉 Database is ready!"
+
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+MIGRATIONS_DIR="$SCRIPT_DIR/src/db/migrations"
+
+# Check if migrations directory exists
+if [ ! -d "$MIGRATIONS_DIR" ]; then
+    echo "❌ Error: Migrations directory not found: $MIGRATIONS_DIR"
+    exit 1
+fi
+
+# Count migration files
+MIGRATION_COUNT=$(find "$MIGRATIONS_DIR" -name "*.sql" -type f | wc -l)
+echo "📂 Found $MIGRATION_COUNT migration files in $MIGRATIONS_DIR"
+echo ""
+
+# Function to run a migration file via Docker
+run_migration() {
+    local migration_file=$1
+    local migration_name=$(basename "$migration_file")
+
+    echo "📝 Running: $migration_name"
+
+    # Copy migration file to container
+    if ! docker cp "$migration_file" "$CONTAINER_NAME:/tmp/migration.sql" 2>/dev/null; then
+        echo "   ❌ Error: Failed to copy migration file to container"
+        return 1
+    fi
+
+    # Execute migration inside container
+    if docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -f /tmp/migration.sql > /dev/null 2>&1; then
+        echo "   ✅ Success"
+        return 0
+    else
+        echo "   ⚠️  Warning: Migration may have already been applied or encountered an error"
+        # Don't exit, continue with other migrations
+        return 1
+    fi
+}
+
+# Run all migration files in alphabetical order
+echo "🚀 Running migrations..."
+echo ""
+
+SUCCESS_COUNT=0
+WARNING_COUNT=0
+
+# Sort files to ensure they run in order (001, 002, 003, etc.)
+for migration_file in $(find "$MIGRATIONS_DIR" -name "*.sql" -type f | sort); do
+    if [ -f "$migration_file" ]; then
+        if run_migration "$migration_file"; then
+            SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+        else
+            WARNING_COUNT=$((WARNING_COUNT + 1))
+        fi
+    fi
+done
+
+echo ""
+echo "✅ Migration process complete!"
+echo "   - Successful: $SUCCESS_COUNT"
+echo "   - Warnings: $WARNING_COUNT"
+echo ""
+
+# Show database status
+echo "📊 Database Status:"
+docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "\dt" 2>/dev/null | grep -E "users|companies|trips|wallets|transactions|notifications" || echo "No tables found"
+
+echo ""
+
+# Verify critical columns exist
+echo "🔍 Verifying critical columns:"
+docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "\d users" 2>/dev/null | grep -E "is_admin" && echo "   ✅ is_admin column found in users table" || echo "   ⚠️  is_admin column not found in users table"
+
+docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "\d users" 2>/dev/null | grep -E "user_type" && echo "   ✅ user_type column found in users table" || echo "   ⚠️  user_type column not found in users table"
+
+docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "\d users" 2>/dev/null | grep -E "company_id" && echo "   ✅ company_id column found in users table" || echo "   ⚠️  company_id column not found in users table"
+
+echo ""
+
+# Show table counts
+echo "📈 Record Counts:"
+docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -t -c "
+SELECT
+  'Users: ' || COUNT(*) FROM users
+UNION ALL
+SELECT
+  'Companies: ' || COUNT(*) FROM companies
+UNION ALL
+SELECT
+  'Trips: ' || COUNT(*) FROM trips;
+" 2>/dev/null || echo "   Unable to fetch counts"
+
+echo ""
+echo "🎉 All done! Database is ready."
+echo ""

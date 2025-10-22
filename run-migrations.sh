@@ -69,38 +69,74 @@ run_migration() {
     fi
 }
 
-# Run migrations in order
-echo "🚀 Running migrations..."
-echo ""
-
-cd "$(dirname "$0")"
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+MIGRATIONS_DIR="$SCRIPT_DIR/src/db/migrations"
 
 # Check if migrations directory exists
-if [ ! -d "src/db/migrations" ]; then
-    echo "❌ Error: Migrations directory not found: src/db/migrations"
+if [ ! -d "$MIGRATIONS_DIR" ]; then
+    echo "❌ Error: Migrations directory not found: $MIGRATIONS_DIR"
     exit 1
 fi
 
-# Run all migration files in order
-for migration_file in src/db/migrations/*.sql; do
+# Count migration files
+MIGRATION_COUNT=$(find "$MIGRATIONS_DIR" -name "*.sql" -type f | wc -l)
+echo "📂 Found $MIGRATION_COUNT migration files in $MIGRATIONS_DIR"
+echo ""
+
+# Run all migration files in alphabetical order
+echo "🚀 Running migrations..."
+echo ""
+
+SUCCESS_COUNT=0
+WARNING_COUNT=0
+
+# Sort files to ensure they run in order (001, 002, 003, etc.)
+for migration_file in $(find "$MIGRATIONS_DIR" -name "*.sql" -type f | sort); do
     if [ -f "$migration_file" ]; then
-        run_migration "$migration_file"
+        if run_migration "$migration_file"; then
+            SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+        else
+            WARNING_COUNT=$((WARNING_COUNT + 1))
+        fi
     fi
 done
 
 echo ""
 echo "✅ Migration process complete!"
+echo "   - Successful: $SUCCESS_COUNT"
+echo "   - Warnings: $WARNING_COUNT"
 echo ""
 
-# Show tables created
-echo "📊 Database Tables:"
-docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "\dt" 2>/dev/null | grep -E "users|companies|trips|wallets|transactions" || echo "No tables found"
+# Show database status
+echo "📊 Database Status:"
+docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "\dt" 2>/dev/null | grep -E "users|companies|trips|wallets|transactions|notifications" || echo "No tables found"
 
 echo ""
 
-# Verify is_admin column was added
-echo "🔍 Verifying is_admin column in users table:"
-docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "\d users" 2>/dev/null | grep -E "is_admin" && echo "   ✅ is_admin column found" || echo "   ⚠️  is_admin column not found"
+# Verify critical columns exist
+echo "🔍 Verifying critical columns:"
+docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "\d users" 2>/dev/null | grep -E "is_admin" && echo "   ✅ is_admin column found in users table" || echo "   ⚠️  is_admin column not found in users table"
+
+docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "\d users" 2>/dev/null | grep -E "user_type" && echo "   ✅ user_type column found in users table" || echo "   ⚠️  user_type column not found in users table"
+
+docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "\d users" 2>/dev/null | grep -E "company_id" && echo "   ✅ company_id column found in users table" || echo "   ⚠️  company_id column not found in users table"
+
+echo ""
+
+# Show table counts
+echo "📈 Record Counts:"
+docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -t -c "
+SELECT
+  'Users: ' || COUNT(*) FROM users
+UNION ALL
+SELECT
+  'Companies: ' || COUNT(*) FROM companies
+UNION ALL
+SELECT
+  'Trips: ' || COUNT(*) FROM trips;
+" 2>/dev/null || echo "   Unable to fetch counts"
 
 echo ""
 echo "🎉 All done! Database is ready."
+echo ""
