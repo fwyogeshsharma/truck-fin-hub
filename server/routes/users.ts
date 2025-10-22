@@ -192,9 +192,12 @@ router.put('/:id/make-admin', async (req: Request, res: Response) => {
 // PUT /api/users/:id/remove-admin - Remove admin privileges from user
 router.put('/:id/remove-admin', async (req: Request, res: Response) => {
   try {
-    // Update user: set is_admin to false
+    // Update user: set is_admin to false and clear company fields
     const user = await updateUser(req.params.id, {
       is_admin: false,
+      company_id: null,
+      company: null,
+      company_logo: null,
     });
 
     if (!user) {
