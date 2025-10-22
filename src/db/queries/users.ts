@@ -118,7 +118,7 @@ export const getAllUsers = async (): Promise<User[]> => {
       c.phone as company_data_phone
     FROM users u
     LEFT JOIN companies c ON u.company_id = c.id
-    WHERE u.is_active = TRUE AND u.id NOT LIKE 'company-%'
+    WHERE u.is_active = TRUE AND u.id NOT LIKE 'company-%' AND u.company_id IS NOT NULL
     ORDER BY u.created_at DESC`
   );
 
@@ -159,7 +159,7 @@ export const getUsersByRole = async (role: User['role']): Promise<User[]> => {
       c.phone as company_data_phone
     FROM users u
     LEFT JOIN companies c ON u.company_id = c.id
-    WHERE u.role = $1 AND u.is_active = TRUE AND u.id NOT LIKE 'company-%'
+    WHERE u.role = $1 AND u.is_active = TRUE AND u.id NOT LIKE 'company-%' AND u.company_id IS NOT NULL
     ORDER BY u.created_at DESC`,
     [role]
   );
@@ -421,7 +421,7 @@ export const findTransporterByName = async (name: string): Promise<User | null> 
  */
 export const getPendingUserApprovals = async (companyId?: string): Promise<User[]> => {
   const db = getDatabase();
-  let query = `SELECT * FROM users WHERE approval_status = 'pending' AND is_active = TRUE`;
+  let query = `SELECT * FROM users WHERE approval_status = 'pending' AND is_active = TRUE AND company_id IS NOT NULL`;
   const values: any[] = [];
 
   if (companyId) {
