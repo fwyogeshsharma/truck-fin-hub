@@ -525,7 +525,7 @@ const LoadAgentDashboard = () => {
 
           // Validate interest rate
           const parsedInterestRate = parseFloat(loanInterestRate);
-          if (isNaN(parsedInterestRate) || parsedInterestRate < 8 || parsedInterestRate > 18) {
+          if (isNaN(parsedInterestRate)) {
             console.warn(`Invalid interest rate (${loanInterestRate}) for row: ${rowText}`);
             errorCount++;
             continue;
@@ -1488,12 +1488,10 @@ const LoadAgentDashboard = () => {
                         placeholder="50000"
                         value={formData.loanAmount}
                         onChange={handleChange}
-                        min="20000"
-                        max="80000"
                         required
                         className="h-11 border-2 focus:border-emerald-500 text-lg font-semibold"
                       />
-                      <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Range: ₹20,000 - ₹80,000</p>
+                      <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Enter loan amount</p>
                     </div>
 
                     <div className="space-y-2">
@@ -1509,12 +1507,10 @@ const LoadAgentDashboard = () => {
                         value={formData.loanInterestRate}
                         onChange={handleChange}
                         step="0.5"
-                        min="8"
-                        max="18"
                         required
                         className="h-11 border-2 focus:border-emerald-500 text-lg font-semibold"
                       />
-                      <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Range: 8% - 18%</p>
+                      <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Enter interest rate</p>
                     </div>
                   </div>
 

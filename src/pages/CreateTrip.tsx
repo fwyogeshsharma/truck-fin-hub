@@ -143,14 +143,12 @@ const CreateTrip = () => {
                   id="amount"
                   name="amount"
                   type="number"
-                  placeholder="e.g., 25000 (Between 20K-30K)"
+                  placeholder="e.g., 25000"
                   value={formData.amount}
                   onChange={handleChange}
-                  min="20000"
-                  max="30000"
                   required
                 />
-                <p className="text-xs text-muted-foreground">Enter trip value between ₹20,000 and ₹30,000</p>
+                <p className="text-xs text-muted-foreground">Enter trip value</p>
               </div>
 
               <div className="bg-muted/50 p-4 rounded-lg space-y-2">
