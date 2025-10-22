@@ -16,16 +16,21 @@ import {
 
 const router = Router();
 
-// GET /api/users - Get all users or filter by role
+// GET /api/users - Get all users or filter by role/company
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { role } = req.query;
+    const { role, company_id } = req.query;
 
     let users;
     if (role) {
       users = await getUsersByRole(role as any);
     } else {
       users = await getAllUsers();
+    }
+
+    // Filter by company_id if provided
+    if (company_id) {
+      users = users.filter(u => u.company_id === company_id);
     }
 
     // Remove password hashes from response

@@ -89,16 +89,32 @@ const UserManagement = () => {
 
   const fetchAllUsers = async () => {
     try {
-      const users = auth.getAllUsers();
+      // Build API URL with company filter for company admins
+      let url = '/users';
 
-      // Filter by company if company admin
-      const filteredUsers = user?.is_admin && user?.company_id
-        ? users.filter(u => u.company_id === user.company_id)
-        : users;
+      // Company admins should only see users from their company
+      if (user?.is_admin && user?.company_id && user?.role !== 'super_admin') {
+        url = `/users?company_id=${user.company_id}`;
+      }
 
-      setAllUsers(filteredUsers);
+      // Fetch users from API (filtered by company on backend for security)
+      const users = await apiClient.get(url);
+      setAllUsers(users);
+
+      console.log('👥 Fetched users:', {
+        total: users.length,
+        isCompanyAdmin: user?.is_admin,
+        companyId: user?.company_id,
+        role: user?.role,
+        filtered: url.includes('company_id')
+      });
     } catch (error) {
       console.error('Failed to fetch users:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to load users from database',
+      });
     }
   };
 
