@@ -10,6 +10,7 @@ export interface User {
   company_id?: string;
   companyLogo?: string;
   userLogo?: string;
+  user_type?: 'individual' | 'company';
   approval_status?: 'approved' | 'pending' | 'rejected';
   approved_by?: string;
   approved_at?: string;
@@ -38,6 +39,7 @@ export interface UpdateRoleData {
   company?: string;
   companyId?: string;
   companyLogo?: string;
+  userType?: 'individual' | 'company';
   approvalStatus?: 'approved' | 'pending' | 'rejected';
 }
 

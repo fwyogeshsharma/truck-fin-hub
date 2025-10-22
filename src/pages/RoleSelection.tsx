@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { TruckIcon, Package, Wallet, UserCircle } from "lucide-react";
 import { auth, User } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -62,15 +64,30 @@ interface Company {
   is_active: boolean;
 }
 
+type LenderType = 'individual' | 'company';
+type ShipperAction = 'select' | 'create';
+
 const RoleSelection = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedRole, setSelectedRole] = useState<User['role'] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showCompanyDialog, setShowCompanyDialog] = useState(false);
+  const [showLenderTypeDialog, setShowLenderTypeDialog] = useState(false);
+  const [showShipperActionDialog, setShowShipperActionDialog] = useState(false);
+  const [showCompanyForm, setShowCompanyForm] = useState(false);
+  const [lenderType, setLenderType] = useState<LenderType | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
+  const [companyFormData, setCompanyFormData] = useState({
+    name: '',
+    display_name: '',
+    email: '',
+    phone: '',
+    address: '',
+    gst_number: '',
+  });
 
   // Check if user has accepted terms on component mount
   useEffect(() => {
@@ -124,14 +141,83 @@ const RoleSelection = () => {
 
     const user = auth.getCurrentUser();
 
-    // If load_agent or lender is selected and user doesn't have a company yet (first time role selection)
-    if ((selectedRole === 'load_agent' || selectedRole === 'lender') && !user?.company) {
-      setShowCompanyDialog(true);
+    // For lenders, show individual/company choice first
+    if (selectedRole === 'lender' && !user?.company) {
+      setShowLenderTypeDialog(true);
       return;
     }
 
-    // For other roles or if company already selected, proceed directly
+    // For shippers (load_agent), show select/create company dialog
+    if (selectedRole === 'load_agent' && !user?.company) {
+      setShowShipperActionDialog(true);
+      return;
+    }
+
+    // For other roles or if already configured, proceed directly
     proceedWithRoleSelection();
+  };
+
+  const handleLenderTypeSelect = (type: LenderType) => {
+    setLenderType(type);
+    setShowLenderTypeDialog(false);
+
+    if (type === 'individual') {
+      // Individual lender - go directly to dashboard
+      proceedWithRoleSelection();
+    } else {
+      // Company lender - show company selection
+      setShowCompanyDialog(true);
+    }
+  };
+
+  const handleShipperActionSelect = (action: ShipperAction) => {
+    setShowShipperActionDialog(false);
+
+    if (action === 'select') {
+      // Select existing company
+      setShowCompanyDialog(true);
+    } else {
+      // Create new company
+      setShowCompanyForm(true);
+    }
+  };
+
+  const handleCompanyFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // Create company via API
+      const response = await fetch('/api/companies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(companyFormData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create company');
+      }
+
+      const newCompany = await response.json();
+
+      toast({
+        title: "Company Created",
+        description: `${newCompany.display_name || newCompany.name} has been created successfully.`,
+      });
+
+      // Set the new company and proceed
+      setSelectedCompany(newCompany);
+      setShowCompanyForm(false);
+      await handleCompanySelect(newCompany);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to create company",
+        description: error.message || "Something went wrong",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const proceedWithRoleSelection = async () => {
@@ -139,11 +225,17 @@ const RoleSelection = () => {
 
     setIsLoading(true);
     try {
+      // Determine user type based on role and selection
+      const userType = selectedRole === 'lender' ? lenderType || 'individual' :
+                       (selectedCompany || selectedRole === 'load_agent') ? 'company' : 'individual';
+
       const updatedUser = await auth.updateUserRole(
         selectedRole,
         selectedCompany?.display_name || selectedCompany?.name,
         selectedCompany?.logo,
-        selectedCompany?.id
+        selectedCompany?.id,
+        undefined, // approvalStatus
+        userType
       );
 
       if (updatedUser) {
@@ -178,7 +270,8 @@ const RoleSelection = () => {
           company.display_name || company.name,
           company.logo,
           company.id,
-          'pending' // Set approval status to pending
+          'pending', // Set approval status to pending
+          'company' // Company lender/shipper
         );
 
         const roleTitle = selectedRole === 'load_agent' ? 'shipper' : 'lender';
@@ -296,6 +389,184 @@ const RoleSelection = () => {
           </Button>
         </div>
       </div>
+
+      {/* Lender Type Selection Dialog */}
+      <Dialog open={showLenderTypeDialog} onOpenChange={setShowLenderTypeDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Choose Lender Type</DialogTitle>
+            <DialogDescription>
+              Are you lending as an individual or representing a company?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Card
+              className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 hover:border-primary"
+              onClick={() => handleLenderTypeSelect('individual')}
+            >
+              <CardContent className="p-6 text-center">
+                <UserCircle className="h-12 w-12 mx-auto mb-3 text-primary" />
+                <h3 className="font-semibold text-lg mb-2">Individual Lender</h3>
+                <p className="text-sm text-muted-foreground">
+                  Invest personally and manage your own portfolio
+                </p>
+              </CardContent>
+            </Card>
+            <Card
+              className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 hover:border-primary"
+              onClick={() => handleLenderTypeSelect('company')}
+            >
+              <CardContent className="p-6 text-center">
+                <Package className="h-12 w-12 mx-auto mb-3 text-primary" />
+                <h3 className="font-semibold text-lg mb-2">Company Lender</h3>
+                <p className="text-sm text-muted-foreground">
+                  Represent a lending company or financial institution
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Shipper Action Selection Dialog */}
+      <Dialog open={showShipperActionDialog} onOpenChange={setShowShipperActionDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Company Setup</DialogTitle>
+            <DialogDescription>
+              Select an existing company or create a new one
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Card
+              className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 hover:border-primary"
+              onClick={() => handleShipperActionSelect('select')}
+            >
+              <CardContent className="p-6 text-center">
+                <Package className="h-12 w-12 mx-auto mb-3 text-primary" />
+                <h3 className="font-semibold text-lg mb-2">Select Existing Company</h3>
+                <p className="text-sm text-muted-foreground">
+                  Choose from registered logistics companies
+                </p>
+              </CardContent>
+            </Card>
+            <Card
+              className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 hover:border-primary"
+              onClick={() => handleShipperActionSelect('create')}
+            >
+              <CardContent className="p-6 text-center">
+                <TruckIcon className="h-12 w-12 mx-auto mb-3 text-primary" />
+                <h3 className="font-semibold text-lg mb-2">Create New Company</h3>
+                <p className="text-sm text-muted-foreground">
+                  Register your own logistics company
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Company Form Dialog */}
+      <Dialog open={showCompanyForm} onOpenChange={setShowCompanyForm}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Company</DialogTitle>
+            <DialogDescription>
+              Fill in your company details to get started
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCompanyFormSubmit} className="space-y-4 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="company-name">Company Name *</Label>
+                <Input
+                  id="company-name"
+                  placeholder="ABC Logistics Pvt Ltd"
+                  value={companyFormData.name}
+                  onChange={(e) => setCompanyFormData({ ...companyFormData, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="display-name">Display Name *</Label>
+                <Input
+                  id="display-name"
+                  placeholder="ABC Logistics"
+                  value={companyFormData.display_name}
+                  onChange={(e) => setCompanyFormData({ ...companyFormData, display_name: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="company-email">Email *</Label>
+                <Input
+                  id="company-email"
+                  type="email"
+                  placeholder="contact@abclogistics.com"
+                  value={companyFormData.email}
+                  onChange={(e) => setCompanyFormData({ ...companyFormData, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="company-phone">Phone *</Label>
+                <Input
+                  id="company-phone"
+                  type="tel"
+                  placeholder="9876543210"
+                  value={companyFormData.phone}
+                  onChange={(e) => setCompanyFormData({ ...companyFormData, phone: e.target.value })}
+                  required
+                  pattern="[0-9]{10}"
+                  minLength={10}
+                  maxLength={10}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="company-address">Address *</Label>
+              <Input
+                id="company-address"
+                placeholder="123 Business Park, City, State - 400001"
+                value={companyFormData.address}
+                onChange={(e) => setCompanyFormData({ ...companyFormData, address: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gst-number">GST Number (Optional)</Label>
+              <Input
+                id="gst-number"
+                placeholder="22AAAAA0000A1Z5"
+                value={companyFormData.gst_number}
+                onChange={(e) => setCompanyFormData({ ...companyFormData, gst_number: e.target.value.toUpperCase() })}
+                pattern="[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}"
+                maxLength={15}
+              />
+              <p className="text-xs text-muted-foreground">Format: 22AAAAA0000A1Z5</p>
+            </div>
+            <div className="flex justify-end gap-4 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowCompanyForm(false)}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-gradient-primary"
+                disabled={isLoading}
+              >
+                {isLoading ? "Creating..." : "Create Company"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Company Selection Dialog */}
       <Dialog open={showCompanyDialog} onOpenChange={setShowCompanyDialog}>
