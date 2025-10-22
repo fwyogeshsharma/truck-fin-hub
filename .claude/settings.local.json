@@ -31,7 +31,8 @@
       "Bash(docker system prune:*)",
       "Bash(docker compose:*)",
       "Bash(npm run build:server:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(powershell -Command:*)"
     ],
     "deny": [],
     "ask": []
