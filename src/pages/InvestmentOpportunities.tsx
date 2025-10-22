@@ -370,7 +370,8 @@ const InvestmentOpportunities = () => {
     }
 
     const maturityDays = trip.maturityDays || 30;
-    const yearlyRate = (interestRate * 365) / maturityDays;
+    //const yearlyRate = (interestRate * 365) / maturityDays;
+    const yearlyRate = interestRate;
     const adjustedYearlyRate = yearlyRate - (yearlyRate * 0.3);
     const expectedReturn = investmentAmount * (adjustedYearlyRate / 100);
 
