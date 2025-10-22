@@ -188,11 +188,11 @@ const AdminSetupDebug = () => {
               <CardDescription>All pending requests (across all companies)</CardDescription>
             </CardHeader>
             <CardContent>
-              {debugInfo?.pendingApprovals.length === 0 ? (
+              {!debugInfo?.pendingApprovals || debugInfo?.pendingApprovals.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">No pending requests</p>
               ) : (
                 <div className="space-y-2">
-                  {debugInfo?.pendingApprovals.map((u: any) => (
+                  {debugInfo?.pendingApprovals?.map((u: any) => (
                     <div key={u.id} className="p-3 border rounded-lg text-xs">
                       <p className="font-medium">{u.name}</p>
                       <p className="text-muted-foreground">{u.email}</p>
@@ -212,11 +212,11 @@ const AdminSetupDebug = () => {
                 <CardDescription>Requests for {user?.company}</CardDescription>
               </CardHeader>
               <CardContent>
-                {debugInfo?.pendingForCompany.length === 0 ? (
+                {!debugInfo?.pendingForCompany || debugInfo?.pendingForCompany.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">No pending requests for your company</p>
                 ) : (
                   <div className="space-y-2">
-                    {debugInfo?.pendingForCompany.map((u: any) => (
+                    {debugInfo?.pendingForCompany?.map((u: any) => (
                       <div key={u.id} className="p-3 border rounded-lg text-xs">
                         <p className="font-medium">{u.name}</p>
                         <p className="text-muted-foreground">{u.email}</p>
