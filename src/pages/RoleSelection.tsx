@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { TruckIcon, Package, Wallet, UserCircle } from "lucide-react";
 import { auth, User } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { apiClient } from "@/api/client";
 import {
   Dialog,
   DialogContent,
@@ -114,13 +115,8 @@ const RoleSelection = () => {
     const fetchCompanies = async () => {
       setLoadingCompanies(true);
       try {
-        const response = await fetch('/api/companies?active=true');
-        if (response.ok) {
-          const data = await response.json();
-          setCompanies(data);
-        } else {
-          throw new Error('Failed to fetch companies');
-        }
+        const data = await apiClient.get('/companies?active=true');
+        setCompanies(data);
       } catch (error) {
         console.error('Failed to fetch companies:', error);
         toast({
@@ -188,17 +184,7 @@ const RoleSelection = () => {
 
     try {
       // Create company via API
-      const response = await fetch('/api/companies', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(companyFormData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create company');
-      }
-
-      const newCompany = await response.json();
+      const newCompany = await apiClient.post('/companies', companyFormData);
 
       toast({
         title: "Company Created",
