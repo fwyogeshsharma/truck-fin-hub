@@ -269,7 +269,7 @@ const LoadAgentDashboard = () => {
         loadOwnerId: user?.id || user?.userId || '',
         loadOwnerName: user?.company || user?.name || 'Shipper',
         loadOwnerLogo: user?.companyLogo || '',
-        loadOwnerRating: 4.5,
+        loadOwnerRating: null,
         // Mandatory fields
         ewayBillNumber: formData.ewayBillNumber,
         ewayBillImage: ewayBillImageBase64,
@@ -545,7 +545,7 @@ const LoadAgentDashboard = () => {
             loadOwnerId: user?.id || user?.userId || '',
             loadOwnerName: user?.company || user?.name || 'Shipper',
             loadOwnerLogo: user?.companyLogo || '',
-            loadOwnerRating: 4.5,
+            loadOwnerRating: null,
             // Mandatory fields
             ewayBillNumber,
             ewayBillImage: '',
