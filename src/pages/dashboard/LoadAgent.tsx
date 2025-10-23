@@ -177,13 +177,23 @@ const LoadAgentDashboard = () => {
             }
             setRefreshKey(prev => prev + 1);
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error uploading document:', error);
-          toast({
-            title: 'Upload Failed',
-            description: 'Failed to upload document. Please try again.',
-            variant: 'destructive',
-          });
+
+          // Check if error is 413 Content Too Large
+          if (error?.status === 413 || error?.message?.includes('413') || error?.message?.toLowerCase().includes('too large')) {
+            toast({
+              title: 'Content Too Large',
+              description: 'The file content is too large for the server. Please upload images only (JPG, PNG) and ensure they are compressed/optimized. Avoid uploading PDF files.',
+              variant: 'destructive',
+            });
+          } else {
+            toast({
+              title: 'Upload Failed',
+              description: error?.message || 'Failed to upload document. Please try again.',
+              variant: 'destructive',
+            });
+          }
         } finally {
           // Clear loading state
           setUploadingDocuments(prev => {
@@ -1457,7 +1467,7 @@ const LoadAgentDashboard = () => {
                         id="ewayBillImage"
                         name="ewayBillImage"
                         type="file"
-                        accept="image/*,.pdf"
+                        accept="image/*"
                         onChange={handleChange}
                         className="cursor-pointer h-11 border-2"
                       />
@@ -2511,7 +2521,7 @@ print(response.json())`;
                         <Input
                           id={`ewaybill-${selectedTrip.id}`}
                           type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
+                          accept=".jpg,.jpeg,.png"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
@@ -2567,7 +2577,7 @@ print(response.json())`;
                         <Input
                           id={`bilty-${selectedTrip.id}`}
                           type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
+                          accept=".jpg,.jpeg,.png"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
@@ -2623,7 +2633,7 @@ print(response.json())`;
                         <Input
                           id={`advance_invoice-${selectedTrip.id}`}
                           type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
+                          accept=".jpg,.jpeg,.png"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
@@ -2679,7 +2689,7 @@ print(response.json())`;
                         <Input
                           id={`pod-${selectedTrip.id}`}
                           type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
+                          accept=".jpg,.jpeg,.png"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
@@ -2735,7 +2745,7 @@ print(response.json())`;
                         <Input
                           id={`final_invoice-${selectedTrip.id}`}
                           type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
+                          accept=".jpg,.jpeg,.png"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {

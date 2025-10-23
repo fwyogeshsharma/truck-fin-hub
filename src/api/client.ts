@@ -18,6 +18,19 @@ interface RequestOptions {
   headers?: Record<string, string>;
 }
 
+// Custom error class to preserve HTTP status codes
+class ApiError extends Error {
+  status: number;
+  response?: any;
+
+  constructor(message: string, status: number, response?: any) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.response = response;
+  }
+}
+
 export const apiClient = {
   async get<T = any>(endpoint: string, options?: RequestOptions): Promise<T> {
     const token = getAuthToken();
@@ -32,7 +45,7 @@ export const apiClient = {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.error || error.message || 'Request failed');
+      throw new ApiError(error.error || error.message || 'Request failed', response.status, error);
     }
 
     return response.json();
@@ -52,7 +65,7 @@ export const apiClient = {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.error || error.message || 'Request failed');
+      throw new ApiError(error.error || error.message || 'Request failed', response.status, error);
     }
 
     return response.json();
@@ -72,7 +85,7 @@ export const apiClient = {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.error || error.message || 'Request failed');
+      throw new ApiError(error.error || error.message || 'Request failed', response.status, error);
     }
 
     return response.json();
@@ -91,7 +104,7 @@ export const apiClient = {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.error || error.message || 'Request failed');
+      throw new ApiError(error.error || error.message || 'Request failed', response.status, error);
     }
 
     return response.json();
