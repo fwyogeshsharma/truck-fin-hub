@@ -155,23 +155,31 @@ router.put('/:id', async (req: Request, res: Response) => {
 // PUT /api/users/:id/make-admin - Make user an admin for a company
 router.put('/:id/make-admin', async (req: Request, res: Response) => {
   try {
-    const { company, company_id } = req.body;
+    const { company, company_id, approved_by } = req.body;
 
     // Prefer company_id, fall back to company for backward compatibility
     if (!company_id && !company) {
       return res.status(400).json({ error: 'Company ID or company name is required' });
     }
 
-    // Update user: set is_admin to true, assign company, and auto-approve
-    // When a super admin makes someone an admin, they should be able to login immediately
-    const user = await updateUser(req.params.id, {
+    // Build update object
+    const updateData: any = {
       is_admin: true,
       company_id: company_id || undefined,
       company: company || undefined,
       approval_status: 'approved', // Auto-approve admins
       approved_at: new Date().toISOString(),
-      approved_by: req.body.approved_by || null, // Track who made them admin (null if system)
-    });
+    };
+
+    // Only set approved_by if a valid value is provided
+    // This avoids foreign key constraint violation when null or invalid ID
+    if (approved_by) {
+      updateData.approved_by = approved_by;
+    }
+
+    // Update user: set is_admin to true, assign company, and auto-approve
+    // When a super admin makes someone an admin, they should be able to login immediately
+    const user = await updateUser(req.params.id, updateData);
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -192,12 +200,10 @@ router.put('/:id/make-admin', async (req: Request, res: Response) => {
 // PUT /api/users/:id/remove-admin - Remove admin privileges from user
 router.put('/:id/remove-admin', async (req: Request, res: Response) => {
   try {
-    // Update user: set is_admin to false and clear company fields
+    // Update user: set is_admin to false
+    // Note: We keep company fields as they may still be part of the company, just not an admin
     const user = await updateUser(req.params.id, {
       is_admin: false,
-      company_id: null,
-      company: null,
-      company_logo: null,
     });
 
     if (!user) {

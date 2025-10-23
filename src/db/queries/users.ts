@@ -301,7 +301,9 @@ export const updateUser = async (id: string, input: UpdateUserInput): Promise<Us
     updates.push(`approval_status = $${paramCount++}`);
     values.push(input.approval_status);
   }
-  if (input.approved_by !== undefined) {
+  // Only update approved_by if it has a valid value (not null/undefined)
+  // This prevents foreign key constraint violation
+  if (input.approved_by !== undefined && input.approved_by !== null) {
     updates.push(`approved_by = $${paramCount++}`);
     values.push(input.approved_by);
   }

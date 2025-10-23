@@ -246,34 +246,45 @@ const RoleSelection = () => {
     setSelectedCompany(company);
     setShowCompanyDialog(false);
 
-    // For shipper and lender roles, set status to pending and show approval message
+    // For shipper and lender roles, submit to backend which will determine if user is first (admin) or needs approval
     if (selectedRole === 'load_agent' || selectedRole === 'lender') {
       setIsLoading(true);
       try {
-        // Update user with company and pending status
-        await auth.updateUserRole(
+        // Update user with company - backend will determine if they're first user (admin) or need approval
+        const updatedUser = await auth.updateUserRole(
           selectedRole,
           company.display_name || company.name,
           company.logo,
           company.id,
-          'pending', // Set approval status to pending
+          undefined, // Let backend determine approval status
           'company' // Company lender/shipper
         );
 
         const roleTitle = selectedRole === 'load_agent' ? 'shipper' : 'lender';
 
-        toast({
-          title: "Request Submitted",
-          description: "Your request has been sent to the company admin for approval.",
-        });
+        // Check if user was auto-approved (first user of company becomes admin)
+        if (updatedUser?.approval_status === 'approved' && updatedUser?.is_admin) {
+          // User is the first user of the company, now an admin - proceed to dashboard
+          toast({
+            title: "Welcome, Admin!",
+            description: `You're the first user of ${company.display_name || company.name} and have been granted admin privileges.`,
+          });
+          navigate(`/dashboard/${selectedRole}`);
+        } else {
+          // User needs approval from company admin
+          toast({
+            title: "Request Submitted",
+            description: "Your request has been sent to the company admin for approval.",
+          });
 
-        // Logout user and redirect to auth page with message
-        auth.logout();
-        navigate('/auth', {
-          state: {
-            message: `Your ${roleTitle} request for ${company.display_name || company.name} has been submitted. Please wait for admin approval before logging in again.`
-          }
-        });
+          // Logout user and redirect to auth page with message
+          auth.logout();
+          navigate('/auth', {
+            state: {
+              message: `Your ${roleTitle} request for ${company.display_name || company.name} has been submitted. Please wait for admin approval before logging in again.`
+            }
+          });
+        }
       } catch (error: any) {
         toast({
           variant: "destructive",
