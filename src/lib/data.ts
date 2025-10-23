@@ -172,7 +172,8 @@ export const data = {
       return toCamelCase(updatedTrip);
     } catch (error) {
       console.error('Failed to update trip:', error);
-      return null;
+      // Re-throw the error so it can be caught and handled properly by the caller
+      throw error;
     }
   },
 
