@@ -107,9 +107,9 @@ export const getTrip = async (id: string): Promise<(Trip & { bids?: TripBid[], d
 };
 
 /**
- * Get all trips with bids
+ * Get all trips with bids and documents
  */
-export const getAllTrips = async (): Promise<(Trip & { bids?: TripBid[] })[]> => {
+export const getAllTrips = async (): Promise<(Trip & { bids?: TripBid[], documents?: Record<string, string> })[]> => {
   const db = await getDatabase();
   const result = await db.query('SELECT * FROM trips ORDER BY created_at DESC');
   const trips = result.rows as Trip[];
@@ -118,6 +118,10 @@ export const getAllTrips = async (): Promise<(Trip & { bids?: TripBid[] })[]> =>
     // Get all bids for all trips in a single query for efficiency
     const bidsResult = await db.query('SELECT * FROM trip_bids ORDER BY created_at DESC');
     const allBids = bidsResult.rows as TripBid[];
+
+    // Get all documents for all trips in a single query for efficiency
+    const docsResult = await db.query('SELECT * FROM trip_documents');
+    const allDocs = docsResult.rows as TripDocument[];
 
     // Group bids by trip_id and convert numeric fields
     const bidsByTrip = allBids.reduce((acc, bid) => {
@@ -132,7 +136,16 @@ export const getAllTrips = async (): Promise<(Trip & { bids?: TripBid[] })[]> =>
       return acc;
     }, {} as Record<string, TripBid[]>);
 
-    // Add bids to each trip and convert numeric fields
+    // Group documents by trip_id
+    const docsByTrip = allDocs.reduce((acc, doc) => {
+      if (!acc[doc.trip_id]) {
+        acc[doc.trip_id] = {};
+      }
+      acc[doc.trip_id][doc.document_type] = doc.document_data;
+      return acc;
+    }, {} as Record<string, Record<string, string>>);
+
+    // Add bids and documents to each trip and convert numeric fields
     return trips.map(trip => ({
       ...trip,
       distance: Number(trip.distance),
@@ -142,10 +155,11 @@ export const getAllTrips = async (): Promise<(Trip & { bids?: TripBid[] })[]> =>
       maturity_days: trip.maturity_days ? Number(trip.maturity_days) : undefined,
       load_owner_rating: trip.load_owner_rating ? Number(trip.load_owner_rating) : undefined,
       bids: bidsByTrip[trip.id] || undefined,
+      documents: docsByTrip[trip.id] && Object.keys(docsByTrip[trip.id]).length > 0 ? docsByTrip[trip.id] : undefined,
     }));
   } catch (error) {
-    console.error('Error loading bids:', error);
-    // Return trips with numeric conversions even if bids fail
+    console.error('Error loading bids and documents:', error);
+    // Return trips with numeric conversions even if bids/documents fail
     return trips.map(trip => ({
       ...trip,
       distance: Number(trip.distance),
@@ -159,12 +173,30 @@ export const getAllTrips = async (): Promise<(Trip & { bids?: TripBid[] })[]> =>
 };
 
 /**
- * Get trips by status
+ * Get trips by status with documents
  */
-export const getTripsByStatus = async (status: Trip['status']): Promise<Trip[]> => {
+export const getTripsByStatus = async (status: Trip['status']): Promise<(Trip & { documents?: Record<string, string> })[]> => {
   const db = await getDatabase();
   const result = await db.query('SELECT * FROM trips WHERE status = $1 ORDER BY created_at DESC', [status]);
-  return result.rows.map(trip => ({
+  const trips = result.rows as Trip[];
+
+  // Get all documents for these trips
+  const tripIds = trips.map(t => t.id);
+  if (tripIds.length === 0) return [];
+
+  const docsResult = await db.query('SELECT * FROM trip_documents WHERE trip_id = ANY($1)', [tripIds]);
+  const allDocs = docsResult.rows as TripDocument[];
+
+  // Group documents by trip_id
+  const docsByTrip = allDocs.reduce((acc, doc) => {
+    if (!acc[doc.trip_id]) {
+      acc[doc.trip_id] = {};
+    }
+    acc[doc.trip_id][doc.document_type] = doc.document_data;
+    return acc;
+  }, {} as Record<string, Record<string, string>>);
+
+  return trips.map(trip => ({
     ...trip,
     distance: Number(trip.distance),
     weight: Number(trip.weight),
@@ -172,16 +204,35 @@ export const getTripsByStatus = async (status: Trip['status']): Promise<Trip[]> 
     interest_rate: trip.interest_rate ? Number(trip.interest_rate) : undefined,
     maturity_days: trip.maturity_days ? Number(trip.maturity_days) : undefined,
     load_owner_rating: trip.load_owner_rating ? Number(trip.load_owner_rating) : undefined,
+    documents: docsByTrip[trip.id] && Object.keys(docsByTrip[trip.id]).length > 0 ? docsByTrip[trip.id] : undefined,
   }));
 };
 
 /**
- * Get trips by load owner
+ * Get trips by load owner with documents
  */
-export const getTripsByLoadOwner = async (loadOwnerId: string): Promise<Trip[]> => {
+export const getTripsByLoadOwner = async (loadOwnerId: string): Promise<(Trip & { documents?: Record<string, string> })[]> => {
   const db = await getDatabase();
   const result = await db.query('SELECT * FROM trips WHERE load_owner_id = $1 ORDER BY created_at DESC', [loadOwnerId]);
-  return result.rows.map(trip => ({
+  const trips = result.rows as Trip[];
+
+  // Get all documents for these trips
+  const tripIds = trips.map(t => t.id);
+  if (tripIds.length === 0) return [];
+
+  const docsResult = await db.query('SELECT * FROM trip_documents WHERE trip_id = ANY($1)', [tripIds]);
+  const allDocs = docsResult.rows as TripDocument[];
+
+  // Group documents by trip_id
+  const docsByTrip = allDocs.reduce((acc, doc) => {
+    if (!acc[doc.trip_id]) {
+      acc[doc.trip_id] = {};
+    }
+    acc[doc.trip_id][doc.document_type] = doc.document_data;
+    return acc;
+  }, {} as Record<string, Record<string, string>>);
+
+  return trips.map(trip => ({
     ...trip,
     distance: Number(trip.distance),
     weight: Number(trip.weight),
@@ -189,16 +240,35 @@ export const getTripsByLoadOwner = async (loadOwnerId: string): Promise<Trip[]> 
     interest_rate: trip.interest_rate ? Number(trip.interest_rate) : undefined,
     maturity_days: trip.maturity_days ? Number(trip.maturity_days) : undefined,
     load_owner_rating: trip.load_owner_rating ? Number(trip.load_owner_rating) : undefined,
+    documents: docsByTrip[trip.id] && Object.keys(docsByTrip[trip.id]).length > 0 ? docsByTrip[trip.id] : undefined,
   }));
 };
 
 /**
- * Get trips by lender
+ * Get trips by lender with documents
  */
-export const getTripsByLender = async (lenderId: string): Promise<Trip[]> => {
+export const getTripsByLender = async (lenderId: string): Promise<(Trip & { documents?: Record<string, string> })[]> => {
   const db = await getDatabase();
   const result = await db.query('SELECT * FROM trips WHERE lender_id = $1 ORDER BY created_at DESC', [lenderId]);
-  return result.rows.map(trip => ({
+  const trips = result.rows as Trip[];
+
+  // Get all documents for these trips
+  const tripIds = trips.map(t => t.id);
+  if (tripIds.length === 0) return [];
+
+  const docsResult = await db.query('SELECT * FROM trip_documents WHERE trip_id = ANY($1)', [tripIds]);
+  const allDocs = docsResult.rows as TripDocument[];
+
+  // Group documents by trip_id
+  const docsByTrip = allDocs.reduce((acc, doc) => {
+    if (!acc[doc.trip_id]) {
+      acc[doc.trip_id] = {};
+    }
+    acc[doc.trip_id][doc.document_type] = doc.document_data;
+    return acc;
+  }, {} as Record<string, Record<string, string>>);
+
+  return trips.map(trip => ({
     ...trip,
     distance: Number(trip.distance),
     weight: Number(trip.weight),
@@ -206,6 +276,7 @@ export const getTripsByLender = async (lenderId: string): Promise<Trip[]> => {
     interest_rate: trip.interest_rate ? Number(trip.interest_rate) : undefined,
     maturity_days: trip.maturity_days ? Number(trip.maturity_days) : undefined,
     load_owner_rating: trip.load_owner_rating ? Number(trip.load_owner_rating) : undefined,
+    documents: docsByTrip[trip.id] && Object.keys(docsByTrip[trip.id]).length > 0 ? docsByTrip[trip.id] : undefined,
   }));
 };
 
