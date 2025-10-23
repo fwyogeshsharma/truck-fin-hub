@@ -11,6 +11,7 @@ import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { formatCurrency, formatCurrencyCompact } from "@/lib/currency";
 import { getChartColors, getChartColorPalette } from "@/lib/chartColors";
 import { apiClient } from '@/api/client';
+import MaturityCountdown from '@/components/MaturityCountdown';
 
 const LenderDashboard = () => {
   const { toast } = useToast();
@@ -688,6 +689,9 @@ const LenderDashboard = () => {
                         <p className="text-xs text-muted-foreground">
                           Return: {formatCurrency(investment.expectedReturn)}
                         </p>
+                        {investment.maturityDate && (
+                          <MaturityCountdown maturityDate={investment.maturityDate} className="mt-1" />
+                        )}
                       </div>
                     </div>
                   );
