@@ -156,19 +156,41 @@ const LoadAgentDashboard = () => {
           console.log(`🔍 Current trip documents:`, trip?.documents);
 
           if (trip) {
-            const updatedTrip = await data.updateTrip(tripId, {
-              documents: {
-                ...trip.documents,
-                [docType]: base64String,
-              },
-            });
+            const newDocuments = {
+              ...trip.documents,
+              [docType]: base64String,
+            };
+
+            // Check if all documents are uploaded
+            const requiredDocs = ['ewaybill', 'bilty', 'advance_invoice', 'pod', 'final_invoice'];
+            const allDocsUploaded = requiredDocs.every(doc => newDocuments[doc]);
+
+            // Update trip with documents and status
+            const updateData: any = {
+              documents: newDocuments,
+            };
+
+            // If all documents are uploaded and trip is funded/in_transit, mark as completed
+            if (allDocsUploaded && (trip.status === 'funded' || trip.status === 'in_transit')) {
+              updateData.status = 'completed';
+              updateData.completedAt = new Date().toISOString();
+            }
+
+            const updatedTrip = await data.updateTrip(tripId, updateData);
 
             console.log(`✅ Document uploaded successfully: ${docType}`, updatedTrip?.documents);
 
-            toast({
-              title: 'Document Uploaded!',
-              description: `${docType.charAt(0).toUpperCase() + docType.slice(1).replace(/_/g, ' ')} has been uploaded successfully`,
-            });
+            if (allDocsUploaded && updateData.status === 'completed') {
+              toast({
+                title: 'Trip Completed!',
+                description: `All documents uploaded successfully! Trip marked as completed.`,
+              });
+            } else {
+              toast({
+                title: 'Document Uploaded!',
+                description: `${docType.charAt(0).toUpperCase() + docType.slice(1).replace(/_/g, ' ')} has been uploaded successfully`,
+              });
+            }
 
             // Update selected trip to show uploaded document immediately
             if (updatedTrip) {
