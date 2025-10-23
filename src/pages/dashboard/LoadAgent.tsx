@@ -178,10 +178,12 @@ const LoadAgentDashboard = () => {
               documents: newDocuments,
             };
 
-            // If all documents are uploaded and trip is funded/in_transit, mark as completed
-            if (allDocsUploaded && (trip.status === 'funded' || trip.status === 'in_transit')) {
+            // If all documents are uploaded, mark trip as completed
+            // This indicates the parcel has been delivered and all documentation is complete
+            if (allDocsUploaded && trip.status !== 'completed' && trip.status !== 'cancelled') {
               updateData.status = 'completed';
               updateData.completedAt = new Date().toISOString();
+              console.log(`🎉 All documents uploaded! Trip ${tripId} marked as COMPLETED`);
             }
 
             const updatedTrip = await data.updateTrip(tripId, updateData);
@@ -190,13 +192,16 @@ const LoadAgentDashboard = () => {
 
             if (allDocsUploaded && updateData.status === 'completed') {
               toast({
-                title: 'Trip Completed!',
-                description: `All documents uploaded successfully! Trip marked as completed.`,
+                title: 'Trip Completed! 🎉',
+                description: `All documents uploaded successfully! Parcel delivered. Trip status updated to COMPLETED.`,
               });
             } else {
               toast({
                 title: 'Document Uploaded!',
-                description: `${docType.charAt(0).toUpperCase() + docType.slice(1).replace(/_/g, ' ')} has been uploaded successfully`,
+                description: `${docType.charAt(0).toUpperCase() + docType.slice(1).replace(/_/g, ' ')} has been uploaded successfully. ${5 - requiredDocs.filter(doc => {
+                  const camelCaseKey = toCamelCase(doc);
+                  return newDocuments[doc] || (newDocuments as any)[camelCaseKey];
+                }).length} document(s) remaining.`,
               });
             }
 
@@ -1038,16 +1043,16 @@ const LoadAgentDashboard = () => {
       color: 'text-yellow-600',
     },
     {
-      title: 'Escrowed',
-      value: allTrips.filter((t) => t.status === 'escrowed').length,
-      icon: Shield,
-      color: 'text-orange-600',
+      title: 'Active',
+      value: allTrips.filter((t) => t.status === 'funded' || t.status === 'in_transit' || t.status === 'escrowed').length,
+      icon: TruckIcon,
+      color: 'text-blue-600',
     },
     {
-      title: 'Funded',
-      value: allTrips.filter((t) => t.status === 'funded').length,
+      title: 'Completed',
+      value: allTrips.filter((t) => t.status === 'completed').length,
       icon: CheckCircle,
-      color: 'text-green-600',
+      color: 'text-purple-600',
     },
   ];
 
