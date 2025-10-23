@@ -8,7 +8,14 @@ import {
   processTransactionRequest,
   getTransactionRequestsWithUserDetails,
 } from '../../src/db/queries/transaction_requests.js';
-import { addToBalance, deductFromBalance, getWallet } from '../../src/db/queries/wallets.js';
+import {
+  addToBalance,
+  deductFromBalance,
+  getWallet,
+  moveToEscrowForWithdrawal,
+  releaseEscrowToBalance,
+  deductFromEscrow,
+} from '../../src/db/queries/wallets.js';
 import { createTransaction } from '../../src/db/queries/transactions.js';
 
 const router = Router();
@@ -48,6 +55,42 @@ router.post('/', async (req: Request, res: Response) => {
     // For withdrawal, bank account details are required
     if (request_type === 'withdrawal' && (!bank_account_id || !bank_account_number || !bank_ifsc_code)) {
       return res.status(400).json({ error: 'Bank account details are required for withdrawal requests' });
+    }
+
+    // For withdrawal requests, immediately move amount to escrow and create pending transaction
+    if (request_type === 'withdrawal') {
+      try {
+        await moveToEscrowForWithdrawal(user_id, Number(amount));
+
+        // Get updated wallet for balance_after
+        const wallet = await getWallet(user_id);
+
+        // Create pending transaction record
+        await createTransaction({
+          user_id,
+          type: 'debit',
+          amount: Number(amount),
+          category: 'withdrawal',
+          description: `Withdrawal request pending - Amount moved to escrow. Will be reflected in your bank account within 24-48 hours upon approval.`,
+          balance_after: wallet.balance,
+        });
+      } catch (error: any) {
+        return res.status(400).json({ error: error.message });
+      }
+    }
+
+    // For add money requests, create pending transaction record
+    if (request_type === 'add_money') {
+      const wallet = await getWallet(user_id);
+
+      await createTransaction({
+        user_id,
+        type: 'credit',
+        amount: Number(amount),
+        category: 'payment',
+        description: `Add money request pending - Will be reflected in your wallet within 24-48 hours upon verification and approval.`,
+        balance_after: wallet.balance,
+      });
     }
 
     const transactionRequest = await createTransactionRequest({
@@ -162,7 +205,7 @@ router.put('/:id/process', async (req: Request, res: Response) => {
       admin_notes,
     });
 
-    // If approved, update the wallet and create transaction
+    // If approved, update the wallet and create completion transaction
     if (status === 'approved') {
       if (transactionRequest.request_type === 'add_money') {
         // Add money to wallet
@@ -171,29 +214,47 @@ router.put('/:id/process', async (req: Request, res: Response) => {
         // Get updated wallet balance
         const wallet = await getWallet(transactionRequest.user_id);
 
-        // Create transaction record
+        // Create completion transaction record
         await createTransaction({
           user_id: transactionRequest.user_id,
           type: 'credit',
           amount: Number(transactionRequest.amount),
           category: 'payment',
-          description: `Wallet top-up via bank transfer (Ref: ${transaction_id})`,
+          description: `Wallet top-up approved and credited (Ref: ${transaction_id})`,
           balance_after: wallet.balance,
         });
       } else if (transactionRequest.request_type === 'withdrawal') {
-        // Deduct from wallet
-        await deductFromBalance(transactionRequest.user_id, Number(transactionRequest.amount));
+        // Deduct from escrowed amount (amount was already moved to escrow when request was created)
+        await deductFromEscrow(transactionRequest.user_id, Number(transactionRequest.amount));
 
         // Get updated wallet balance
         const wallet = await getWallet(transactionRequest.user_id);
 
-        // Create transaction record
+        // Create completion transaction record
         await createTransaction({
           user_id: transactionRequest.user_id,
           type: 'debit',
           amount: Number(transactionRequest.amount),
-          category: 'payment',
-          description: `Withdrawal to ${transactionRequest.bank_name} A/C ${transactionRequest.bank_account_number?.slice(-4)}`,
+          category: 'withdrawal',
+          description: `Withdrawal approved and processed to ${transactionRequest.bank_name} A/C ${transactionRequest.bank_account_number?.slice(-4)}`,
+          balance_after: wallet.balance,
+        });
+      }
+    } else if (status === 'rejected') {
+      // If withdrawal request is rejected, return escrowed amount back to balance
+      if (transactionRequest.request_type === 'withdrawal') {
+        await releaseEscrowToBalance(transactionRequest.user_id, Number(transactionRequest.amount));
+
+        // Get updated wallet balance
+        const wallet = await getWallet(transactionRequest.user_id);
+
+        // Create transaction record for rejection
+        await createTransaction({
+          user_id: transactionRequest.user_id,
+          type: 'credit',
+          amount: Number(transactionRequest.amount),
+          category: 'refund',
+          description: `Withdrawal request rejected - Amount returned to available balance`,
           balance_after: wallet.balance,
         });
       }

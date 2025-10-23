@@ -169,6 +169,47 @@ export const returnInvestment = async (userId: string, principal: number, return
   });
 };
 
+/**
+ * Move balance to escrow for withdrawal request
+ */
+export const moveToEscrowForWithdrawal = async (userId: string, amount: number): Promise<Wallet> => {
+  const wallet = await getWallet(userId);
+  if (wallet.balance < amount) {
+    throw new Error('Insufficient balance');
+  }
+  return await updateWallet(userId, {
+    balance: wallet.balance - amount,
+    escrowed_amount: wallet.escrowed_amount + amount,
+  });
+};
+
+/**
+ * Release escrow (return to balance) - for rejected withdrawal requests
+ */
+export const releaseEscrowToBalance = async (userId: string, amount: number): Promise<Wallet> => {
+  const wallet = await getWallet(userId);
+  if (wallet.escrowed_amount < amount) {
+    throw new Error('Insufficient escrowed amount');
+  }
+  return await updateWallet(userId, {
+    balance: wallet.balance + amount,
+    escrowed_amount: wallet.escrowed_amount - amount,
+  });
+};
+
+/**
+ * Deduct from escrowed amount (for approved withdrawal)
+ */
+export const deductFromEscrow = async (userId: string, amount: number): Promise<Wallet> => {
+  const wallet = await getWallet(userId);
+  if (wallet.escrowed_amount < amount) {
+    throw new Error('Insufficient escrowed amount');
+  }
+  return await updateWallet(userId, {
+    escrowed_amount: wallet.escrowed_amount - amount,
+  });
+};
+
 export default {
   getWallet,
   updateWallet,
@@ -177,4 +218,7 @@ export default {
   moveToEscrow,
   moveFromEscrowToInvested,
   returnInvestment,
+  moveToEscrowForWithdrawal,
+  releaseEscrowToBalance,
+  deductFromEscrow,
 };
