@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { TruckIcon, CheckCircle2, Shield, AlertCircle } from "lucide-react";
+import { CheckCircle2, Shield, AlertCircle } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -55,7 +55,7 @@ const TermsAcceptance = () => {
   const handleDecline = () => {
     toast({
       title: "Terms declined",
-      description: "You must accept the terms to use TruckFin",
+      description: "You must accept the terms to use LogiFin",
     });
     // Optionally, redirect back to auth or landing page
     navigate("/auth");
@@ -67,7 +67,7 @@ const TermsAcceptance = () => {
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TruckIcon className="h-8 w-8 text-primary" />
+            <img src="/logiFin.png" alt="LogiFin" className="h-8" />
           </div>
         </div>
       </header>
@@ -76,7 +76,7 @@ const TermsAcceptance = () => {
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold mb-3">Terms & Conditions</h1>
           <p className="text-lg text-muted-foreground">
-            Please review and accept our terms to continue using TruckFin
+            Please review and accept our terms to continue using LogiFin
           </p>
         </div>
 
@@ -166,13 +166,13 @@ const TermsAcceptance = () => {
                         <span className="leading-relaxed">
                           <strong>No Guaranteed Returns:</strong> Returns are indicative and not guaranteed.
                           Actual returns may vary based on trip completion, market conditions, and other factors
-                          beyond TruckFin's control.
+                          beyond LogiFin's control.
                         </span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-destructive font-bold text-lg">•</span>
                         <span className="leading-relaxed">
-                          <strong>Agreement to Terms:</strong> By using TruckFin, you agree to our terms of
+                          <strong>Agreement to Terms:</strong> By using LogiFin, you agree to our terms of
                           service, privacy policy, and acknowledge the risks associated with logistics financing.
                           You confirm that you have the legal capacity to enter into this agreement.
                         </span>
@@ -180,7 +180,7 @@ const TermsAcceptance = () => {
                       <li className="flex items-start gap-2">
                         <span className="text-destructive font-bold text-lg">•</span>
                         <span className="leading-relaxed">
-                          <strong>Fee Modifications:</strong> TruckFin reserves the right to modify platform
+                          <strong>Fee Modifications:</strong> LogiFin reserves the right to modify platform
                           fees with 30 days prior notice to users. Continued use of the platform after such
                           modifications constitutes acceptance of the new fees.
                         </span>
@@ -196,7 +196,7 @@ const TermsAcceptance = () => {
                       <li className="flex items-start gap-2">
                         <span className="text-destructive font-bold text-lg">•</span>
                         <span className="leading-relaxed">
-                          <strong>Platform Liability:</strong> TruckFin acts as a facilitator and marketplace.
+                          <strong>Platform Liability:</strong> LogiFin acts as a facilitator and marketplace.
                           We are not responsible for the conduct of load owners, vehicle providers, or lenders,
                           nor for any losses incurred due to trip failures, delays, or defaults.
                         </span>
@@ -204,7 +204,7 @@ const TermsAcceptance = () => {
                       <li className="flex items-start gap-2">
                         <span className="text-destructive font-bold text-lg">•</span>
                         <span className="leading-relaxed">
-                          <strong>Dispute Resolution:</strong> Any disputes arising from the use of TruckFin
+                          <strong>Dispute Resolution:</strong> Any disputes arising from the use of LogiFin
                           shall be subject to the exclusive jurisdiction of courts in [Your City], India,
                           and shall be governed by Indian law.
                         </span>
@@ -235,7 +235,7 @@ const TermsAcceptance = () => {
                   >
                     I have read, understood, and agree to all the terms and conditions, platform fees,
                     investment terms, and important notices mentioned above. I acknowledge that I am
-                    accepting these terms voluntarily and understand the risks involved in using TruckFin's services.
+                    accepting these terms voluntarily and understand the risks involved in using LogiFin's services.
                   </label>
                 </div>
               </div>
