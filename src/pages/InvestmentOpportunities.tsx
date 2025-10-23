@@ -351,6 +351,7 @@ const InvestmentOpportunities = () => {
 
     if (!amount || amount <= 0) {
       toast({
+
         variant: "destructive",
         title: "Invalid Amount",
         description: "Please enter a valid amount greater than ₹0",
