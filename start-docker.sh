@@ -90,11 +90,6 @@ VALUES
   ('company_xyz', 'XYZ Transport', 'XYZ Transport', 'hello@xyz.com', '9876543212', 'Bangalore, India', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
--- Update trip_documents to support all 5 document types
-ALTER TABLE trip_documents DROP CONSTRAINT IF EXISTS trip_documents_document_type_check;
-ALTER TABLE trip_documents ADD CONSTRAINT trip_documents_document_type_check
-  CHECK(document_type IN ('bilty', 'ewaybill', 'advance_invoice', 'pod', 'final_invoice'));
-
 SELECT 'Migrations completed!' as status;
 EOFMIGRATION
 
