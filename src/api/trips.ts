@@ -27,7 +27,7 @@ export interface AddBidData {
 }
 
 export interface UploadDocumentData {
-  documentType: 'bilty' | 'ewaybill' | 'invoice';
+  documentType: 'bilty' | 'ewaybill' | 'advance_invoice' | 'pod' | 'final_invoice';
   documentData: string;
   uploadedBy: string;
 }

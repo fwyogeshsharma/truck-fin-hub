@@ -99,7 +99,7 @@ CREATE INDEX IF NOT EXISTS idx_trip_bids_lender ON trip_bids(lender_id);
 CREATE TABLE IF NOT EXISTS trip_documents (
   id TEXT PRIMARY KEY,
   trip_id TEXT NOT NULL,
-  document_type TEXT NOT NULL CHECK(document_type IN ('bilty', 'ewaybill', 'invoice')),
+  document_type TEXT NOT NULL CHECK(document_type IN ('bilty', 'ewaybill', 'advance_invoice', 'pod', 'final_invoice')),
   document_data TEXT NOT NULL,
   uploaded_at TEXT DEFAULT (datetime('now')),
   uploaded_by TEXT NOT NULL,

@@ -41,7 +41,7 @@ export interface TripBid {
 export interface TripDocument {
   id: string;
   trip_id: string;
-  document_type: 'bilty' | 'ewaybill' | 'invoice';
+  document_type: 'bilty' | 'ewaybill' | 'advance_invoice' | 'pod' | 'final_invoice';
   document_data: string;
   uploaded_at: string;
   uploaded_by: string;
@@ -253,31 +253,47 @@ export const createTrip = async (input: CreateTripInput): Promise<Trip> => {
 /**
  * Update trip
  */
-export const updateTrip = async (id: string, updates: Partial<Trip>): Promise<Trip | null> => {
+export const updateTrip = async (id: string, updates: Partial<Trip & { documents?: Record<string, string> }>): Promise<Trip | null> => {
   const db = await getDatabase();
 
   const trip = await getTrip(id);
   if (!trip) return null;
 
+  // Extract and handle documents separately
+  const { documents, ...tripUpdates } = updates as any;
+
+  // Handle document updates if provided
+  if (documents && typeof documents === 'object') {
+    const validDocTypes: Array<'bilty' | 'ewaybill' | 'advance_invoice' | 'pod' | 'final_invoice'> =
+      ['bilty', 'ewaybill', 'advance_invoice', 'pod', 'final_invoice'];
+
+    for (const docType of validDocTypes) {
+      if (documents[docType]) {
+        // Use 'system' as uploadedBy for now, or extract from context if available
+        await uploadDocument(id, docType, documents[docType], trip.load_owner_id || 'system');
+      }
+    }
+  }
+
   const fields: string[] = [];
   const values: any[] = [];
   let paramIndex = 1;
 
-  Object.entries(updates).forEach(([key, value]) => {
-    if (value !== undefined && key !== 'id') {
+  Object.entries(tripUpdates).forEach(([key, value]) => {
+    if (value !== undefined && key !== 'id' && key !== 'documents') {
       fields.push(`${key} = $${paramIndex}`);
       values.push(value);
       paramIndex++;
     }
   });
 
-  if (fields.length === 0) return trip;
+  if (fields.length > 0) {
+    values.push(id);
 
-  values.push(id);
-
-  await db.query(`
-    UPDATE trips SET ${fields.join(', ')} WHERE id = $${paramIndex}
-  `, values);
+    await db.query(`
+      UPDATE trips SET ${fields.join(', ')} WHERE id = $${paramIndex}
+    `, values);
+  }
 
   return await getTrip(id);
 };
@@ -303,7 +319,7 @@ export const addBid = async (tripId: string, lenderId: string, lenderName: strin
  */
 export const uploadDocument = async (
   tripId: string,
-  documentType: 'bilty' | 'ewaybill' | 'invoice',
+  documentType: 'bilty' | 'ewaybill' | 'advance_invoice' | 'pod' | 'final_invoice',
   documentData: string,
   uploadedBy: string
 ): Promise<TripDocument> => {

@@ -59,6 +59,7 @@ import {
   Weight,
   UserCheck,
   UserX,
+  Loader2,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import DocumentProgress from '@/components/DocumentProgress';
@@ -100,6 +101,7 @@ const LoadAgentDashboard = () => {
   const [documentViewDialogOpen, setDocumentViewDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<{ type: string; data: string } | null>(null);
   const [uploadingExcel, setUploadingExcel] = useState(false);
+  const [uploadingDocuments, setUploadingDocuments] = useState<Record<string, boolean>>({});
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -119,32 +121,81 @@ const LoadAgentDashboard = () => {
   };
 
   const handleDocumentUpload = async (tripId: string, docType: 'ewaybill' | 'bilty' | 'advance_invoice' | 'pod' | 'final_invoice', file: File) => {
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64String = reader.result as string;
-      const trip = await data.getTrip(tripId);
+    const uploadKey = `${tripId}-${docType}`;
 
-      if (trip) {
-        const updatedTrip = await data.updateTrip(tripId, {
-          documents: {
-            ...trip.documents,
-            [docType]: base64String,
-          },
-        });
+    // Set loading state
+    setUploadingDocuments(prev => ({ ...prev, [uploadKey]: true }));
 
-        toast({
-          title: 'Document Uploaded!',
-          description: `${docType.charAt(0).toUpperCase() + docType.slice(1)} has been uploaded successfully`,
-        });
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          const base64String = reader.result as string;
+          const trip = await data.getTrip(tripId);
 
-        // Update selected trip to show uploaded document immediately
-        if (updatedTrip) {
-          setSelectedTrip(updatedTrip);
+          if (trip) {
+            const updatedTrip = await data.updateTrip(tripId, {
+              documents: {
+                ...trip.documents,
+                [docType]: base64String,
+              },
+            });
+
+            toast({
+              title: 'Document Uploaded!',
+              description: `${docType.charAt(0).toUpperCase() + docType.slice(1).replace(/_/g, ' ')} has been uploaded successfully`,
+            });
+
+            // Update selected trip to show uploaded document immediately
+            if (updatedTrip) {
+              setSelectedTrip(updatedTrip);
+            }
+            setRefreshKey(prev => prev + 1);
+          }
+        } catch (error) {
+          console.error('Error uploading document:', error);
+          toast({
+            title: 'Upload Failed',
+            description: 'Failed to upload document. Please try again.',
+            variant: 'destructive',
+          });
+        } finally {
+          // Clear loading state
+          setUploadingDocuments(prev => {
+            const newState = { ...prev };
+            delete newState[uploadKey];
+            return newState;
+          });
         }
-        setRefreshKey(prev => prev + 1);
-      }
-    };
-    reader.readAsDataURL(file);
+      };
+
+      reader.onerror = () => {
+        toast({
+          title: 'Upload Failed',
+          description: 'Failed to read file. Please try again.',
+          variant: 'destructive',
+        });
+        setUploadingDocuments(prev => {
+          const newState = { ...prev };
+          delete newState[uploadKey];
+          return newState;
+        });
+      };
+
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error starting upload:', error);
+      toast({
+        title: 'Upload Failed',
+        description: 'Failed to start upload. Please try again.',
+        variant: 'destructive',
+      });
+      setUploadingDocuments(prev => {
+        const newState = { ...prev };
+        delete newState[uploadKey];
+        return newState;
+      });
+    }
   };
 
   const handleViewDocument = (docType: string, docData: string) => {
@@ -2394,7 +2445,12 @@ print(response.json())`;
                       <Label htmlFor={`ewaybill-${selectedTrip.id}`} className="text-sm font-medium">
                         1. E-Way Bill
                       </Label>
-                      {selectedTrip.documents?.ewaybill ? (
+                      {uploadingDocuments[`${selectedTrip.id}-ewaybill`] ? (
+                        <div className="flex flex-col items-center justify-center py-4 space-y-2">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          <span className="text-xs text-muted-foreground">Uploading...</span>
+                        </div>
+                      ) : selectedTrip.documents?.ewaybill ? (
                         <div className="space-y-2">
                           <Badge className="bg-green-600 w-full justify-center text-xs py-1">Uploaded</Badge>
                           <div className="grid grid-cols-2 gap-1">
@@ -2432,6 +2488,7 @@ print(response.json())`;
                             if (file) handleDocumentUpload(selectedTrip.id, 'ewaybill', file);
                           }}
                           className="text-xs"
+                          disabled={uploadingDocuments[`${selectedTrip.id}-ewaybill`]}
                         />
                       )}
                     </div>
@@ -2441,7 +2498,12 @@ print(response.json())`;
                       <Label htmlFor={`bilty-${selectedTrip.id}`} className="text-sm font-medium">
                         2. Bilty
                       </Label>
-                      {selectedTrip.documents?.bilty ? (
+                      {uploadingDocuments[`${selectedTrip.id}-bilty`] ? (
+                        <div className="flex flex-col items-center justify-center py-4 space-y-2">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          <span className="text-xs text-muted-foreground">Uploading...</span>
+                        </div>
+                      ) : selectedTrip.documents?.bilty ? (
                         <div className="space-y-2">
                           <Badge className="bg-green-600 w-full justify-center text-xs py-1">Uploaded</Badge>
                           <div className="grid grid-cols-2 gap-1">
@@ -2479,6 +2541,7 @@ print(response.json())`;
                             if (file) handleDocumentUpload(selectedTrip.id, 'bilty', file);
                           }}
                           className="text-xs"
+                          disabled={uploadingDocuments[`${selectedTrip.id}-bilty`]}
                         />
                       )}
                     </div>
@@ -2488,7 +2551,12 @@ print(response.json())`;
                       <Label htmlFor={`advance_invoice-${selectedTrip.id}`} className="text-sm font-medium">
                         3. Advance Invoice
                       </Label>
-                      {selectedTrip.documents?.advance_invoice ? (
+                      {uploadingDocuments[`${selectedTrip.id}-advance_invoice`] ? (
+                        <div className="flex flex-col items-center justify-center py-4 space-y-2">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          <span className="text-xs text-muted-foreground">Uploading...</span>
+                        </div>
+                      ) : selectedTrip.documents?.advance_invoice ? (
                         <div className="space-y-2">
                           <Badge className="bg-green-600 w-full justify-center text-xs py-1">Uploaded</Badge>
                           <div className="grid grid-cols-2 gap-1">
@@ -2526,6 +2594,7 @@ print(response.json())`;
                             if (file) handleDocumentUpload(selectedTrip.id, 'advance_invoice', file);
                           }}
                           className="text-xs"
+                          disabled={uploadingDocuments[`${selectedTrip.id}-advance_invoice`]}
                         />
                       )}
                     </div>
@@ -2535,7 +2604,12 @@ print(response.json())`;
                       <Label htmlFor={`pod-${selectedTrip.id}`} className="text-sm font-medium">
                         4. POD
                       </Label>
-                      {selectedTrip.documents?.pod ? (
+                      {uploadingDocuments[`${selectedTrip.id}-pod`] ? (
+                        <div className="flex flex-col items-center justify-center py-4 space-y-2">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          <span className="text-xs text-muted-foreground">Uploading...</span>
+                        </div>
+                      ) : selectedTrip.documents?.pod ? (
                         <div className="space-y-2">
                           <Badge className="bg-green-600 w-full justify-center text-xs py-1">Uploaded</Badge>
                           <div className="grid grid-cols-2 gap-1">
@@ -2573,6 +2647,7 @@ print(response.json())`;
                             if (file) handleDocumentUpload(selectedTrip.id, 'pod', file);
                           }}
                           className="text-xs"
+                          disabled={uploadingDocuments[`${selectedTrip.id}-pod`]}
                         />
                       )}
                     </div>
@@ -2582,7 +2657,12 @@ print(response.json())`;
                       <Label htmlFor={`final_invoice-${selectedTrip.id}`} className="text-sm font-medium">
                         5. Final Invoice
                       </Label>
-                      {selectedTrip.documents?.final_invoice ? (
+                      {uploadingDocuments[`${selectedTrip.id}-final_invoice`] ? (
+                        <div className="flex flex-col items-center justify-center py-4 space-y-2">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          <span className="text-xs text-muted-foreground">Uploading...</span>
+                        </div>
+                      ) : selectedTrip.documents?.final_invoice ? (
                         <div className="space-y-2">
                           <Badge className="bg-green-600 w-full justify-center text-xs py-1">Uploaded</Badge>
                           <div className="grid grid-cols-2 gap-1">
@@ -2620,6 +2700,7 @@ print(response.json())`;
                             if (file) handleDocumentUpload(selectedTrip.id, 'final_invoice', file);
                           }}
                           className="text-xs"
+                          disabled={uploadingDocuments[`${selectedTrip.id}-final_invoice`]}
                         />
                       )}
                     </div>
