@@ -267,8 +267,8 @@ const LoadAgentDashboard = () => {
 
       const trip = await data.createTrip({
         loadOwnerId: user?.id || user?.userId || '',
-        loadOwnerName: user?.company || 'Shipper',
-        loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
+        loadOwnerName: user?.company || user?.name || 'Shipper',
+        loadOwnerLogo: user?.companyLogo || '',
         loadOwnerRating: 4.5,
         // Mandatory fields
         ewayBillNumber: formData.ewayBillNumber,
@@ -543,8 +543,8 @@ const LoadAgentDashboard = () => {
 
           await data.createTrip({
             loadOwnerId: user?.id || user?.userId || '',
-            loadOwnerName: user?.company || 'Shipper',
-            loadOwnerLogo: user?.companyLogo || '/rr_full_transp_old.png',
+            loadOwnerName: user?.company || user?.name || 'Shipper',
+            loadOwnerLogo: user?.companyLogo || '',
             loadOwnerRating: 4.5,
             // Mandatory fields
             ewayBillNumber,

@@ -88,7 +88,10 @@ const RoleSelection = () => {
     phone: '',
     address: '',
     gst_number: '',
+    logo: '',
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>('');
 
   // Check if user has accepted terms on component mount
   useEffect(() => {
@@ -178,11 +181,48 @@ const RoleSelection = () => {
     }
   };
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        variant: 'destructive',
+        title: 'File Too Large',
+        description: 'Logo must be less than 2MB',
+      });
+      return;
+    }
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/svg+xml'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid File Type',
+        description: 'Logo must be JPG, PNG, or SVG',
+      });
+      return;
+    }
+
+    setLogoFile(file);
+
+    // Convert to base64 and create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setLogoPreview(base64String);
+      setCompanyFormData({ ...companyFormData, logo: base64String });
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleCompanyFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
+    try{
       // Create company via API
       const newCompany = await apiClient.post('/companies', companyFormData);
 
@@ -551,6 +591,31 @@ const RoleSelection = () => {
                 maxLength={15}
               />
               <p className="text-xs text-muted-foreground">Format: 22AAAAA0000A1Z5</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="company-logo">Company Logo (Optional)</Label>
+              <div className="flex items-center gap-4">
+                {logoPreview && (
+                  <div className="w-20 h-20 border rounded-lg flex items-center justify-center bg-white p-2">
+                    <img
+                      src={logoPreview}
+                      alt="Logo preview"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <Input
+                    id="company-logo"
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/svg+xml"
+                    onChange={handleLogoUpload}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    JPG, PNG, or SVG. Max 2MB.
+                  </p>
+                </div>
+              </div>
             </div>
             <div className="flex justify-end gap-4 pt-4">
               <Button

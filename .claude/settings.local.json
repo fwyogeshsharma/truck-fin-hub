@@ -33,7 +33,9 @@
       "Bash(npm run build:server:*)",
       "Bash(test:*)",
       "Bash(powershell -Command:*)",
-      "Bash(Select-String -Pattern \"start|dev|server\")"
+      "Bash(Select-String -Pattern \"start|dev|server\")",
+      "Bash(Get-Content \"D:\\Projects\\truck-fin-hub\\src\\pages\\RoleSelection.tsx\")",
+      "Bash(Select-Object -First 100)"
     ],
     "deny": [],
     "ask": []
