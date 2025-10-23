@@ -122,6 +122,7 @@ const LoadAgentDashboard = () => {
 
   const handleDocumentUpload = async (tripId: string, docType: 'ewaybill' | 'bilty' | 'advance_invoice' | 'pod' | 'final_invoice', file: File) => {
     const uploadKey = `${tripId}-${docType}`;
+    console.log(`📤 Starting upload: ${docType} for trip ${tripId}`, { fileName: file.name, fileSize: file.size });
 
     // Set loading state
     setUploadingDocuments(prev => ({ ...prev, [uploadKey]: true }));
@@ -131,7 +132,10 @@ const LoadAgentDashboard = () => {
       reader.onloadend = async () => {
         try {
           const base64String = reader.result as string;
+          console.log(`📄 File read complete: ${docType}, size: ${base64String.length} bytes`);
+
           const trip = await data.getTrip(tripId);
+          console.log(`🔍 Current trip documents:`, trip?.documents);
 
           if (trip) {
             const updatedTrip = await data.updateTrip(tripId, {
@@ -141,6 +145,8 @@ const LoadAgentDashboard = () => {
               },
             });
 
+            console.log(`✅ Document uploaded successfully: ${docType}`, updatedTrip?.documents);
+
             toast({
               title: 'Document Uploaded!',
               description: `${docType.charAt(0).toUpperCase() + docType.slice(1).replace(/_/g, ' ')} has been uploaded successfully`,
@@ -149,6 +155,7 @@ const LoadAgentDashboard = () => {
             // Update selected trip to show uploaded document immediately
             if (updatedTrip) {
               setSelectedTrip(updatedTrip);
+              console.log(`🔄 Updated selected trip with new documents:`, updatedTrip.documents);
             }
             setRefreshKey(prev => prev + 1);
           }
@@ -388,6 +395,9 @@ const LoadAgentDashboard = () => {
   };
 
   const handleViewTrip = (trip: any) => {
+    console.log('👁️ Viewing trip:', trip.id);
+    console.log('📋 Trip documents:', trip.documents);
+    console.log('📊 Document types available:', Object.keys(trip.documents || {}));
     setSelectedTrip(trip);
     setViewDialogOpen(true);
   };
@@ -2336,7 +2346,7 @@ print(response.json())`;
 
         {/* View Trip Dialog */}
         <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Trip Details</DialogTitle>
               <DialogDescription>Complete trip information</DialogDescription>
@@ -2427,22 +2437,23 @@ print(response.json())`;
 
                 {/* Document Upload Section */}
                 <div className="mt-6 pt-6 border-t">
-                  <h3 className="font-semibold mb-4 flex items-center gap-2">
-                    <Package className="h-5 w-5" />
+                  <h3 className="font-semibold mb-6 flex items-center gap-2 text-lg">
+                    <Package className="h-6 w-6" />
                     Trip Documents
                   </h3>
 
                   {/* Document Progress Tracker */}
-                  <DocumentProgress
-                    documents={selectedTrip.documents}
-                    showSteps={true}
-                    className="mb-6"
-                  />
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 p-4 rounded-lg mb-6 border border-blue-200 dark:border-blue-800">
+                    <DocumentProgress
+                      documents={selectedTrip.documents}
+                      showSteps={true}
+                    />
+                  </div>
 
-                  <div className="grid md:grid-cols-5 gap-4">
+                  <div className="grid md:grid-cols-5 gap-5">
                     {/* 1. E-Way Bill Upload */}
-                    <div className="p-3 border rounded-lg space-y-2">
-                      <Label htmlFor={`ewaybill-${selectedTrip.id}`} className="text-sm font-medium">
+                    <div className="p-4 border-2 rounded-lg space-y-2 hover:border-primary/50 transition-colors">
+                      <Label htmlFor={`ewaybill-${selectedTrip.id}`} className="text-sm font-semibold">
                         1. E-Way Bill
                       </Label>
                       {uploadingDocuments[`${selectedTrip.id}-ewaybill`] ? (
@@ -2485,7 +2496,10 @@ print(response.json())`;
                           accept=".pdf,.jpg,.jpeg,.png"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) handleDocumentUpload(selectedTrip.id, 'ewaybill', file);
+                            if (file) {
+                              handleDocumentUpload(selectedTrip.id, 'ewaybill', file);
+                              e.target.value = ''; // Reset input after upload
+                            }
                           }}
                           className="text-xs"
                           disabled={uploadingDocuments[`${selectedTrip.id}-ewaybill`]}
@@ -2494,8 +2508,8 @@ print(response.json())`;
                     </div>
 
                     {/* 2. Bilty Upload */}
-                    <div className="p-3 border rounded-lg space-y-2">
-                      <Label htmlFor={`bilty-${selectedTrip.id}`} className="text-sm font-medium">
+                    <div className="p-4 border-2 rounded-lg space-y-2 hover:border-primary/50 transition-colors">
+                      <Label htmlFor={`bilty-${selectedTrip.id}`} className="text-sm font-semibold">
                         2. Bilty
                       </Label>
                       {uploadingDocuments[`${selectedTrip.id}-bilty`] ? (
@@ -2538,7 +2552,10 @@ print(response.json())`;
                           accept=".pdf,.jpg,.jpeg,.png"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) handleDocumentUpload(selectedTrip.id, 'bilty', file);
+                            if (file) {
+                              handleDocumentUpload(selectedTrip.id, 'bilty', file);
+                              e.target.value = ''; // Reset input after upload
+                            }
                           }}
                           className="text-xs"
                           disabled={uploadingDocuments[`${selectedTrip.id}-bilty`]}
@@ -2547,8 +2564,8 @@ print(response.json())`;
                     </div>
 
                     {/* 3. Advance Invoice Upload */}
-                    <div className="p-3 border rounded-lg space-y-2">
-                      <Label htmlFor={`advance_invoice-${selectedTrip.id}`} className="text-sm font-medium">
+                    <div className="p-4 border-2 rounded-lg space-y-2 hover:border-primary/50 transition-colors">
+                      <Label htmlFor={`advance_invoice-${selectedTrip.id}`} className="text-sm font-semibold">
                         3. Advance Invoice
                       </Label>
                       {uploadingDocuments[`${selectedTrip.id}-advance_invoice`] ? (
@@ -2591,7 +2608,10 @@ print(response.json())`;
                           accept=".pdf,.jpg,.jpeg,.png"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) handleDocumentUpload(selectedTrip.id, 'advance_invoice', file);
+                            if (file) {
+                              handleDocumentUpload(selectedTrip.id, 'advance_invoice', file);
+                              e.target.value = ''; // Reset input after upload
+                            }
                           }}
                           className="text-xs"
                           disabled={uploadingDocuments[`${selectedTrip.id}-advance_invoice`]}
@@ -2600,8 +2620,8 @@ print(response.json())`;
                     </div>
 
                     {/* 4. POD Upload */}
-                    <div className="p-3 border rounded-lg space-y-2">
-                      <Label htmlFor={`pod-${selectedTrip.id}`} className="text-sm font-medium">
+                    <div className="p-4 border-2 rounded-lg space-y-2 hover:border-primary/50 transition-colors">
+                      <Label htmlFor={`pod-${selectedTrip.id}`} className="text-sm font-semibold">
                         4. POD
                       </Label>
                       {uploadingDocuments[`${selectedTrip.id}-pod`] ? (
@@ -2644,7 +2664,10 @@ print(response.json())`;
                           accept=".pdf,.jpg,.jpeg,.png"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) handleDocumentUpload(selectedTrip.id, 'pod', file);
+                            if (file) {
+                              handleDocumentUpload(selectedTrip.id, 'pod', file);
+                              e.target.value = ''; // Reset input after upload
+                            }
                           }}
                           className="text-xs"
                           disabled={uploadingDocuments[`${selectedTrip.id}-pod`]}
@@ -2653,8 +2676,8 @@ print(response.json())`;
                     </div>
 
                     {/* 5. Final Invoice Upload */}
-                    <div className="p-3 border rounded-lg space-y-2">
-                      <Label htmlFor={`final_invoice-${selectedTrip.id}`} className="text-sm font-medium">
+                    <div className="p-4 border-2 rounded-lg space-y-2 hover:border-primary/50 transition-colors">
+                      <Label htmlFor={`final_invoice-${selectedTrip.id}`} className="text-sm font-semibold">
                         5. Final Invoice
                       </Label>
                       {uploadingDocuments[`${selectedTrip.id}-final_invoice`] ? (
@@ -2697,7 +2720,10 @@ print(response.json())`;
                           accept=".pdf,.jpg,.jpeg,.png"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) handleDocumentUpload(selectedTrip.id, 'final_invoice', file);
+                            if (file) {
+                              handleDocumentUpload(selectedTrip.id, 'final_invoice', file);
+                              e.target.value = ''; // Reset input after upload
+                            }
                           }}
                           className="text-xs"
                           disabled={uploadingDocuments[`${selectedTrip.id}-final_invoice`]}
