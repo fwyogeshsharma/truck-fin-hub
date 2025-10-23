@@ -2380,6 +2380,14 @@ print(response.json())`;
                     <Package className="h-5 w-5" />
                     Trip Documents
                   </h3>
+
+                  {/* Document Progress Tracker */}
+                  <DocumentProgress
+                    documents={selectedTrip.documents}
+                    showSteps={true}
+                    className="mb-6"
+                  />
+
                   <div className="grid md:grid-cols-5 gap-4">
                     {/* 1. E-Way Bill Upload */}
                     <div className="p-3 border rounded-lg space-y-2">
