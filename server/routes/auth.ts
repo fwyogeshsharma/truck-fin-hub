@@ -239,10 +239,11 @@ router.put('/role', async (req: Request, res: Response) => {
       const isFirstUser = await isFirstUserOfCompany(companyId);
 
       if (isFirstUser) {
-        // First user of the company becomes admin and is auto-approved
+        // First user of the company becomes admin and is auto-approved by super admin
         updateData.is_admin = true;
         updateData.approval_status = 'approved';
         updateData.approved_at = new Date().toISOString();
+        updateData.approved_by = ADMIN_CONFIG.superAdmin.id; // Approved by super admin
         console.log('✅ First user of company - setting as admin and auto-approving');
       } else {
         // Subsequent users need approval from company admin

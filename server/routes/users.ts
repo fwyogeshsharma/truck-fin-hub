@@ -155,12 +155,15 @@ router.put('/:id', async (req: Request, res: Response) => {
 // PUT /api/users/:id/make-admin - Make user an admin for a company
 router.put('/:id/make-admin', async (req: Request, res: Response) => {
   try {
-    const { company, company_id, approved_by } = req.body;
+    const { company, company_id } = req.body;
 
     // Prefer company_id, fall back to company for backward compatibility
     if (!company_id && !company) {
       return res.status(400).json({ error: 'Company ID or company name is required' });
     }
+
+    // Super admin ID - all admins are approved by super admin
+    const SUPER_ADMIN_ID = 'super_admin_001';
 
     // Build update object
     const updateData: any = {
@@ -169,13 +172,8 @@ router.put('/:id/make-admin', async (req: Request, res: Response) => {
       company: company || undefined,
       approval_status: 'approved', // Auto-approve admins
       approved_at: new Date().toISOString(),
+      approved_by: SUPER_ADMIN_ID, // Always approved by super admin
     };
-
-    // Only set approved_by if a valid value is provided
-    // This avoids foreign key constraint violation when null or invalid ID
-    if (approved_by) {
-      updateData.approved_by = approved_by;
-    }
 
     // Update user: set is_admin to true, assign company, and auto-approve
     // When a super admin makes someone an admin, they should be able to login immediately
