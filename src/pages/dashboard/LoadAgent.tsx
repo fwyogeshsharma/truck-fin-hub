@@ -124,6 +124,24 @@ const LoadAgentDashboard = () => {
     const uploadKey = `${tripId}-${docType}`;
     console.log(`📤 Starting upload: ${docType} for trip ${tripId}`, { fileName: file.name, fileSize: file.size });
 
+    // Define maximum file size (10MB)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+
+    // Check file size before processing
+    if (file.size > MAX_FILE_SIZE) {
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      const maxSizeMB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
+
+      toast({
+        title: 'File Too Large',
+        description: `The file size (${fileSizeMB}MB) exceeds the maximum allowed size of ${maxSizeMB}MB. Please upload a smaller file.`,
+        variant: 'destructive',
+      });
+
+      console.error(`❌ File size (${fileSizeMB}MB) exceeds maximum allowed size (${maxSizeMB}MB)`);
+      return;
+    }
+
     // Set loading state
     setUploadingDocuments(prev => ({ ...prev, [uploadKey]: true }));
 
