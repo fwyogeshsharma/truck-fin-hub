@@ -473,6 +473,26 @@ export const rejectUser = async (userId: string, rejectedBy: string, reason: str
   return result.rows[0] || null;
 };
 
+/**
+ * Get users by company ID
+ */
+export const getUsersByCompanyId = async (companyId: string): Promise<User[]> => {
+  const db = getDatabase();
+  const result = await db.query(
+    `SELECT * FROM users WHERE company_id = $1 AND is_active = TRUE ORDER BY created_at ASC`,
+    [companyId]
+  );
+  return result.rows;
+};
+
+/**
+ * Check if user is the first user of a company
+ */
+export const isFirstUserOfCompany = async (companyId: string): Promise<boolean> => {
+  const users = await getUsersByCompanyId(companyId);
+  return users.length === 0;
+};
+
 export default {
   getUserById,
   getUserByEmail,
@@ -488,4 +508,6 @@ export default {
   getPendingUserApprovals,
   approveUser,
   rejectUser,
+  getUsersByCompanyId,
+  isFirstUserOfCompany,
 };

@@ -170,7 +170,7 @@ router.put('/:id/make-admin', async (req: Request, res: Response) => {
       company: company || undefined,
       approval_status: 'approved', // Auto-approve admins
       approved_at: new Date().toISOString(),
-      approved_by: req.body.approved_by || 'system', // Track who made them admin
+      approved_by: req.body.approved_by || null, // Track who made them admin (null if system)
     });
 
     if (!user) {

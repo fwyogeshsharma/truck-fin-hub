@@ -4,7 +4,8 @@ import {
   createUser,
   verifyPassword,
   getUserByEmail,
-  updateUser
+  updateUser,
+  isFirstUserOfCompany
 } from '../../src/db/queries/users.js';
 import { getWallet } from '../../src/db/queries/wallets.js';
 
@@ -232,10 +233,31 @@ router.put('/role', async (req: Request, res: Response) => {
       company_logo: companyLogo,
     };
 
-    // If approval status is provided, set it (for shipper role requiring approval)
-    if (approvalStatus) {
-      updateData.approval_status = approvalStatus;
-      console.log('✅ Setting approval status to:', approvalStatus);
+    // Check if user is joining a company
+    if (companyId) {
+      // Check if this is the first user of the company
+      const isFirstUser = await isFirstUserOfCompany(companyId);
+
+      if (isFirstUser) {
+        // First user of the company becomes admin and is auto-approved
+        updateData.is_admin = true;
+        updateData.approval_status = 'approved';
+        updateData.approved_at = new Date().toISOString();
+        console.log('✅ First user of company - setting as admin and auto-approving');
+      } else {
+        // Subsequent users need approval from company admin
+        updateData.approval_status = 'pending';
+        console.log('⏳ Not first user - setting approval status to pending');
+      }
+    } else {
+      // If no company (individual lender, vehicle owner, etc.), auto-approve
+      if (approvalStatus) {
+        updateData.approval_status = approvalStatus;
+        console.log('✅ Setting approval status to:', approvalStatus);
+      } else {
+        updateData.approval_status = 'approved';
+        console.log('✅ No company - auto-approving');
+      }
     }
 
     console.log('🔄 Calling updateUser with:', { userId, updateData });
@@ -250,7 +272,8 @@ router.put('/role', async (req: Request, res: Response) => {
       id: user.id,
       role: user.role,
       company: user.company,
-      approval_status: user.approval_status
+      approval_status: user.approval_status,
+      is_admin: user.is_admin
     });
 
     res.json({
