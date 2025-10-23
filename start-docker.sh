@@ -25,7 +25,7 @@ echo "   - PostgreSQL Database"
 echo "   - Backend API Server"
 echo ""
 
-docker-compose up -d --build
+docker-compose up -d --build --force-recreate backend
 
 # Wait for services to be healthy
 echo ""
