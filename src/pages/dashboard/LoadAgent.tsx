@@ -156,14 +156,20 @@ const LoadAgentDashboard = () => {
           console.log(`🔍 Current trip documents:`, trip?.documents);
 
           if (trip) {
+            // Helper to convert snake_case to camelCase for single key
+            const toCamelCase = (str: string) => str.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+
             const newDocuments = {
               ...trip.documents,
               [docType]: base64String,
             };
 
-            // Check if all documents are uploaded
+            // Check if all documents are uploaded (check both snake_case and camelCase)
             const requiredDocs = ['ewaybill', 'bilty', 'advance_invoice', 'pod', 'final_invoice'];
-            const allDocsUploaded = requiredDocs.every(doc => newDocuments[doc]);
+            const allDocsUploaded = requiredDocs.every(doc => {
+              const camelCaseKey = toCamelCase(doc);
+              return newDocuments[doc] || (newDocuments as any)[camelCaseKey];
+            });
 
             // Update trip with documents and status
             const updateData: any = {
@@ -2623,7 +2629,7 @@ print(response.json())`;
                           <Loader2 className="h-6 w-6 animate-spin text-primary" />
                           <span className="text-xs text-muted-foreground">Uploading...</span>
                         </div>
-                      ) : selectedTrip.documents?.advance_invoice ? (
+                      ) : (selectedTrip.documents as any)?.advanceInvoice ? (
                         <div className="space-y-2">
                           <Badge className="bg-green-600 w-full justify-center text-xs py-1">Uploaded</Badge>
                           <div className="grid grid-cols-2 gap-1">
@@ -2631,7 +2637,7 @@ print(response.json())`;
                               variant="outline"
                               size="sm"
                               className="text-xs h-8"
-                              onClick={() => handleViewDocument('Advance Invoice', selectedTrip.documents!.advance_invoice!)}
+                              onClick={() => handleViewDocument('Advance Invoice', (selectedTrip.documents as any)!.advanceInvoice!)}
                             >
                               <Eye className="h-3 w-3 mr-1" />
                               View
@@ -2642,7 +2648,7 @@ print(response.json())`;
                               className="text-xs h-8"
                               onClick={() => {
                                 const link = document.createElement('a');
-                                link.href = selectedTrip.documents!.advance_invoice!;
+                                link.href = (selectedTrip.documents as any)!.advanceInvoice!;
                                 link.download = `advance-invoice-${selectedTrip.id}.pdf`;
                                 link.click();
                               }}
@@ -2735,7 +2741,7 @@ print(response.json())`;
                           <Loader2 className="h-6 w-6 animate-spin text-primary" />
                           <span className="text-xs text-muted-foreground">Uploading...</span>
                         </div>
-                      ) : selectedTrip.documents?.final_invoice ? (
+                      ) : (selectedTrip.documents as any)?.finalInvoice ? (
                         <div className="space-y-2">
                           <Badge className="bg-green-600 w-full justify-center text-xs py-1">Uploaded</Badge>
                           <div className="grid grid-cols-2 gap-1">
@@ -2743,7 +2749,7 @@ print(response.json())`;
                               variant="outline"
                               size="sm"
                               className="text-xs h-8"
-                              onClick={() => handleViewDocument('Final Invoice', selectedTrip.documents!.final_invoice!)}
+                              onClick={() => handleViewDocument('Final Invoice', (selectedTrip.documents as any)!.finalInvoice!)}
                             >
                               <Eye className="h-3 w-3 mr-1" />
                               View
@@ -2754,7 +2760,7 @@ print(response.json())`;
                               className="text-xs h-8"
                               onClick={() => {
                                 const link = document.createElement('a');
-                                link.href = selectedTrip.documents!.final_invoice!;
+                                link.href = (selectedTrip.documents as any)!.finalInvoice!;
                                 link.download = `final-invoice-${selectedTrip.id}.pdf`;
                                 link.click();
                               }}
