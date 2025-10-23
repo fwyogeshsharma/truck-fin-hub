@@ -284,12 +284,12 @@ const MyInvestments = () => {
                     Bilty
                   </Button>
                 )}
-                {trip.documents.advance_invoice && (
+                {((trip.documents as any).advance_invoice || (trip.documents as any).advanceInvoice) && (
                   <Button
                     variant="outline"
                     size="sm"
                     className="flex items-center gap-2"
-                    onClick={() => handleViewDocument('Advance Invoice', trip.documents.advance_invoice)}
+                    onClick={() => handleViewDocument('Advance Invoice', (trip.documents as any).advance_invoice || (trip.documents as any).advanceInvoice)}
                   >
                     <Eye className="h-4 w-4" />
                     Advance Invoice
@@ -306,12 +306,12 @@ const MyInvestments = () => {
                     POD
                   </Button>
                 )}
-                {trip.documents.final_invoice && (
+                {((trip.documents as any).final_invoice || (trip.documents as any).finalInvoice) && (
                   <Button
                     variant="outline"
                     size="sm"
                     className="flex items-center gap-2"
-                    onClick={() => handleViewDocument('Final Invoice', trip.documents.final_invoice)}
+                    onClick={() => handleViewDocument('Final Invoice', (trip.documents as any).final_invoice || (trip.documents as any).finalInvoice)}
                   >
                     <Eye className="h-4 w-4" />
                     Final Invoice
@@ -540,12 +540,12 @@ const MyInvestments = () => {
                     Bilty
                   </Button>
                 )}
-                {trip.documents.advance_invoice && (
+                {((trip.documents as any).advance_invoice || (trip.documents as any).advanceInvoice) && (
                   <Button
                     variant="outline"
                     size="sm"
                     className="flex items-center gap-2"
-                    onClick={() => handleViewDocument('Advance Invoice', trip.documents.advance_invoice)}
+                    onClick={() => handleViewDocument('Advance Invoice', (trip.documents as any).advance_invoice || (trip.documents as any).advanceInvoice)}
                   >
                     <Eye className="h-4 w-4" />
                     Advance Invoice
@@ -562,12 +562,12 @@ const MyInvestments = () => {
                     POD
                   </Button>
                 )}
-                {trip.documents.final_invoice && (
+                {((trip.documents as any).final_invoice || (trip.documents as any).finalInvoice) && (
                   <Button
                     variant="outline"
                     size="sm"
                     className="flex items-center gap-2"
-                    onClick={() => handleViewDocument('Final Invoice', trip.documents.final_invoice)}
+                    onClick={() => handleViewDocument('Final Invoice', (trip.documents as any).final_invoice || (trip.documents as any).finalInvoice)}
                   >
                     <Eye className="h-4 w-4" />
                     Final Invoice

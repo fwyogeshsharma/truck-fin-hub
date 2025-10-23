@@ -79,20 +79,22 @@ const getDocumentStep = (documents?: Record<string, string>) => {
     return { step: 'No Documents', color: 'bg-gray-500' };
   }
 
-  // Document progression order
-  if (documents.final_invoice) {
+  const docsAny = documents as any;
+
+  // Document progression order (check both snake_case and camelCase)
+  if (docsAny.final_invoice || docsAny.finalInvoice) {
     return { step: 'Final Invoice', color: 'bg-green-600' };
   }
-  if (documents.pod) {
+  if (docsAny.pod) {
     return { step: 'POD', color: 'bg-blue-600' };
   }
-  if (documents.advance_invoice) {
+  if (docsAny.advance_invoice || docsAny.advanceInvoice) {
     return { step: 'Advance Invoice', color: 'bg-purple-600' };
   }
-  if (documents.bilty) {
+  if (docsAny.bilty) {
     return { step: 'Bilty', color: 'bg-yellow-600' };
   }
-  if (documents.ewaybill) {
+  if (docsAny.ewaybill) {
     return { step: 'E-Way Bill', color: 'bg-orange-600' };
   }
 

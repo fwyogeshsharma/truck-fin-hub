@@ -6,8 +6,10 @@ interface DocumentProgressProps {
     ewaybill?: string;
     bilty?: string;
     advance_invoice?: string;
+    advanceInvoice?: string;
     pod?: string;
     final_invoice?: string;
+    finalInvoice?: string;
   };
   showSteps?: boolean;
   className?: string;
@@ -16,14 +18,20 @@ interface DocumentProgressProps {
 const DOCUMENT_STEPS = [
   { key: 'ewaybill', label: 'E-Way Bill', step: 1 },
   { key: 'bilty', label: 'Bilty', step: 2 },
-  { key: 'advance_invoice', label: 'Advance Invoice', step: 3 },
+  { key: 'advance_invoice', camelKey: 'advanceInvoice', label: 'Advance Invoice', step: 3 },
   { key: 'pod', label: 'POD', step: 4 },
-  { key: 'final_invoice', label: 'Final Invoice', step: 5 },
+  { key: 'final_invoice', camelKey: 'finalInvoice', label: 'Final Invoice', step: 5 },
 ];
 
 export const DocumentProgress = ({ documents = {}, showSteps = false, className = '' }: DocumentProgressProps) => {
+  // Helper to check if document exists (check both snake_case and camelCase)
+  const hasDocument = (step: typeof DOCUMENT_STEPS[0]) => {
+    const docsAny = documents as any;
+    return docsAny[step.key] || (step.camelKey && docsAny[step.camelKey]);
+  };
+
   // Calculate completion percentage (each document = 20%)
-  const completedDocs = DOCUMENT_STEPS.filter(step => documents[step.key as keyof typeof documents]);
+  const completedDocs = DOCUMENT_STEPS.filter(step => hasDocument(step));
   const completionPercentage = (completedDocs.length / DOCUMENT_STEPS.length) * 100;
 
   if (showSteps) {
@@ -43,7 +51,7 @@ export const DocumentProgress = ({ documents = {}, showSteps = false, className 
 
         <div className="grid grid-cols-5 gap-2 mt-3">
           {DOCUMENT_STEPS.map((step) => {
-            const isComplete = !!documents[step.key as keyof typeof documents];
+            const isComplete = hasDocument(step);
             return (
               <div
                 key={step.key}
