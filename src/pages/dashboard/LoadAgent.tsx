@@ -947,11 +947,17 @@ const LoadAgentDashboard = () => {
 
   // Calculate days remaining until maturity
   const getDaysToMaturity = (trip: Trip) => {
-    if (!trip.fundedAt || !trip.maturityDays) return null;
+    const fundedAt = trip.fundedAt || (trip as any).funded_at;
+    const maturityDays = trip.maturityDays || (trip as any).maturity_days;
 
-    const fundedDate = new Date(trip.fundedAt);
+    if (!fundedAt || !maturityDays) {
+      console.log('⚠️ Missing funding info for trip:', trip.id, { fundedAt, maturityDays });
+      return null;
+    }
+
+    const fundedDate = new Date(fundedAt);
     const maturityDate = new Date(fundedDate);
-    maturityDate.setDate(fundedDate.getDate() + trip.maturityDays);
+    maturityDate.setDate(fundedDate.getDate() + maturityDays);
 
     const today = new Date();
     const daysRemaining = Math.ceil((maturityDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -961,8 +967,21 @@ const LoadAgentDashboard = () => {
 
   // Get trips that need loan closure (completed and funded)
   const getLoanClosureTrips = () => {
-    return allTrips
-      .filter(trip => trip.status === 'completed' && trip.lenderId)
+    const closureTrips = allTrips
+      .filter(trip => {
+        // Check if trip is completed
+        const isCompleted = trip.status === 'completed';
+
+        // Check if trip has lender info (check both camelCase and snake_case)
+        const hasLender = trip.lenderId || (trip as any).lender_id;
+
+        // Debug log
+        if (isCompleted && !hasLender) {
+          console.log('⚠️ Completed trip without lender:', trip.id, trip);
+        }
+
+        return isCompleted && hasLender;
+      })
       .map(trip => ({
         ...trip,
         daysToMaturity: getDaysToMaturity(trip),
@@ -973,13 +992,22 @@ const LoadAgentDashboard = () => {
         const daysB = b.daysToMaturity ?? Infinity;
         return daysA - daysB;
       });
+
+    console.log('📊 Loan Closure Trips:', closureTrips.length, 'trips found');
+    console.log('📋 All trips:', allTrips.length, 'Completed:', allTrips.filter(t => t.status === 'completed').length);
+
+    return closureTrips;
   };
 
   const loanClosureTrips = getLoanClosureTrips();
 
   // Handle loan repayment
   const handleLoanRepayment = async (trip: Trip) => {
-    if (!trip.lenderId || !trip.lenderName) {
+    // Check for lender info (both camelCase and snake_case)
+    const lenderId = trip.lenderId || (trip as any).lender_id;
+    const lenderName = trip.lenderName || (trip as any).lender_name;
+
+    if (!lenderId || !lenderName) {
       toast({
         title: 'Error',
         description: 'No lender information found for this trip',
@@ -993,15 +1021,24 @@ const LoadAgentDashboard = () => {
     try {
       // Calculate total repayment amount (principal + interest)
       const principal = trip.amount;
-      const interestRate = trip.interestRate || 0;
-      const maturityDays = trip.maturityDays || 30;
+      const interestRate = trip.interestRate || (trip as any).interest_rate || 0;
+      const maturityDays = trip.maturityDays || (trip as any).maturity_days || 30;
       const interest = (principal * (interestRate / 365) * maturityDays) / 100;
       const totalRepayment = principal + interest;
+
+      console.log('💰 Processing loan repayment:', {
+        tripId: trip.id,
+        lenderId,
+        lenderName,
+        principal,
+        interest,
+        totalRepayment,
+      });
 
       // Process repayment via transaction
       await data.createTransaction({
         fromUserId: user?.id || '',
-        toUserId: trip.lenderId,
+        toUserId: lenderId,
         amount: totalRepayment,
         type: 'repayment',
         tripId: trip.id,
@@ -1010,7 +1047,7 @@ const LoadAgentDashboard = () => {
 
       toast({
         title: 'Repayment Successful',
-        description: `Successfully repaid ₹${(totalRepayment / 1000).toFixed(2)}K to ${trip.lenderName}`,
+        description: `Successfully repaid ₹${(totalRepayment / 1000).toFixed(2)}K to ${lenderName}`,
       });
 
       // Reload trips
@@ -1552,8 +1589,8 @@ const LoadAgentDashboard = () => {
                   <div className="space-y-4">
                     {loanClosureTrips.map((trip: any) => {
                       const principal = trip.amount;
-                      const interestRate = trip.interestRate || 0;
-                      const maturityDays = trip.maturityDays || 30;
+                      const interestRate = trip.interestRate || trip.interest_rate || 0;
+                      const maturityDays = trip.maturityDays || trip.maturity_days || 30;
                       const interest = (principal * (interestRate / 365) * maturityDays) / 100;
                       const totalRepayment = principal + interest;
                       const daysToMaturity = trip.daysToMaturity;
@@ -1593,7 +1630,7 @@ const LoadAgentDashboard = () => {
                                 {/* Lender Info */}
                                 <div className="bg-muted/50 p-3 rounded-lg">
                                   <p className="text-xs text-muted-foreground mb-1">Lender</p>
-                                  <p className="font-medium">{trip.lenderName}</p>
+                                  <p className="font-medium">{trip.lenderName || (trip as any).lender_name || 'Unknown Lender'}</p>
                                 </div>
 
                                 {/* Financial Details */}
