@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Wallet, TrendingUp, Package, IndianRupee, Lock, ArrowUpRight, ArrowDownRight, Sparkles, Brain, RefreshCw, Clock, CheckCircle2, UserCheck, UserX } from "lucide-react";
+import { Wallet, TrendingUp, Package, IndianRupee, Lock, ArrowUpRight, ArrowDownRight, Sparkles, Brain, RefreshCw, Clock, CheckCircle2, UserCheck, UserX, Eye, FileText } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data, type Trip, type Investment, type Wallet as WalletType } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -12,6 +13,7 @@ import { formatCurrency, formatCurrencyCompact } from "@/lib/currency";
 import { getChartColors, getChartColorPalette } from "@/lib/chartColors";
 import { apiClient } from '@/api/client';
 import MaturityCountdown from '@/components/MaturityCountdown';
+import DocumentProgress from '@/components/DocumentProgress';
 
 const LenderDashboard = () => {
   const { toast } = useToast();
@@ -32,6 +34,8 @@ const LenderDashboard = () => {
   const [colorPalette, setColorPalette] = useState(getChartColorPalette());
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
   const [approvingUserId, setApprovingUserId] = useState<string | null>(null);
+  const [selectedTripForDocs, setSelectedTripForDocs] = useState<Trip | null>(null);
+  const [documentViewOpen, setDocumentViewOpen] = useState(false);
 
   // Update chart colors when theme changes
   useEffect(() => {
@@ -678,20 +682,35 @@ const LenderDashboard = () => {
                           </p>
                         </div>
                       </div>
+                      <div className="flex-1 ml-4">
+                        <DocumentProgress documents={trip.documents} className="mb-2" />
+                      </div>
                       <div className="text-right">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 mb-2">
                           <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-600 text-white flex items-center gap-1">
                             <ArrowUpRight className="h-3 w-3" />
                             Active
                           </span>
                         </div>
-                        <p className="text-sm font-semibold mt-1">{formatCurrency(investment.amount)} at {Number(investment.interestRate).toFixed(2)}%</p>
+                        <p className="text-sm font-semibold">{formatCurrency(investment.amount)} at {Number(investment.interestRate).toFixed(2)}%</p>
                         <p className="text-xs text-muted-foreground">
                           Return: {formatCurrency(investment.expectedReturn)}
                         </p>
                         {investment.maturityDate && (
                           <MaturityCountdown maturityDate={investment.maturityDate} className="mt-1" />
                         )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="mt-2 text-xs h-7"
+                          onClick={() => {
+                            setSelectedTripForDocs(trip);
+                            setDocumentViewOpen(true);
+                          }}
+                        >
+                          <FileText className="h-3 w-3 mr-1" />
+                          View Documents
+                        </Button>
                       </div>
                     </div>
                   );
@@ -701,6 +720,82 @@ const LenderDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Document Viewer Dialog */}
+      <Dialog open={documentViewOpen} onOpenChange={setDocumentViewOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Trip Documents</DialogTitle>
+            <DialogDescription>
+              {selectedTripForDocs && `${selectedTripForDocs.origin} → ${selectedTripForDocs.destination}`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedTripForDocs && (
+            <div className="space-y-4">
+              <DocumentProgress documents={selectedTripForDocs.documents} showSteps={true} />
+
+              <div className="border-t pt-4 space-y-3">
+                {['ewaybill', 'bilty', 'advance_invoice', 'pod', 'final_invoice'].map((docType, index) => {
+                  const docLabels = {
+                    ewaybill: 'E-Way Bill',
+                    bilty: 'Bilty',
+                    advance_invoice: 'Advance Invoice',
+                    pod: 'POD',
+                    final_invoice: 'Final Invoice'
+                  };
+                  const docKey = docType as keyof typeof selectedTripForDocs.documents;
+                  const document = selectedTripForDocs.documents?.[docKey];
+
+                  return (
+                    <div key={docType} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${document ? 'bg-green-100 text-green-600' : 'bg-muted text-muted-foreground'}`}>
+                          {document ? (
+                            <CheckCircle2 className="h-4 w-4" />
+                          ) : (
+                            <span className="text-xs font-semibold">{index + 1}</span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{docLabels[docType as keyof typeof docLabels]}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {document ? 'Uploaded' : 'Pending upload'}
+                          </p>
+                        </div>
+                      </div>
+                      {document && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.open(document, '_blank')}
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            View
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const link = document.createElement('a');
+                              link.href = document;
+                              link.download = `${docType}-${selectedTripForDocs.id}.pdf`;
+                              link.click();
+                            }}
+                          >
+                            Download
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

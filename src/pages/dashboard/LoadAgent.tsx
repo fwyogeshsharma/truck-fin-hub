@@ -61,6 +61,7 @@ import {
   UserX,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import DocumentProgress from '@/components/DocumentProgress';
 import { formatPercentage } from '@/lib/currency';
 
 const LoadAgentDashboard = () => {
