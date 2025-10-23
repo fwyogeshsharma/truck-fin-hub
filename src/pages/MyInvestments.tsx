@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import {
   MapPin,
   IndianRupee,
@@ -12,7 +14,9 @@ import {
   TruckIcon,
   Package,
   AlertCircle,
-  Lock
+  Lock,
+  FileText,
+  Eye
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
@@ -34,6 +38,8 @@ const MyInvestments = () => {
   const [trips, setTrips] = useState<Map<string, any>>(new Map());
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Record<string, any>>({});
+  const [documentViewDialogOpen, setDocumentViewDialogOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<{ type: string; data: string } | null>(null);
 
   // Filter configuration
   const filterConfig: FilterConfig[] = [
@@ -182,6 +188,11 @@ const MyInvestments = () => {
     return trips.get(tripId);
   };
 
+  const handleViewDocument = (docType: string, docData: string) => {
+    setSelectedDocument({ type: docType, data: docData });
+    setDocumentViewDialogOpen(true);
+  };
+
   const EscrowedInvestmentCard = ({ investment }: { investment: any }) => {
     const trip = getTripDetails(investment.tripId);
     if (!trip) return null;
@@ -242,6 +253,73 @@ const MyInvestments = () => {
               </div>
             </div>
           </div>
+
+          {/* Trip Documents */}
+          {trip.documents && Object.keys(trip.documents).length > 0 && (
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Trip Documents
+              </h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {trip.documents.ewaybill && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    onClick={() => handleViewDocument('E-Way Bill', trip.documents.ewaybill)}
+                  >
+                    <Eye className="h-4 w-4" />
+                    E-Way Bill
+                  </Button>
+                )}
+                {trip.documents.bilty && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    onClick={() => handleViewDocument('Bilty', trip.documents.bilty)}
+                  >
+                    <Eye className="h-4 w-4" />
+                    Bilty
+                  </Button>
+                )}
+                {trip.documents.advance_invoice && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    onClick={() => handleViewDocument('Advance Invoice', trip.documents.advance_invoice)}
+                  >
+                    <Eye className="h-4 w-4" />
+                    Advance Invoice
+                  </Button>
+                )}
+                {trip.documents.pod && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    onClick={() => handleViewDocument('POD', trip.documents.pod)}
+                  >
+                    <Eye className="h-4 w-4" />
+                    POD
+                  </Button>
+                )}
+                {trip.documents.final_invoice && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    onClick={() => handleViewDocument('Final Invoice', trip.documents.final_invoice)}
+                  >
+                    <Eye className="h-4 w-4" />
+                    Final Invoice
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -431,6 +509,73 @@ const MyInvestments = () => {
               <p className="font-medium">{daysSinceInvestment} days</p>
             </div>
           </div>
+
+          {/* Trip Documents */}
+          {trip.documents && Object.keys(trip.documents).length > 0 && (
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Trip Documents
+              </h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {trip.documents.ewaybill && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    onClick={() => handleViewDocument('E-Way Bill', trip.documents.ewaybill)}
+                  >
+                    <Eye className="h-4 w-4" />
+                    E-Way Bill
+                  </Button>
+                )}
+                {trip.documents.bilty && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    onClick={() => handleViewDocument('Bilty', trip.documents.bilty)}
+                  >
+                    <Eye className="h-4 w-4" />
+                    Bilty
+                  </Button>
+                )}
+                {trip.documents.advance_invoice && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    onClick={() => handleViewDocument('Advance Invoice', trip.documents.advance_invoice)}
+                  >
+                    <Eye className="h-4 w-4" />
+                    Advance Invoice
+                  </Button>
+                )}
+                {trip.documents.pod && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    onClick={() => handleViewDocument('POD', trip.documents.pod)}
+                  >
+                    <Eye className="h-4 w-4" />
+                    POD
+                  </Button>
+                )}
+                {trip.documents.final_invoice && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    onClick={() => handleViewDocument('Final Invoice', trip.documents.final_invoice)}
+                  >
+                    <Eye className="h-4 w-4" />
+                    Final Invoice
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -600,6 +745,35 @@ const MyInvestments = () => {
           )}
         </Tabs>
       </div>
+
+      {/* Document View Dialog */}
+      <Dialog open={documentViewDialogOpen} onOpenChange={setDocumentViewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{selectedDocument?.type}</DialogTitle>
+            <DialogDescription>
+              View the uploaded document
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto">
+            {selectedDocument?.data && (
+              selectedDocument.data.startsWith('data:application/pdf') ? (
+                <iframe
+                  src={selectedDocument.data}
+                  className="w-full h-[600px] border rounded"
+                  title={selectedDocument.type}
+                />
+              ) : (
+                <img
+                  src={selectedDocument.data}
+                  alt={selectedDocument.type}
+                  className="max-w-full h-auto"
+                />
+              )
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

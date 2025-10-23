@@ -56,6 +56,7 @@ import {
   ChevronRight,
   Upload,
   ArrowUpCircle,
+  FileText,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { auth } from "@/lib/auth";
@@ -71,6 +72,32 @@ import {
 import AdvancedFilter, { type FilterConfig } from "@/components/AdvancedFilter";
 import { getCompanyInfo } from "@/data/companyInfo";
 import { apiClient } from "@/api/client";
+
+// Helper function to get the latest document step
+const getDocumentStep = (documents?: Record<string, string>) => {
+  if (!documents || Object.keys(documents).length === 0) {
+    return { step: 'No Documents', color: 'bg-gray-500' };
+  }
+
+  // Document progression order
+  if (documents.final_invoice) {
+    return { step: 'Final Invoice', color: 'bg-green-600' };
+  }
+  if (documents.pod) {
+    return { step: 'POD', color: 'bg-blue-600' };
+  }
+  if (documents.advance_invoice) {
+    return { step: 'Advance Invoice', color: 'bg-purple-600' };
+  }
+  if (documents.bilty) {
+    return { step: 'Bilty', color: 'bg-yellow-600' };
+  }
+  if (documents.ewaybill) {
+    return { step: 'E-Way Bill', color: 'bg-orange-600' };
+  }
+
+  return { step: 'No Documents', color: 'bg-gray-500' };
+};
 
 const InvestmentOpportunities = () => {
   const { toast } = useToast();
@@ -2080,6 +2107,16 @@ const InvestmentOpportunities = () => {
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2">
+                          {/* Document Step Indicator */}
+                          {(() => {
+                            const docStep = getDocumentStep(trip.documents);
+                            return (
+                              <Badge className={`${docStep.color} text-white flex items-center gap-1`}>
+                                <FileText className="h-3 w-3" />
+                                {docStep.step}
+                              </Badge>
+                            );
+                          })()}
                           <div className="flex items-center gap-2">
                             {/* Risk Level */}
                             {trip.riskLevel && (
