@@ -40,6 +40,7 @@ import {
   Clock,
   XCircle,
   Shield,
+  AlertCircle,
   Star,
   Upload,
   Download,
@@ -73,6 +74,7 @@ const LoadAgentDashboard = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [allTrips, setAllTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
+  const [repaying, setRepaying] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const loadTrips = async () => {
@@ -938,6 +940,89 @@ const LoadAgentDashboard = () => {
     setRefreshKey(prev => prev + 1); // Refresh trip list
   };
 
+  // Calculate days remaining until maturity
+  const getDaysToMaturity = (trip: Trip) => {
+    if (!trip.fundedAt || !trip.maturityDays) return null;
+
+    const fundedDate = new Date(trip.fundedAt);
+    const maturityDate = new Date(fundedDate);
+    maturityDate.setDate(fundedDate.getDate() + trip.maturityDays);
+
+    const today = new Date();
+    const daysRemaining = Math.ceil((maturityDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    return daysRemaining;
+  };
+
+  // Get trips that need loan closure (completed and funded)
+  const getLoanClosureTrips = () => {
+    return allTrips
+      .filter(trip => trip.status === 'completed' && trip.lenderId)
+      .map(trip => ({
+        ...trip,
+        daysToMaturity: getDaysToMaturity(trip),
+      }))
+      .sort((a, b) => {
+        // Sort by days to maturity (urgent ones first)
+        const daysA = a.daysToMaturity ?? Infinity;
+        const daysB = b.daysToMaturity ?? Infinity;
+        return daysA - daysB;
+      });
+  };
+
+  const loanClosureTrips = getLoanClosureTrips();
+
+  // Handle loan repayment
+  const handleLoanRepayment = async (trip: Trip) => {
+    if (!trip.lenderId || !trip.lenderName) {
+      toast({
+        title: 'Error',
+        description: 'No lender information found for this trip',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setRepaying(prev => ({ ...prev, [trip.id]: true }));
+
+    try {
+      // Calculate total repayment amount (principal + interest)
+      const principal = trip.amount;
+      const interestRate = trip.interestRate || 0;
+      const maturityDays = trip.maturityDays || 30;
+      const interest = (principal * (interestRate / 365) * maturityDays) / 100;
+      const totalRepayment = principal + interest;
+
+      // Process repayment via transaction
+      await data.createTransaction({
+        fromUserId: user?.id || '',
+        toUserId: trip.lenderId,
+        amount: totalRepayment,
+        type: 'repayment',
+        tripId: trip.id,
+        description: `Loan repayment for trip ${trip.origin} → ${trip.destination}`,
+      });
+
+      toast({
+        title: 'Repayment Successful',
+        description: `Successfully repaid ₹${(totalRepayment / 1000).toFixed(2)}K to ${trip.lenderName}`,
+      });
+
+      // Reload trips
+      setRefreshKey(prev => prev + 1);
+
+    } catch (error: any) {
+      console.error('Repayment error:', error);
+      toast({
+        title: 'Repayment Failed',
+        description: error?.message || 'Failed to process repayment. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setRepaying(prev => ({ ...prev, [trip.id]: false }));
+    }
+  };
+
   // Stats
   const stats = [
     {
@@ -1059,6 +1144,16 @@ const LoadAgentDashboard = () => {
         })}
         </div>
 
+        {/* Tabs for All Trips and Loan Closure */}
+        <Tabs defaultValue="all-trips" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="all-trips">All Trips</TabsTrigger>
+            <TabsTrigger value="loan-closure">
+              Loan Closure {loanClosureTrips.length > 0 && `(${loanClosureTrips.length})`}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all-trips" className="space-y-6">
         {/* Escrowed Trips - Pending Allotment */}
         {allTrips.filter((t) => t.status === 'escrowed').length > 0 && (
           <Card className="border-orange-500/50 bg-orange-50/50 dark:bg-orange-950/20">
@@ -1428,6 +1523,153 @@ const LoadAgentDashboard = () => {
             </div>
           </Card>
         )}
+          </TabsContent>
+
+          {/* Loan Closure Tab */}
+          <TabsContent value="loan-closure" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Loan Closure - Pending Repayments</CardTitle>
+                <CardDescription>
+                  Completed trips with funded loans awaiting repayment - sorted by maturity urgency
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loanClosureTrips.length === 0 ? (
+                  <div className="text-center py-12">
+                    <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                    <p className="text-muted-foreground">No pending loan closures</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      All loans have been repaid or no loans are due
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {loanClosureTrips.map((trip: any) => {
+                      const principal = trip.amount;
+                      const interestRate = trip.interestRate || 0;
+                      const maturityDays = trip.maturityDays || 30;
+                      const interest = (principal * (interestRate / 365) * maturityDays) / 100;
+                      const totalRepayment = principal + interest;
+                      const daysToMaturity = trip.daysToMaturity;
+                      const isOverdue = daysToMaturity !== null && daysToMaturity < 0;
+                      const isUrgent = daysToMaturity !== null && daysToMaturity >= 0 && daysToMaturity <= 10;
+
+                      return (
+                        <Card key={trip.id} className={`${isOverdue ? 'border-red-500 bg-red-50/50' : isUrgent ? 'border-orange-500 bg-orange-50/50' : ''}`}>
+                          <CardContent className="p-6">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 space-y-3">
+                                {/* Trip Info */}
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="font-semibold text-lg">
+                                      {trip.origin} → {trip.destination}
+                                    </h4>
+                                    <Badge variant="secondary">Completed</Badge>
+                                    {isOverdue && (
+                                      <Badge variant="destructive" className="flex items-center gap-1">
+                                        <AlertCircle className="h-3 w-3" />
+                                        Overdue
+                                      </Badge>
+                                    )}
+                                    {isUrgent && !isOverdue && (
+                                      <Badge className="bg-orange-600 flex items-center gap-1">
+                                        <Clock className="h-3 w-3" />
+                                        Urgent - {daysToMaturity} days left
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    {trip.loadType} • {trip.weight}kg • {trip.distance}km
+                                  </p>
+                                </div>
+
+                                {/* Lender Info */}
+                                <div className="bg-muted/50 p-3 rounded-lg">
+                                  <p className="text-xs text-muted-foreground mb-1">Lender</p>
+                                  <p className="font-medium">{trip.lenderName}</p>
+                                </div>
+
+                                {/* Financial Details */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Principal</p>
+                                    <p className="font-semibold">₹{(principal / 1000).toFixed(0)}K</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Interest ({interestRate}%)</p>
+                                    <p className="font-semibold text-orange-600">₹{(interest / 1000).toFixed(2)}K</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Total Repayment</p>
+                                    <p className="font-semibold text-primary">₹{(totalRepayment / 1000).toFixed(2)}K</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                      <Calendar className="h-3 w-3" />
+                                      Maturity Status
+                                    </p>
+                                    <p className={`font-semibold ${isOverdue ? 'text-red-600' : isUrgent ? 'text-orange-600' : ''}`}>
+                                      {daysToMaturity !== null ? (
+                                        isOverdue ? `Overdue by ${Math.abs(daysToMaturity)} days` : `${daysToMaturity} days left`
+                                      ) : (
+                                        `${maturityDays} days`
+                                      )}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Dates */}
+                                {trip.fundedAt && (
+                                  <div className="text-xs text-muted-foreground">
+                                    Funded: {new Date(trip.fundedAt).toLocaleDateString()} •
+                                    Completed: {trip.completedAt ? new Date(trip.completedAt).toLocaleDateString() : 'N/A'}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Repay Button */}
+                              <div className="flex flex-col items-end gap-2">
+                                <Button
+                                  onClick={() => handleLoanRepayment(trip)}
+                                  disabled={repaying[trip.id]}
+                                  className={`${isOverdue || isUrgent ? 'bg-red-600 hover:bg-red-700' : ''}`}
+                                >
+                                  {repaying[trip.id] ? (
+                                    <>
+                                      <Clock className="h-4 w-4 mr-2 animate-spin" />
+                                      Processing...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <IndianRupee className="h-4 w-4 mr-2" />
+                                      Close Loan - ₹{(totalRepayment / 1000).toFixed(2)}K
+                                    </>
+                                  )}
+                                </Button>
+                                {isOverdue && (
+                                  <p className="text-xs text-red-600 font-medium text-right">
+                                    ⚠️ Payment overdue<br/>Late fees may apply
+                                  </p>
+                                )}
+                                {isUrgent && !isOverdue && (
+                                  <p className="text-xs text-orange-600 font-medium text-right">
+                                    ⏰ Payment due in {daysToMaturity} days
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Create Trip Dialog */}
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
