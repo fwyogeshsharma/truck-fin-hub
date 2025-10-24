@@ -19,6 +19,25 @@ const Profile = () => {
     }
   }, [user, navigate]);
 
+  const getRoleDisplayName = (role: string) => {
+    switch (role) {
+      case 'lender':
+        return 'Lender';
+      case 'load_owner':
+        return 'Load Owner';
+      case 'load_agent':
+        return 'Transporter';
+      case 'transporter':
+        return 'Vehicle Owner';
+      case 'admin':
+        return 'Admin';
+      case 'super_admin':
+        return 'Super Admin';
+      default:
+        return role?.replace('_', ' ') || 'N/A';
+    }
+  };
+
   if (!user) return null;
 
   return (
@@ -44,8 +63,8 @@ const Profile = () => {
                   <div className="flex-1">
                     <CardTitle className="text-2xl">{user.name}</CardTitle>
                     <CardDescription className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary" className="capitalize">
-                        {user.role}
+                      <Badge variant="secondary">
+                        {getRoleDisplayName(user.role)}
                       </Badge>
                       <Badge variant="outline" className="capitalize flex items-center gap-1">
                         <Shield className="h-3 w-3" />
@@ -89,7 +108,7 @@ const Profile = () => {
                     <Briefcase className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="text-sm text-muted-foreground">Account Type</p>
-                      <p className="font-medium capitalize">{user.role}</p>
+                      <p className="font-medium">{getRoleDisplayName(user.role)}</p>
                     </div>
                   </div>
 
