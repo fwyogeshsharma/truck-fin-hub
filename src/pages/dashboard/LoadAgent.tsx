@@ -173,43 +173,30 @@ const LoadAgentDashboard = () => {
               return newDocuments[doc] || (newDocuments as any)[camelCaseKey];
             });
 
-            // Update trip with documents and status
+            // Update trip with ONLY documents - NEVER change status automatically
+            // Status changes should only happen through explicit workflow actions (allotment, etc.)
             const updateData: any = {
               documents: newDocuments,
             };
-
-            // If all documents are uploaded AND trip is in transit/funded state, mark trip as completed
-            // DON'T change status if trip is still pending or escrowed (awaiting allotment)
-            // This allows documents to be uploaded without removing the trip from allotment requests
-            const canComplete = trip.status === 'in_transit' || trip.status === 'funded';
-            if (allDocsUploaded && canComplete && trip.status !== 'completed' && trip.status !== 'cancelled') {
-              updateData.status = 'completed';
-              updateData.completedAt = new Date().toISOString();
-              console.log(`🎉 All documents uploaded! Trip ${tripId} marked as COMPLETED`);
-            }
 
             const updatedTrip = await data.updateTrip(tripId, updateData);
 
             console.log(`✅ Document uploaded successfully: ${docType}`, updatedTrip?.documents);
 
-            // Show appropriate toast based on whether status was changed
-            if (allDocsUploaded && updateData.status === 'completed') {
-              toast({
-                title: 'Trip Completed! 🎉',
-                description: `All documents uploaded successfully! Parcel delivered. Trip status updated to COMPLETED.`,
-              });
-            } else if (allDocsUploaded && !canComplete) {
+            // Show toast notification
+            if (allDocsUploaded) {
               toast({
                 title: 'All Documents Uploaded! ✅',
-                description: `All documents uploaded successfully! Trip remains in ${trip.status} status. Complete allotment process to proceed.`,
+                description: `All 5 documents uploaded successfully! Trip status remains ${trip.status}.`,
               });
             } else {
+              const uploadedCount = requiredDocs.filter(doc => {
+                const camelCaseKey = toCamelCase(doc);
+                return newDocuments[doc] || (newDocuments as any)[camelCaseKey];
+              }).length;
               toast({
                 title: 'Document Uploaded!',
-                description: `${docType.charAt(0).toUpperCase() + docType.slice(1).replace(/_/g, ' ')} has been uploaded successfully. ${5 - requiredDocs.filter(doc => {
-                  const camelCaseKey = toCamelCase(doc);
-                  return newDocuments[doc] || (newDocuments as any)[camelCaseKey];
-                }).length} document(s) remaining.`,
+                description: `${docType.charAt(0).toUpperCase() + docType.slice(1).replace(/_/g, ' ')} uploaded successfully. ${uploadedCount}/5 documents completed.`,
               });
             }
 
