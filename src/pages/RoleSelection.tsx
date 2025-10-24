@@ -27,24 +27,10 @@ const roles = [
   // },
   {
     id: "load_agent" as const,
-    title: "Shipper",
-    description: "Manage and facilitate trip financing for multiple load owners",
-    icon: UserCircle,
-    color: "primary",
-  },
-  {
-    id: "transporter" as const,
-    title: "Vehicle Owner",
-    description: "Execute trips efficiently and receive faster payments for deliveries",
-    icon: TruckIcon,
-    color: "secondary",
-  },
-  {
-    id: "vehicle_agent" as const,
     title: "Transporter",
-    description: "Coordinate and manage trips for multiple vehicle owners",
-    icon: UserCircle,
-    color: "secondary",
+    description: "Manage and facilitate trip financing for multiple load owners",
+    icon: TruckIcon,
+    color: "primary",
   },
   {
     id: "lender" as const,
@@ -146,7 +132,7 @@ const RoleSelection = () => {
       return;
     }
 
-    // For shippers (load_agent), show select/create company dialog
+    // For transporters (load_agent), show select/create company dialog
     if (selectedRole === 'load_agent' && !user?.company) {
       setShowShipperActionDialog(true);
       return;
@@ -164,7 +150,7 @@ const RoleSelection = () => {
       // Individual lender - go directly to dashboard
       proceedWithRoleSelection();
     } else {
-      // Company lender - show create/select company dialog (same as shipper)
+      // Company lender - show create/select company dialog (same as transporter)
       setShowShipperActionDialog(true);
     }
   };
@@ -286,7 +272,7 @@ const RoleSelection = () => {
     setSelectedCompany(company);
     setShowCompanyDialog(false);
 
-    // For shipper and lender roles, submit to backend which will determine if user is first (admin) or needs approval
+    // For transporter and lender roles, submit to backend which will determine if user is first (admin) or needs approval
     if (selectedRole === 'load_agent' || selectedRole === 'lender') {
       setIsLoading(true);
       try {
@@ -297,10 +283,10 @@ const RoleSelection = () => {
           company.logo,
           company.id,
           undefined, // Let backend determine approval status
-          'company' // Company lender/shipper
+          'company' // Company lender/transporter
         );
 
-        const roleTitle = selectedRole === 'load_agent' ? 'shipper' : 'lender';
+        const roleTitle = selectedRole === 'load_agent' ? 'transporter' : 'lender';
 
         // Check if user was auto-approved (first user of company becomes admin)
         if (updatedUser?.approval_status === 'approved' && updatedUser?.is_admin) {
@@ -377,7 +363,7 @@ const RoleSelection = () => {
           <p className="text-lg text-muted-foreground">Select how you'll use LogiFin (<span className="font-bold text-foreground">this can't be changed later</span>)</p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+        <div className="grid md:grid-cols-2 gap-6 mb-10 max-w-4xl mx-auto">
           {roles.map((role) => {
             const Icon = role.icon;
             const isSelected = selectedRole === role.id;
@@ -645,7 +631,7 @@ const RoleSelection = () => {
             <DialogTitle>Select Your Company</DialogTitle>
             <DialogDescription>
               {selectedRole === 'load_agent'
-                ? 'Choose the logistics company you represent as a Shipper'
+                ? 'Choose the logistics company you represent as a Transporter'
                 : selectedRole === 'lender'
                 ? 'Choose the lending company you want to represent'
                 : 'Choose the company you want to work for'}
