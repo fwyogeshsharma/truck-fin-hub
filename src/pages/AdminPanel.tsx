@@ -12,7 +12,6 @@ import {
   TruckIcon,
   Wallet,
   FileText,
-  Settings,
   BarChart3,
   AlertCircle,
 } from "lucide-react";
@@ -156,14 +155,6 @@ const AdminPanel = () => {
               {companyData ? `Manage ${companyData.display_name}` : 'Manage your company operations'}
             </p>
           </div>
-          <Button
-            onClick={() => navigate('/settings')}
-            variant="outline"
-            className="gap-2"
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </Button>
         </div>
 
         {/* Company Info Card */}

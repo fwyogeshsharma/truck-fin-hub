@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, TruckIcon, Wallet, AlertTriangle, CheckCircle2, Clock, UserCheck, UserX, Settings } from "lucide-react";
+import { Users, TruckIcon, Wallet, AlertTriangle, CheckCircle2, Clock, UserCheck, UserX } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data, Trip, Investment } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -200,15 +200,6 @@ const AdminDashboard = () => {
                 'System overview and management'}
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/admin/setup-debug')}
-            className="flex items-center gap-2"
-          >
-            <Settings className="h-4 w-4" />
-            Setup Debug
-          </Button>
         </div>
 
         {/* Stats */}

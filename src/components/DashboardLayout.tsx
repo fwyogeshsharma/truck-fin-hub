@@ -77,7 +77,6 @@ const roleConfig = {
       { label: "Transaction Requests", path: "/transaction-requests", icon: ArrowLeftRight },
       { label: "Admin Panel", path: "/dashboard/admin", icon: Shield },
       { label: "Users", path: "/admin/users", icon: Users },
-      { label: "System", path: "/admin/system", icon: Shield },
     ],
   },
 };
