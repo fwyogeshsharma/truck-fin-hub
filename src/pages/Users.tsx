@@ -376,12 +376,13 @@ const Users = () => {
   };
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Email', 'Phone', 'Role', 'Created At'];
+    const headers = ['Name', 'Email', 'Phone', 'Role', 'Company', 'Created At'];
     const csvData = filteredUsers.map(u => [
       u.name || '',
       u.email || '',
       u.phone || '',
       getRoleDisplayName(u.role),
+      u.company || 'Individual',
       u.createdAt || 'N/A',
     ]);
 
@@ -545,6 +546,7 @@ const Users = () => {
                     <TableHead>Email</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Company</TableHead>
                     <TableHead>User ID</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -552,7 +554,7 @@ const Users = () => {
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
+                      <TableCell colSpan={7} className="text-center py-8">
                         <div className="flex items-center justify-center gap-2">
                           <RefreshCw className="h-5 w-5 animate-spin text-primary" />
                           <span className="text-muted-foreground">Loading users from database...</span>
@@ -561,7 +563,7 @@ const Users = () => {
                     </TableRow>
                   ) : filteredUsers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         No users found
                       </TableCell>
                     </TableRow>
@@ -592,6 +594,11 @@ const Users = () => {
                           <Badge className={`${getRoleBadgeColor(userItem.role)} border`}>
                             {getRoleDisplayName(userItem.role)}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className={userItem.company ? "font-medium" : "text-muted-foreground italic"}>
+                            {userItem.company || 'Individual'}
+                          </span>
                         </TableCell>
                         <TableCell className="font-mono text-xs text-muted-foreground">
                           {userItem.id}
