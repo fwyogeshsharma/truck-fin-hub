@@ -205,10 +205,6 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                   <UserIcon className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/settings')}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/settings/notifications')}>
                   <BellIcon className="mr-2 h-4 w-4" />
                   <span>Notifications</span>
@@ -283,17 +279,6 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                   >
                     <FileText className="h-5 w-5" />
                     <span className="text-base">Reports</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="justify-start gap-3 h-12"
-                    onClick={() => {
-                      navigate('/settings');
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    <Settings className="h-5 w-5" />
-                    <span className="text-base">Settings</span>
                   </Button>
                   <div className="my-4 border-t" />
                   <Button
