@@ -112,8 +112,8 @@ export function ThemeCustomizer() {
   useEffect(() => {
     const fetchColors = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-        const response = await fetch(`${apiUrl}/api/theme`);
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+        const response = await fetch(`${apiUrl}/theme`);
         if (response.ok) {
           const data = await response.json();
           setColors(data);
@@ -148,8 +148,8 @@ export function ThemeCustomizer() {
 
     setSaving(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-      const response = await fetch(`${apiUrl}/api/theme`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+      const response = await fetch(`${apiUrl}/theme`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
