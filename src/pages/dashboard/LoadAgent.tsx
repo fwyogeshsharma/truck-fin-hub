@@ -985,7 +985,23 @@ const LoadAgentDashboard = () => {
     return daysRemaining;
   };
 
-  // Get trips that need loan closure (completed and funded)
+  // Helper to check if all documents are uploaded
+  const hasAllDocuments = (trip: Trip) => {
+    const docs = trip.documents || {};
+    const requiredDocs = ['ewaybill', 'bilty', 'advance_invoice', 'pod', 'final_invoice'];
+
+    // Helper to convert snake_case to camelCase
+    const toCamelCase = (str: string) => str.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+
+    const allDocsUploaded = requiredDocs.every(doc => {
+      const camelCaseKey = toCamelCase(doc);
+      return docs[doc] || (docs as any)[camelCaseKey];
+    });
+
+    return allDocsUploaded;
+  };
+
+  // Get trips that need loan closure (completed AND funded AND all documents uploaded)
   const getLoanClosureTrips = () => {
     const closureTrips = allTrips
       .filter(trip => {
@@ -995,12 +1011,19 @@ const LoadAgentDashboard = () => {
         // Check if trip has lender info (check both camelCase and snake_case)
         const hasLender = trip.lenderId || (trip as any).lender_id;
 
+        // Check if all documents are uploaded
+        const docsComplete = hasAllDocuments(trip);
+
         // Debug log
         if (isCompleted && !hasLender) {
           console.log('⚠️ Completed trip without lender:', trip.id, trip);
         }
+        if (isCompleted && hasLender && !docsComplete) {
+          console.log('⚠️ Funded & Completed trip but missing documents:', trip.id, trip);
+        }
 
-        return isCompleted && hasLender;
+        // ONLY show trips that are: completed + funded + all docs uploaded
+        return isCompleted && hasLender && docsComplete;
       })
       .map(trip => ({
         ...trip,
@@ -1607,7 +1630,7 @@ const LoadAgentDashboard = () => {
               <CardHeader>
                 <CardTitle>Loan Closure - Pending Repayments</CardTitle>
                 <CardDescription>
-                  Trips marked as "Funded & Completed" awaiting loan repayment - sorted by maturity urgency
+                  Trips marked as "Funded & Completed" with all documents uploaded - awaiting loan repayment (sorted by maturity urgency)
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1616,7 +1639,7 @@ const LoadAgentDashboard = () => {
                     <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                     <p className="text-muted-foreground">No pending loan closures</p>
                     <p className="text-sm text-muted-foreground mt-2">
-                      All loans have been repaid or no loans are due
+                      Trips will appear here when they are: Funded + Completed + All documents uploaded
                     </p>
                   </div>
                 ) : (
