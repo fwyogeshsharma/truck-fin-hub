@@ -1138,19 +1138,19 @@ const LoadAgentDashboard = () => {
       title: 'Pending',
       value: allTrips.filter((t) => t.status === 'pending').length,
       icon: Clock,
-      color: 'text-yellow-600',
+      color: 'text-accent',
     },
     {
       title: 'Active',
       value: allTrips.filter((t) => t.status === 'funded' || t.status === 'in_transit' || t.status === 'escrowed').length,
       icon: TruckIcon,
-      color: 'text-blue-600',
+      color: 'text-primary',
     },
     {
       title: 'Completed',
       value: allTrips.filter((t) => t.status === 'completed').length,
       icon: CheckCircle,
-      color: 'text-purple-600',
+      color: 'text-secondary',
     },
   ];
 
@@ -1158,7 +1158,7 @@ const LoadAgentDashboard = () => {
     // If trip is provided and it's both funded AND completed, show special combined badge
     if (trip && isFundedAndCompleted(trip)) {
       return (
-        <Badge className="bg-gradient-to-r from-green-600 to-purple-600">
+        <Badge className="bg-gradient-to-r from-secondary to-primary text-white">
           <CheckCircle className="h-3 w-3 mr-1" />
           Funded & Completed
         </Badge>
@@ -1176,28 +1176,28 @@ const LoadAgentDashboard = () => {
         );
       case 'escrowed':
         return (
-          <Badge className="bg-orange-600">
+          <Badge className="bg-accent text-white">
             <Shield className="h-3 w-3 mr-1" />
             Escrowed
           </Badge>
         );
       case 'funded':
         return (
-          <Badge className="bg-green-600">
+          <Badge className="bg-secondary text-white">
             <CheckCircle className="h-3 w-3 mr-1" />
             Funded
           </Badge>
         );
       case 'in_transit':
         return (
-          <Badge className="bg-blue-600">
+          <Badge className="bg-primary text-white">
             <TruckIcon className="h-3 w-3 mr-1" />
             In Transit
           </Badge>
         );
       case 'completed':
         return (
-          <Badge className="bg-purple-600">
+          <Badge className="bg-primary-dark text-white">
             <CheckCircle className="h-3 w-3 mr-1" />
             Completed
           </Badge>
