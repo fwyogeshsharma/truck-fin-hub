@@ -2833,6 +2833,62 @@ print(response.json())`;
                   )}
                 </div>
 
+                {/* Loan Repayment Notice - Show if funded and completed */}
+                {isFundedAndCompleted(selectedTrip) && (() => {
+                  const principal = selectedTrip.amount;
+                  const interestRate = selectedTrip.interestRate || (selectedTrip as any).interest_rate || 0;
+                  const maturityDays = selectedTrip.maturityDays || (selectedTrip as any).maturity_days || 30;
+                  const interest = (principal * (interestRate / 365) * maturityDays) / 100;
+                  const totalRepayment = principal + interest;
+                  const daysToMaturity = getDaysToMaturity(selectedTrip);
+
+                  return (
+                    <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-purple-50 dark:from-green-950/20 dark:to-purple-950/20 border-2 border-green-400 dark:border-green-700 rounded-lg shadow-lg">
+                      <div className="flex items-start gap-3 mb-4">
+                        <CheckCircle className="h-8 w-8 text-green-600 flex-shrink-0" />
+                        <div className="flex-1">
+                          <h4 className="font-bold text-lg text-green-900 dark:text-green-100 mb-1">Loan Repayment Available</h4>
+                          <p className="text-sm text-green-700 dark:text-green-300">
+                            This trip is funded and all documents are completed. Close the loan to complete repayment.
+                          </p>
+                        </div>
+                        {selectedTrip.lenderName && (
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground">Lender</p>
+                            <p className="font-semibold">{selectedTrip.lenderName}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Loan Details */}
+                      <div className="grid grid-cols-4 gap-3 p-3 bg-white dark:bg-gray-900 rounded-lg border border-green-200 dark:border-green-800">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Principal</p>
+                          <p className="font-bold text-lg">₹{(principal / 1000).toFixed(0)}K</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Interest ({interestRate}%)</p>
+                          <p className="font-bold text-lg text-orange-600">₹{(interest / 1000).toFixed(2)}K</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Total Repayment</p>
+                          <p className="font-bold text-lg text-primary">₹{(totalRepayment / 1000).toFixed(2)}K</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Maturity</p>
+                          <p className={`font-bold text-sm ${daysToMaturity !== null && daysToMaturity < 0 ? 'text-red-600' : daysToMaturity !== null && daysToMaturity <= 10 ? 'text-orange-600' : 'text-green-600'}`}>
+                            {daysToMaturity !== null ? (
+                              daysToMaturity < 0 ? `Overdue ${Math.abs(daysToMaturity)}d` : `${daysToMaturity} days`
+                            ) : (
+                              `${maturityDays} days`
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Document Upload Section */}
                 <div className="mt-6 pt-6 border-t">
                   <h3 className="font-semibold mb-6 flex items-center gap-2 text-lg">
@@ -3134,9 +3190,35 @@ print(response.json())`;
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
-                Close
-              </Button>
+              <div className="flex items-center justify-between w-full gap-4">
+                <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
+                  Close
+                </Button>
+
+                {/* Show loan repayment button if trip is funded AND all documents uploaded */}
+                {selectedTrip && isFundedAndCompleted(selectedTrip) && (
+                  <Button
+                    onClick={() => {
+                      setViewDialogOpen(false);
+                      handleLoanRepayment(selectedTrip);
+                    }}
+                    disabled={repaying[selectedTrip.id]}
+                    className="bg-gradient-to-r from-green-600 to-purple-600 hover:from-green-700 hover:to-purple-700"
+                  >
+                    {repaying[selectedTrip.id] ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Processing Repayment...
+                      </>
+                    ) : (
+                      <>
+                        <IndianRupee className="h-4 w-4 mr-2" />
+                        Close Loan - Repay Now
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>
