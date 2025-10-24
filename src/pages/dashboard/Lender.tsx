@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Wallet, TrendingUp, Package, IndianRupee, Lock, ArrowUpRight, ArrowDownRight, Sparkles, Brain, RefreshCw, Clock, CheckCircle2, UserCheck, UserX, Eye, FileText } from "lucide-react";
+import { Wallet, TrendingUp, Package, IndianRupee, Lock, ArrowUpRight, ArrowDownRight, Sparkles, Brain, RefreshCw, Clock, CheckCircle2, UserCheck, UserX, Eye, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data, type Trip, type Investment, type Wallet as WalletType } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -36,6 +36,11 @@ const LenderDashboard = () => {
   const [approvingUserId, setApprovingUserId] = useState<string | null>(null);
   const [selectedTripForDocs, setSelectedTripForDocs] = useState<Trip | null>(null);
   const [documentViewOpen, setDocumentViewOpen] = useState(false);
+
+  // Pagination state
+  const [pendingBidsPage, setPendingBidsPage] = useState(1);
+  const [activeInvestmentsPage, setActiveInvestmentsPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Update chart colors when theme changes
   useEffect(() => {
@@ -255,14 +260,26 @@ const LenderDashboard = () => {
   ];
 
   // Get user's active investments (allotted and confirmed by Borrower)
-  const activeInvestmentTrips = myInvestments
+  const allActiveInvestmentTrips = myInvestments
     .filter(i => i.status === 'active')
     .map(investment => {
       const trip = trips.find(t => t.id === investment.tripId);
       return trip ? { ...trip, investment } : null;
     })
-    .filter(Boolean)
-    .slice(0, 5);
+    .filter(Boolean);
+
+  // Pagination for active investments
+  const totalActivePages = Math.ceil(allActiveInvestmentTrips.length / itemsPerPage);
+  const activeStartIndex = (activeInvestmentsPage - 1) * itemsPerPage;
+  const activeEndIndex = activeStartIndex + itemsPerPage;
+  const activeInvestmentTrips = allActiveInvestmentTrips.slice(activeStartIndex, activeEndIndex);
+
+  // Get escrowed investments for pending bids
+  const allEscrowedInvestments = myInvestments.filter(i => i.status === 'escrowed');
+  const totalPendingPages = Math.ceil(allEscrowedInvestments.length / itemsPerPage);
+  const pendingStartIndex = (pendingBidsPage - 1) * itemsPerPage;
+  const pendingEndIndex = pendingStartIndex + itemsPerPage;
+  const paginatedEscrowedInvestments = allEscrowedInvestments.slice(pendingStartIndex, pendingEndIndex);
 
   // AI Insights - Calculate investment opportunities
   const pendingTrips = trips.filter(t => t.status === 'pending');
@@ -597,52 +614,94 @@ const LenderDashboard = () => {
         </div>
 
         {/* Escrowed Investments */}
-        {myInvestments.filter(i => i.status === 'escrowed').length > 0 && (
+        {allEscrowedInvestments.length > 0 && (
           <Card className="border-orange-500/50 bg-orange-50/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Lock className="h-5 w-5 text-orange-600" />
-                Pending Bids (Escrowed)
+                Pending Bids (Escrowed) ({allEscrowedInvestments.length})
               </CardTitle>
               <CardDescription>Awaiting Borrower confirmation</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {myInvestments
-                  .filter(i => i.status === 'escrowed')
-                  .map((investment) => {
-                    const trip = trips.find(t => t.id === investment.tripId);
-                    if (!trip) return null;
-                    return (
-                      <div key={investment.id} className="flex items-center justify-between p-4 border border-orange-300 rounded-lg bg-white">
-                        <div className="flex items-center gap-4">
-                          {trip.loadOwnerLogo && (
-                            <img
-                              src={trip.loadOwnerLogo}
-                              alt={trip.loadOwnerName}
-                              className="h-12 w-12 object-contain rounded border p-1"
-                            />
-                          )}
-                          <div>
-                            <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {trip.loadType} • {trip.distance}km
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="flex items-center gap-2">
-                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 flex items-center gap-1">
-                              <Lock className="h-3 w-3" />
-                              Awaiting Allotment
-                            </span>
-                          </div>
-                          <p className="text-sm font-semibold mt-1">{formatCurrency(investment.amount)} at {Number(investment.interestRate).toFixed(2)}%</p>
+                {paginatedEscrowedInvestments.map((investment) => {
+                  const trip = trips.find(t => t.id === investment.tripId);
+                  if (!trip) return null;
+                  return (
+                    <div key={investment.id} className="flex items-center justify-between p-4 border border-orange-300 rounded-lg bg-white">
+                      <div className="flex items-center gap-4">
+                        {trip.loadOwnerLogo && (
+                          <img
+                            src={trip.loadOwnerLogo}
+                            alt={trip.loadOwnerName}
+                            className="h-12 w-12 object-contain rounded border p-1"
+                          />
+                        )}
+                        <div>
+                          <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {trip.loadType} • {trip.distance}km
+                          </p>
                         </div>
                       </div>
-                    );
-                  })}
+                      <div className="text-right">
+                        <div className="flex items-center gap-2">
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 flex items-center gap-1">
+                            <Lock className="h-3 w-3" />
+                            Awaiting Allotment
+                          </span>
+                        </div>
+                        <p className="text-sm font-semibold mt-1">{formatCurrency(investment.amount)} at {Number(investment.interestRate).toFixed(2)}%</p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+
+              {/* Pagination Controls for Pending Bids */}
+              {totalPendingPages > 1 && (
+                <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {pendingStartIndex + 1} to {Math.min(pendingEndIndex, allEscrowedInvestments.length)} of {allEscrowedInvestments.length} bids
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPendingBidsPage(prev => Math.max(1, prev - 1))}
+                      disabled={pendingBidsPage === 1}
+                      className="gap-1"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPendingPages }, (_, i) => i + 1).map((page) => (
+                        <Button
+                          key={page}
+                          variant={pendingBidsPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setPendingBidsPage(page)}
+                          className="min-w-[36px]"
+                        >
+                          {page}
+                        </Button>
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPendingBidsPage(prev => Math.min(totalPendingPages, prev + 1))}
+                      disabled={pendingBidsPage === totalPendingPages}
+                      className="gap-1"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -650,12 +709,12 @@ const LenderDashboard = () => {
         {/* Active Investments - Allotted Trips */}
         <Card>
           <CardHeader>
-            <CardTitle>My Active Investments</CardTitle>
+            <CardTitle>My Active Investments ({allActiveInvestmentTrips.length})</CardTitle>
             <CardDescription>Trips allotted to you by Borrowers</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {activeInvestmentTrips.length === 0 ? (
+              {activeInvestmentTrips.length === 0 && allActiveInvestmentTrips.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
                   <p>No active investments yet</p>
@@ -717,6 +776,50 @@ const LenderDashboard = () => {
                 })
               )}
             </div>
+
+            {/* Pagination Controls for Active Investments */}
+            {totalActivePages > 1 && (
+              <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                <div className="text-sm text-muted-foreground">
+                  Showing {activeStartIndex + 1} to {Math.min(activeEndIndex, allActiveInvestmentTrips.length)} of {allActiveInvestmentTrips.length} investments
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActiveInvestmentsPage(prev => Math.max(1, prev - 1))}
+                    disabled={activeInvestmentsPage === 1}
+                    className="gap-1"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalActivePages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={activeInvestmentsPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setActiveInvestmentsPage(page)}
+                        className="min-w-[36px]"
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActiveInvestmentsPage(prev => Math.min(totalActivePages, prev + 1))}
+                    disabled={activeInvestmentsPage === totalActivePages}
+                    className="gap-1"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
