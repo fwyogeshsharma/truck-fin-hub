@@ -23,14 +23,28 @@ const Landing = () => {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-hero opacity-10" />
-        <div className="container mx-auto px-4 py-20 md:py-32 relative">
+        {/* Video Background */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/logifinlandingpage.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+
+        {/* Overlay for better text readability */}
+        <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+
+        <div className="container mx-auto px-4 py-20 md:py-32 relative z-10">
           <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h1 className="text-4xl md:text-6xl font-bold text-foreground leading-tight">
+            <h1 className="text-4xl md:text-6xl font-bold text-foreground leading-tight drop-shadow-lg">
               Fast Financing for India's
               <span className="bg-gradient-primary bg-clip-text text-transparent"> Trucking Industry</span>
             </h1>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-xl text-muted-foreground drop-shadow-md">
               Connect load providers, vehicle providers, and lenders on one platform. Get invoice financing in hours, not days.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
