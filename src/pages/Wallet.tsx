@@ -404,13 +404,11 @@ const WalletPage = () => {
             <p className="text-muted-foreground mt-1">Manage your funds and transactions</p>
           </div>
           <div className="flex gap-2">
-            {/* Hide Add Money button only for shipper role */}
-            {user?.role !== 'load_agent' && (
-              <Button onClick={() => setTopUpDialogOpen(true)} className="bg-gradient-primary">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Money
-              </Button>
-            )}
+            {/* Add Money button - now available for all roles including shipper */}
+            <Button onClick={() => setTopUpDialogOpen(true)} className="bg-gradient-primary">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Money
+            </Button>
             <Button
               variant="outline"
               onClick={() => setWithdrawDialogOpen(true)}
