@@ -1552,10 +1552,7 @@ const InvestmentOpportunities = () => {
                           <p className="text-xs text-muted-foreground">
                             ARR (
                             {formatPercentage(
-                              (((tripInterestRates[trip.id] ||
-                                trip.interestRate ||
-                                12) *
-                                365) /
+                              (((trip.interestRate || 12) * 365) /
                                 (trip.maturityDays || 30)) *
                                 0.7,
                             )}
@@ -1564,10 +1561,7 @@ const InvestmentOpportunities = () => {
                           <p className="font-semibold text-green-600">
                             {formatCurrencyCompact(
                               trip.amount *
-                                (((((tripInterestRates[trip.id] ||
-                                  trip.interestRate ||
-                                  12) *
-                                  365) /
+                                (((((trip.interestRate || 12) * 365) /
                                   (trip.maturityDays || 30)) *
                                   0.7) /
                                   100),
