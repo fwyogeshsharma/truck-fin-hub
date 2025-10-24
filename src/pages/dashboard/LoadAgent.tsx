@@ -178,9 +178,11 @@ const LoadAgentDashboard = () => {
               documents: newDocuments,
             };
 
-            // If all documents are uploaded, mark trip as completed
-            // This indicates the parcel has been delivered and all documentation is complete
-            if (allDocsUploaded && trip.status !== 'completed' && trip.status !== 'cancelled') {
+            // If all documents are uploaded AND trip is in transit/funded state, mark trip as completed
+            // DON'T change status if trip is still pending or escrowed (awaiting allotment)
+            // This allows documents to be uploaded without removing the trip from allotment requests
+            const canComplete = trip.status === 'in_transit' || trip.status === 'funded';
+            if (allDocsUploaded && canComplete && trip.status !== 'completed' && trip.status !== 'cancelled') {
               updateData.status = 'completed';
               updateData.completedAt = new Date().toISOString();
               console.log(`🎉 All documents uploaded! Trip ${tripId} marked as COMPLETED`);
@@ -190,10 +192,16 @@ const LoadAgentDashboard = () => {
 
             console.log(`✅ Document uploaded successfully: ${docType}`, updatedTrip?.documents);
 
+            // Show appropriate toast based on whether status was changed
             if (allDocsUploaded && updateData.status === 'completed') {
               toast({
                 title: 'Trip Completed! 🎉',
                 description: `All documents uploaded successfully! Parcel delivered. Trip status updated to COMPLETED.`,
+              });
+            } else if (allDocsUploaded && !canComplete) {
+              toast({
+                title: 'All Documents Uploaded! ✅',
+                description: `All documents uploaded successfully! Trip remains in ${trip.status} status. Complete allotment process to proceed.`,
               });
             } else {
               toast({
