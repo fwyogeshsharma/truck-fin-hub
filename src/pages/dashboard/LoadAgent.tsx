@@ -104,6 +104,8 @@ const LoadAgentDashboard = () => {
   const [selectedDocument, setSelectedDocument] = useState<{ type: string; data: string } | null>(null);
   const [uploadingExcel, setUploadingExcel] = useState(false);
   const [uploadingDocuments, setUploadingDocuments] = useState<Record<string, boolean>>({});
+  const [repaymentDialogOpen, setRepaymentDialogOpen] = useState(false);
+  const [tripForRepayment, setTripForRepayment] = useState<any>(null);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -1044,8 +1046,14 @@ const LoadAgentDashboard = () => {
 
   const loanClosureTrips = getLoanClosureTrips();
 
-  // Handle loan repayment
-  const handleLoanRepayment = async (trip: Trip) => {
+  // Open repayment confirmation dialog
+  const handleLoanRepayment = (trip: Trip) => {
+    setTripForRepayment(trip);
+    setRepaymentDialogOpen(true);
+  };
+
+  // Process actual loan repayment
+  const processLoanRepayment = async (trip: Trip) => {
     // Check for lender info (both camelCase and snake_case)
     const lenderId = trip.lenderId || (trip as any).lender_id;
     const lenderName = trip.lenderName || (trip as any).lender_name;
@@ -1062,11 +1070,20 @@ const LoadAgentDashboard = () => {
     setRepaying(prev => ({ ...prev, [trip.id]: true }));
 
     try {
-      // Calculate total repayment amount (principal + interest)
+      // Calculate total repayment based on ACTUAL days (not maturity days)
+      // This allows early repayment with reduced interest
       const principal = trip.amount;
       const interestRate = trip.interestRate || (trip as any).interest_rate || 0;
-      const maturityDays = trip.maturityDays || (trip as any).maturity_days || 30;
-      const interest = (principal * (interestRate / 365) * maturityDays) / 100;
+      const fundedAt = trip.fundedAt || (trip as any).funded_at;
+
+      // Calculate actual days loan was active
+      const fundedDate = new Date(fundedAt);
+      const today = new Date();
+      const actualDays = Math.ceil((today.getTime() - fundedDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      // Calculate interest based on actual days (not maturity days)
+      const interestRatePerDay = interestRate / 365;
+      const interest = (principal * interestRatePerDay * actualDays) / 100;
       const totalRepayment = principal + interest;
 
       console.log('💰 Processing loan repayment:', {
@@ -1090,10 +1107,11 @@ const LoadAgentDashboard = () => {
 
       toast({
         title: 'Repayment Successful',
-        description: `Successfully repaid ₹${(totalRepayment / 1000).toFixed(2)}K to ${lenderName}`,
+        description: `Successfully repaid ₹${(totalRepayment / 1000).toFixed(2)}K to ${lenderName} (${actualDays} days)`,
       });
 
-      // Reload trips
+      // Close repayment dialog and reload trips
+      setRepaymentDialogOpen(false);
       setRefreshKey(prev => prev + 1);
 
     } catch (error: any) {
@@ -3256,6 +3274,185 @@ print(response.json())`;
               <Button variant="outline" onClick={() => setDocumentViewDialogOpen(false)}>
                 Close
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Loan Repayment Confirmation Dialog */}
+        <Dialog open={repaymentDialogOpen} onOpenChange={setRepaymentDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <IndianRupee className="h-5 w-5 text-primary" />
+                Loan Repayment Calculation
+              </DialogTitle>
+              <DialogDescription>
+                Detailed breakdown of loan repayment based on actual days
+              </DialogDescription>
+            </DialogHeader>
+
+            {tripForRepayment && (() => {
+              const principal = tripForRepayment.amount;
+              const interestRate = tripForRepayment.interestRate || (tripForRepayment as any).interest_rate || 0;
+              const maturityDays = tripForRepayment.maturityDays || (tripForRepayment as any).maturity_days || 30;
+              const fundedAt = tripForRepayment.fundedAt || (tripForRepayment as any).funded_at;
+
+              // Calculate actual days loan was active
+              const fundedDate = new Date(fundedAt);
+              const today = new Date();
+              const actualDays = Math.ceil((today.getTime() - fundedDate.getTime()) / (1000 * 60 * 60 * 24));
+
+              // Calculate interest per day
+              const interestRatePerDay = interestRate / 365;
+
+              // Calculate interest based on actual days
+              const actualInterest = (principal * interestRatePerDay * actualDays) / 100;
+              const actualTotalRepayment = principal + actualInterest;
+
+              // Calculate what it would be at maturity (for comparison)
+              const maturityInterest = (principal * interestRatePerDay * maturityDays) / 100;
+              const maturityTotalRepayment = principal + maturityInterest;
+
+              const isEarlyPayment = actualDays < maturityDays;
+              const savings = isEarlyPayment ? maturityInterest - actualInterest : 0;
+
+              return (
+                <div className="space-y-6">
+                  {/* Trip Info */}
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-1">Trip</p>
+                    <p className="font-semibold">
+                      {tripForRepayment.origin} → {tripForRepayment.destination}
+                    </p>
+                    {tripForRepayment.lenderName && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Lender: {tripForRepayment.lenderName}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Calculation Breakdown */}
+                  <div className="space-y-3">
+                    <h4 className="font-semibold">Calculation Breakdown:</h4>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Principal */}
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <p className="text-xs text-muted-foreground mb-1">Principal Amount</p>
+                        <p className="text-2xl font-bold">₹{(principal / 1000).toFixed(0)}K</p>
+                        <p className="text-xs text-muted-foreground mt-1">Original loan amount</p>
+                      </div>
+
+                      {/* Interest Rate */}
+                      <div className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                        <p className="text-xs text-muted-foreground mb-1">Annual Interest Rate</p>
+                        <p className="text-2xl font-bold">{interestRate}%</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Per day: {interestRatePerDay.toFixed(4)}%
+                        </p>
+                      </div>
+
+                      {/* Maturity Days */}
+                      <div className="p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                        <p className="text-xs text-muted-foreground mb-1">Maturity Period</p>
+                        <p className="text-2xl font-bold">{maturityDays} days</p>
+                        <p className="text-xs text-muted-foreground mt-1">Original loan term</p>
+                      </div>
+
+                      {/* Actual Days */}
+                      <div className={`p-3 rounded-lg border ${isEarlyPayment ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800'}`}>
+                        <p className="text-xs text-muted-foreground mb-1">Actual Days</p>
+                        <p className="text-2xl font-bold">{actualDays} days</p>
+                        <p className={`text-xs font-semibold mt-1 ${isEarlyPayment ? 'text-green-600' : 'text-red-600'}`}>
+                          {isEarlyPayment ? `Early by ${maturityDays - actualDays} days` : `Overdue by ${actualDays - maturityDays} days`}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Interest Calculation Formula */}
+                    <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border">
+                      <p className="text-sm font-semibold mb-2">Interest Calculation:</p>
+                      <div className="font-mono text-sm space-y-1">
+                        <p>Interest = Principal × (Rate/365) × Actual Days</p>
+                        <p className="text-muted-foreground">
+                          = ₹{(principal / 1000).toFixed(0)}K × ({interestRate}%/365) × {actualDays} days
+                        </p>
+                        <p className="text-primary font-semibold">
+                          = ₹{(actualInterest / 1000).toFixed(2)}K
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Total Repayment */}
+                    <div className="p-4 bg-gradient-to-r from-green-50 to-purple-50 dark:from-green-950/20 dark:to-purple-950/20 rounded-lg border-2 border-primary">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="font-semibold">Total Repayment Amount:</p>
+                        <p className="text-3xl font-bold text-primary">₹{(actualTotalRepayment / 1000).toFixed(2)}K</p>
+                      </div>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <p>Principal: ₹{(principal / 1000).toFixed(0)}K</p>
+                        <p>Interest ({actualDays} days): ₹{(actualInterest / 1000).toFixed(2)}K</p>
+                      </div>
+                    </div>
+
+                    {/* Early Payment Savings */}
+                    {isEarlyPayment && savings > 0 && (
+                      <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-300 dark:border-green-700">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                          <p className="font-semibold text-green-900 dark:text-green-100">Early Payment Savings!</p>
+                        </div>
+                        <p className="text-sm">
+                          By paying {maturityDays - actualDays} days early, you save ₹{(savings / 1000).toFixed(2)}K in interest.
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          (At maturity: ₹{(maturityTotalRepayment / 1000).toFixed(2)}K)
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Overdue Warning */}
+                    {!isEarlyPayment && actualDays > maturityDays && (
+                      <div className="p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-300 dark:border-red-700">
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertCircle className="h-5 w-5 text-red-600" />
+                          <p className="font-semibold text-red-900 dark:text-red-100">Payment Overdue</p>
+                        </div>
+                        <p className="text-sm">
+                          Payment is {actualDays - maturityDays} days overdue. Additional interest of ₹{((actualInterest - maturityInterest) / 1000).toFixed(2)}K has accrued.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            <DialogFooter>
+              <div className="flex items-center justify-between w-full gap-4">
+                <Button variant="outline" onClick={() => setRepaymentDialogOpen(false)}>
+                  Cancel
+                </Button>
+                {tripForRepayment && (
+                  <Button
+                    onClick={() => processLoanRepayment(tripForRepayment)}
+                    disabled={repaying[tripForRepayment.id]}
+                    className="bg-gradient-to-r from-green-600 to-purple-600 hover:from-green-700 hover:to-purple-700"
+                  >
+                    {repaying[tripForRepayment.id] ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Confirm Repayment
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>
