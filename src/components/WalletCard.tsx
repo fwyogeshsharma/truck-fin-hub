@@ -229,54 +229,52 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
       return;
     }
 
-    if (!hasBankAccount || !primaryBankAccount) {
-      toast({
-        variant: 'destructive',
-        title: 'Bank Account Required',
-        description: 'Please add a bank account first to withdraw funds',
-      });
-      return;
-    }
-
+    // Simulate withdrawal processing
     setIsProcessing(true);
 
-    try {
-      // Create withdrawal request
-      await apiClient.post('/transaction-requests', {
-        user_id: userId,
-        request_type: 'withdrawal',
-        amount,
-        bank_account_id: primaryBankAccount.id,
-        bank_account_number: primaryBankAccount.accountNumber,
-        bank_ifsc_code: primaryBankAccount.ifscCode,
-        bank_name: primaryBankAccount.bankName,
-      });
+    setTimeout(async () => {
+      try {
+        const newBalance = wallet.balance - amount;
 
-      toast({
-        title: 'Request Submitted!',
-        description: 'Your withdrawal request has been submitted. The amount has been moved to escrow and will be transferred to your bank account within 24-48 hours after verification.',
-      });
+        // Update wallet balance
+        const updatedWallet = await data.updateWallet(userId, {
+          balance: newBalance,
+        });
 
-      setWithdrawDialogOpen(false);
-      setWithdrawAmount('');
+        // Create transaction record
+        await data.createTransaction({
+          userId,
+          type: 'debit',
+          amount,
+          category: 'withdrawal',
+          description: 'Wallet withdrawal to bank account',
+          balanceAfter: newBalance,
+        });
 
-      // Refresh wallet data to show updated balances
-      const updatedWallet = await data.getWallet(userId);
-      setWallet(updatedWallet);
+        setWallet(updatedWallet);
 
-      // Notify parent component of balance update
-      if (onBalanceUpdate) {
-        onBalanceUpdate();
+        toast({
+          title: 'Withdrawal Successful!',
+          description: `${formatCurrency(amount)} withdrawn from your wallet`,
+        });
+
+        setWithdrawDialogOpen(false);
+        setWithdrawAmount('');
+
+        // Notify parent component of balance update
+        if (onBalanceUpdate) {
+          onBalanceUpdate();
+        }
+      } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: error.message || 'Failed to withdraw money',
+        });
+      } finally {
+        setIsProcessing(false);
       }
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Request Failed',
-        description: error.message || 'Failed to submit withdrawal request. Please try again.',
-      });
-    } finally {
-      setIsProcessing(false);
-    }
+    }, 2000); // 2 second simulated withdrawal processing
   };
 
   const availableBalance = wallet.balance;
@@ -493,10 +491,10 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ArrowDownCircle className="h-5 w-5 text-orange-600" />
-              Request Withdrawal
+              Withdraw Money from Wallet
             </DialogTitle>
             <DialogDescription>
-              Submit a withdrawal request. The amount will be moved to escrow and transferred to your bank account within 24-48 hours after super admin approval.
+              Withdraw funds to your linked bank account
             </DialogDescription>
           </DialogHeader>
 
@@ -545,36 +543,28 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
             </div>
 
             {/* Bank Account Info */}
-            {hasBankAccount && primaryBankAccount && (
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm font-medium mb-2">Withdrawal To</p>
-                <div className="text-sm">
-                  <p className="font-medium">{primaryBankAccount.bankName}</p>
-                  <p className="text-xs text-muted-foreground">
-                    A/C: XXXX XXXX {primaryBankAccount.accountNumber.slice(-4)} | IFSC: {primaryBankAccount.ifscCode}
-                  </p>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  ⏰ Processing Time: 24-48 hours after approval
-                </p>
-              </div>
-            )}
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm font-medium mb-2">Bank Account</p>
+              <p className="text-xs text-muted-foreground">
+                This is a simulated withdrawal system. In production, this would transfer funds to your linked bank account via IMPS/NEFT/RTGS.
+              </p>
+            </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setWithdrawDialogOpen(false)} disabled={isProcessing}>
               Cancel
             </Button>
-            <Button onClick={handleWithdraw} disabled={isProcessing} className="bg-gradient-primary">
+            <Button onClick={handleWithdraw} disabled={isProcessing} variant="destructive">
               {isProcessing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Submitting...
+                  Processing...
                 </>
               ) : (
                 <>
                   <ArrowDownCircle className="h-4 w-4 mr-2" />
-                  Submit Request
+                  Withdraw {withdrawAmount ? formatCurrencyCompact(parseFloat(withdrawAmount), true) : '₹0'}
                 </>
               )}
             </Button>
