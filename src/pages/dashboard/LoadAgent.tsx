@@ -173,18 +173,36 @@ const LoadAgentDashboard = () => {
               return newDocuments[doc] || (newDocuments as any)[camelCaseKey];
             });
 
-            // Update trip with ONLY documents - NEVER change status automatically
-            // Status changes should only happen through explicit workflow actions (allotment, etc.)
+            // Check if trip is funded (has a lender)
+            const isFunded = trip.lenderId || (trip as any).lender_id;
+            const isFundedStatus = trip.status === 'funded' || trip.status === 'in_transit';
+
+            // Update trip with documents
             const updateData: any = {
               documents: newDocuments,
             };
+
+            // CRITICAL LOGIC:
+            // If trip is FUNDED (has lender) AND all docs are uploaded → mark as COMPLETED
+            // This will show in Loan Closure tab as "Funded & Completed"
+            // If trip is NOT funded (escrowed/pending) → keep status unchanged (preserve allotment requests)
+            if (allDocsUploaded && isFunded && isFundedStatus && trip.status !== 'completed' && trip.status !== 'cancelled') {
+              updateData.status = 'completed';
+              updateData.completedAt = new Date().toISOString();
+              console.log(`🎉 Trip is FUNDED and all documents uploaded! Marking as COMPLETED for loan closure tracking`);
+            }
 
             const updatedTrip = await data.updateTrip(tripId, updateData);
 
             console.log(`✅ Document uploaded successfully: ${docType}`, updatedTrip?.documents);
 
             // Show toast notification
-            if (allDocsUploaded) {
+            if (allDocsUploaded && updateData.status === 'completed') {
+              toast({
+                title: 'Trip Completed! 🎉',
+                description: `All documents uploaded! Trip marked as "Funded & Completed" - now appears in Loan Closure tab.`,
+              });
+            } else if (allDocsUploaded) {
               toast({
                 title: 'All Documents Uploaded! ✅',
                 description: `All 5 documents uploaded successfully! Trip status remains ${trip.status}.`,
