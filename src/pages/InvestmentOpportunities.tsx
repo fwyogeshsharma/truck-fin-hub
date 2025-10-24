@@ -310,16 +310,13 @@ const InvestmentOpportunities = () => {
         ? prev.filter((id) => id !== tripId)
         : [...prev, tripId];
 
-      // Initialize interest rate for newly selected trip using displayed ARR from screen
+      // Initialize interest rate for newly selected trip using displayed rate from screen
       if (!prev.includes(tripId) && !tripInterestRates[tripId]) {
         const trip = trips.find((t) => t.id === tripId);
-        // Calculate the displayed ARR value (same formula used in the UI display)
-        const baseRate = trip?.interestRate || 12;
-        const maturityDays = trip?.maturityDays || 30;
-        const displayedARR = ((baseRate * 365) / maturityDays) * 0.7;
+        const lenderRate = (trip?.interestRate || 12) * 0.7;
         setTripInterestRates((prevRates) => ({
           ...prevRates,
-          [tripId]: displayedARR,
+          [tripId]: lenderRate,
         }));
       }
 
@@ -521,18 +518,19 @@ const InvestmentOpportunities = () => {
       });
 
       // Add bid to trip_bids table
+      const adjustedRate = interestRate / 0.7;
       await data.addBid(
         tripId,
         user.id,
         user.name || "Lender",
         investmentAmount,
-        interestRate,
+        adjustedRate,
       );
 
       // Update trip status to escrowed and set the accepted bid's interest rate
       await data.updateTrip(tripId, {
         status: "escrowed",
-        interestRate: interestRate,
+        interestRate: adjustedRate,
       });
 
       // Refresh trips list
@@ -631,18 +629,19 @@ const InvestmentOpportunities = () => {
         });
 
         // Add bid to trip_bids table
+        const adjustedTripRate = tripRate / 0.7;
         await data.addBid(
           tripId,
           user.id,
           user.name || "Lender",
           investmentAmount,
-          tripRate,
+          adjustedTripRate,
         );
 
         // Update trip status to escrowed and set the accepted bid's interest rate
         await data.updateTrip(tripId, {
           status: "escrowed",
-          interestRate: tripRate,
+          interestRate: adjustedTripRate,
         });
       }
 
@@ -1551,20 +1550,15 @@ const InvestmentOpportunities = () => {
                         <div className="hidden md:block md:col-span-2 text-center">
                           <p className="text-xs text-muted-foreground">
                             ARR (
-                            {formatPercentage(
-                              (((trip.interestRate || 12) * 365) /
-                                (trip.maturityDays || 30)) *
-                                0.7,
-                            )}
+                            {formatPercentage((trip.interestRate || 12) * 0.7)}
                             %)
                           </p>
                           <p className="font-semibold text-green-600">
                             {formatCurrencyCompact(
                               trip.amount *
-                                (((((trip.interestRate || 12) * 365) /
-                                  (trip.maturityDays || 30)) *
-                                  0.7) /
-                                  100),
+                                ((((trip.interestRate || 12) * 0.7) / 365) *
+                                  (trip.maturityDays || 30)) /
+                                100,
                               true,
                             )}
                           </p>
@@ -2181,11 +2175,7 @@ const InvestmentOpportunities = () => {
                               Offered Rate
                             </p>
                             <p className="font-semibold text-green-600">
-                              {formatPercentage(
-                                (((trip.interestRate || 12) * 365) /
-                                  (trip.maturityDays || 30)) *
-                                  0.7,
-                              )}
+                              {formatPercentage((trip.interestRate || 12) * 0.7)}
                               % ARR
                             </p>
                           </div>

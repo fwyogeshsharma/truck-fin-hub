@@ -301,7 +301,7 @@ const LoadOwnerDashboard = () => {
                     <p className="font-semibold">₹{(trip.amount / 1000).toFixed(0)}K</p>
                     <p className="text-sm text-muted-foreground">Requested: ₹{(trip.amount / 1000).toFixed(0)}K</p>
                     {trip.interestRate && (
-                      <p className="text-xs text-secondary">{(trip.interestRate * 1.3).toFixed(2)}% interest</p>
+                      <p className="text-xs text-secondary">{trip.interestRate.toFixed(2)}% interest</p>
                     )}
                   </div>
                 </div>

@@ -1328,10 +1328,6 @@ const LoadAgentDashboard = () => {
                                 </h4>
                                 <div className="space-y-2">
                                   {trip.bids.map((bid: any, index: number) => {
-                                    // Add 30% markup to lender's bid rate
-                                    // If lender bids 10%, shipper pays 10% + (10% * 0.3) = 13%
-                                    const shipperRate = bid.interestRate + (bid.interestRate * 0.3);
-
                                     return (
                                       <div
                                         key={index}
@@ -1340,7 +1336,7 @@ const LoadAgentDashboard = () => {
                                         <div>
                                           <p className="font-medium">{bid.lenderName}</p>
                                           <p className="text-sm text-muted-foreground">
-                                            Amount: ₹{(bid.amount / 1000).toFixed(0)}K • Rate: {formatPercentage(shipperRate)}%
+                                            Amount: ₹{(bid.amount / 1000).toFixed(0)}K • Rate: {formatPercentage(bid.interestRate)}%
                                           </p>
                                         </div>
                                         <Button
@@ -1486,35 +1482,27 @@ const LoadAgentDashboard = () => {
                         <TableCell>
                           <div className="text-center cursor-help relative group">
                             <p className="font-semibold text-green-600">
-                              {formatPercentage(trip.interestRate || 12)}% ({trip.maturityDays || 30} days)
+                              {formatPercentage(trip.interestRate || 12)}% ARR
                             </p>
                             <div className="hidden group-hover:block absolute z-10 bg-popover text-popover-foreground border rounded-lg shadow-lg p-3 mt-1 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                              <p className="text-sm font-semibold">{formatPercentage(trip.interestRate || 12)}% in {trip.maturityDays || 30} days</p>
-                              <p className="text-sm text-muted-foreground">{formatPercentage((trip.interestRate || 12) * 365 / (trip.maturityDays || 30))}% ARR</p>
+                              <p className="text-sm font-semibold">{formatPercentage(trip.interestRate || 12)}% ARR</p>
+                              <p className="text-sm text-muted-foreground">{formatPercentage((trip.interestRate || 12) * (trip.maturityDays || 30) / 365)}% for {trip.maturityDays || 30} days</p>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
                           {trip.bids && trip.bids.length > 0 ? (
-                            (() => {
-                              // Add 30% markup to lender's bid rate
-                              // If lender bids 10%, shipper pays 10% + (10% * 0.3) = 13%
-                              const shipperRate = trip.bids[0].interestRate + (trip.bids[0].interestRate * 0.3);
-
-                              return (
-                                <div>
-                                  <p className="font-semibold text-green-600">
-                                    ₹{(trip.bids[0].amount / 1000).toFixed(0)}K
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    @ {formatPercentage(shipperRate)}%
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    by {trip.bids[0].lenderName}
-                                  </p>
-                                </div>
-                              );
-                            })()
+                            <div>
+                              <p className="font-semibold text-green-600">
+                                ₹{(trip.bids[0].amount / 1000).toFixed(0)}K
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                @ {formatPercentage(trip.bids[0].interestRate)}%
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                by {trip.bids[0].lenderName}
+                              </p>
+                            </div>
                           ) : (
                             <p className="text-sm text-muted-foreground">No bids</p>
                           )}
