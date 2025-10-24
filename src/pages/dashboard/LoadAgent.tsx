@@ -945,6 +945,13 @@ const LoadAgentDashboard = () => {
     setRefreshKey(prev => prev + 1); // Refresh trip list
   };
 
+  // Helper function to check if trip is both funded AND completed
+  const isFundedAndCompleted = (trip: Trip) => {
+    const isCompleted = trip.status === 'completed';
+    const hasFunding = trip.lenderId || (trip as any).lender_id;
+    return isCompleted && hasFunding;
+  };
+
   // Calculate days remaining until maturity
   const getDaysToMaturity = (trip: Trip) => {
     const fundedAt = trip.fundedAt || (trip as any).funded_at;
@@ -1093,7 +1100,18 @@ const LoadAgentDashboard = () => {
     },
   ];
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, trip?: Trip) => {
+    // If trip is provided and it's both funded AND completed, show special combined badge
+    if (trip && isFundedAndCompleted(trip)) {
+      return (
+        <Badge className="bg-gradient-to-r from-green-600 to-purple-600">
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Funded & Completed
+        </Badge>
+      );
+    }
+
+    // Otherwise show regular status badge
     switch (status) {
       case 'pending':
         return (
@@ -1448,16 +1466,8 @@ const LoadAgentDashboard = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-1 flex-wrap">
-                            {/* Show funding badge if trip has a lender */}
-                            {(trip.lenderId || (trip as any).lender_id) && trip.status !== 'pending' && trip.status !== 'escrowed' && (
-                              <Badge className="bg-green-600">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Funded
-                              </Badge>
-                            )}
-                            {getStatusBadge(trip.status)}
-                          </div>
+                          {/* Pass trip object to getStatusBadge to show combined "Funded & Completed" status */}
+                          {getStatusBadge(trip.status, trip)}
                         </TableCell>
                         <TableCell>
                           <p className="text-sm">
@@ -1584,7 +1594,7 @@ const LoadAgentDashboard = () => {
               <CardHeader>
                 <CardTitle>Loan Closure - Pending Repayments</CardTitle>
                 <CardDescription>
-                  Completed trips with funded loans awaiting repayment - sorted by maturity urgency
+                  Trips marked as "Funded & Completed" awaiting loan repayment - sorted by maturity urgency
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1619,15 +1629,8 @@ const LoadAgentDashboard = () => {
                                     <h4 className="font-semibold text-lg">
                                       {trip.origin} → {trip.destination}
                                     </h4>
-                                    {/* Show both Funded and Completed badges to indicate full loan lifecycle */}
-                                    <Badge className="bg-green-600">
-                                      <CheckCircle className="h-3 w-3 mr-1" />
-                                      Funded
-                                    </Badge>
-                                    <Badge className="bg-purple-600">
-                                      <CheckCircle className="h-3 w-3 mr-1" />
-                                      Completed
-                                    </Badge>
+                                    {/* Show combined "Funded & Completed" badge */}
+                                    {getStatusBadge(trip.status, trip)}
                                     {isOverdue && (
                                       <Badge variant="destructive" className="flex items-center gap-1">
                                         <AlertCircle className="h-3 w-3" />
