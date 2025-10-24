@@ -18,7 +18,7 @@ import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useNavigate } from "react-router-dom";
-import { ThemeSelector } from "@/components/ThemeSelector";
+import { ThemeCustomizer } from "@/components/ThemeCustomizer";
 
 /**
  * SuperAdminDashboard Component
@@ -165,8 +165,8 @@ const SuperAdminDashboard = () => {
           })}
         </div>
 
-        {/* Theme Selector */}
-        <ThemeSelector />
+        {/* Theme Customizer */}
+        <ThemeCustomizer />
 
         {/* Quick Actions */}
         <Card>

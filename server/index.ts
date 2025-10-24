@@ -15,6 +15,7 @@ import bankAccountRoutes from './routes/bankAccounts.ts';
 import kycRoutes from './routes/kyc.ts';
 import notificationRoutes from './routes/notifications.ts';
 import migrationRoutes from './routes/migrations.ts';
+import themeSettingsRoutes from './routes/theme_settings.ts';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -87,6 +88,7 @@ app.use('/api/bank-accounts', bankAccountRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/migrations', migrationRoutes);
+app.use('/api/theme', themeSettingsRoutes);
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {

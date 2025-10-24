@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import { auth } from "@/lib/auth";
+import { loadThemeFromDatabase } from "@/lib/theme-loader";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import TermsAcceptance from "./pages/TermsAcceptance";
@@ -39,6 +40,9 @@ const App = () => {
   useEffect(() => {
     // Initialize mock load agent users on app load
     auth.initializeMockUsers();
+
+    // Load theme colors from database
+    loadThemeFromDatabase();
   }, []);
 
   return (

@@ -324,4 +324,76 @@ router.get('/list-users', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/migrations/create-theme-settings-table - Create theme_settings table
+router.post('/create-theme-settings-table', async (req: Request, res: Response) => {
+  try {
+    const db = await getDatabase();
+
+    console.log('Starting migration: Creating theme_settings table...');
+
+    // Check if table already exists
+    const tableCheck = await db.query(
+      "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'theme_settings'"
+    );
+
+    if (tableCheck.rows.length > 0) {
+      console.log('Table already exists, skipping migration');
+      return res.json({
+        success: true,
+        message: 'Table already exists, no migration needed',
+        alreadyExists: true
+      });
+    }
+
+    // Create the table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS theme_settings (
+        id SERIAL PRIMARY KEY,
+        setting_key VARCHAR(100) UNIQUE NOT NULL,
+        setting_value TEXT NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_by VARCHAR(255)
+      )
+    `);
+    console.log('  ✅ Created theme_settings table');
+
+    // Insert default theme colors
+    await db.query(`
+      INSERT INTO theme_settings (setting_key, setting_value, updated_by) VALUES
+        ('primary_color', '#3b82f6', 'system'),
+        ('primary_color_dark', '#2563eb', 'system'),
+        ('secondary_color', '#10b981', 'system'),
+        ('accent_color', '#f59e0b', 'system')
+      ON CONFLICT (setting_key) DO NOTHING
+    `);
+    console.log('  ✅ Inserted default theme colors');
+
+    // Create index for faster lookups
+    await db.query(`
+      CREATE INDEX IF NOT EXISTS idx_theme_settings_key ON theme_settings(setting_key)
+    `);
+    console.log('  ✅ Created index on setting_key');
+
+    // Add comment
+    await db.query(`
+      COMMENT ON TABLE theme_settings IS 'Stores customizable theme colors and settings for the application'
+    `);
+    console.log('  ✅ Added table comment');
+
+    console.log('\n✨ Migration completed successfully!');
+
+    res.json({
+      success: true,
+      message: 'Theme settings table created successfully',
+    });
+  } catch (error: any) {
+    console.error('Migration failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Migration failed',
+      message: error.message
+    });
+  }
+});
+
 export default router;
