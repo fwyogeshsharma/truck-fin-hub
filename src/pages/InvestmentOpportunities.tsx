@@ -310,12 +310,16 @@ const InvestmentOpportunities = () => {
         ? prev.filter((id) => id !== tripId)
         : [...prev, tripId];
 
-      // Initialize interest rate for newly selected trip using trip's own interest rate
+      // Initialize interest rate for newly selected trip using displayed ARR from screen
       if (!prev.includes(tripId) && !tripInterestRates[tripId]) {
         const trip = trips.find((t) => t.id === tripId);
+        // Calculate the displayed ARR value (same formula used in the UI display)
+        const baseRate = trip?.interestRate || 12;
+        const maturityDays = trip?.maturityDays || 30;
+        const displayedARR = ((baseRate * 365) / maturityDays) * 0.7;
         setTripInterestRates((prevRates) => ({
           ...prevRates,
-          [tripId]: trip?.interestRate || 12,
+          [tripId]: displayedARR,
         }));
       }
 
