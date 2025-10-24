@@ -1447,7 +1447,18 @@ const LoadAgentDashboard = () => {
                             <p className="text-sm text-muted-foreground">No bids</p>
                           )}
                         </TableCell>
-                        <TableCell>{getStatusBadge(trip.status)}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1 flex-wrap">
+                            {/* Show funding badge if trip has a lender */}
+                            {(trip.lenderId || (trip as any).lender_id) && trip.status !== 'pending' && trip.status !== 'escrowed' && (
+                              <Badge className="bg-green-600">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Funded
+                              </Badge>
+                            )}
+                            {getStatusBadge(trip.status)}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <p className="text-sm">
                             {new Date(trip.createdAt).toLocaleDateString('en-IN', {
@@ -1608,7 +1619,15 @@ const LoadAgentDashboard = () => {
                                     <h4 className="font-semibold text-lg">
                                       {trip.origin} → {trip.destination}
                                     </h4>
-                                    <Badge variant="secondary">Completed</Badge>
+                                    {/* Show both Funded and Completed badges to indicate full loan lifecycle */}
+                                    <Badge className="bg-green-600">
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                      Funded
+                                    </Badge>
+                                    <Badge className="bg-purple-600">
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                      Completed
+                                    </Badge>
                                     {isOverdue && (
                                       <Badge variant="destructive" className="flex items-center gap-1">
                                         <AlertCircle className="h-3 w-3" />
