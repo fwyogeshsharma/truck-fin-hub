@@ -43,7 +43,10 @@
       "Bash(npm run build:frontend:*)",
       "Bash(npm run build:*)",
       "Bash(npm install:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)"
     ],
     "deny": [],
     "ask": []
