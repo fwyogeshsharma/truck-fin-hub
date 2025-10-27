@@ -361,6 +361,37 @@ export const reportService = {
 
   // Lender Reports
   async generatePortfolioSummary(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
+    // Fetch real trips data for this lender
+    const trips = await this.fetchTripsData(filter, userId, userRole);
+
+    // Filter trips where this user is the lender
+    const lenderTrips = trips.filter(t => t.lender_id === userId);
+
+    // Calculate metrics
+    const totalInvested = lenderTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const activeInvestments = lenderTrips.filter(t => ['funded', 'in_transit', 'escrowed'].includes(t.status));
+    const completedInvestments = lenderTrips.filter(t => t.status === 'completed');
+
+    // Calculate expected returns
+    const totalExpectedReturns = lenderTrips.reduce((sum, t) => {
+      const amount = t.amount || 0;
+      const rate = (t.interest_rate || 12) / 100;
+      const days = t.maturity_days || 30;
+      return sum + (amount * rate * days / 365);
+    }, 0);
+
+    const portfolioValue = totalInvested + totalExpectedReturns;
+
+    // Build details from real trips
+    const details = lenderTrips.slice(0, 20).map(trip => ({
+      borrower: trip.load_owner_name || 'Unknown',
+      amount: trip.amount || 0,
+      interestRate: trip.interest_rate || 0,
+      status: trip.status === 'completed' ? 'Completed' : 'Active',
+      maturityDate: trip.maturity_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      expectedReturn: trip.amount + (trip.amount * (trip.interest_rate || 12) / 100 * (trip.maturity_days || 30) / 365)
+    }));
+
     return {
       id: `report_${Date.now()}`,
       type: 'portfolio_summary',
@@ -370,45 +401,51 @@ export const reportService = {
       startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       endDate: filter.endDate || new Date().toISOString(),
       summary: {
-        totalCount: 28,
-        totalAmount: 4200000,
-        averageAmount: 150000,
+        totalCount: lenderTrips.length,
+        totalAmount: totalInvested,
+        averageAmount: lenderTrips.length > 0 ? totalInvested / lenderTrips.length : 0,
         growth: 22.5,
         trends: [
-          { label: 'Total Invested', value: formatCurrency(4200000), change: 22 },
-          { label: 'Active Investments', value: 15 },
-          { label: 'Completed', value: 13 },
-          { label: 'Portfolio Value', value: formatCurrency(4530000), change: 7.8 },
-          { label: 'Expected Returns', value: formatCurrency(525000) },
+          { label: 'Total Invested', value: formatCurrency(totalInvested), change: 22 },
+          { label: 'Active Investments', value: activeInvestments.length },
+          { label: 'Completed', value: completedInvestments.length },
+          { label: 'Portfolio Value', value: formatCurrency(portfolioValue), change: 7.8 },
+          { label: 'Expected Returns', value: formatCurrency(totalExpectedReturns) },
         ],
       },
-      details: [
-        { borrower: 'Varun Beverages', amount: 200000, interestRate: 12, status: 'Active', maturityDate: '2025-02-15', expectedReturn: 204000 },
-        { borrower: 'Emami Ltd', amount: 150000, interestRate: 11.5, status: 'Active', maturityDate: '2025-02-20', expectedReturn: 151437 },
-        { borrower: 'Greenply Industries', amount: 180000, interestRate: 13, status: 'Completed', maturityDate: '2025-01-10', actualReturn: 183900 },
-        { borrower: 'Berger Paints', amount: 220000, interestRate: 12.5, status: 'Active', maturityDate: '2025-02-25', expectedReturn: 224583 },
-      ],
+      details,
       charts: [
         {
           type: 'pie',
           title: 'Portfolio Allocation',
           data: {
-            labels: ['Active (54%)', 'Completed (46%)'],
+            labels: [
+              `Active (${activeInvestments.length})`,
+              `Completed (${completedInvestments.length})`
+            ],
             datasets: [{
               label: 'Investments',
-              data: [2268000, 1932000],
+              data: [
+                activeInvestments.reduce((sum, t) => sum + (t.amount || 0), 0),
+                completedInvestments.reduce((sum, t) => sum + (t.amount || 0), 0)
+              ],
               backgroundColor: ['#3b82f6', '#10b981'],
             }],
           },
         },
         {
           type: 'bar',
-          title: 'Monthly Investment Volume',
+          title: 'Investment by Status',
           data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            labels: ['Funded', 'In Transit', 'Escrowed', 'Completed'],
             datasets: [{
-              label: 'Investment Amount (₹)',
-              data: [450000, 620000, 780000, 850000, 920000, 1050000],
+              label: 'Amount (₹)',
+              data: [
+                lenderTrips.filter(t => t.status === 'funded').reduce((s, t) => s + (t.amount || 0), 0),
+                lenderTrips.filter(t => t.status === 'in_transit').reduce((s, t) => s + (t.amount || 0), 0),
+                lenderTrips.filter(t => t.status === 'escrowed').reduce((s, t) => s + (t.amount || 0), 0),
+                lenderTrips.filter(t => t.status === 'completed').reduce((s, t) => s + (t.amount || 0), 0),
+              ],
               backgroundColor: 'rgba(59, 130, 246, 0.7)',
             }],
           },
@@ -418,6 +455,44 @@ export const reportService = {
   },
 
   async generateReturnsAnalysis(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
+    // Fetch real trips data for this lender
+    const trips = await this.fetchTripsData(filter, userId, userRole);
+    const lenderTrips = trips.filter(t => t.lender_id === userId);
+
+    // Focus on completed trips for returns analysis
+    const completedTrips = lenderTrips.filter(t => t.status === 'completed');
+
+    // Calculate returns
+    const totalPrincipal = completedTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const totalReturns = completedTrips.reduce((sum, t) => {
+      const amount = t.amount || 0;
+      const rate = (t.interest_rate || 12) / 100;
+      const days = t.maturity_days || 30;
+      return sum + (amount * rate * days / 365);
+    }, 0);
+
+    const avgROI = completedTrips.length > 0
+      ? (totalReturns / totalPrincipal) * 100
+      : 0;
+
+    const annualizedReturn = avgROI * (365 / 30); // Assuming average 30-day loans
+
+    // Build details from completed trips
+    const details = completedTrips.slice(0, 20).map(trip => {
+      const principal = trip.amount || 0;
+      const returns = principal * (trip.interest_rate || 12) / 100 * (trip.maturity_days || 30) / 365;
+      const roi = (returns / principal) * 100;
+
+      return {
+        investment: trip.id.substring(0, 8).toUpperCase(),
+        principal,
+        returns,
+        roi: parseFloat(roi.toFixed(2)),
+        duration: trip.maturity_days || 30,
+        completedDate: trip.completed_at ? new Date(trip.completed_at).toISOString().split('T')[0] : '-'
+      };
+    });
+
     return {
       id: `report_${Date.now()}`,
       type: 'returns_analysis',
@@ -427,24 +502,19 @@ export const reportService = {
       startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       endDate: filter.endDate || new Date().toISOString(),
       summary: {
-        totalCount: 13,
-        totalAmount: 231500,
-        averageAmount: 17807,
+        totalCount: completedTrips.length,
+        totalAmount: totalReturns,
+        averageAmount: completedTrips.length > 0 ? totalReturns / completedTrips.length : 0,
         growth: 28.3,
         trends: [
-          { label: 'Total Returns', value: formatCurrency(231500), change: 28 },
-          { label: 'Average ROI', value: '12.8%' },
-          { label: 'Interest Income', value: formatCurrency(231500) },
-          { label: 'Principal Recovered', value: formatCurrency(1932000) },
-          { label: 'Annualized Return', value: '15.6%' },
+          { label: 'Total Returns', value: formatCurrency(totalReturns), change: 28 },
+          { label: 'Average ROI', value: `${avgROI.toFixed(2)}%` },
+          { label: 'Interest Income', value: formatCurrency(totalReturns) },
+          { label: 'Principal Recovered', value: formatCurrency(totalPrincipal) },
+          { label: 'Annualized Return', value: `${annualizedReturn.toFixed(2)}%` },
         ],
       },
-      details: [
-        { investment: 'TRP001', principal: 150000, returns: 18000, roi: 12, duration: 30, completedDate: '2025-01-10' },
-        { investment: 'TRP003', principal: 120000, returns: 15600, roi: 13, duration: 30, completedDate: '2025-01-15' },
-        { investment: 'TRP007', principal: 180000, returns: 22500, roi: 12.5, duration: 30, completedDate: '2025-01-20' },
-        { investment: 'TRP009', principal: 95000, returns: 11875, roi: 12.5, duration: 30, completedDate: '2025-01-25' },
-      ],
+      details,
       charts: [
         {
           type: 'line',
