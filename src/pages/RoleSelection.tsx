@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TruckIcon, Package, Wallet, UserCircle } from "lucide-react";
+import { TruckIcon, Package, Wallet, UserCircle, ArrowLeft, Search } from "lucide-react";
 import { auth, User } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiClient } from "@/api/client";
@@ -78,6 +78,7 @@ const RoleSelection = () => {
   });
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>('');
+  const [companySearchQuery, setCompanySearchQuery] = useState('');
 
   // Check if user has accepted terms on component mount
   useEffect(() => {
@@ -625,29 +626,77 @@ const RoleSelection = () => {
       </Dialog>
 
       {/* Company Selection Dialog */}
-      <Dialog open={showCompanyDialog} onOpenChange={setShowCompanyDialog}>
+      <Dialog open={showCompanyDialog} onOpenChange={(open) => {
+        setShowCompanyDialog(open);
+        if (!open) setCompanySearchQuery(''); // Reset search when closing
+      }}>
         <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Select Your Company</DialogTitle>
-            <DialogDescription>
-              {selectedRole === 'load_agent'
-                ? 'Choose the logistics company you represent as a Transporter'
-                : selectedRole === 'lender'
-                ? 'Choose the lending company you want to represent'
-                : 'Choose the company you want to work for'}
-            </DialogDescription>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setShowCompanyDialog(false);
+                  setCompanySearchQuery('');
+                  setShowShipperActionDialog(true);
+                }}
+                className="h-8 w-8"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex-1">
+                <DialogTitle>Select Your Company</DialogTitle>
+                <DialogDescription>
+                  {selectedRole === 'load_agent'
+                    ? 'Choose the logistics company you represent as a Transporter'
+                    : selectedRole === 'lender'
+                    ? 'Choose the lending company you want to represent'
+                    : 'Choose the company you want to work for'}
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
+
+          {/* Search Box */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search company by name..."
+              value={companySearchQuery}
+              onChange={(e) => setCompanySearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
           <div className="grid gap-4 py-4">
             {loadingCompanies ? (
               <div className="flex items-center justify-center py-8">
                 <p className="text-muted-foreground">Loading companies...</p>
               </div>
-            ) : companies.length === 0 ? (
+            ) : companies.filter(company => {
+              const searchLower = companySearchQuery.toLowerCase();
+              return (
+                company.name.toLowerCase().includes(searchLower) ||
+                (company.display_name || '').toLowerCase().includes(searchLower)
+              );
+            }).length === 0 ? (
               <div className="flex items-center justify-center py-8">
-                <p className="text-muted-foreground">No companies available</p>
+                <p className="text-muted-foreground">
+                  {companySearchQuery ? 'No companies found matching your search' : 'No companies available'}
+                </p>
               </div>
             ) : (
-              companies.map((company) => (
+              companies
+                .filter(company => {
+                  const searchLower = companySearchQuery.toLowerCase();
+                  return (
+                    company.name.toLowerCase().includes(searchLower) ||
+                    (company.display_name || '').toLowerCase().includes(searchLower)
+                  );
+                })
+                .map((company) => (
                 <Card
                   key={company.id}
                   className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 hover:border-primary"
