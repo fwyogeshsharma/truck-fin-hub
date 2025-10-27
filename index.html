@@ -18,6 +18,17 @@
 
   <body>
     <div id="root"></div>
+    <script>
+      // Polyfill for process object to prevent "process is not defined" errors
+      window.process = window.process || {
+        env: {},
+        argv: [],
+        cwd: function() { return '/'; },
+        exit: function() {},
+        platform: 'browser',
+        version: '',
+      };
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
