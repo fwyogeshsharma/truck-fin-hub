@@ -16,10 +16,20 @@ const router = Router();
 // GET /api/platform-fees - Get all platform fees
 router.get('/', async (req: Request, res: Response) => {
   try {
+    console.log('📊 Fetching all platform fees...');
     const fees = await getAllPlatformFees();
+    console.log(`✅ Found ${fees.length} platform fee records`);
+    if (fees.length > 0) {
+      console.log('📋 Sample record:', JSON.stringify(fees[0], null, 2));
+    }
     res.json(fees);
   } catch (error: any) {
-    console.error('Get all platform fees error:', error);
+    console.error('❌ Get all platform fees error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    });
     res.status(500).json({ error: 'Failed to get platform fees', message: error.message });
   }
 });
