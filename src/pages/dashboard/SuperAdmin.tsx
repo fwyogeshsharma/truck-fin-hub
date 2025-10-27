@@ -214,6 +214,18 @@ const SuperAdminDashboard = () => {
 
               <Button
                 variant="outline"
+                className="flex items-center gap-2 h-auto py-4 bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800"
+                onClick={() => navigate('/platform-fee-report')}
+              >
+                <TrendingUp className="h-5 w-5 text-green-600" />
+                <div className="text-left">
+                  <div className="font-semibold">Platform Fee Report</div>
+                  <div className="text-xs text-muted-foreground">View all collected fees</div>
+                </div>
+              </Button>
+
+              <Button
+                variant="outline"
                 className="flex items-center gap-2 h-auto py-4"
               >
                 <FileText className="h-5 w-5" />

@@ -27,6 +27,7 @@ import KYCAdmin from "./pages/KYCAdmin";
 import PlatformConfiguration from "./pages/PlatformConfig";
 import NotificationSettings from "./pages/NotificationSettings";
 import Reports from "./pages/Reports";
+import PlatformFeeReport from "./pages/PlatformFeeReport";
 import Users from "./pages/Users";
 import AdminPanel from "./pages/AdminPanel";
 import UserManagement from "./pages/UserManagement";
@@ -74,6 +75,7 @@ const App = () => {
           <Route path="/platform-config" element={<PlatformConfiguration />} />
           <Route path="/settings/notifications" element={<NotificationSettings />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/platform-fee-report" element={<PlatformFeeReport />} />
           <Route path="/admin/users" element={<Users />} />
           <Route path="/admin-panel" element={<AdminPanel />} />
           <Route path="/user-management" element={<UserManagement />} />

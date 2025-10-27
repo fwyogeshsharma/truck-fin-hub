@@ -1,6 +1,10 @@
 // Data utilities using API
 
 import { tripsAPI, walletsAPI, investmentsAPI, transactionsAPI, bankAccountsAPI } from '../api';
+import { createPlatformFee } from '../db/queries/platformFees';
+
+// Super Admin ID constant
+const SUPER_ADMIN_ID = 'super_admin_001';
 
 // Re-export types for backward compatibility
 export interface Trip {
@@ -489,9 +493,75 @@ export const data = {
           console.log('✅ [ALLOTMENT] New balance:', newBalance);
           console.log('✅ [ALLOTMENT] ========================================');
 
-      // 4. Update investment status (do this last, it's less critical than wallet transfers)
+          // 5. Credit transaction fee to Super Admin wallet
+          console.log('🔵 [ALLOTMENT] ========================================');
+          console.log('🔵 [ALLOTMENT] Step 5: CREDITING FEE TO SUPER ADMIN');
+          console.log('🔵 [ALLOTMENT] ========================================');
+          console.log('🔵 [ALLOTMENT] Super Admin ID:', SUPER_ADMIN_ID);
+          console.log('🔵 [ALLOTMENT] Fee amount to credit:', transactionFee);
+
+          let superAdminTransactionId: string | undefined;
+          try {
+            // Get super admin wallet
+            const superAdminWallet = await data.getWallet(SUPER_ADMIN_ID);
+            const superAdminOldBalance = Number(superAdminWallet.balance) || 0;
+            const superAdminNewBalance = superAdminOldBalance + transactionFee;
+
+            console.log('🔵 [ALLOTMENT] Super Admin wallet balance before:', superAdminOldBalance);
+            console.log('🔵 [ALLOTMENT] Super Admin wallet balance after:', superAdminNewBalance);
+
+            // Update super admin wallet
+            await data.updateWallet(SUPER_ADMIN_ID, {
+              balance: superAdminNewBalance
+            });
+
+            console.log('✅ [ALLOTMENT] Super Admin wallet updated successfully');
+
+            // Create transaction record for super admin receiving fee
+            const superAdminTransaction = await data.createTransaction({
+              userId: SUPER_ADMIN_ID,
+              type: 'credit' as const,
+              amount: transactionFee,
+              category: 'fee' as const,
+              description: `Platform fee (0.5%) from loan: ${bid.lenderName} → ${trip.loadOwnerName} (Trip: ${trip.origin} → ${trip.destination})`,
+              balanceAfter: superAdminNewBalance,
+            });
+
+            superAdminTransactionId = superAdminTransaction.id;
+            console.log('✅ [ALLOTMENT] Super Admin fee transaction created:', superAdminTransactionId);
+
+            // 6. Create platform fee record
+            console.log('🔵 [ALLOTMENT] ========================================');
+            console.log('🔵 [ALLOTMENT] Step 6: CREATING PLATFORM FEE RECORD');
+            console.log('🔵 [ALLOTMENT] ========================================');
+
+            await createPlatformFee({
+              trip_id: tripId,
+              lender_id: bid.lenderId,
+              lender_name: bid.lenderName,
+              borrower_id: recipientUserId,
+              borrower_name: trip.loadOwnerName,
+              loan_amount: originalAmount,
+              fee_percentage: 0.5,
+              fee_amount: transactionFee,
+              super_admin_transaction_id: superAdminTransactionId,
+              borrower_transaction_id: transaction.id,
+            });
+
+            console.log('✅ [ALLOTMENT] Platform fee record created successfully');
+            console.log('✅ [ALLOTMENT] ========================================');
+            console.log('✅ [ALLOTMENT] FEE CREDITED TO SUPER ADMIN SUCCESSFULLY!');
+            console.log('✅ [ALLOTMENT] ========================================');
+          } catch (superAdminError) {
+            console.error('❌ [ALLOTMENT] Failed to credit fee to super admin!');
+            console.error('❌ [ALLOTMENT] Error:', superAdminError);
+            console.error('❌ [ALLOTMENT] This is not critical - borrower funds are safe');
+            // Don't throw - the main transaction (borrower getting funds) is complete
+          }
+
+      // 8. Update investment status (do this last, it's less critical than wallet transfers)
       console.log('🔵 [ALLOTMENT] ========================================');
-      console.log('🔵 [ALLOTMENT] Step 5: Updating investment status');
+      console.log('🔵 [ALLOTMENT] Step 8: Updating investment status');
       console.log('🔵 [ALLOTMENT] ========================================');
 
       let updatedInvestment = null;
