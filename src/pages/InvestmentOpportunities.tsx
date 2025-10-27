@@ -665,6 +665,7 @@ const InvestmentOpportunities = () => {
       );
 
       const bidId = bidResponse.id;
+      console.log('✅ Bid created with ID:', bidId);
 
       // 4. Create loan agreement with the actual bid ID
       const agreementData = {
@@ -688,7 +689,9 @@ const InvestmentOpportunities = () => {
         contractAccepted: false,
       };
 
-      await apiClient.post('/loan-agreements', agreementData);
+      console.log('Creating loan agreement with data:', agreementData);
+      const agreementResponse = await apiClient.post('/loan-agreements', agreementData);
+      console.log('✅ Loan agreement created:', agreementResponse.data);
 
       // 5. Optionally save as template
       if (contract.saveAsTemplate && contract.templateName) {

@@ -844,33 +844,42 @@ const LoadAgentDashboard = () => {
         return;
       }
 
-      // Check if bid has a contract - try multiple approaches
+      // Show loading toast while checking for contract
+      toast({
+        title: 'Checking for loan agreement...',
+        description: 'Please wait while we verify if this bid has a signed contract.',
+        duration: 2000,
+      });
+
+      // Always try to fetch loan agreement for this bid
       let agreement = null;
+      let hasContract = false;
 
-      // Approach 1: Check if bid has contract fields set
-      if (bid.hasContract && bid.contractId) {
-        try {
-          const response = await apiClient.get(`/loan-agreements/${bid.contractId}`);
+      // Try to find loan agreement by bid ID
+      try {
+        console.log('Fetching loan agreement for bid ID:', bid.id);
+        const response = await apiClient.get(`/loan-agreements/bid/${bid.id}`);
+        console.log('Loan agreement API response status:', response.status);
+
+        if (response.status === 200 && response.data) {
           agreement = response.data;
-        } catch (error) {
-          console.error('Failed to fetch loan agreement by contractId:', error);
+          hasContract = true;
+          console.log('✅ Loan agreement found:', agreement);
+        }
+      } catch (error: any) {
+        console.log('❌ No loan agreement found for bid:', bid.id);
+        if (error.response?.status !== 404) {
+          console.error('Error fetching loan agreement:', error);
+          toast({
+            variant: 'destructive',
+            title: 'Warning',
+            description: 'Could not check for loan agreement. Proceeding with standard allotment.',
+            duration: 3000,
+          });
         }
       }
 
-      // Approach 2: Try to find loan agreement by bid ID (fallback)
-      if (!agreement) {
-        try {
-          console.log('Trying to fetch loan agreement by bid ID:', bid.id);
-          const response = await apiClient.get(`/loan-agreements/bid/${bid.id}`);
-          console.log('Loan agreement API response:', response);
-          agreement = response.data;
-          console.log('Extracted agreement data:', agreement);
-        } catch (error) {
-          console.log('No loan agreement found for bid:', bid.id, 'Error:', error);
-        }
-      }
-
-      if (agreement) {
+      if (hasContract && agreement) {
         console.log('Loan agreement found:', agreement);
 
         // Prepare contract data for dialog
@@ -889,18 +898,28 @@ const LoadAgentDashboard = () => {
 
         console.log('Setting contract data:', contractDataToSet);
 
-        setContractData(contractDataToSet);
-
-        // Store pending allotment data
+        // Store pending allotment data first
         setPendingAllotment({
           tripId,
           lenderId,
           lenderName,
         });
 
-        // Show contract dialog
-        console.log('Opening contract dialog');
-        setContractDialogOpen(true);
+        // Set contract data
+        setContractData(contractDataToSet);
+
+        // Use setTimeout to ensure state updates have propagated
+        setTimeout(() => {
+          console.log('Opening contract dialog');
+          setContractDialogOpen(true);
+
+          // Notify user
+          toast({
+            title: 'Contract Review Required',
+            description: 'Please review and sign the loan agreement to complete allotment.',
+            duration: 5000,
+          });
+        }, 100);
       } else {
         // No contract - proceed with normal allotment (backward compatibility)
         const amount = bid?.amount || 0;
