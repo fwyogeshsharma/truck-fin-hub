@@ -89,6 +89,7 @@ const LoadAgentDashboard = () => {
     tripId: string;
     lenderId: string;
     lenderName: string;
+    agreementId: string;
   } | null>(null);
   const [contractLoading, setContractLoading] = useState(false);
 
@@ -898,11 +899,12 @@ const LoadAgentDashboard = () => {
 
         console.log('Setting contract data:', contractDataToSet);
 
-        // Store pending allotment data first
+        // Store pending allotment data first (including agreement ID)
         setPendingAllotment({
           tripId,
           lenderId,
           lenderName,
+          agreementId: agreement.id,
         });
 
         // Set contract data
@@ -951,32 +953,42 @@ const LoadAgentDashboard = () => {
   };
 
   const handleContractAccept = async (borrowerSignature: string) => {
-    if (!pendingAllotment) return;
+    if (!pendingAllotment) {
+      console.error('No pending allotment data');
+      return;
+    }
 
     try {
       setContractLoading(true);
+      console.log('📝 Starting contract acceptance process...');
+      console.log('Agreement ID:', pendingAllotment.agreementId);
+      console.log('Borrower signature length:', borrowerSignature.length);
 
       const trip = allTrips.find(t => t.id === pendingAllotment.tripId);
       const bid = trip?.bids?.find(b => b.lenderId === pendingAllotment.lenderId);
 
-      if (!bid?.contractId) {
+      if (!pendingAllotment.agreementId) {
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: 'Contract ID not found',
+          description: 'Contract agreement ID not found',
         });
+        setContractLoading(false);
         return;
       }
 
       // 1. Update loan agreement with borrower signature
-      await apiClient.put(`/loan-agreements/${bid.contractId}`, {
+      console.log('Updating loan agreement with borrower signature...');
+      await apiClient.put(`/loan-agreements/${pendingAllotment.agreementId}`, {
         borrowerSignatureImage: borrowerSignature,
         borrowerSignedAt: new Date().toISOString(),
         status: 'accepted',
         contractAccepted: true,
       });
+      console.log('✅ Loan agreement updated successfully');
 
-      // 2. Proceed with normal allotment
+      // 2. Proceed with trip allotment
+      console.log('Proceeding with trip allotment...');
       const amount = bid?.amount || 0;
       const result = await data.allotTrip(
         pendingAllotment.tripId,
@@ -986,6 +998,7 @@ const LoadAgentDashboard = () => {
       );
 
       if (result) {
+        console.log('✅ Trip allotted successfully!');
         toast({
           title: 'Contract Accepted & Trip Allotted!',
           description: `Contract signed successfully. Trip allotted to ${pendingAllotment.lenderName}. ₹${amount.toLocaleString('en-IN')} has been credited to your wallet.`,
@@ -996,18 +1009,20 @@ const LoadAgentDashboard = () => {
         setPendingAllotment(null);
         setContractData(null);
       } else {
+        console.error('❌ Trip allotment failed');
         toast({
           variant: 'destructive',
           title: 'Error',
           description: 'Contract signed but failed to allot trip. Please contact support.',
         });
       }
-    } catch (error) {
-      console.error('Error accepting contract:', error);
+    } catch (error: any) {
+      console.error('❌ Error accepting contract:', error);
+      console.error('Error details:', error.response?.data || error.message);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to accept contract. Please try again.',
+        description: error.response?.data?.message || 'Failed to accept contract. Please try again.',
       });
     } finally {
       setContractLoading(false);

@@ -313,17 +313,24 @@ const ContractAcceptanceDialog = ({
           </TabsContent>
         </Tabs>
 
-        <DialogFooter>
+        <DialogFooter className="gap-3">
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Reject Contract
           </Button>
-          <Button onClick={handleAccept} disabled={loading || !termsAccepted || !borrowerSignature} className="bg-gradient-primary">
+          <Button
+            onClick={handleAccept}
+            disabled={loading || !termsAccepted || !borrowerSignature}
+            className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
+          >
             {loading ? (
-              <>Processing...</>
+              <>
+                <div className="h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Processing Allotment...
+              </>
             ) : (
               <>
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Accept & Sign Contract
+                Sign Contract & Allot Trip
               </>
             )}
           </Button>
