@@ -67,10 +67,10 @@ export interface PlatformConfig {
 // Default platform configuration
 export const DEFAULT_PLATFORM_CONFIG: PlatformConfig = {
   fees: {
-    platformFee: 2.5, // 2.5% platform fee
-    transactionFee: 1.0, // 1% transaction fee
-    loadAgentCommission: 1.5, // 1.5% commission
-    vehicleAgentCommission: 1.0, // 1% commission
+    platformFee: 0, // No platform fee
+    transactionFee: 0.5, // 0.5% transaction fee on loan disbursement
+    loadAgentCommission: 0, // No load agent commission
+    vehicleAgentCommission: 0, // No vehicle agent commission
     earlyPaymentDiscount: 0.5, // 0.5% discount for early payment
   },
 

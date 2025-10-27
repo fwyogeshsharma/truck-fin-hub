@@ -215,29 +215,29 @@ const PlatformConfiguration = () => {
         {/* Platform Fees */}
         <ConfigSection
           title="Platform Fees"
-          description="Configure platform and transaction fees (in percentage)"
+          description="Configure transaction fee (0.5% default, deducted on loan disbursement). Interest rates are set by transporter and lender bids - no markup applied."
           icon={Percent}
         >
           <ConfigInput
-            label="Platform Fee"
-            value={config.fees.platformFee}
-            onChange={(v) => handleInputChange('fees', 'platformFee', v)}
-            suffix="%"
-          />
-          <ConfigInput
-            label="Transaction Fee"
+            label="Transaction Fee (Active)"
             value={config.fees.transactionFee}
             onChange={(v) => handleInputChange('fees', 'transactionFee', v)}
             suffix="%"
           />
           <ConfigInput
-            label="Borrower Commission"
+            label="Platform Fee (Deprecated)"
+            value={config.fees.platformFee}
+            onChange={(v) => handleInputChange('fees', 'platformFee', v)}
+            suffix="%"
+          />
+          <ConfigInput
+            label="Borrower Commission (Deprecated)"
             value={config.fees.loadAgentCommission}
             onChange={(v) => handleInputChange('fees', 'loadAgentCommission', v)}
             suffix="%"
           />
           <ConfigInput
-            label="Vehicle Agent Commission"
+            label="Vehicle Agent Commission (Deprecated)"
             value={config.fees.vehicleAgentCommission}
             onChange={(v) => handleInputChange('fees', 'vehicleAgentCommission', v)}
             suffix="%"

@@ -140,7 +140,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
           <div className="flex items-center gap-3 md:gap-6">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate(`/dashboard/${role}`)}>
               <img src="/logiFin.png" alt="LogiFin" className="h-8 w-auto md:h-10 object-contain" />
             </div>
 

@@ -291,18 +291,15 @@ export const data = {
       console.log('Allotting trip:', tripId, 'to lender:', lenderId);
       console.log('Current user allotting:', currentUserId || trip.loadOwnerId);
 
-      // Calculate adjusted interest rate for transporter (lender rate + 20% markup)
-      const maturityDays = trip.maturityDays || 30;
-      const yearlyRate = (bid.interestRate * 365) / maturityDays;
-      const adjustedYearlyRate = yearlyRate * 1.2;
-      const transporterRate = (adjustedYearlyRate * maturityDays) / 365;
+      // Use the bid interest rate directly (no markup)
+      // The lender's bid rate is final and will be used for the transporter
 
       // Update trip status to funded
       const updatedTrip = await data.updateTrip(tripId, {
         status: 'funded',
         lenderId: bid.lenderId,
         lenderName: bid.lenderName,
-        interestRate: transporterRate,
+        interestRate: bid.interestRate,
         fundedAt: new Date().toISOString(),
       });
 
@@ -381,14 +378,18 @@ export const data = {
             throw new Error(`Failed to fetch recipient wallet: ${(walletError as Error).message}`);
           }
 
-          // Calculate new balance
+          // Calculate transaction fee (0.5% of loan amount) and net amount
+          const originalAmount = Number(bid.amount) || 0;
+          const transactionFee = originalAmount * 0.005; // 0.5% fee
+          const creditAmount = originalAmount - transactionFee; // Net amount after fee
           const oldBalance = Number(recipientWallet.balance) || 0;
-          const creditAmount = Number(bid.amount) || 0;
           const newBalance = oldBalance + creditAmount;
 
           console.log('🔵 [ALLOTMENT] Balance calculation:');
+          console.log('🔵 [ALLOTMENT]   Loan amount:', originalAmount);
+          console.log('🔵 [ALLOTMENT]   Transaction fee (0.5%):', transactionFee);
+          console.log('🔵 [ALLOTMENT]   Net credit amount:', creditAmount);
           console.log('🔵 [ALLOTMENT]   Old balance:', oldBalance);
-          console.log('🔵 [ALLOTMENT]   Credit amount:', creditAmount);
           console.log('🔵 [ALLOTMENT]   New balance:', newBalance);
 
           // Update wallet - THIS IS CRITICAL!
@@ -428,12 +429,13 @@ export const data = {
           console.log('🔵 [ALLOTMENT] ========================================');
 
           try {
+            // Create credit transaction for net amount received
             const transactionData = {
               userId: recipientUserId,
               type: 'credit' as const,
               amount: creditAmount,
               category: 'payment' as const,
-              description: `Received ₹${creditAmount.toLocaleString('en-IN')} from ${bid.lenderName} for trip ${trip.origin} → ${trip.destination}`,
+              description: `Loan disbursed: ₹${originalAmount.toLocaleString('en-IN')} from ${bid.lenderName} for trip ${trip.origin} → ${trip.destination} (Net: ₹${creditAmount.toLocaleString('en-IN')} after 0.5% fee)`,
               balanceAfter: newBalance,
             };
 
@@ -441,6 +443,19 @@ export const data = {
             console.log('🔵 [ALLOTMENT] Calling transactionsAPI.create()...');
 
             const transaction = await data.createTransaction(transactionData);
+
+            // Create fee transaction record
+            const feeTransactionData = {
+              userId: recipientUserId,
+              type: 'debit' as const,
+              amount: transactionFee,
+              category: 'fee' as const,
+              description: `Transaction fee (0.5%) for loan from ${bid.lenderName}`,
+              balanceAfter: newBalance,
+            };
+
+            await data.createTransaction(feeTransactionData);
+            console.log('✅ [ALLOTMENT] Fee transaction created:', transactionFee);
 
             console.log('✅ [ALLOTMENT] Transaction created successfully!');
             console.log('✅ [ALLOTMENT] Transaction details:', JSON.stringify({
@@ -468,8 +483,10 @@ export const data = {
           console.log('✅ [ALLOTMENT] RECIPIENT WALLET CREDITED SUCCESSFULLY!');
           console.log('✅ [ALLOTMENT] Recipient User ID:', recipientUserId);
           console.log('✅ [ALLOTMENT] Old balance:', oldBalance);
+          console.log('✅ [ALLOTMENT] Loan amount:', originalAmount);
+          console.log('✅ [ALLOTMENT] Transaction fee (0.5%):', transactionFee);
+          console.log('✅ [ALLOTMENT] Net amount credited:', creditAmount);
           console.log('✅ [ALLOTMENT] New balance:', newBalance);
-          console.log('✅ [ALLOTMENT] Amount credited:', creditAmount);
           console.log('✅ [ALLOTMENT] ========================================');
 
       // 4. Update investment status (do this last, it's less critical than wallet transfers)

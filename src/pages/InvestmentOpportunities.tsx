@@ -527,20 +527,19 @@ const InvestmentOpportunities = () => {
         ).toISOString(),
       });
 
-      // Add bid to trip_bids table
-      const adjustedRate = interestRate / 0.7;
+      // Add bid to trip_bids table - use the lender's bid rate directly (no adjustment)
       await data.addBid(
         tripId,
         user.id,
         user.name || "Lender",
         investmentAmount,
-        adjustedRate,
+        interestRate,
       );
 
       // Update trip status to escrowed and set the accepted bid's interest rate
       await data.updateTrip(tripId, {
         status: "escrowed",
-        interestRate: adjustedRate,
+        interestRate: interestRate,
       });
 
       // Refresh trips list
@@ -654,14 +653,13 @@ const InvestmentOpportunities = () => {
         maturityDate: new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toISOString(),
       });
 
-      // 3. Create bid and get the bid ID
-      const adjustedRate = interestRate / 0.7;
+      // 3. Create bid and get the bid ID - use the lender's bid rate directly (no adjustment)
       const bidResponse = await data.addBid(
         pendingBidData.tripId,
         user.id,
         user.name || "Lender",
         investmentAmount,
-        adjustedRate,
+        interestRate,
       );
 
       const bidId = bidResponse.id;
@@ -717,7 +715,7 @@ const InvestmentOpportunities = () => {
       // 6. Update trip status to escrowed
       await data.updateTrip(pendingBidData.tripId, {
         status: "escrowed",
-        interestRate: adjustedRate,
+        interestRate: interestRate,
       });
 
       // 7. Refresh trips list
