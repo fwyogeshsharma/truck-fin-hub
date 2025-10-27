@@ -1348,7 +1348,7 @@ const LoadAgentDashboard = () => {
   }, 0);
   const loanPending = loanTaken - completedTrips.reduce((sum, t) => sum + (t.amount || t.loanAmount || 0), 0);
 
-  // Calculate profit (interest earned on completed trips)
+  // Calculate interest paid (interest paid to lenders on completed trips)
   const profit = completedTrips.reduce((sum, t) => {
     const principal = t.amount || t.loanAmount || 0;
     const interestRate = t.interestRate || t.loanInterestRate || 0;
@@ -1357,7 +1357,7 @@ const LoadAgentDashboard = () => {
     return sum + interest;
   }, 0);
 
-  // Monthly profit data for graph (last 6 months)
+  // Monthly interest paid data for graph (last 6 months)
   const getLast6MonthsData = () => {
     const months = [];
     const now = new Date();
@@ -1580,20 +1580,20 @@ const LoadAgentDashboard = () => {
                 <div className="bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 p-4 rounded-lg border border-primary/30">
                   <div className="flex items-center gap-2 mb-2">
                     <Star className="h-4 w-4 text-primary" />
-                    <p className="text-xs font-medium text-muted-foreground">Total Profit</p>
+                    <p className="text-xs font-medium text-muted-foreground">Total Interest Paid</p>
                   </div>
                   <p className="text-2xl font-bold text-primary">₹{(profit / 1000).toFixed(1)}K</p>
-                  <p className="text-xs text-muted-foreground mt-1">Interest earned</p>
+                  <p className="text-xs text-muted-foreground mt-1">Interest paid to lenders</p>
                 </div>
               </div>
 
               {/* Charts Section */}
               <div className="grid md:grid-cols-2 gap-6">
-                {/* Monthly Profit Trend */}
+                {/* Monthly Interest Paid Trend */}
                 <div className="bg-white dark:bg-card p-4 rounded-lg border">
                   <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-primary" />
-                    Monthly Profit Trend (Last 6 Months)
+                    Monthly Interest Paid Trend (Last 6 Months)
                   </h4>
                   <ResponsiveContainer width="100%" height={200}>
                     <AreaChart data={monthlyData}>
@@ -1610,17 +1610,17 @@ const LoadAgentDashboard = () => {
                         stroke="#8b5cf6"
                         fill="#8b5cf6"
                         fillOpacity={0.6}
-                        name="Profit"
+                        name="Interest Paid"
                       />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
 
-                {/* Monthly Loans vs Profit */}
+                {/* Monthly Loans vs Interest Paid */}
                 <div className="bg-white dark:bg-card p-4 rounded-lg border">
                   <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-secondary" />
-                    Loans Taken vs Profit
+                    Loans Taken vs Interest Paid
                   </h4>
                   <ResponsiveContainer width="100%" height={200}>
                     <RechartsBarChart data={monthlyData}>
@@ -1633,7 +1633,7 @@ const LoadAgentDashboard = () => {
                       />
                       <Legend wrapperStyle={{ fontSize: '12px' }} />
                       <Bar dataKey="loansTaken" fill="#3b82f6" name="Loans Taken" />
-                      <Bar dataKey="profit" fill="#10b981" name="Profit" />
+                      <Bar dataKey="profit" fill="#10b981" name="Interest Paid" />
                     </RechartsBarChart>
                   </ResponsiveContainer>
                 </div>
