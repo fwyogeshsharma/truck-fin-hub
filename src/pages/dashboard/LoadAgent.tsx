@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { auth } from '@/lib/auth';
 import { data, Trip, Wallet, Transaction } from '@/lib/data';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,6 +67,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import DocumentProgress from '@/components/DocumentProgress';
+import ContractAcceptanceDialog from '@/components/ContractAcceptanceDialog';
 import { formatPercentage } from '@/lib/currency';
 
 const LoadAgentDashboard = () => {
@@ -79,6 +81,16 @@ const LoadAgentDashboard = () => {
   const [repaying, setRepaying] = useState<Record<string, boolean>>({});
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  // Contract acceptance states
+  const [contractDialogOpen, setContractDialogOpen] = useState(false);
+  const [contractData, setContractData] = useState<any>(null);
+  const [pendingAllotment, setPendingAllotment] = useState<{
+    tripId: string;
+    lenderId: string;
+    lenderName: string;
+  } | null>(null);
+  const [contractLoading, setContractLoading] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -812,27 +824,140 @@ const LoadAgentDashboard = () => {
   }, [advancedFilters]);
 
   const handleAllotTrip = async (tripId: string, lenderId: string, lenderName: string) => {
-    // Get trip details before allotment to know the amount
-    const trip = allTrips.find(t => t.id === tripId);
-    const bid = trip?.bids?.find(b => b.lenderId === lenderId);
-    const amount = bid?.amount || 0;
+    try {
+      // Get trip details before allotment to know the amount
+      const trip = allTrips.find(t => t.id === tripId);
+      const bid = trip?.bids?.find(b => b.lenderId === lenderId);
 
-    // Pass current user ID so the money goes to the user who is allotting (not trip creator)
-    const result = await data.allotTrip(tripId, lenderId, lenderName, user?.id);
+      if (!trip || !bid) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Trip or bid not found',
+        });
+        return;
+      }
 
-    if (result) {
-      toast({
-        title: 'Trip Allotted Successfully!',
-        description: `Trip allotted to ${lenderName}. ₹${amount.toLocaleString('en-IN')} has been credited to your wallet. Check your wallet to see the transaction.`,
-        duration: 6000, // Show for 6 seconds
-      });
-      setRefreshKey(prev => prev + 1); // Refresh trip list
-    } else {
+      // Check if bid has a contract
+      if (bid.hasContract && bid.contractId) {
+        // Fetch loan agreement
+        const response = await apiClient.get(`/loan-agreements/${bid.contractId}`);
+        const agreement = response.data;
+
+        // Prepare contract data for dialog
+        setContractData({
+          lenderName: lenderName,
+          lenderSignature: agreement.lenderSignatureImage,
+          termsAndConditions: agreement.termsAndConditions || agreement.contractTerms || '',
+          interestRateClause: agreement.interestRateClause || '',
+          repaymentClause: agreement.repaymentClause || '',
+          latePaymentClause: agreement.latePaymentClause || '',
+          defaultClause: agreement.defaultClause || '',
+          tripAmount: agreement.loanAmount || bid.amount,
+          interestRate: agreement.interestRate || bid.interestRate,
+          maturityDays: agreement.maturityDays || trip.maturityDays || 30,
+        });
+
+        // Store pending allotment data
+        setPendingAllotment({
+          tripId,
+          lenderId,
+          lenderName,
+        });
+
+        // Show contract dialog
+        setContractDialogOpen(true);
+      } else {
+        // No contract - proceed with normal allotment (backward compatibility)
+        const amount = bid?.amount || 0;
+        const result = await data.allotTrip(tripId, lenderId, lenderName, user?.id);
+
+        if (result) {
+          toast({
+            title: 'Trip Allotted Successfully!',
+            description: `Trip allotted to ${lenderName}. ₹${amount.toLocaleString('en-IN')} has been credited to your wallet. Check your wallet to see the transaction.`,
+            duration: 6000,
+          });
+          setRefreshKey(prev => prev + 1);
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Failed to allot trip',
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleAllotTrip:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to allot trip',
+        description: 'Failed to process allotment request',
       });
+    }
+  };
+
+  const handleContractAccept = async (borrowerSignature: string) => {
+    if (!pendingAllotment) return;
+
+    try {
+      setContractLoading(true);
+
+      const trip = allTrips.find(t => t.id === pendingAllotment.tripId);
+      const bid = trip?.bids?.find(b => b.lenderId === pendingAllotment.lenderId);
+
+      if (!bid?.contractId) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Contract ID not found',
+        });
+        return;
+      }
+
+      // 1. Update loan agreement with borrower signature
+      await apiClient.put(`/loan-agreements/${bid.contractId}`, {
+        borrowerSignatureImage: borrowerSignature,
+        borrowerSignedAt: new Date().toISOString(),
+        status: 'accepted',
+        contractAccepted: true,
+      });
+
+      // 2. Proceed with normal allotment
+      const amount = bid?.amount || 0;
+      const result = await data.allotTrip(
+        pendingAllotment.tripId,
+        pendingAllotment.lenderId,
+        pendingAllotment.lenderName,
+        user?.id
+      );
+
+      if (result) {
+        toast({
+          title: 'Contract Accepted & Trip Allotted!',
+          description: `Contract signed successfully. Trip allotted to ${pendingAllotment.lenderName}. ₹${amount.toLocaleString('en-IN')} has been credited to your wallet.`,
+          duration: 6000,
+        });
+        setRefreshKey(prev => prev + 1);
+        setContractDialogOpen(false);
+        setPendingAllotment(null);
+        setContractData(null);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Contract signed but failed to allot trip. Please contact support.',
+        });
+      }
+    } catch (error) {
+      console.error('Error accepting contract:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to accept contract. Please try again.',
+      });
+    } finally {
+      setContractLoading(false);
     }
   };
 
@@ -3695,6 +3820,21 @@ print(response.json())`;
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Contract Acceptance Dialog */}
+        {contractData && (
+          <ContractAcceptanceDialog
+            open={contractDialogOpen}
+            onClose={() => {
+              setContractDialogOpen(false);
+              setPendingAllotment(null);
+              setContractData(null);
+            }}
+            onAccept={handleContractAccept}
+            contract={contractData}
+            loading={contractLoading}
+          />
+        )}
       </div>
     </DashboardLayout>
   );

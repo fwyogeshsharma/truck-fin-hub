@@ -72,6 +72,7 @@ import {
 import AdvancedFilter, { type FilterConfig } from "@/components/AdvancedFilter";
 import { getCompanyInfo } from "@/data/companyInfo";
 import { apiClient } from "@/api/client";
+import LoanContractEditor, { type LoanContract } from "@/components/LoanContractEditor";
 
 // Helper function to get the latest document step
 const getDocumentStep = (documents?: Record<string, string>) => {
@@ -234,6 +235,15 @@ const InvestmentOpportunities = () => {
   const [bidDialogOpen, setBidDialogOpen] = useState(false);
   const [selectedTripForBid, setSelectedTripForBid] = useState<any>(null);
   const [customBidRate, setCustomBidRate] = useState<number>(0);
+
+  // Contract dialog states
+  const [contractDialogOpen, setContractDialogOpen] = useState(false);
+  const [pendingBidData, setPendingBidData] = useState<{
+    tripId: string;
+    amount: number;
+    interestRate: number;
+    maturityDays: number;
+  } | null>(null);
 
   const refreshWallet = async () => {
     if (!user?.id) return;
@@ -575,7 +585,94 @@ const InvestmentOpportunities = () => {
       return;
     }
 
-    handleInvest(selectedTripForBid.id, amount, customBidRate);
+    // Store bid data and show contract dialog
+    const maturityDays = selectedTripForBid.maturityDays || 30;
+    setPendingBidData({
+      tripId: selectedTripForBid.id,
+      amount,
+      interestRate: customBidRate,
+      maturityDays,
+    });
+
+    // Close bid dialog and open contract dialog
+    setBidDialogOpen(false);
+    setContractDialogOpen(true);
+  };
+
+  const handleContractSave = async (contract: LoanContract) => {
+    if (!pendingBidData || !user?.id) return;
+
+    try {
+      // Generate unique IDs
+      const bidId = `bid_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const agreementId = `agreement_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // 1. Create loan agreement with contract terms
+      const trip = trips.find((t) => t.id === pendingBidData.tripId);
+      if (!trip) return;
+
+      const agreementData = {
+        id: agreementId,
+        tripId: pendingBidData.tripId,
+        bidId: bidId,
+        lenderId: user.id,
+        borrowerId: trip.loadOwnerId,
+        contractTerms: contract.termsAndConditions,
+        loanAmount: pendingBidData.amount,
+        interestRate: pendingBidData.interestRate,
+        maturityDays: pendingBidData.maturityDays,
+        termsAndConditions: contract.termsAndConditions,
+        interestRateClause: contract.interestRateClause,
+        repaymentClause: contract.repaymentClause,
+        latePaymentClause: contract.latePaymentClause,
+        defaultClause: contract.defaultClause,
+        customClauses: JSON.stringify(contract.customClauses),
+        lenderSignatureImage: contract.lenderSignature,
+        lenderSignedAt: new Date().toISOString(),
+        status: 'pending_borrower',
+        contractAccepted: false,
+      };
+
+      await apiClient.post('/loan-agreements', agreementData);
+
+      // 2. Optionally save as template
+      if (contract.saveAsTemplate && contract.templateName) {
+        const templateId = `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        await apiClient.post('/loan-contract-templates', {
+          id: templateId,
+          lenderId: user.id,
+          templateName: contract.templateName,
+          termsAndConditions: contract.termsAndConditions,
+          interestRateClause: contract.interestRateClause,
+          repaymentClause: contract.repaymentClause,
+          latePaymentClause: contract.latePaymentClause,
+          defaultClause: contract.defaultClause,
+          customClauses: JSON.stringify(contract.customClauses),
+          lenderSignatureImage: contract.lenderSignature,
+          isDefault: false,
+        });
+
+        toast({
+          title: "Template Saved",
+          description: `Contract template "${contract.templateName}" has been saved for future use`,
+        });
+      }
+
+      // 3. Proceed with normal bid creation
+      await handleInvest(pendingBidData.tripId, pendingBidData.amount, pendingBidData.interestRate);
+
+      // Close contract dialog and reset
+      setContractDialogOpen(false);
+      setPendingBidData(null);
+
+    } catch (error) {
+      console.error('Failed to save contract:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save loan contract. Please try again.",
+      });
+    }
   };
 
   const handleBulkInvest = async () => {
@@ -2729,6 +2826,24 @@ const InvestmentOpportunities = () => {
           </Dialog>
         </div>
       </TooltipProvider>
+
+      {/* Loan Contract Editor */}
+      {pendingBidData && (
+        <LoanContractEditor
+          open={contractDialogOpen}
+          onClose={() => {
+            setContractDialogOpen(false);
+            setPendingBidData(null);
+            // Re-open bid dialog if user cancels contract
+            setBidDialogOpen(true);
+          }}
+          onSave={handleContractSave}
+          tripAmount={pendingBidData.amount}
+          interestRate={pendingBidData.interestRate}
+          maturityDays={pendingBidData.maturityDays}
+          lenderId={user?.id || ''}
+        />
+      )}
     </DashboardLayout>
   );
 };
