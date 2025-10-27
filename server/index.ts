@@ -16,6 +16,8 @@ import kycRoutes from './routes/kyc.ts';
 import notificationRoutes from './routes/notifications.ts';
 import migrationRoutes from './routes/migrations.ts';
 import themeSettingsRoutes from './routes/theme_settings.ts';
+import loanAgreementRoutes from './routes/loanAgreements.ts';
+import loanContractTemplateRoutes from './routes/loanContractTemplates.ts';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -89,6 +91,8 @@ app.use('/api/kyc', kycRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/migrations', migrationRoutes);
 app.use('/api/theme', themeSettingsRoutes);
+app.use('/api/loan-agreements', loanAgreementRoutes);
+app.use('/api/loan-contract-templates', loanContractTemplateRoutes);
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
