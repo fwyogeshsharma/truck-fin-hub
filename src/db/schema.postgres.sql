@@ -25,6 +25,16 @@ CREATE TABLE IF NOT EXISTS users (
   terms_accepted BOOLEAN DEFAULT FALSE,
   terms_accepted_at TIMESTAMP,
   is_active BOOLEAN DEFAULT TRUE,
+  -- Lender Financial Profile
+  is_admin BOOLEAN DEFAULT FALSE,
+  annual_income VARCHAR(20) CHECK(annual_income IN ('below_5L', '5L_10L', '10L_25L', '25L_50L', 'above_50L')),
+  investable_surplus VARCHAR(20) CHECK(investable_surplus IN ('below_1L', '1L_5L', '5L_10L', '10L_25L', 'above_25L')),
+  investment_experience VARCHAR(20) CHECK(investment_experience IN ('beginner', 'intermediate', 'experienced', 'expert')),
+  risk_appetite VARCHAR(20) CHECK(risk_appetite IN ('conservative', 'moderate', 'aggressive')),
+  investment_horizon VARCHAR(20) CHECK(investment_horizon IN ('short', 'medium', 'long', 'flexible')),
+  max_investment_per_deal VARCHAR(20) CHECK(max_investment_per_deal IN ('below_25K', '25K_50K', '50K_1L', '1L_2L', 'above_2L')),
+  financial_profile_completed BOOLEAN DEFAULT FALSE,
+  financial_profile_updated_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (approved_by) REFERENCES users(id)

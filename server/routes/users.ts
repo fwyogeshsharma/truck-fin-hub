@@ -135,6 +135,46 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
+// PUT /api/users/:id/financial-profile - Update lender's financial profile
+router.put('/:id/financial-profile', async (req: Request, res: Response) => {
+  try {
+    const {
+      annualIncome,
+      investableSurplus,
+      investmentExperience,
+      riskAppetite,
+      investmentHorizon,
+      maxInvestmentPerDeal,
+    } = req.body;
+
+    const financialProfile = {
+      annual_income: annualIncome,
+      investable_surplus: investableSurplus,
+      investment_experience: investmentExperience,
+      risk_appetite: riskAppetite,
+      investment_horizon: investmentHorizon,
+      max_investment_per_deal: maxInvestmentPerDeal,
+      financial_profile_completed: true,
+      financial_profile_updated_at: new Date().toISOString(),
+    };
+
+    const user = await updateUser(req.params.id, financialProfile);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Remove password hash
+    const { password_hash, ...sanitizedUser } = user;
+    res.json({
+      message: 'Financial profile updated successfully',
+      user: sanitizedUser,
+    });
+  } catch (error: any) {
+    console.error('Update financial profile error:', error);
+    res.status(500).json({ error: 'Failed to update financial profile', message: error.message });
+  }
+});
+
 // PUT /api/users/:id - Update user
 router.put('/:id', async (req: Request, res: Response) => {
   try {

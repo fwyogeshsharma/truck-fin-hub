@@ -14,6 +14,7 @@ import { getChartColors, getChartColorPalette } from "@/lib/chartColors";
 import { apiClient } from '@/api/client';
 import MaturityCountdown from '@/components/MaturityCountdown';
 import DocumentProgress from '@/components/DocumentProgress';
+import LenderFinancialQuestionnaire from '@/components/LenderFinancialQuestionnaire';
 
 const LenderDashboard = () => {
   const { toast } = useToast();
@@ -36,6 +37,8 @@ const LenderDashboard = () => {
   const [approvingUserId, setApprovingUserId] = useState<string | null>(null);
   const [selectedTripForDocs, setSelectedTripForDocs] = useState<Trip | null>(null);
   const [documentViewOpen, setDocumentViewOpen] = useState(false);
+  const [showFinancialQuestionnaire, setShowFinancialQuestionnaire] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   // Pagination state
   const [pendingBidsPage, setPendingBidsPage] = useState(1);
@@ -93,14 +96,21 @@ const LenderDashboard = () => {
 
       setLoading(true);
       try {
-        const [tripsData, investmentsData, walletData] = await Promise.all([
+        const [tripsData, investmentsData, walletData, userData] = await Promise.all([
           data.getTrips(),
           data.getInvestments(),
           data.getWallet(user.id),
+          apiClient.get(`/users/${user.id}`),
         ]);
         setTrips(tripsData);
         setMyInvestments(investmentsData.filter(i => i.lenderId === user.id));
         setWallet(walletData);
+        setUserProfile(userData);
+
+        // Show financial questionnaire if not completed (only for lenders, not admins)
+        if (!userData.financial_profile_completed && user.role === 'lender' && !user.is_admin) {
+          setShowFinancialQuestionnaire(true);
+        }
 
         // Fetch pending approvals if user is admin
         if (user?.is_admin) {
@@ -899,6 +909,16 @@ const LenderDashboard = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Financial Questionnaire for new lenders */}
+      {user?.id && (
+        <LenderFinancialQuestionnaire
+          open={showFinancialQuestionnaire}
+          onClose={() => setShowFinancialQuestionnaire(false)}
+          userId={user.id}
+          userName={user.name}
+        />
+      )}
     </DashboardLayout>
   );
 };

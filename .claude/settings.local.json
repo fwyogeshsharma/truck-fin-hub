@@ -40,7 +40,8 @@
       "Bash(powershell -ExecutionPolicy Bypass -File \"D:\\Projects\\truck-fin-hub\\update-investment-opportunities.ps1\")",
       "Bash(powershell:*)",
       "Bash(git restore:*)",
-      "Bash(npm run build:frontend:*)"
+      "Bash(npm run build:frontend:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

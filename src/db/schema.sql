@@ -24,6 +24,16 @@ CREATE TABLE IF NOT EXISTS users (
   terms_accepted INTEGER DEFAULT 0,
   terms_accepted_at TEXT,
   is_active INTEGER DEFAULT 1,
+  -- Lender Financial Profile
+  is_admin INTEGER DEFAULT 0,
+  annual_income TEXT CHECK(annual_income IN ('below_5L', '5L_10L', '10L_25L', '25L_50L', 'above_50L')),
+  investable_surplus TEXT CHECK(investable_surplus IN ('below_1L', '1L_5L', '5L_10L', '10L_25L', 'above_25L')),
+  investment_experience TEXT CHECK(investment_experience IN ('beginner', 'intermediate', 'experienced', 'expert')),
+  risk_appetite TEXT CHECK(risk_appetite IN ('conservative', 'moderate', 'aggressive')),
+  investment_horizon TEXT CHECK(investment_horizon IN ('short', 'medium', 'long', 'flexible')),
+  max_investment_per_deal TEXT CHECK(max_investment_per_deal IN ('below_25K', '25K_50K', '50K_1L', '1L_2L', 'above_2L')),
+  financial_profile_completed INTEGER DEFAULT 0,
+  financial_profile_updated_at TEXT,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (approved_by) REFERENCES users(id)

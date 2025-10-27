@@ -20,6 +20,15 @@ export interface User {
   termsAccepted?: boolean;
   termsAcceptedAt?: string;
   is_admin?: boolean;
+  // Lender Financial Profile
+  annual_income?: 'below_5L' | '5L_10L' | '10L_25L' | '25L_50L' | 'above_50L';
+  investable_surplus?: 'below_1L' | '1L_5L' | '5L_10L' | '10L_25L' | 'above_25L';
+  investment_experience?: 'beginner' | 'intermediate' | 'experienced' | 'expert';
+  risk_appetite?: 'conservative' | 'moderate' | 'aggressive';
+  investment_horizon?: 'short' | 'medium' | 'long' | 'flexible';
+  max_investment_per_deal?: 'below_25K' | '25K_50K' | '50K_1L' | '1L_2L' | 'above_2L';
+  financial_profile_completed?: boolean;
+  financial_profile_updated_at?: string;
 }
 
 const AUTH_KEY = 'current_user';
