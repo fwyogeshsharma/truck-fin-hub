@@ -62,6 +62,7 @@ import {
   UserCheck,
   UserX,
   Loader2,
+  TrendingUp,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import DocumentProgress from '@/components/DocumentProgress';
