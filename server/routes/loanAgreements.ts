@@ -90,7 +90,26 @@ router.get('/:id', async (req: Request, res: Response) => {
 // POST /api/loan-agreements - Create a new loan agreement
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const input: CreateLoanAgreementInput = req.body;
+    const body = req.body;
+
+    // Normalize field names (accept both camelCase and snake_case)
+    const input: CreateLoanAgreementInput = {
+      trip_id: body.trip_id || body.tripId,
+      bid_id: body.bid_id || body.bidId,
+      lender_id: body.lender_id || body.lenderId,
+      borrower_id: body.borrower_id || body.borrowerId,
+      contract_terms: body.contract_terms || body.contractTerms,
+      interest_rate: body.interest_rate || body.interestRate,
+      loan_amount: body.loan_amount || body.loanAmount,
+      maturity_days: body.maturity_days || body.maturityDays,
+      terms_and_conditions: body.terms_and_conditions || body.termsAndConditions,
+      interest_rate_clause: body.interest_rate_clause || body.interestRateClause,
+      repayment_clause: body.repayment_clause || body.repaymentClause,
+      late_payment_clause: body.late_payment_clause || body.latePaymentClause,
+      default_clause: body.default_clause || body.defaultClause,
+      custom_clauses: body.custom_clauses || body.customClauses,
+      lender_signature_image: body.lender_signature_image || body.lenderSignatureImage,
+    };
 
     // Validate required fields
     const requiredFields = [
@@ -125,7 +144,15 @@ router.post('/', async (req: Request, res: Response) => {
 router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const input: UpdateLoanAgreementInput = req.body;
+    const body = req.body;
+
+    // Normalize field names (accept both camelCase and snake_case)
+    const input: UpdateLoanAgreementInput = {
+      borrower_signature_image: body.borrower_signature_image || body.borrowerSignatureImage,
+      borrower_signed_at: body.borrower_signed_at || body.borrowerSignedAt,
+      status: body.status,
+      contract_accepted: body.contract_accepted !== undefined ? body.contract_accepted : body.contractAccepted,
+    };
 
     // Check if agreement exists
     const existing = await getLoanAgreementById(id);

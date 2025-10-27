@@ -81,7 +81,21 @@ router.get('/:id', async (req: Request, res: Response) => {
 // POST /api/loan-contract-templates - Create a new template
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const input: CreateLoanContractTemplateInput = req.body;
+    const body = req.body;
+
+    // Normalize field names (accept both camelCase and snake_case)
+    const input: CreateLoanContractTemplateInput = {
+      lender_id: body.lender_id || body.lenderId,
+      template_name: body.template_name || body.templateName,
+      terms_and_conditions: body.terms_and_conditions || body.termsAndConditions,
+      interest_rate_clause: body.interest_rate_clause || body.interestRateClause,
+      repayment_clause: body.repayment_clause || body.repaymentClause,
+      late_payment_clause: body.late_payment_clause || body.latePaymentClause,
+      default_clause: body.default_clause || body.defaultClause,
+      custom_clauses: body.custom_clauses || body.customClauses,
+      lender_signature_image: body.lender_signature_image || body.lenderSignatureImage,
+      is_default: body.is_default !== undefined ? body.is_default : body.isDefault,
+    };
 
     // Validate required fields
     const requiredFields = ['lender_id', 'template_name', 'terms_and_conditions'];
@@ -106,7 +120,20 @@ router.post('/', async (req: Request, res: Response) => {
 router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const input: UpdateLoanContractTemplateInput = req.body;
+    const body = req.body;
+
+    // Normalize field names (accept both camelCase and snake_case)
+    const input: UpdateLoanContractTemplateInput = {
+      template_name: body.template_name || body.templateName,
+      terms_and_conditions: body.terms_and_conditions || body.termsAndConditions,
+      interest_rate_clause: body.interest_rate_clause || body.interestRateClause,
+      repayment_clause: body.repayment_clause || body.repaymentClause,
+      late_payment_clause: body.late_payment_clause || body.latePaymentClause,
+      default_clause: body.default_clause || body.defaultClause,
+      custom_clauses: body.custom_clauses || body.customClauses,
+      lender_signature_image: body.lender_signature_image || body.lenderSignatureImage,
+      is_default: body.is_default !== undefined ? body.is_default : body.isDefault,
+    };
 
     // Check if template exists
     const existing = await getLoanContractTemplateById(id);
