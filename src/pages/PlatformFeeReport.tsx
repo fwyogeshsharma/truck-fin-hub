@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { DollarSign, TrendingUp, FileText, Download, Calendar, Search, Filter } from 'lucide-react';
-import apiClient from '@/lib/apiClient';
+import apiClient from '@/api/client';
 
 interface PlatformFee {
   id: string;
