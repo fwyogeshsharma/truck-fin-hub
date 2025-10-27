@@ -825,9 +825,15 @@ const LoadAgentDashboard = () => {
 
   const handleAllotTrip = async (tripId: string, lenderId: string, lenderName: string) => {
     try {
+      console.log('=== handleAllotTrip called ===');
+      console.log('tripId:', tripId, 'lenderId:', lenderId, 'lenderName:', lenderName);
+
       // Get trip details before allotment to know the amount
       const trip = allTrips.find(t => t.id === tripId);
       const bid = trip?.bids?.find(b => b.lenderId === lenderId);
+
+      console.log('Found trip:', trip);
+      console.log('Found bid:', bid);
 
       if (!trip || !bid) {
         toast({
@@ -854,27 +860,36 @@ const LoadAgentDashboard = () => {
       // Approach 2: Try to find loan agreement by bid ID (fallback)
       if (!agreement) {
         try {
+          console.log('Trying to fetch loan agreement by bid ID:', bid.id);
           const response = await apiClient.get(`/loan-agreements/bid/${bid.id}`);
+          console.log('Loan agreement API response:', response);
           agreement = response.data;
+          console.log('Extracted agreement data:', agreement);
         } catch (error) {
-          console.log('No loan agreement found for bid:', bid.id);
+          console.log('No loan agreement found for bid:', bid.id, 'Error:', error);
         }
       }
 
       if (agreement) {
+        console.log('Loan agreement found:', agreement);
+
         // Prepare contract data for dialog
-        setContractData({
+        const contractDataToSet = {
           lenderName: lenderName,
-          lenderSignature: agreement.lenderSignatureImage || agreement.lender_signature_image,
-          termsAndConditions: agreement.termsAndConditions || agreement.terms_and_conditions || agreement.contractTerms || agreement.contract_terms || '',
-          interestRateClause: agreement.interestRateClause || agreement.interest_rate_clause || '',
-          repaymentClause: agreement.repaymentClause || agreement.repayment_clause || '',
-          latePaymentClause: agreement.latePaymentClause || agreement.late_payment_clause || '',
-          defaultClause: agreement.defaultClause || agreement.default_clause || '',
+          lenderSignature: agreement.lenderSignatureImage || agreement.lender_signature_image || '',
+          termsAndConditions: agreement.termsAndConditions || agreement.terms_and_conditions || agreement.contractTerms || agreement.contract_terms || 'No terms specified',
+          interestRateClause: agreement.interestRateClause || agreement.interest_rate_clause || 'Standard interest terms apply',
+          repaymentClause: agreement.repaymentClause || agreement.repayment_clause || 'Standard repayment terms apply',
+          latePaymentClause: agreement.latePaymentClause || agreement.late_payment_clause || 'Late payment penalties may apply',
+          defaultClause: agreement.defaultClause || agreement.default_clause || 'Standard default terms apply',
           tripAmount: agreement.loanAmount || agreement.loan_amount || bid.amount,
           interestRate: agreement.interestRate || agreement.interest_rate || bid.interestRate,
           maturityDays: agreement.maturityDays || agreement.maturity_days || trip.maturityDays || 30,
-        });
+        };
+
+        console.log('Setting contract data:', contractDataToSet);
+
+        setContractData(contractDataToSet);
 
         // Store pending allotment data
         setPendingAllotment({
@@ -884,6 +899,7 @@ const LoadAgentDashboard = () => {
         });
 
         // Show contract dialog
+        console.log('Opening contract dialog');
         setContractDialogOpen(true);
       } else {
         // No contract - proceed with normal allotment (backward compatibility)
@@ -3840,19 +3856,28 @@ print(response.json())`;
         </Dialog>
 
         {/* Contract Acceptance Dialog */}
-        {contractData && (
-          <ContractAcceptanceDialog
-            open={contractDialogOpen}
-            onClose={() => {
-              setContractDialogOpen(false);
-              setPendingAllotment(null);
-              setContractData(null);
-            }}
-            onAccept={handleContractAccept}
-            contract={contractData}
-            loading={contractLoading}
-          />
-        )}
+        <ContractAcceptanceDialog
+          open={contractDialogOpen && contractData !== null}
+          onClose={() => {
+            setContractDialogOpen(false);
+            setPendingAllotment(null);
+            setContractData(null);
+          }}
+          onAccept={handleContractAccept}
+          contract={contractData || {
+            lenderName: '',
+            lenderSignature: '',
+            termsAndConditions: '',
+            interestRateClause: '',
+            repaymentClause: '',
+            latePaymentClause: '',
+            defaultClause: '',
+            tripAmount: 0,
+            interestRate: 0,
+            maturityDays: 0,
+          }}
+          loading={contractLoading}
+        />
       </div>
     </DashboardLayout>
   );
