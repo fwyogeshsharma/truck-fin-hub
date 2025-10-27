@@ -328,7 +328,7 @@ const RoleSelection = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4 py-12 relative overflow-hidden">
-      <div className="absolute inset-0 bg-background/95" />
+      <div className="fixed inset-0 bg-background/95" />
 
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

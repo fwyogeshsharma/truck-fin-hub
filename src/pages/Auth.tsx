@@ -113,8 +113,8 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
-      <div className="absolute inset-0 bg-background/95" />
-      
+      <div className="fixed inset-0 bg-background/95" />
+
       <Card className="w-full max-w-md relative shadow-xl">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
