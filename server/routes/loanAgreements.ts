@@ -12,6 +12,7 @@ import {
   CreateLoanAgreementInput,
   UpdateLoanAgreementInput,
 } from '../../src/db/queries/loanAgreements.ts';
+import { updateBidContract } from '../../src/db/queries/trips.ts';
 
 const router = Router();
 
@@ -133,6 +134,10 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     const agreement = await createLoanAgreement(input);
+
+    // Update the bid to reference this contract
+    await updateBidContract(input.bid_id, agreement.id);
+
     res.status(201).json(agreement);
   } catch (error: any) {
     console.error('Create loan agreement error:', error);

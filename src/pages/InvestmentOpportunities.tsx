@@ -603,24 +603,79 @@ const InvestmentOpportunities = () => {
     if (!pendingBidData || !user?.id) return;
 
     try {
-      // Generate unique IDs
-      const bidId = `bid_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const agreementId = `agreement_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-      // 1. Create loan agreement with contract terms
       const trip = trips.find((t) => t.id === pendingBidData.tripId);
       if (!trip) return;
 
+      const investmentAmount = pendingBidData.amount;
+      const interestRate = pendingBidData.interestRate;
+      const maturityDays = pendingBidData.maturityDays;
+
+      // Check if balance is insufficient
+      if (wallet.balance < investmentAmount) {
+        setPendingInvestmentAmount(investmentAmount);
+        setTopUpAmount((investmentAmount - wallet.balance).toString());
+        setTopUpDialogOpen(true);
+        toast({
+          variant: "destructive",
+          title: "Insufficient Balance",
+          description: `You need ${formatCurrency(investmentAmount - wallet.balance)} more to invest`,
+        });
+        return;
+      }
+
+      const expectedReturn = (investmentAmount * (interestRate / 365) * maturityDays) / 100;
+
+      // 1. Move amount to escrow
+      await data.updateWallet(user.id, {
+        balance: wallet.balance - investmentAmount,
+        escrowedAmount: (wallet.escrowedAmount || 0) + investmentAmount,
+      });
+
+      // Create transaction record for lender
+      await data.createTransaction({
+        userId: user.id,
+        type: "debit",
+        amount: investmentAmount,
+        category: "investment",
+        description: `Escrowed ₹${investmentAmount} for trip ${trip.origin} → ${trip.destination}`,
+        balanceAfter: wallet.balance - investmentAmount,
+      });
+
+      await refreshWallet();
+
+      // 2. Create escrowed investment
+      await data.createInvestment({
+        lenderId: user.id,
+        tripId: pendingBidData.tripId,
+        amount: investmentAmount,
+        interestRate: interestRate,
+        expectedReturn,
+        status: "escrowed",
+        maturityDate: new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toISOString(),
+      });
+
+      // 3. Create bid and get the bid ID
+      const adjustedRate = interestRate / 0.7;
+      const bidResponse = await data.addBid(
+        pendingBidData.tripId,
+        user.id,
+        user.name || "Lender",
+        investmentAmount,
+        adjustedRate,
+      );
+
+      const bidId = bidResponse.id;
+
+      // 4. Create loan agreement with the actual bid ID
       const agreementData = {
-        id: agreementId,
         tripId: pendingBidData.tripId,
         bidId: bidId,
         lenderId: user.id,
         borrowerId: trip.loadOwnerId,
         contractTerms: contract.termsAndConditions,
-        loanAmount: pendingBidData.amount,
-        interestRate: pendingBidData.interestRate,
-        maturityDays: pendingBidData.maturityDays,
+        loanAmount: investmentAmount,
+        interestRate: interestRate,
+        maturityDays: maturityDays,
         termsAndConditions: contract.termsAndConditions,
         interestRateClause: contract.interestRateClause,
         repaymentClause: contract.repaymentClause,
@@ -635,11 +690,9 @@ const InvestmentOpportunities = () => {
 
       await apiClient.post('/loan-agreements', agreementData);
 
-      // 2. Optionally save as template
+      // 5. Optionally save as template
       if (contract.saveAsTemplate && contract.templateName) {
-        const templateId = `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         await apiClient.post('/loan-contract-templates', {
-          id: templateId,
           lenderId: user.id,
           templateName: contract.templateName,
           termsAndConditions: contract.termsAndConditions,
@@ -658,12 +711,27 @@ const InvestmentOpportunities = () => {
         });
       }
 
-      // 3. Proceed with normal bid creation
-      await handleInvest(pendingBidData.tripId, pendingBidData.amount, pendingBidData.interestRate);
+      // 6. Update trip status to escrowed
+      await data.updateTrip(pendingBidData.tripId, {
+        status: "escrowed",
+        interestRate: adjustedRate,
+      });
+
+      // 7. Refresh trips list
+      const allTrips = await data.getTrips();
+      const pendingTrips = allTrips.filter((t) => t.status === "pending");
+      setTrips(pendingTrips);
+
+      toast({
+        title: "Bid confirmed!",
+        description: `${formatCurrency(investmentAmount)} moved to escrow. Awaiting Borrower confirmation.`,
+      });
 
       // Close contract dialog and reset
       setContractDialogOpen(false);
       setPendingBidData(null);
+      setSelectedTrip(null);
+      setBidDialogOpen(false);
 
     } catch (error) {
       console.error('Failed to save contract:', error);

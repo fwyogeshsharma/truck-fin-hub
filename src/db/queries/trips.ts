@@ -386,6 +386,18 @@ export const addBid = async (tripId: string, lenderId: string, lenderName: strin
 };
 
 /**
+ * Update bid with contract reference
+ */
+export const updateBidContract = async (bidId: string, contractId: string): Promise<void> => {
+  const db = await getDatabase();
+  await db.query(`
+    UPDATE trip_bids
+    SET contract_id = $1, has_contract = TRUE
+    WHERE id = $2
+  `, [contractId, bidId]);
+};
+
+/**
  * Upload document
  */
 export const uploadDocument = async (
