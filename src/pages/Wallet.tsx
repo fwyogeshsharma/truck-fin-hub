@@ -404,7 +404,7 @@ const WalletPage = () => {
             <p className="text-muted-foreground mt-1">Manage your funds and transactions</p>
           </div>
           <div className="flex gap-2">
-            {/* Add Money button - now available for all roles including shipper */}
+            {/* Add Money button - now available for all roles including transporter */}
             <Button onClick={() => setTopUpDialogOpen(true)} className="bg-gradient-primary">
               <Plus className="h-4 w-4 mr-2" />
               Add Money

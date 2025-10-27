@@ -451,7 +451,7 @@ const RoleSelection = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Company Action Selection Dialog (for both Shipper and Company Lender) */}
+      {/* Company Action Selection Dialog (for both Transporter and Company Lender) */}
       <Dialog open={showShipperActionDialog} onOpenChange={setShowShipperActionDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

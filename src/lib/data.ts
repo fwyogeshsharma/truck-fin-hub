@@ -291,18 +291,18 @@ export const data = {
       console.log('Allotting trip:', tripId, 'to lender:', lenderId);
       console.log('Current user allotting:', currentUserId || trip.loadOwnerId);
 
-      // Calculate adjusted interest rate for shipper (lender rate + 20% markup)
+      // Calculate adjusted interest rate for transporter (lender rate + 20% markup)
       const maturityDays = trip.maturityDays || 30;
       const yearlyRate = (bid.interestRate * 365) / maturityDays;
       const adjustedYearlyRate = yearlyRate * 1.2;
-      const shipperRate = (adjustedYearlyRate * maturityDays) / 365;
+      const transporterRate = (adjustedYearlyRate * maturityDays) / 365;
 
       // Update trip status to funded
       const updatedTrip = await data.updateTrip(tripId, {
         status: 'funded',
         lenderId: bid.lenderId,
         lenderName: bid.lenderName,
-        interestRate: shipperRate,
+        interestRate: transporterRate,
         fundedAt: new Date().toISOString(),
       });
 
@@ -350,11 +350,11 @@ export const data = {
         // Continue anyway - borrower should still get funds
       }
 
-      // 3. Add amount to shipper/load agent's balance - THIS IS CRITICAL AND MUST ALWAYS HAPPEN
+      // 3. Add amount to transporter/load agent's balance - THIS IS CRITICAL AND MUST ALWAYS HAPPEN
       // Use currentUserId (the user who clicked allot) if provided, otherwise fallback to trip owner
       const recipientUserId = currentUserId || trip.loadOwnerId;
           console.log('🔵 [ALLOTMENT] ========================================');
-          console.log('🔵 [ALLOTMENT] Step 3: CREDITING SHIPPER/LOAD AGENT WALLET');
+          console.log('🔵 [ALLOTMENT] Step 3: CREDITING TRANSPORTER/LOAD AGENT WALLET');
           console.log('🔵 [ALLOTMENT] ========================================');
           console.log('🔵 [ALLOTMENT] Recipient User ID (who gets the money):', recipientUserId);
           console.log('🔵 [ALLOTMENT] Original trip owner ID:', trip.loadOwnerId);

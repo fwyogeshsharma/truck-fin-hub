@@ -547,7 +547,7 @@ const ShipperKYC = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Shipper Verification</h1>
+            <h1 className="text-3xl font-bold">Transporter Verification</h1>
             <p className="text-muted-foreground mt-1">
               Complete KYC and build your credibility score to attract more lenders
             </p>

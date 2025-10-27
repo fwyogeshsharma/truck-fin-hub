@@ -96,7 +96,7 @@ const AdminDashboard = () => {
 
       toast({
         title: "User Approved",
-        description: "The shipper has been approved and can now log in.",
+        description: "The transporter has been approved and can now log in.",
       });
       // Refresh pending approvals
       await fetchPendingApprovals();
@@ -124,7 +124,7 @@ const AdminDashboard = () => {
 
       toast({
         title: "User Rejected",
-        description: "The shipper request has been rejected.",
+        description: "The transporter request has been rejected.",
       });
       // Refresh pending approvals
       await fetchPendingApprovals();
@@ -228,12 +228,12 @@ const AdminDashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-yellow-600" />
-              Grant Access - Pending Shipper Approvals
+              Grant Access - Pending Transporter Approvals
             </CardTitle>
             <CardDescription>
               {user?.is_admin && user?.company ?
-                `New shipper access requests for ${user.company}` :
-                'Review and approve new shipper requests from all companies'}
+                `New transporter access requests for ${user.company}` :
+                'Review and approve new transporter requests from all companies'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -245,8 +245,8 @@ const AdminDashboard = () => {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {user?.is_admin && user?.company
-                    ? `No shipper access requests for ${user.company} at this time.`
-                    : 'All shipper requests have been processed.'}
+                    ? `No transporter access requests for ${user.company} at this time.`
+                    : 'All transporter requests have been processed.'}
                 </p>
                 {!user?.is_admin && (
                   <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-3">
@@ -281,7 +281,7 @@ const AdminDashboard = () => {
                       <div className="ml-12 space-y-1">
                         <p className="text-xs text-muted-foreground">📞 Phone: {pendingUser.phone || 'N/A'}</p>
                         <p className="text-xs text-muted-foreground">🏢 Company: <span className="font-medium text-foreground">{pendingUser.company}</span></p>
-                        <p className="text-xs text-muted-foreground">👤 Role: <span className="font-medium text-foreground">Shipper (load_agent)</span></p>
+                        <p className="text-xs text-muted-foreground">👤 Role: <span className="font-medium text-foreground">Transporter (load_agent)</span></p>
                         <p className="text-xs text-muted-foreground">📅 Requested: {new Date(pendingUser.created_at).toLocaleDateString()}</p>
                       </div>
                     </div>
