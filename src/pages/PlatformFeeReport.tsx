@@ -62,11 +62,13 @@ const PlatformFeeReport = () => {
   const fetchFees = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/platform-fees');
-      setFees(response.data);
-      setFilteredFees(response.data);
+      const data = await apiClient.get('/platform-fees');
+      setFees(Array.isArray(data) ? data : []);
+      setFilteredFees(Array.isArray(data) ? data : []);
     } catch (error: any) {
       console.error('Failed to fetch platform fees:', error);
+      setFees([]);
+      setFilteredFees([]);
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -79,10 +81,11 @@ const PlatformFeeReport = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await apiClient.get('/platform-fees/stats');
-      setStats(response.data);
+      const data = await apiClient.get('/platform-fees/stats');
+      setStats(data || null);
     } catch (error: any) {
       console.error('Failed to fetch platform fee stats:', error);
+      setStats(null);
     }
   };
 
