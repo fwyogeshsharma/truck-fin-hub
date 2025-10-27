@@ -190,19 +190,75 @@ export const reportService = {
   async generateFundingAnalysis(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
     const trips = await this.fetchTripsData(filter, userId, userRole);
     const fundedTrips = trips.filter(t => t.lender_id);
-    const totalBorrowed = fundedTrips.reduce((sum, t) => sum + t.amount, 0);
+
+    const totalBorrowed = fundedTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const avgAmount = fundedTrips.length > 0 ? totalBorrowed / fundedTrips.length : 0;
     const avgInterestRate = fundedTrips.length > 0
       ? fundedTrips.reduce((sum, t) => sum + (t.interest_rate || 12), 0) / fundedTrips.length
       : 12.5;
 
-    const details = fundedTrips.map(trip => ({
-      lender: trip.lender_name || 'N/A',
-      amount: trip.amount,
-      interestRate: trip.interest_rate || 12,
-      tenure: trip.maturity_days || 30,
-      status: trip.status === 'completed' ? 'Repaid' : 'Active',
-      outstanding: trip.status === 'completed' ? 0 : trip.amount * (1 + (trip.interest_rate || 12) / 100)
-    }));
+    // Calculate total interest paid (from completed trips)
+    const completedFundedTrips = fundedTrips.filter(t => t.status === 'completed');
+    const totalInterestPaid = completedFundedTrips.reduce((sum, t) => {
+      const amount = t.amount || 0;
+      const rate = (t.interest_rate || 12) / 100;
+      const days = t.maturity_days || 30;
+      return sum + (amount * rate * days / 365);
+    }, 0);
+
+    // Calculate active and repaid loans
+    const activeLoans = fundedTrips.filter(t => ['funded', 'in_transit', 'escrowed'].includes(t.status));
+    const repaidLoans = completedFundedTrips;
+
+    // Build details from real funded trips
+    const details = fundedTrips.slice(0, 20).map(trip => {
+      const amount = trip.amount || 0;
+      const rate = (trip.interest_rate || 12) / 100;
+      const days = trip.maturity_days || 30;
+      const interest = amount * rate * days / 365;
+      const outstanding = trip.status === 'completed' ? 0 : amount + interest;
+
+      return {
+        lender: trip.lender_name || 'Unknown Lender',
+        amount,
+        interestRate: trip.interest_rate || 12,
+        tenure: trip.maturity_days || 30,
+        status: trip.status === 'completed' ? 'Repaid' : 'Active',
+        outstanding
+      };
+    });
+
+    // Calculate weekly funding trend (last 4 weeks)
+    const weeklyFunding: number[] = [];
+    const weekLabels: string[] = [];
+    const now = new Date();
+
+    for (let i = 3; i >= 0; i--) {
+      const weekStart = new Date(now.getTime() - (i * 7 * 24 * 60 * 60 * 1000));
+      const weekEnd = new Date(weekStart.getTime() + (7 * 24 * 60 * 60 * 1000));
+      weekLabels.push(`Week ${4 - i}`);
+
+      const weekTrips = fundedTrips.filter(t => {
+        const createdDate = new Date(t.created_at);
+        return createdDate >= weekStart && createdDate < weekEnd;
+      });
+
+      const weekTotal = weekTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
+      weeklyFunding.push(weekTotal);
+    }
+
+    // Calculate interest rate distribution
+    const rateRanges = ['10-11%', '11-12%', '12-13%', '13-14%', '14-15%'];
+    const rateCounts = [0, 0, 0, 0, 0];
+
+    fundedTrips.forEach(t => {
+      const rate = t.interest_rate || 12;
+      if (rate >= 10 && rate < 11) rateCounts[0]++;
+      else if (rate >= 11 && rate < 12) rateCounts[1]++;
+      else if (rate >= 12 && rate < 13) rateCounts[2]++;
+      else if (rate >= 13 && rate < 14) rateCounts[3]++;
+      else if (rate >= 14 && rate <= 15) rateCounts[4]++;
+    });
 
     return {
       id: `report_${Date.now()}`,
@@ -213,34 +269,28 @@ export const reportService = {
       startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       endDate: filter.endDate || new Date().toISOString(),
       summary: {
-        totalCount: 38,
-        totalAmount: 5700000,
-        averageAmount: 150000,
+        totalCount: fundedTrips.length,
+        totalAmount: totalBorrowed,
+        averageAmount: avgAmount,
         growth: 18.2,
         trends: [
-          { label: 'Total Borrowed', value: formatCurrency(5700000), change: 18 },
-          { label: 'Avg Interest Rate', value: '12.5%', change: -0.5 },
-          { label: 'Total Interest Paid', value: formatCurrency(285000) },
-          { label: 'Active Loans', value: 12 },
-          { label: 'Repaid Loans', value: 26 },
+          { label: 'Total Borrowed', value: formatCurrency(totalBorrowed), change: 18 },
+          { label: 'Avg Interest Rate', value: `${avgInterestRate.toFixed(1)}%`, change: -0.5 },
+          { label: 'Total Interest Paid', value: formatCurrency(totalInterestPaid) },
+          { label: 'Active Loans', value: activeLoans.length },
+          { label: 'Repaid Loans', value: repaidLoans.length },
         ],
       },
-      details: [
-        { lender: 'ABC Finance', amount: 150000, interestRate: 12, tenure: 30, status: 'Active', outstanding: 155000 },
-        { lender: 'XYZ Capital', amount: 180000, interestRate: 11.5, tenure: 30, status: 'Active', outstanding: 186750 },
-        { lender: 'PQR Investments', amount: 120000, interestRate: 13, tenure: 30, status: 'Repaid', outstanding: 0 },
-        { lender: 'LMN Fund', amount: 200000, interestRate: 12.5, tenure: 30, status: 'Active', outstanding: 207500 },
-        { lender: 'DEF Lenders', amount: 95000, interestRate: 14, tenure: 30, status: 'Repaid', outstanding: 0 },
-      ],
+      details,
       charts: [
         {
           type: 'line',
-          title: 'Funding Trend',
+          title: 'Funding Trend (Last 4 Weeks)',
           data: {
-            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            labels: weekLabels,
             datasets: [{
               label: 'Funding Amount (₹)',
-              data: [450000, 720000, 890000, 1200000],
+              data: weeklyFunding,
               borderColor: '#10b981',
               backgroundColor: 'rgba(16, 185, 129, 0.1)',
             }],
@@ -250,10 +300,10 @@ export const reportService = {
           type: 'bar',
           title: 'Interest Rate Distribution',
           data: {
-            labels: ['10-11%', '11-12%', '12-13%', '13-14%', '14-15%'],
+            labels: rateRanges,
             datasets: [{
               label: 'Number of Loans',
-              data: [3, 8, 15, 9, 3],
+              data: rateCounts,
               backgroundColor: 'rgba(59, 130, 246, 0.7)',
             }],
           },
@@ -263,6 +313,51 @@ export const reportService = {
   },
 
   async generateCostBreakdown(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
+    const trips = await this.fetchTripsData(filter, userId, userRole);
+    const totalTrips = trips.length;
+
+    // Calculate costs based on real trip data
+    // Assuming typical cost structure for logistics:
+    // - Fuel: 35-40% of trip amount
+    // - Labor: 20-25% of trip amount
+    // - Tolls: 15-20% of trip amount
+    // - Financing: Interest paid on funded trips
+    // - Others: 3-5% for maintenance and misc
+
+    const totalRevenue = trips.reduce((sum, t) => sum + (t.amount || 0), 0);
+
+    // Fuel costs (estimated at 38% of revenue)
+    const fuelCosts = totalRevenue * 0.38;
+
+    // Labor costs (estimated at 22% of revenue)
+    const laborCosts = totalRevenue * 0.22;
+
+    // Toll charges (estimated at 18% of revenue)
+    const tollCosts = totalRevenue * 0.18;
+
+    // Financing costs (actual interest from funded trips)
+    const fundedTrips = trips.filter(t => t.lender_id && t.status === 'completed');
+    const financingCosts = fundedTrips.reduce((sum, t) => {
+      const amount = t.amount || 0;
+      const rate = (t.interest_rate || 12) / 100;
+      const days = t.maturity_days || 30;
+      return sum + (amount * rate * days / 365);
+    }, 0);
+
+    // Other expenses (estimated at 4% of revenue)
+    const otherCosts = totalRevenue * 0.04;
+
+    // Total costs
+    const totalCosts = fuelCosts + laborCosts + tollCosts + financingCosts + otherCosts;
+    const avgCostPerTrip = totalTrips > 0 ? totalCosts / totalTrips : 0;
+
+    // Calculate percentages
+    const fuelPercentage = totalCosts > 0 ? (fuelCosts / totalCosts) * 100 : 0;
+    const laborPercentage = totalCosts > 0 ? (laborCosts / totalCosts) * 100 : 0;
+    const tollPercentage = totalCosts > 0 ? (tollCosts / totalCosts) * 100 : 0;
+    const financingPercentage = totalCosts > 0 ? (financingCosts / totalCosts) * 100 : 0;
+    const otherPercentage = totalCosts > 0 ? (otherCosts / totalCosts) * 100 : 0;
+
     return {
       id: `report_${Date.now()}`,
       type: 'cost_breakdown',
@@ -272,33 +367,69 @@ export const reportService = {
       startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       endDate: filter.endDate || new Date().toISOString(),
       summary: {
-        totalCount: 45,
-        totalAmount: 2250000,
-        averageAmount: 50000,
+        totalCount: totalTrips,
+        totalAmount: totalCosts,
+        averageAmount: avgCostPerTrip,
         trends: [
-          { label: 'Fuel Costs', value: formatCurrency(900000), change: 5 },
-          { label: 'Toll Charges', value: formatCurrency(450000) },
-          { label: 'Labor Costs', value: formatCurrency(540000) },
-          { label: 'Financing Costs', value: formatCurrency(285000) },
-          { label: 'Other Expenses', value: formatCurrency(75000) },
+          { label: 'Fuel Costs', value: formatCurrency(fuelCosts), change: 5 },
+          { label: 'Toll Charges', value: formatCurrency(tollCosts) },
+          { label: 'Labor Costs', value: formatCurrency(laborCosts) },
+          { label: 'Financing Costs', value: formatCurrency(financingCosts) },
+          { label: 'Other Expenses', value: formatCurrency(otherCosts) },
         ],
       },
       details: [
-        { category: 'Fuel', subcategory: 'Diesel', amount: 900000, percentage: 40, trips: 45 },
-        { category: 'Tolls', subcategory: 'Highway Tolls', amount: 450000, percentage: 20, trips: 45 },
-        { category: 'Labor', subcategory: 'Driver Salaries', amount: 540000, percentage: 24, trips: 45 },
-        { category: 'Financing', subcategory: 'Interest Payments', amount: 285000, percentage: 12.7, trips: 38 },
-        { category: 'Others', subcategory: 'Maintenance & Misc', amount: 75000, percentage: 3.3, trips: 45 },
+        {
+          category: 'Fuel',
+          subcategory: 'Diesel',
+          amount: fuelCosts,
+          percentage: parseFloat(fuelPercentage.toFixed(1)),
+          trips: totalTrips
+        },
+        {
+          category: 'Tolls',
+          subcategory: 'Highway Tolls',
+          amount: tollCosts,
+          percentage: parseFloat(tollPercentage.toFixed(1)),
+          trips: totalTrips
+        },
+        {
+          category: 'Labor',
+          subcategory: 'Driver Salaries',
+          amount: laborCosts,
+          percentage: parseFloat(laborPercentage.toFixed(1)),
+          trips: totalTrips
+        },
+        {
+          category: 'Financing',
+          subcategory: 'Interest Payments',
+          amount: financingCosts,
+          percentage: parseFloat(financingPercentage.toFixed(1)),
+          trips: fundedTrips.length
+        },
+        {
+          category: 'Others',
+          subcategory: 'Maintenance & Misc',
+          amount: otherCosts,
+          percentage: parseFloat(otherPercentage.toFixed(1)),
+          trips: totalTrips
+        },
       ],
       charts: [
         {
           type: 'pie',
           title: 'Cost Distribution',
           data: {
-            labels: ['Fuel (40%)', 'Labor (24%)', 'Tolls (20%)', 'Financing (12.7%)', 'Others (3.3%)'],
+            labels: [
+              `Fuel (${fuelPercentage.toFixed(1)}%)`,
+              `Labor (${laborPercentage.toFixed(1)}%)`,
+              `Tolls (${tollPercentage.toFixed(1)}%)`,
+              `Financing (${financingPercentage.toFixed(1)}%)`,
+              `Others (${otherPercentage.toFixed(1)}%)`
+            ],
             datasets: [{
               label: 'Costs',
-              data: [900000, 540000, 450000, 285000, 75000],
+              data: [fuelCosts, laborCosts, tollCosts, financingCosts, otherCosts],
               backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'],
             }],
           },
@@ -308,6 +439,116 @@ export const reportService = {
   },
 
   async generateTripPerformance(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
+    const trips = await this.fetchTripsData(filter, userId, userRole);
+    const totalTrips = trips.length;
+    const completedTrips = trips.filter(t => t.status === 'completed');
+
+    // Calculate performance metrics
+    const totalRevenue = trips.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const avgRevenue = totalTrips > 0 ? totalRevenue / totalTrips : 0;
+
+    // Calculate costs (using same logic as cost breakdown)
+    const totalCosts = totalRevenue * 0.38 + totalRevenue * 0.22 + totalRevenue * 0.18 + totalRevenue * 0.04;
+    const fundedTrips = trips.filter(t => t.lender_id && t.status === 'completed');
+    const financingCosts = fundedTrips.reduce((sum, t) => {
+      const amount = t.amount || 0;
+      const rate = (t.interest_rate || 12) / 100;
+      const days = t.maturity_days || 30;
+      return sum + (amount * rate * days / 365);
+    }, 0);
+    const totalCostsWithFinancing = totalCosts + financingCosts;
+
+    // Calculate profit margin
+    const totalProfit = totalRevenue - totalCostsWithFinancing;
+    const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+
+    // Calculate on-time delivery (assuming trips completed within maturity date are on-time)
+    const onTimeTrips = completedTrips.filter(t => {
+      if (!t.maturity_date || !t.completed_at) return true;
+      const maturityDate = new Date(t.maturity_date);
+      const completedDate = new Date(t.completed_at);
+      return completedDate <= maturityDate;
+    });
+    const onTimePercentage = completedTrips.length > 0
+      ? (onTimeTrips.length / completedTrips.length) * 100
+      : 0;
+
+    // Calculate average trip duration
+    const tripsWithDuration = completedTrips.filter(t => t.created_at && t.completed_at);
+    const avgDurationDays = tripsWithDuration.length > 0
+      ? tripsWithDuration.reduce((sum, t) => {
+          const start = new Date(t.created_at);
+          const end = new Date(t.completed_at!);
+          const days = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+          return sum + days;
+        }, 0) / tripsWithDuration.length
+      : 0;
+
+    // Performance details
+    const details = [
+      {
+        metric: 'On-Time Delivery Rate',
+        value: `${onTimePercentage.toFixed(1)}%`,
+        target: '90%',
+        status: onTimePercentage >= 90 ? 'Excellent' : onTimePercentage >= 85 ? 'Good' : 'Needs Improvement'
+      },
+      {
+        metric: 'Average Trip Duration',
+        value: `${avgDurationDays.toFixed(1)} days`,
+        target: '2 days',
+        status: avgDurationDays <= 2 ? 'Excellent' : avgDurationDays <= 3 ? 'Good' : 'Fair'
+      },
+      {
+        metric: 'Profit Margin',
+        value: `${profitMargin.toFixed(1)}%`,
+        target: '15%',
+        status: profitMargin >= 15 ? 'Excellent' : profitMargin >= 10 ? 'Good' : 'Fair'
+      },
+      {
+        metric: 'Trip Success Rate',
+        value: `${completedTrips.length > 0 ? ((completedTrips.length / totalTrips) * 100).toFixed(1) : 0}%`,
+        target: '95%',
+        status: completedTrips.length >= totalTrips * 0.95 ? 'Excellent' : 'Good'
+      },
+      {
+        metric: 'Average Revenue per Trip',
+        value: formatCurrency(avgRevenue),
+        target: formatCurrency(150000),
+        status: avgRevenue >= 150000 ? 'Excellent' : 'Good'
+      },
+    ];
+
+    // Calculate weekly performance trends (last 4 weeks)
+    const weeklyOnTime: number[] = [];
+    const weeklyProfitMargin: number[] = [];
+    const weekLabels: string[] = [];
+    const now = new Date();
+
+    for (let i = 3; i >= 0; i--) {
+      const weekStart = new Date(now.getTime() - (i * 7 * 24 * 60 * 60 * 1000));
+      const weekEnd = new Date(weekStart.getTime() + (7 * 24 * 60 * 60 * 1000));
+      weekLabels.push(`Week ${4 - i}`);
+
+      const weekCompletedTrips = completedTrips.filter(t => {
+        const completedDate = t.completed_at ? new Date(t.completed_at) : null;
+        return completedDate && completedDate >= weekStart && completedDate < weekEnd;
+      });
+
+      const weekOnTimeTrips = weekCompletedTrips.filter(t => {
+        if (!t.maturity_date || !t.completed_at) return true;
+        const maturityDate = new Date(t.maturity_date);
+        const completedDate = new Date(t.completed_at);
+        return completedDate <= maturityDate;
+      });
+
+      const weekOnTimePercent = weekCompletedTrips.length > 0
+        ? (weekOnTimeTrips.length / weekCompletedTrips.length) * 100
+        : 0;
+
+      weeklyOnTime.push(parseFloat(weekOnTimePercent.toFixed(1)));
+      weeklyProfitMargin.push(parseFloat(profitMargin.toFixed(1))); // Using overall profit margin as approximation
+    }
+
     return {
       id: `report_${Date.now()}`,
       type: 'trip_performance',
@@ -317,39 +558,33 @@ export const reportService = {
       startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       endDate: filter.endDate || new Date().toISOString(),
       summary: {
-        totalCount: 45,
-        totalAmount: 6750000,
-        averageAmount: 150000,
+        totalCount: totalTrips,
+        totalAmount: totalRevenue,
+        averageAmount: avgRevenue,
         trends: [
-          { label: 'On-Time Delivery', value: '89%', change: 3 },
-          { label: 'Avg Trip Duration', value: '2.3 days' },
-          { label: 'Profit Margin', value: '18.5%', change: 2 },
-          { label: 'Customer Satisfaction', value: '4.6/5' },
-          { label: 'Repeat Customers', value: '72%' },
+          { label: 'On-Time Delivery', value: `${onTimePercentage.toFixed(1)}%`, change: 3 },
+          { label: 'Avg Trip Duration', value: `${avgDurationDays.toFixed(1)} days` },
+          { label: 'Profit Margin', value: `${profitMargin.toFixed(1)}%`, change: 2 },
+          { label: 'Completed Trips', value: completedTrips.length },
+          { label: 'Total Revenue', value: formatCurrency(totalRevenue) },
         ],
       },
-      details: [
-        { metric: 'On-Time Delivery Rate', value: '89%', target: '90%', status: 'Good' },
-        { metric: 'Average Trip Duration', value: '2.3 days', target: '2 days', status: 'Fair' },
-        { metric: 'Fuel Efficiency', value: '5.2 km/l', target: '5 km/l', status: 'Excellent' },
-        { metric: 'Damage-Free Delivery', value: '96%', target: '95%', status: 'Excellent' },
-        { metric: 'Customer Rating', value: '4.6/5', target: '4.5/5', status: 'Excellent' },
-      ],
+      details,
       charts: [
         {
           type: 'line',
-          title: 'Performance Trend',
+          title: 'Performance Trend (Last 4 Weeks)',
           data: {
-            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            labels: weekLabels,
             datasets: [
               {
                 label: 'On-Time %',
-                data: [85, 87, 88, 89],
+                data: weeklyOnTime,
                 borderColor: '#10b981',
               },
               {
-                label: 'Customer Rating',
-                data: [4.4, 4.5, 4.5, 4.6],
+                label: 'Profit Margin %',
+                data: weeklyProfitMargin,
                 borderColor: '#3b82f6',
               },
             ],
@@ -534,6 +769,82 @@ export const reportService = {
   },
 
   async generateRiskAssessment(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
+    // Fetch real trips data for this lender
+    const trips = await this.fetchTripsData(filter, userId, userRole);
+    const lenderTrips = trips.filter(t => t.lender_id === userId);
+
+    // Calculate risk metrics
+    const totalAmount = lenderTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const activeTrips = lenderTrips.filter(t => ['funded', 'in_transit', 'escrowed'].includes(t.status));
+    const completedTrips = lenderTrips.filter(t => t.status === 'completed');
+    const delayedTrips = lenderTrips.filter(t => {
+      if (!t.maturity_date) return false;
+      const maturityDate = new Date(t.maturity_date);
+      return maturityDate < new Date() && t.status !== 'completed';
+    });
+
+    // Calculate default rate
+    const defaultRate = lenderTrips.length > 0 ? (delayedTrips.length / lenderTrips.length) * 100 : 0;
+
+    // Calculate borrower concentration
+    const borrowerAmounts: Record<string, number> = {};
+    lenderTrips.forEach(t => {
+      const borrowerId = t.load_owner_id || 'unknown';
+      borrowerAmounts[borrowerId] = (borrowerAmounts[borrowerId] || 0) + (t.amount || 0);
+    });
+    const maxBorrowerExposure = totalAmount > 0
+      ? Math.max(...Object.values(borrowerAmounts)) / totalAmount * 100
+      : 0;
+
+    // Calculate average maturity days
+    const avgMaturityDays = lenderTrips.length > 0
+      ? lenderTrips.reduce((sum, t) => sum + (t.maturity_days || 30), 0) / lenderTrips.length
+      : 30;
+
+    // Determine overall risk score based on metrics
+    let overallRisk = 'Low';
+    if (defaultRate > 5 || maxBorrowerExposure > 40) {
+      overallRisk = 'High';
+    } else if (defaultRate > 2 || maxBorrowerExposure > 25) {
+      overallRisk = 'Medium';
+    }
+
+    // Calculate diversification score (1-10)
+    const uniqueBorrowers = Object.keys(borrowerAmounts).length;
+    const diversificationScore = Math.min(10, uniqueBorrowers * 2);
+
+    // Risk categorization (simplified)
+    const lowRiskAmount = completedTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const mediumRiskAmount = activeTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const highRiskAmount = delayedTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
+
+    const details = [
+      {
+        category: 'Borrower Concentration',
+        risk: maxBorrowerExposure > 30 ? 'High' : maxBorrowerExposure > 20 ? 'Medium' : 'Low',
+        exposure: `${maxBorrowerExposure.toFixed(1)}%`,
+        recommendation: maxBorrowerExposure > 30 ? 'Reduce concentration' : 'Well diversified'
+      },
+      {
+        category: 'Default Risk',
+        risk: defaultRate > 5 ? 'High' : defaultRate > 2 ? 'Medium' : 'Low',
+        exposure: `${defaultRate.toFixed(1)}%`,
+        recommendation: defaultRate > 5 ? 'Review overdue loans' : 'Low default rate'
+      },
+      {
+        category: 'Portfolio Diversification',
+        risk: uniqueBorrowers < 3 ? 'High' : uniqueBorrowers < 5 ? 'Medium' : 'Low',
+        exposure: `${uniqueBorrowers} borrowers`,
+        recommendation: uniqueBorrowers < 5 ? 'Increase diversification' : 'Good distribution'
+      },
+      {
+        category: 'Tenor Risk',
+        risk: avgMaturityDays > 60 ? 'Medium' : 'Low',
+        exposure: `Avg ${Math.round(avgMaturityDays)} days`,
+        recommendation: avgMaturityDays > 60 ? 'Monitor long-term loans' : 'Short-term focus is safe'
+      },
+    ];
+
     return {
       id: `report_${Date.now()}`,
       type: 'risk_assessment',
@@ -543,32 +854,31 @@ export const reportService = {
       startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       endDate: filter.endDate || new Date().toISOString(),
       summary: {
-        totalCount: 28,
-        totalAmount: 4200000,
-        averageAmount: 150000,
+        totalCount: lenderTrips.length,
+        totalAmount: totalAmount,
+        averageAmount: lenderTrips.length > 0 ? totalAmount / lenderTrips.length : 0,
         trends: [
-          { label: 'Overall Risk Score', value: 'Low-Medium' },
-          { label: 'Default Rate', value: '0%' },
-          { label: 'Concentration Risk', value: 'Low' },
-          { label: 'Avg Credit Rating', value: 'A' },
-          { label: 'Diversification Score', value: '8.5/10' },
+          { label: 'Overall Risk Score', value: overallRisk },
+          { label: 'Default Rate', value: `${defaultRate.toFixed(1)}%` },
+          { label: 'Max Borrower Exposure', value: `${maxBorrowerExposure.toFixed(1)}%` },
+          { label: 'Unique Borrowers', value: uniqueBorrowers },
+          { label: 'Diversification Score', value: `${diversificationScore}/10` },
         ],
       },
-      details: [
-        { category: 'Borrower Concentration', risk: 'Low', exposure: '18%', recommendation: 'Well diversified' },
-        { category: 'Industry Concentration', risk: 'Medium', exposure: '45%', recommendation: 'Consider more sectors' },
-        { category: 'Geographic Concentration', risk: 'Low', exposure: '22%', recommendation: 'Good distribution' },
-        { category: 'Tenor Risk', risk: 'Low', exposure: 'Avg 30 days', recommendation: 'Short-term focus is safe' },
-      ],
+      details,
       charts: [
         {
           type: 'pie',
           title: 'Risk Distribution',
           data: {
-            labels: ['Low Risk (60%)', 'Medium Risk (35%)', 'High Risk (5%)'],
+            labels: [
+              `Low Risk (${completedTrips.length})`,
+              `Medium Risk (${activeTrips.length})`,
+              `High Risk (${delayedTrips.length})`
+            ],
             datasets: [{
               label: 'Portfolio',
-              data: [2520000, 1470000, 210000],
+              data: [lowRiskAmount, mediumRiskAmount, highRiskAmount],
               backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
             }],
           },
@@ -578,6 +888,104 @@ export const reportService = {
   },
 
   async generateInvestmentPerformance(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
+    // Fetch real trips data for this lender
+    const trips = await this.fetchTripsData(filter, userId, userRole);
+    const lenderTrips = trips.filter(t => t.lender_id === userId);
+
+    // Calculate performance metrics
+    const totalInvested = lenderTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const completedTrips = lenderTrips.filter(t => t.status === 'completed');
+
+    // Calculate total returns from completed trips
+    const totalReturns = completedTrips.reduce((sum, t) => {
+      const amount = t.amount || 0;
+      const rate = (t.interest_rate || 12) / 100;
+      const days = t.maturity_days || 30;
+      return sum + (amount * rate * days / 365);
+    }, 0);
+
+    const totalPrincipal = completedTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
+
+    // Calculate YTD returns (annualized from completed trips)
+    const ytdReturn = totalPrincipal > 0 ? (totalReturns / totalPrincipal) * 100 : 0;
+    const annualizedYTD = ytdReturn * (365 / 30); // Approximate annualization
+
+    // Calculate monthly average
+    const avgMonthlyReturn = ytdReturn;
+
+    // Find best performing investment
+    let bestROI = 0;
+    completedTrips.forEach(t => {
+      const roi = ((t.interest_rate || 12) * (t.maturity_days || 30)) / 365;
+      if (roi > bestROI) bestROI = roi;
+    });
+
+    // Calculate hit rate (successful completions vs total)
+    const hitRate = lenderTrips.length > 0
+      ? (completedTrips.length / lenderTrips.length) * 100
+      : 0;
+
+    // Benchmark returns (assumed market average)
+    const benchmarkMonthly = 10;
+    const benchmarkYTD = 12;
+
+    // Calculate performance metrics
+    const details = [
+      {
+        metric: 'YTD Return',
+        value: `${annualizedYTD.toFixed(1)}%`,
+        benchmark: `${benchmarkYTD}%`,
+        performance: annualizedYTD > benchmarkYTD ? 'Outperforming' : 'Underperforming'
+      },
+      {
+        metric: 'Monthly Return',
+        value: `${avgMonthlyReturn.toFixed(1)}%`,
+        benchmark: `${benchmarkMonthly}%`,
+        performance: avgMonthlyReturn > benchmarkMonthly ? 'Outperforming' : 'Underperforming'
+      },
+      {
+        metric: 'Success Rate',
+        value: `${hitRate.toFixed(1)}%`,
+        benchmark: '85%',
+        performance: hitRate > 85 ? 'Excellent' : hitRate > 70 ? 'Good' : 'Needs Improvement'
+      },
+      {
+        metric: 'Total Investments',
+        value: lenderTrips.length,
+        benchmark: '-',
+        performance: lenderTrips.length > 10 ? 'Active' : 'Growing'
+      },
+    ];
+
+    // Calculate monthly performance trend (last 6 months)
+    const now = new Date();
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthlyPerformance: number[] = [];
+    const monthLabels: string[] = [];
+
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      monthLabels.push(monthNames[d.getMonth()]);
+
+      // Calculate cumulative returns up to this month
+      const tripsUpToMonth = completedTrips.filter(t => {
+        const completedDate = t.completed_at ? new Date(t.completed_at) : null;
+        return completedDate && completedDate <= d;
+      });
+
+      const returnsUpToMonth = tripsUpToMonth.reduce((sum, t) => {
+        const amount = t.amount || 0;
+        const rate = (t.interest_rate || 12) / 100;
+        const days = t.maturity_days || 30;
+        return sum + (amount * rate * days / 365);
+      }, 0);
+
+      const principalUpToMonth = tripsUpToMonth.reduce((sum, t) => sum + (t.amount || 0), 0);
+      const roiUpToMonth = principalUpToMonth > 0 ? (returnsUpToMonth / principalUpToMonth) * 100 * (365 / 30) : 0;
+
+      monthlyPerformance.push(parseFloat(roiUpToMonth.toFixed(1)));
+    }
+
     return {
       id: `report_${Date.now()}`,
       type: 'investment_performance',
@@ -587,39 +995,34 @@ export const reportService = {
       startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       endDate: filter.endDate || new Date().toISOString(),
       summary: {
-        totalCount: 28,
-        totalAmount: 4200000,
-        averageAmount: 150000,
-        growth: 15.6,
+        totalCount: lenderTrips.length,
+        totalAmount: totalInvested,
+        averageAmount: lenderTrips.length > 0 ? totalInvested / lenderTrips.length : 0,
+        growth: annualizedYTD,
         trends: [
-          { label: 'YTD Returns', value: '15.6%', change: 3.2 },
-          { label: 'Monthly Avg', value: '12.8%' },
-          { label: 'Best Performer', value: '18.2% ROI' },
-          { label: 'Portfolio Beta', value: '0.85' },
-          { label: 'Sharpe Ratio', value: '1.65' },
+          { label: 'YTD Returns', value: `${annualizedYTD.toFixed(1)}%`, change: annualizedYTD - benchmarkYTD },
+          { label: 'Monthly Avg', value: `${avgMonthlyReturn.toFixed(1)}%` },
+          { label: 'Best Performer', value: `${bestROI.toFixed(1)}% ROI` },
+          { label: 'Success Rate', value: `${hitRate.toFixed(1)}%` },
+          { label: 'Total Returns', value: formatCurrency(totalReturns) },
         ],
       },
-      details: [
-        { metric: 'YTD Return', value: '15.6%', benchmark: '12%', performance: 'Outperforming' },
-        { metric: 'Monthly Return', value: '12.8%', benchmark: '10%', performance: 'Outperforming' },
-        { metric: 'Volatility', value: '5.2%', benchmark: '8%', performance: 'Lower Risk' },
-        { metric: 'Hit Rate', value: '92%', benchmark: '85%', performance: 'Excellent' },
-      ],
+      details,
       charts: [
         {
           type: 'line',
-          title: 'Performance vs Benchmark',
+          title: 'Performance Trend (Annualized)',
           data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            labels: monthLabels,
             datasets: [
               {
                 label: 'Your Portfolio',
-                data: [12.5, 13.2, 14.1, 14.8, 15.2, 15.6],
+                data: monthlyPerformance,
                 borderColor: '#10b981',
               },
               {
                 label: 'Benchmark',
-                data: [10, 10.5, 11, 11.2, 11.5, 12],
+                data: Array(6).fill(benchmarkYTD),
                 borderColor: '#94a3b8',
               },
             ],
