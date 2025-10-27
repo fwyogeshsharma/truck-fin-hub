@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { auth } from '@/lib/auth';
-import { data, Trip } from '@/lib/data';
+import { data, Trip, Wallet, Transaction } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdvancedFilter, { type FilterConfig } from '@/components/AdvancedFilter';
+import { AreaChart, Area, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import {
   Table,
   TableBody,
@@ -75,10 +76,13 @@ const LoadAgentDashboard = () => {
   const [allTrips, setAllTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [repaying, setRepaying] = useState<Record<string, boolean>>({});
+  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
-    const loadTrips = async () => {
+    const loadData = async () => {
       try {
+        // Load trips
         const trips = await data.getTrips();
         // Filter trips by company
         const filteredTrips = trips.filter(trip => {
@@ -86,15 +90,25 @@ const LoadAgentDashboard = () => {
           return trip.loadOwnerName === user.company;
         });
         setAllTrips(filteredTrips);
+
+        // Load wallet and transactions
+        if (user?.id) {
+          const [walletData, transactionsData] = await Promise.all([
+            data.getWallet(user.id),
+            data.getTransactions(user.id)
+          ]);
+          setWallet(walletData);
+          setTransactions(transactionsData);
+        }
       } catch (error) {
-        console.error('Failed to load trips:', error);
+        console.error('Failed to load data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadTrips();
-  }, [refreshKey, user?.company]);
+    loadData();
+  }, [refreshKey, user?.company, user?.id]);
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createTripTab, setCreateTripTab] = useState<'form' | 'excel' | 'api'>('form');
@@ -1126,6 +1140,77 @@ const LoadAgentDashboard = () => {
     }
   };
 
+  // Loan Analytics Calculations
+  const fundedTrips = allTrips.filter(t => t.lenderId && (t.status === 'funded' || t.status === 'in_transit' || t.status === 'completed'));
+  const completedTrips = allTrips.filter(t => t.status === 'completed' && t.lenderId);
+
+  const loanTaken = fundedTrips.reduce((sum, t) => sum + (t.amount || t.loanAmount || 0), 0);
+  const loanRepaid = completedTrips.reduce((sum, t) => {
+    const principal = t.amount || t.loanAmount || 0;
+    const interestRate = t.interestRate || t.loanInterestRate || 0;
+    const maturityDays = t.maturityDays || 30;
+    const interest = (principal * (interestRate / 365) * maturityDays) / 100;
+    return sum + principal + interest;
+  }, 0);
+  const loanPending = loanTaken - completedTrips.reduce((sum, t) => sum + (t.amount || t.loanAmount || 0), 0);
+
+  // Calculate profit (interest earned on completed trips)
+  const profit = completedTrips.reduce((sum, t) => {
+    const principal = t.amount || t.loanAmount || 0;
+    const interestRate = t.interestRate || t.loanInterestRate || 0;
+    const maturityDays = t.maturityDays || 30;
+    const interest = (principal * (interestRate / 365) * maturityDays) / 100;
+    return sum + interest;
+  }, 0);
+
+  // Monthly profit data for graph (last 6 months)
+  const getLast6MonthsData = () => {
+    const months = [];
+    const now = new Date();
+
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+      const year = date.getFullYear();
+
+      // Calculate profit for this month
+      const monthProfit = completedTrips
+        .filter(t => {
+          if (!t.completedAt) return false;
+          const completedDate = new Date(t.completedAt);
+          return completedDate.getMonth() === date.getMonth() &&
+                 completedDate.getFullYear() === date.getFullYear();
+        })
+        .reduce((sum, t) => {
+          const principal = t.amount || t.loanAmount || 0;
+          const interestRate = t.interestRate || t.loanInterestRate || 0;
+          const maturityDays = t.maturityDays || 30;
+          const interest = (principal * (interestRate / 365) * maturityDays) / 100;
+          return sum + interest;
+        }, 0);
+
+      // Calculate loans taken for this month
+      const monthLoansTaken = fundedTrips
+        .filter(t => {
+          if (!t.fundedAt) return false;
+          const fundedDate = new Date(t.fundedAt);
+          return fundedDate.getMonth() === date.getMonth() &&
+                 fundedDate.getFullYear() === date.getFullYear();
+        })
+        .reduce((sum, t) => sum + (t.amount || t.loanAmount || 0), 0);
+
+      months.push({
+        month: `${monthName} ${year}`,
+        profit: Math.round(monthProfit),
+        loansTaken: Math.round(monthLoansTaken),
+      });
+    }
+
+    return months;
+  };
+
+  const monthlyData = getLast6MonthsData();
+
   // Stats
   const stats = [
     {
@@ -1257,6 +1342,171 @@ const LoadAgentDashboard = () => {
           );
         })}
         </div>
+
+        {/* Loan Analytics Card */}
+        <Card className="bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-primary" />
+              Financial Analytics
+            </CardTitle>
+            <CardDescription>Comprehensive view of loans, repayments, and profit</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {/* Loan Metrics Summary */}
+              <div className="grid md:grid-cols-4 gap-4">
+                <div className="bg-white dark:bg-card p-4 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="h-4 w-4 text-blue-600" />
+                    <p className="text-xs font-medium text-muted-foreground">Loan Taken</p>
+                  </div>
+                  <p className="text-2xl font-bold text-blue-600">₹{(loanTaken / 1000).toFixed(1)}K</p>
+                  <p className="text-xs text-muted-foreground mt-1">{fundedTrips.length} funded trips</p>
+                </div>
+
+                <div className="bg-white dark:bg-card p-4 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <p className="text-xs font-medium text-muted-foreground">Loan Repaid</p>
+                  </div>
+                  <p className="text-2xl font-bold text-green-600">₹{(loanRepaid / 1000).toFixed(1)}K</p>
+                  <p className="text-xs text-muted-foreground mt-1">{completedTrips.length} completed trips</p>
+                </div>
+
+                <div className="bg-white dark:bg-card p-4 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-4 w-4 text-orange-600" />
+                    <p className="text-xs font-medium text-muted-foreground">Pending Loans</p>
+                  </div>
+                  <p className="text-2xl font-bold text-orange-600">₹{(loanPending / 1000).toFixed(1)}K</p>
+                  <p className="text-xs text-muted-foreground mt-1">{fundedTrips.length - completedTrips.length} active trips</p>
+                </div>
+
+                <div className="bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 p-4 rounded-lg border border-primary/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Star className="h-4 w-4 text-primary" />
+                    <p className="text-xs font-medium text-muted-foreground">Total Profit</p>
+                  </div>
+                  <p className="text-2xl font-bold text-primary">₹{(profit / 1000).toFixed(1)}K</p>
+                  <p className="text-xs text-muted-foreground mt-1">Interest earned</p>
+                </div>
+              </div>
+
+              {/* Charts Section */}
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Monthly Profit Trend */}
+                <div className="bg-white dark:bg-card p-4 rounded-lg border">
+                  <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    Monthly Profit Trend (Last 6 Months)
+                  </h4>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <AreaChart data={monthlyData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} />
+                      <Tooltip
+                        formatter={(value: any) => `₹${value.toLocaleString()}`}
+                        contentStyle={{ fontSize: '12px' }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="profit"
+                        stroke="#8b5cf6"
+                        fill="#8b5cf6"
+                        fillOpacity={0.6}
+                        name="Profit"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Monthly Loans vs Profit */}
+                <div className="bg-white dark:bg-card p-4 rounded-lg border">
+                  <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-secondary" />
+                    Loans Taken vs Profit
+                  </h4>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <RechartsBarChart data={monthlyData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} />
+                      <Tooltip
+                        formatter={(value: any) => `₹${value.toLocaleString()}`}
+                        contentStyle={{ fontSize: '12px' }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '12px' }} />
+                      <Bar dataKey="loansTaken" fill="#3b82f6" name="Loans Taken" />
+                      <Bar dataKey="profit" fill="#10b981" name="Profit" />
+                    </RechartsBarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Loan Status Breakdown */}
+              <div className="bg-white dark:bg-card p-4 rounded-lg border">
+                <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                  <Percent className="h-4 w-4 text-accent" />
+                  Loan Status Breakdown
+                </h4>
+                <div className="flex items-center justify-between gap-6">
+                  <div className="flex-1">
+                    <ResponsiveContainer width="100%" height={200}>
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Repaid', value: completedTrips.length, color: '#10b981' },
+                            { name: 'Pending', value: fundedTrips.length - completedTrips.length, color: '#f59e0b' },
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {[
+                            { name: 'Repaid', value: completedTrips.length, color: '#10b981' },
+                            { name: 'Pending', value: fundedTrips.length - completedTrips.length, color: '#f59e0b' },
+                          ].map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ fontSize: '12px' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-green-600"></div>
+                        <span className="text-sm font-medium">Repaid Loans</span>
+                      </div>
+                      <span className="text-sm font-bold">{completedTrips.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-orange-600"></div>
+                        <span className="text-sm font-medium">Pending Loans</span>
+                      </div>
+                      <span className="text-sm font-bold">{fundedTrips.length - completedTrips.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-blue-600"></div>
+                        <span className="text-sm font-medium">Total Funded</span>
+                      </div>
+                      <span className="text-sm font-bold">{fundedTrips.length}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Tabs for All Trips and Loan Closure */}
         <Tabs defaultValue="all-trips" className="space-y-6">

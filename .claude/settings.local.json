@@ -39,7 +39,8 @@
       "Bash(npx prettier --write \"src/pages/InvestmentOpportunities.tsx\")",
       "Bash(powershell -ExecutionPolicy Bypass -File \"D:\\Projects\\truck-fin-hub\\update-investment-opportunities.ps1\")",
       "Bash(powershell:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(npm run build:frontend:*)"
     ],
     "deny": [],
     "ask": []
