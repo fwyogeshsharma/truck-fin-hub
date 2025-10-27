@@ -1,7 +1,6 @@
 // Data utilities using API
 
-import { tripsAPI, walletsAPI, investmentsAPI, transactionsAPI, bankAccountsAPI } from '../api';
-import { createPlatformFee } from '../db/queries/platformFees';
+import { tripsAPI, walletsAPI, investmentsAPI, transactionsAPI, bankAccountsAPI, platformFeesAPI } from '../api';
 
 // Super Admin ID constant
 const SUPER_ADMIN_ID = 'super_admin_001';
@@ -535,7 +534,7 @@ export const data = {
             console.log('🔵 [ALLOTMENT] Step 6: CREATING PLATFORM FEE RECORD');
             console.log('🔵 [ALLOTMENT] ========================================');
 
-            await createPlatformFee({
+            await platformFeesAPI.create({
               trip_id: tripId,
               lender_id: bid.lenderId,
               lender_name: bid.lenderName,

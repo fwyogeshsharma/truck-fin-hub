@@ -8,6 +8,7 @@ export { transactionsAPI } from './transactions';
 export { bankAccountsAPI } from './bankAccounts';
 export { kycAPI } from './kyc';
 export { usersAPI } from './users';
+export { platformFeesAPI } from './platformFees';
 
 export type { User, LoginResponse, SignupData, UpdateRoleData } from './auth';
 export type { CreateTripData, AddBidData, UploadDocumentData } from './trips';
@@ -16,3 +17,4 @@ export type { CreateTransactionData } from './transactions';
 export type { CreateBankAccountData } from './bankAccounts';
 export type { UserKyc } from './kyc';
 export type { CreateUserData } from './users';
+export type { PlatformFeeInput } from './platformFees';
