@@ -33,6 +33,7 @@ import UserManagement from "./pages/UserManagement";
 import TransactionRequests from "./pages/TransactionRequests";
 import AdminSetupDebug from "./pages/AdminSetupDebug";
 import NotFound from "./pages/NotFound";
+import GettingStarted from "./pages/help/GettingStarted";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,13 @@ const App = () => {
           <Route path="/user-management" element={<UserManagement />} />
           <Route path="/transaction-requests" element={<TransactionRequests />} />
           <Route path="/admin/setup-debug" element={<AdminSetupDebug />} />
+          {/* Help Pages */}
+          <Route path="/help/getting-started" element={<GettingStarted />} />
+          <Route path="/help/user-manual" element={<GettingStarted />} />
+          <Route path="/help/faq" element={<GettingStarted />} />
+          <Route path="/help/video-tutorials" element={<GettingStarted />} />
+          <Route path="/privacy-policy" element={<GettingStarted />} />
+          <Route path="/cookie-policy" element={<GettingStarted />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { auth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
+import Footer from "@/components/Footer";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -256,6 +257,9 @@ const Auth = () => {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

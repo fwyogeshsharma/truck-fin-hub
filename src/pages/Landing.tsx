@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { TruckIcon, IndianRupee, Users, Shield, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import Footer from "@/components/Footer";
 
 const Landing = () => {
   return (
@@ -290,11 +291,7 @@ const Landing = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-8 bg-card/50">
-        <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p>&copy; 2025 LogiFin (Logistic Finance). Revolutionizing logistics financing in India.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

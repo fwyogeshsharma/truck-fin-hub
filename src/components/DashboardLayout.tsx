@@ -16,6 +16,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import NotificationBell from "@/components/NotificationBell";
+import Footer from "@/components/Footer";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -303,6 +304,9 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
       <main className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8">
         {children}
       </main>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };
