@@ -838,24 +838,42 @@ const LoadAgentDashboard = () => {
         return;
       }
 
-      // Check if bid has a contract
-      if (bid.hasContract && bid.contractId) {
-        // Fetch loan agreement
-        const response = await apiClient.get(`/loan-agreements/${bid.contractId}`);
-        const agreement = response.data;
+      // Check if bid has a contract - try multiple approaches
+      let agreement = null;
 
+      // Approach 1: Check if bid has contract fields set
+      if (bid.hasContract && bid.contractId) {
+        try {
+          const response = await apiClient.get(`/loan-agreements/${bid.contractId}`);
+          agreement = response.data;
+        } catch (error) {
+          console.error('Failed to fetch loan agreement by contractId:', error);
+        }
+      }
+
+      // Approach 2: Try to find loan agreement by bid ID (fallback)
+      if (!agreement) {
+        try {
+          const response = await apiClient.get(`/loan-agreements/bid/${bid.id}`);
+          agreement = response.data;
+        } catch (error) {
+          console.log('No loan agreement found for bid:', bid.id);
+        }
+      }
+
+      if (agreement) {
         // Prepare contract data for dialog
         setContractData({
           lenderName: lenderName,
-          lenderSignature: agreement.lenderSignatureImage,
-          termsAndConditions: agreement.termsAndConditions || agreement.contractTerms || '',
-          interestRateClause: agreement.interestRateClause || '',
-          repaymentClause: agreement.repaymentClause || '',
-          latePaymentClause: agreement.latePaymentClause || '',
-          defaultClause: agreement.defaultClause || '',
-          tripAmount: agreement.loanAmount || bid.amount,
-          interestRate: agreement.interestRate || bid.interestRate,
-          maturityDays: agreement.maturityDays || trip.maturityDays || 30,
+          lenderSignature: agreement.lenderSignatureImage || agreement.lender_signature_image,
+          termsAndConditions: agreement.termsAndConditions || agreement.terms_and_conditions || agreement.contractTerms || agreement.contract_terms || '',
+          interestRateClause: agreement.interestRateClause || agreement.interest_rate_clause || '',
+          repaymentClause: agreement.repaymentClause || agreement.repayment_clause || '',
+          latePaymentClause: agreement.latePaymentClause || agreement.late_payment_clause || '',
+          defaultClause: agreement.defaultClause || agreement.default_clause || '',
+          tripAmount: agreement.loanAmount || agreement.loan_amount || bid.amount,
+          interestRate: agreement.interestRate || agreement.interest_rate || bid.interestRate,
+          maturityDays: agreement.maturityDays || agreement.maturity_days || trip.maturityDays || 30,
         });
 
         // Store pending allotment data

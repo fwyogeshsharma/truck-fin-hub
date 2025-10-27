@@ -36,6 +36,8 @@ export interface TripBid {
   amount: number;
   interest_rate: number;
   created_at: string;
+  contract_id?: string;
+  has_contract?: boolean;
 }
 
 export interface TripDocument {
