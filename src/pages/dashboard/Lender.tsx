@@ -899,11 +899,30 @@ const LenderDashboard = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => {
-                              const link = document.createElement('a');
-                              link.href = document;
-                              link.download = `${docType}-${selectedTripForDocs.id}.pdf`;
-                              link.click();
+                            onClick={async () => {
+                              try {
+                                // Fetch the document
+                                const response = await fetch(document);
+                                const blob = await response.blob();
+
+                                // Create a blob URL
+                                const blobUrl = window.URL.createObjectURL(blob);
+
+                                // Create and trigger download
+                                const link = window.document.createElement('a');
+                                link.href = blobUrl;
+                                link.download = `${docLabels[docType as keyof typeof docLabels]}-${selectedTripForDocs.id}.pdf`;
+                                window.document.body.appendChild(link);
+                                link.click();
+
+                                // Cleanup
+                                window.document.body.removeChild(link);
+                                window.URL.revokeObjectURL(blobUrl);
+                              } catch (error) {
+                                console.error('Download failed:', error);
+                                // Fallback: open in new tab
+                                window.open(document, '_blank');
+                              }
                             }}
                           >
                             Download
