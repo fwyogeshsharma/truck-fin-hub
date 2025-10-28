@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { api } from '@/lib/api';
+import { apiClient } from '@/api/client';
 
 interface RatingDialogProps {
   open: boolean;
@@ -51,7 +51,7 @@ const RatingDialog = ({
     setIsSubmitting(true);
 
     try {
-      await api.post('/ratings', {
+      await apiClient.post('/ratings', {
         trip_id: tripId,
         lender_id: lenderId,
         lender_name: lenderName,
