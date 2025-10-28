@@ -268,10 +268,13 @@ export const data = {
 
   createTransaction: async (transaction: Omit<Transaction, 'id' | 'timestamp'>): Promise<Transaction> => {
     try {
+      console.log('🔵 [CREATE TRANSACTION] Input (camelCase):', JSON.stringify(transaction, null, 2));
       const snakeCaseTransaction = toSnakeCase(transaction);
+      console.log('🔵 [CREATE TRANSACTION] Converted (snake_case):', JSON.stringify(snakeCaseTransaction, null, 2));
       const newTransaction = await transactionsAPI.create(snakeCaseTransaction);
       return toCamelCase(newTransaction);
     } catch (error: any) {
+      console.error('❌ [CREATE TRANSACTION] Error:', error);
       throw new Error(error.message || 'Failed to create transaction');
     }
   },

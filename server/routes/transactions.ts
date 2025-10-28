@@ -54,13 +54,22 @@ router.get('/:id', async (req: Request, res: Response) => {
 // POST /api/transactions - Create new transaction
 router.post('/', async (req: Request, res: Response) => {
   try {
+    console.log('🔵 [POST /api/transactions] Received body:', JSON.stringify(req.body, null, 2));
     const { user_id, type, amount, category, description, balance_after } = req.body;
 
     // Validate required fields
     if (!user_id || !type || !amount || !category || !description) {
+      console.error('❌ [POST /api/transactions] Missing fields:', {
+        has_user_id: !!user_id,
+        has_type: !!type,
+        has_amount: !!amount,
+        has_category: !!category,
+        has_description: !!description
+      });
       return res.status(400).json({
         error: 'Missing required fields',
-        message: 'user_id, type, amount, category, and description are required'
+        message: 'user_id, type, amount, category, and description are required',
+        received: Object.keys(req.body)
       });
     }
 
