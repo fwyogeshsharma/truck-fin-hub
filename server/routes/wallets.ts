@@ -187,4 +187,97 @@ router.post('/:userId/return', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/wallets/repayment - Process loan repayment with interest
+router.post('/repayment', async (req: Request, res: Response) => {
+  try {
+    const { trip_id, loan_agreement_id, borrower_id, lender_id, principal_amount, interest_rate, maturity_days } = req.body;
+
+    // Validate required fields
+    if (!lender_id || !principal_amount) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        message: 'lender_id and principal_amount are required'
+      });
+    }
+
+    const principalNum = Number(principal_amount);
+    const interestRateNum = Number(interest_rate) || 0;
+    const maturityDaysNum = Number(maturity_days) || 0;
+
+    // Calculate interest amount
+    let interestAmount = 0;
+    if (interestRateNum > 0) {
+      // Interest calculation: (Principal × Interest Rate × Days) / (100 × 365)
+      // Or for trip-based: Principal × (Interest Rate / 100)
+      if (maturityDaysNum > 0) {
+        interestAmount = (principalNum * interestRateNum * maturityDaysNum) / (100 * 365);
+      } else {
+        // Simple percentage for trip-based interest
+        interestAmount = (principalNum * interestRateNum) / 100;
+      }
+    }
+
+    const totalRepayment = principalNum + interestAmount;
+
+    console.log('Repayment calculation:', {
+      principal: principalNum,
+      interest_rate: interestRateNum,
+      maturity_days: maturityDaysNum,
+      interest_amount: interestAmount,
+      total_repayment: totalRepayment
+    });
+
+    // Update lender's wallet - return investment with interest
+    const lenderWallet = await returnInvestment(lender_id, principalNum, interestAmount);
+
+    // Create transaction record for lender
+    await createTransaction({
+      user_id: lender_id,
+      type: 'credit',
+      amount: totalRepayment,
+      category: 'return',
+      description: trip_id
+        ? `Repayment received for trip ${trip_id}: ₹${principalNum.toFixed(2)} principal + ₹${interestAmount.toFixed(2)} interest`
+        : `Loan repayment: ₹${principalNum.toFixed(2)} principal + ₹${interestAmount.toFixed(2)} interest`,
+      balance_after: lenderWallet.balance,
+    });
+
+    // If borrower_id is provided, create transaction for borrower as well
+    if (borrower_id) {
+      const borrowerWallet = await getWallet(borrower_id);
+      await createTransaction({
+        user_id: borrower_id,
+        type: 'debit',
+        amount: totalRepayment,
+        category: 'payment',
+        description: trip_id
+          ? `Repayment made for trip ${trip_id}: ₹${principalNum.toFixed(2)} principal + ₹${interestAmount.toFixed(2)} interest`
+          : `Loan repayment: ₹${principalNum.toFixed(2)} principal + ₹${interestAmount.toFixed(2)} interest`,
+        balance_after: borrowerWallet.balance,
+      });
+    }
+
+    // Update trip status if trip_id is provided
+    if (trip_id) {
+      const { updateTrip } = await import('../../src/db/queries/trips.ts');
+      await updateTrip(trip_id, { status: 'completed', completed_at: new Date().toISOString() });
+    }
+
+    res.json({
+      success: true,
+      lender_wallet: lenderWallet,
+      repayment_details: {
+        principal: principalNum,
+        interest: interestAmount,
+        total: totalRepayment,
+        interest_rate: interestRateNum,
+        maturity_days: maturityDaysNum
+      }
+    });
+  } catch (error: any) {
+    console.error('Repayment error:', error);
+    res.status(500).json({ error: 'Failed to process repayment', message: error.message });
+  }
+});
+
 export default router;

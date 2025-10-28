@@ -54,7 +54,39 @@ router.get('/:id', async (req: Request, res: Response) => {
 // POST /api/transactions - Create new transaction
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const transaction = await createTransaction(req.body);
+    const { user_id, type, amount, category, description, balance_after } = req.body;
+
+    // Validate required fields
+    if (!user_id || !type || !amount || !category || !description) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        message: 'user_id, type, amount, category, and description are required'
+      });
+    }
+
+    let finalBalanceAfter = balance_after;
+
+    // If balance_after is not provided, calculate it from wallet
+    if (finalBalanceAfter === undefined) {
+      const { getWallet } = await import('../../src/db/queries/wallets.ts');
+      const wallet = await getWallet(user_id);
+
+      if (type === 'credit') {
+        finalBalanceAfter = wallet.balance + Number(amount);
+      } else {
+        finalBalanceAfter = wallet.balance - Number(amount);
+      }
+    }
+
+    const transaction = await createTransaction({
+      user_id,
+      type,
+      amount: Number(amount),
+      category,
+      description,
+      balance_after: Number(finalBalanceAfter),
+    });
+
     res.status(201).json(transaction);
   } catch (error: any) {
     console.error('Create transaction error:', error);
