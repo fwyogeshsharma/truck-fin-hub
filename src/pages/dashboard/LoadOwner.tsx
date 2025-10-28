@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/currency";
 import RatingDialog from "@/components/RatingDialog";
+import { toTitleCase } from "@/lib/utils";
 
 /**
  * LoadOwnerDashboard Component
@@ -177,7 +178,7 @@ const LoadOwnerDashboard = () => {
 
       toast({
         title: 'Repayment Successful',
-        description: `Successfully repaid ${formatCurrency(totalRepayment)} to ${trip.lenderName}. New balance: ${formatCurrency(repaymentResult.borrower_wallet?.balance || 0)}`,
+        description: `Successfully repaid ${formatCurrency(totalRepayment)} to ${toTitleCase(trip.lenderName)}. New balance: ${formatCurrency(repaymentResult.borrower_wallet?.balance || 0)}`,
       });
 
       // Reload trips and wallet data
@@ -424,7 +425,7 @@ const LoadOwnerDashboard = () => {
                                 {/* Lender Info */}
                                 <div className="bg-muted/50 p-3 rounded-lg">
                                   <p className="text-xs text-muted-foreground mb-1">Lender</p>
-                                  <p className="font-medium">{trip.lenderName}</p>
+                                  <p className="font-medium">{toTitleCase(trip.lenderName)}</p>
                                 </div>
 
                                 {/* Financial Details */}
@@ -558,7 +559,7 @@ const LoadOwnerDashboard = () => {
                                 {/* Lender Info */}
                                 <div className="bg-muted/50 p-3 rounded-lg">
                                   <p className="text-xs text-muted-foreground mb-1">Lender</p>
-                                  <p className="font-medium">{trip.lenderName || 'Unknown Lender'}</p>
+                                  <p className="font-medium">{toTitleCase(trip.lenderName) || 'Unknown Lender'}</p>
                                 </div>
 
                                 {/* Repayment Details */}
@@ -639,9 +640,9 @@ const LoadOwnerDashboard = () => {
             }}
             tripId={tripForRating.id}
             lenderId={tripForRating.lenderId || ''}
-            lenderName={tripForRating.lenderName || 'Unknown'}
+            lenderName={toTitleCase(tripForRating.lenderName) || 'Unknown'}
             borrowerId={user?.id || ''}
-            borrowerName={user?.name || ''}
+            borrowerName={toTitleCase(user?.name) || ''}
             loanAmount={tripForRating.amount || 0}
             interestRate={tripForRating.interestRate || 0}
           />

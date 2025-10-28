@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Upload, CheckCircle, AlertTriangle, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { toTitleCase } from '@/lib/utils';
 
 interface ContractAcceptanceDialogProps {
   open: boolean;
@@ -99,7 +100,7 @@ const ContractAcceptanceDialog = ({
             Loan Contract Review & Acceptance
           </DialogTitle>
           <DialogDescription>
-            Please carefully review all terms and conditions before accepting this loan agreement from {contract.lenderName}.
+            Please carefully review all terms and conditions before accepting this loan agreement from {toTitleCase(contract.lenderName)}.
           </DialogDescription>
         </DialogHeader>
 
@@ -169,7 +170,7 @@ const ContractAcceptanceDialog = ({
 
                 <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <p className="text-sm text-blue-900 dark:text-blue-100">
-                    <strong>Lender:</strong> {contract.lenderName}
+                    <strong>Lender:</strong> {toTitleCase(contract.lenderName)}
                   </p>
                   <p className="text-sm text-blue-900 dark:text-blue-100 mt-1">
                     <strong>Contract Date:</strong> {new Date().toLocaleDateString()}
@@ -258,7 +259,7 @@ const ContractAcceptanceDialog = ({
               </CardHeader>
               <CardContent>
                 <div className="border rounded p-4 bg-white dark:bg-muted">
-                  <Label className="text-sm text-muted-foreground">Signed by: {contract.lenderName}</Label>
+                  <Label className="text-sm text-muted-foreground">Signed by: {toTitleCase(contract.lenderName)}</Label>
                   {contract.lenderSignature && (
                     <img src={contract.lenderSignature} alt="Lender Signature" className="mt-2 max-h-24 border" />
                   )}

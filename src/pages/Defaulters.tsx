@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { data, Trip } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
 import { formatCurrency } from "@/lib/currency";
+import { toTitleCase } from "@/lib/utils";
 
 interface DefaulterTrip extends Trip {
   daysOverdue: number;
@@ -260,7 +261,7 @@ const Defaulters = () => {
                           <div className="grid md:grid-cols-2 gap-4">
                             <div>
                               <p className="text-sm text-muted-foreground">Name</p>
-                              <p className="font-medium">{trip.loadOwnerName}</p>
+                              <p className="font-medium">{toTitleCase(trip.loadOwnerName)}</p>
                             </div>
                             {trip.borrowerCompany && (
                               <div>
@@ -325,7 +326,7 @@ const Defaulters = () => {
                         {trip.lenderName && (
                           <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200">
                             <p className="text-xs text-muted-foreground">Lender</p>
-                            <p className="font-medium">{trip.lenderName}</p>
+                            <p className="font-medium">{toTitleCase(trip.lenderName)}</p>
                           </div>
                         )}
 

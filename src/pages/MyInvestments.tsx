@@ -23,6 +23,7 @@ import { data } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
 import AdvancedFilter, { type FilterConfig } from "@/components/AdvancedFilter";
 import { formatCurrency, formatCurrencyCompact } from "@/lib/currency";
+import { toTitleCase } from "@/lib/utils";
 
 const MyInvestments = () => {
   const user = auth.getCurrentUser();
@@ -212,7 +213,7 @@ const MyInvestments = () => {
                 {trip.loadType} • {trip.weight}kg • {trip.distance}km
               </CardDescription>
               <p className="text-sm text-muted-foreground mt-1">
-                Borrower: {trip.loadOwnerName}
+                Borrower: {toTitleCase(trip.loadOwnerName)}
               </p>
             </div>
             <Badge variant="outline" className="bg-primary/10 text-primary">
@@ -352,7 +353,7 @@ const MyInvestments = () => {
                 {trip.loadType} • {trip.weight}kg • {trip.distance}km
               </CardDescription>
               <p className="text-sm text-muted-foreground mt-1">
-                Borrower: {trip.loadOwnerName}
+                Borrower: {toTitleCase(trip.loadOwnerName)}
               </p>
               {trip.transporterName && (
                 <p className="text-sm text-muted-foreground">

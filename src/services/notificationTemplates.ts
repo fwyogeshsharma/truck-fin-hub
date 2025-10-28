@@ -1,5 +1,6 @@
 import { NotificationTemplate } from '@/types/notification';
 import { formatCurrency } from '@/lib/currency';
+import { toTitleCase } from '@/lib/utils';
 
 export const notificationTemplates: Record<string, NotificationTemplate> = {
   // Trip-related notifications
@@ -34,12 +35,12 @@ export const notificationTemplates: Record<string, NotificationTemplate> = {
       <ul>
         <li>Route: ${data.origin} → ${data.destination}</li>
         <li>Funding Amount: ${formatCurrency(data.amount)}</li>
-        <li>Lender: ${data.lenderName}</li>
+        <li>Lender: ${toTitleCase(data.lenderName)}</li>
         <li>Interest Rate: ${data.interestRate}%</li>
       </ul>
       <p>The funds will be available in your wallet shortly.</p>
     `,
-    inAppMessage: (data) => `Trip funded! ${formatCurrency(data.amount)} received from ${data.lenderName} at ${data.interestRate}% interest.`,
+    inAppMessage: (data) => `Trip funded! ${formatCurrency(data.amount)} received from ${toTitleCase(data.lenderName)} at ${data.interestRate}% interest.`,
   },
 
   trip_completed: {
@@ -95,13 +96,13 @@ export const notificationTemplates: Record<string, NotificationTemplate> = {
       <p><strong>Bid Details:</strong></p>
       <ul>
         <li>Trip: ${data.origin} → ${data.destination}</li>
-        <li>Lender: ${data.lenderName}</li>
+        <li>Lender: ${toTitleCase(data.lenderName)}</li>
         <li>Bid Amount: ${formatCurrency(data.amount)}</li>
         <li>Interest Rate: ${data.interestRate}%</li>
       </ul>
       <p>Please review and accept/reject this bid in your dashboard.</p>
     `,
-    inAppMessage: (data) => `New bid: ${formatCurrency(data.amount)} at ${data.interestRate}% from ${data.lenderName}`,
+    inAppMessage: (data) => `New bid: ${formatCurrency(data.amount)} at ${data.interestRate}% from ${toTitleCase(data.lenderName)}`,
   },
 
   investment_allotted: {

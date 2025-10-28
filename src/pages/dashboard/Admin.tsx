@@ -8,6 +8,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from '@/api/client';
+import { toTitleCase } from '@/lib/utils';
 
 const AdminDashboard = () => {
   const user = auth.getCurrentUser();
@@ -352,7 +353,7 @@ const AdminDashboard = () => {
                   <div key={trip.id} className="flex items-center justify-between p-2 border-b last:border-0">
                     <div className="flex-1">
                       <p className="text-sm font-medium">{trip.origin} → {trip.destination}</p>
-                      <p className="text-xs text-muted-foreground">{trip.loadOwnerName}</p>
+                      <p className="text-xs text-muted-foreground">{toTitleCase(trip.loadOwnerName)}</p>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-full ${
                       trip.status === 'completed' ? 'bg-secondary/20 text-secondary' :

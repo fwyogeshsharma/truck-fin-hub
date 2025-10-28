@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/api/client';
+import { toTitleCase } from '@/lib/utils';
 
 interface RatingDialogProps {
   open: boolean;
@@ -65,7 +66,7 @@ const RatingDialog = ({
 
       toast({
         title: 'Rating Submitted',
-        description: `Thank you for rating ${lenderName}!`,
+        description: `Thank you for rating ${toTitleCase(lenderName)}!`,
       });
 
       // Reset form
@@ -103,7 +104,7 @@ const RatingDialog = ({
         <DialogHeader>
           <DialogTitle className="text-2xl">Rate Your Lender</DialogTitle>
           <DialogDescription>
-            Share your experience with {lenderName}
+            Share your experience with {toTitleCase(lenderName)}
           </DialogDescription>
         </DialogHeader>
 
@@ -112,7 +113,7 @@ const RatingDialog = ({
           <div className="bg-blue-50 p-4 rounded-lg space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Lender:</span>
-              <span className="font-semibold">{lenderName}</span>
+              <span className="font-semibold">{toTitleCase(lenderName)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Loan Amount:</span>

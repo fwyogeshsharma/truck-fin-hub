@@ -1,6 +1,7 @@
 // Data utilities using API
 
 import { tripsAPI, walletsAPI, investmentsAPI, transactionsAPI, bankAccountsAPI, platformFeesAPI } from '../api';
+import { toTitleCase } from './utils';
 
 // Super Admin ID constant
 const SUPER_ADMIN_ID = 'super_admin_001';
@@ -349,7 +350,7 @@ export const data = {
           type: 'debit',
           amount: bid.amount,
           category: 'investment',
-          description: `Invested ₹${bid.amount} in trip ${trip.origin} → ${trip.destination} (Borrower: ${trip.loadOwnerName})`,
+          description: `Invested ₹${bid.amount} in trip ${trip.origin} → ${trip.destination} (Borrower: ${toTitleCase(trip.loadOwnerName)})`,
           balanceAfter: lenderWallet.balance,
         });
         console.log('✅ [ALLOTMENT] Lender transaction created successfully');
@@ -446,7 +447,7 @@ export const data = {
               type: 'credit' as const,
               amount: creditAmount,
               category: 'payment' as const,
-              description: `Loan disbursed: ₹${originalAmount.toLocaleString('en-IN')} from ${bid.lenderName} for trip ${trip.origin} → ${trip.destination} (Net: ₹${creditAmount.toLocaleString('en-IN')} after 0.5% fee)`,
+              description: `Loan disbursed: ₹${originalAmount.toLocaleString('en-IN')} from ${toTitleCase(bid.lenderName)} for trip ${trip.origin} → ${trip.destination} (Net: ₹${creditAmount.toLocaleString('en-IN')} after 0.5% fee)`,
               balanceAfter: newBalance,
             };
 
@@ -461,7 +462,7 @@ export const data = {
               type: 'debit' as const,
               amount: transactionFee,
               category: 'fee' as const,
-              description: `Transaction fee (0.5%) for loan from ${bid.lenderName}`,
+              description: `Transaction fee (0.5%) for loan from ${toTitleCase(bid.lenderName)}`,
               balanceAfter: newBalance,
             };
 
@@ -530,7 +531,7 @@ export const data = {
               type: 'credit' as const,
               amount: transactionFee,
               category: 'fee' as const,
-              description: `Platform fee (0.5%) from loan: ${bid.lenderName} → ${trip.loadOwnerName} (Trip: ${trip.origin} → ${trip.destination})`,
+              description: `Platform fee (0.5%) from loan: ${toTitleCase(bid.lenderName)} → ${toTitleCase(trip.loadOwnerName)} (Trip: ${trip.origin} → ${trip.destination})`,
               balanceAfter: superAdminNewBalance,
             });
 

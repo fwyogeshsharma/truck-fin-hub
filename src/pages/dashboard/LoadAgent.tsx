@@ -70,6 +70,7 @@ import DocumentProgress from '@/components/DocumentProgress';
 import ContractAcceptanceDialog from '@/components/ContractAcceptanceDialog';
 import RatingDialog from '@/components/RatingDialog';
 import { formatPercentage } from '@/lib/currency';
+import { toTitleCase } from '@/lib/utils';
 
 const LoadAgentDashboard = () => {
   const navigate = useNavigate();
@@ -935,7 +936,7 @@ const LoadAgentDashboard = () => {
         if (result) {
           toast({
             title: 'Trip Allotted Successfully!',
-            description: `Trip allotted to ${lenderName}. ₹${amount.toLocaleString('en-IN')} has been credited to your wallet. Check your wallet to see the transaction.`,
+            description: `Trip allotted to ${toTitleCase(lenderName)}. ₹${amount.toLocaleString('en-IN')} has been credited to your wallet. Check your wallet to see the transaction.`,
             duration: 6000,
           });
           setRefreshKey(prev => prev + 1);
@@ -1006,7 +1007,7 @@ const LoadAgentDashboard = () => {
         console.log('✅ Trip allotted successfully!');
         toast({
           title: 'Contract Accepted & Trip Allotted!',
-          description: `Contract signed successfully. Trip allotted to ${pendingAllotment.lenderName}. ₹${amount.toLocaleString('en-IN')} has been credited to your wallet.`,
+          description: `Contract signed successfully. Trip allotted to ${toTitleCase(pendingAllotment.lenderName)}. ₹${amount.toLocaleString('en-IN')} has been credited to your wallet.`,
           duration: 6000,
         });
         setRefreshKey(prev => prev + 1);
@@ -1357,7 +1358,7 @@ const LoadAgentDashboard = () => {
 
       toast({
         title: 'Repayment Successful',
-        description: `Successfully repaid ₹${(finalTotalRepayment / 1000).toFixed(2)}K to ${lenderName} (${actualDays} days). New balance: ₹${((repaymentResult.borrower_wallet?.balance || 0) / 1000).toFixed(2)}K`,
+        description: `Successfully repaid ₹${(finalTotalRepayment / 1000).toFixed(2)}K to ${toTitleCase(lenderName)} (${actualDays} days). New balance: ₹${((repaymentResult.borrower_wallet?.balance || 0) / 1000).toFixed(2)}K`,
       });
 
       // Close repayment dialog and reload trips and wallet
@@ -1833,7 +1834,7 @@ const LoadAgentDashboard = () => {
                                         className="flex items-center justify-between p-3 bg-white dark:bg-card rounded border"
                                       >
                                         <div>
-                                          <p className="font-medium">{bid.lenderName}</p>
+                                          <p className="font-medium">{toTitleCase(bid.lenderName)}</p>
                                           <p className="text-sm text-muted-foreground">
                                             Amount: ₹{(bid.amount / 1000).toFixed(0)}K • Rate: {formatPercentage(bid.interestRate)}%
                                           </p>
@@ -1964,7 +1965,7 @@ const LoadAgentDashboard = () => {
                             ) : (
                               <div className="flex items-center gap-1.5">
                                 <Building2 className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-xs font-medium text-foreground">{trip.loadOwnerName}</span>
+                                <span className="text-xs font-medium text-foreground">{toTitleCase(trip.loadOwnerName)}</span>
                               </div>
                             )}
                             {trip.loadOwnerRating && (
@@ -1999,7 +2000,7 @@ const LoadAgentDashboard = () => {
                                 @ {formatPercentage(trip.bids[0].interestRate)}%
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                by {trip.bids[0].lenderName}
+                                by {toTitleCase(trip.bids[0].lenderName)}
                               </p>
                             </div>
                           ) : (
@@ -2193,7 +2194,7 @@ const LoadAgentDashboard = () => {
                                 {/* Lender Info */}
                                 <div className="bg-muted/50 p-3 rounded-lg">
                                   <p className="text-xs text-muted-foreground mb-1">Lender</p>
-                                  <p className="font-medium">{trip.lenderName || (trip as any).lender_name || 'Unknown Lender'}</p>
+                                  <p className="font-medium">{toTitleCase(trip.lenderName || (trip as any).lender_name) || 'Unknown Lender'}</p>
                                 </div>
 
                                 {/* Financial Details */}
@@ -2308,7 +2309,7 @@ const LoadAgentDashboard = () => {
                         minute: '2-digit'
                       }) : 'N/A';
 
-                      const lenderName = trip.lenderName || trip.lender_name || 'Unknown Lender';
+                      const lenderName = toTitleCase(trip.lenderName || trip.lender_name) || 'Unknown Lender';
                       const principal = trip.repaymentPrincipal || trip.repayment_principal || trip.amount;
                       const interest = trip.repaymentInterest || trip.repayment_interest || 0;
                       const total = trip.repaymentAmount || trip.repayment_amount || trip.amount;
@@ -3456,7 +3457,7 @@ print(response.json())`;
 
                   <div className="p-4 bg-muted rounded-lg">
                     <p className="text-sm text-muted-foreground mb-1">Load Owner</p>
-                    <p className="font-semibold">{selectedTrip.loadOwnerName}</p>
+                    <p className="font-semibold">{toTitleCase(selectedTrip.loadOwnerName)}</p>
                     {selectedTrip.loadOwnerRating && (
                       <div className="flex items-center gap-1 mt-1">
                         <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
@@ -3526,7 +3527,7 @@ print(response.json())`;
                         {selectedTrip.lenderName && (
                           <div className="text-right">
                             <p className="text-xs text-muted-foreground">Lender</p>
-                            <p className="font-semibold">{selectedTrip.lenderName}</p>
+                            <p className="font-semibold">{toTitleCase(selectedTrip.lenderName)}</p>
                           </div>
                         )}
                       </div>
@@ -3982,7 +3983,7 @@ print(response.json())`;
                     </p>
                     {tripForRepayment.lenderName && (
                       <p className="text-base text-muted-foreground">
-                        <span className="font-semibold">Lender:</span> {tripForRepayment.lenderName}
+                        <span className="font-semibold">Lender:</span> {toTitleCase(tripForRepayment.lenderName)}
                       </p>
                     )}
                   </div>
@@ -4161,7 +4162,7 @@ print(response.json())`;
             }}
             tripId={tripForRating.id}
             lenderId={tripForRating.lenderId || (tripForRating as any).lender_id || ''}
-            lenderName={tripForRating.lenderName || (tripForRating as any).lender_name || 'Unknown'}
+            lenderName={toTitleCase(tripForRating.lenderName || (tripForRating as any).lender_name) || 'Unknown'}
             borrowerId={user?.id || ''}
             borrowerName={user?.name || ''}
             loanAmount={tripForRating.amount || 0}

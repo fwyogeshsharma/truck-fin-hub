@@ -73,6 +73,7 @@ import AdvancedFilter, { type FilterConfig } from "@/components/AdvancedFilter";
 import { getCompanyInfo } from "@/data/companyInfo";
 import { apiClient } from "@/api/client";
 import LoanContractEditor, { type LoanContract } from "@/components/LoanContractEditor";
+import { toTitleCase } from '@/lib/utils';
 
 // Helper function to get the latest document step
 const getDocumentStep = (documents?: Record<string, string>) => {
@@ -1467,7 +1468,7 @@ const InvestmentOpportunities = () => {
                                   <div className="flex items-center gap-1.5">
                                     <Building2 className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-xs font-medium text-foreground">
-                                      {trip.loadOwnerName}
+                                      {toTitleCase(trip.loadOwnerName)}
                                     </span>
                                   </div>
                                 )}
@@ -1660,7 +1661,7 @@ const InvestmentOpportunities = () => {
                                 ) : (
                                   <div className="space-y-2">
                                     <p className="font-semibold">
-                                      {trip.loadOwnerName}
+                                      {toTitleCase(trip.loadOwnerName)}
                                     </p>
                                     <p className="text-sm text-muted-foreground">
                                       Borrower company information
@@ -2239,7 +2240,7 @@ const InvestmentOpportunities = () => {
                                       ) : (
                                         <div className="space-y-2">
                                           <p className="font-semibold">
-                                            {trip.loadOwnerName}
+                                            {toTitleCase(trip.loadOwnerName)}
                                           </p>
                                           <p className="text-sm text-muted-foreground">
                                             Borrower company information
