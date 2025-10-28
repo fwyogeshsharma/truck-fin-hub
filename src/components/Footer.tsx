@@ -78,58 +78,58 @@ const Footer = () => {
             <h3 className="text-lg font-semibold text-foreground">Help & Resources</h3>
             <ul className="space-y-2">
               <li>
-                <a
-                  href="/help/getting-started"
+                <Link
+                  to="/help/getting-started"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
                 >
                   <BookOpen className="h-4 w-4" />
                   Getting Started Guide
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="/help/user-manual"
+                <Link
+                  to="/help/user-manual"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
                 >
                   <FileText className="h-4 w-4" />
                   User Manual
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="/help/faq"
+                <Link
+                  to="/help/faq"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
                 >
                   <HelpCircle className="h-4 w-4" />
                   FAQs
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="/help/video-tutorials"
+                <Link
+                  to="/help/video-tutorials"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
                 >
                   <BookOpen className="h-4 w-4" />
                   Video Tutorials
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="/terms-conditions"
+                <Link
+                  to="/terms-conditions"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
                 >
                   <FileText className="h-4 w-4" />
                   Terms & Conditions
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="/privacy-policy"
+                <Link
+                  to="/privacy-policy"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
                 >
                   <FileText className="h-4 w-4" />
                   Privacy Policy
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

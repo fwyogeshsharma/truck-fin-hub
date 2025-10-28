@@ -37,6 +37,7 @@ import Defaulters from "./pages/Defaulters";
 import NotFound from "./pages/NotFound";
 import GettingStarted from "./pages/help/GettingStarted";
 import UserManual from "./pages/help/UserManual";
+import VideoTutorials from "./pages/help/VideoTutorials";
 import FAQ from "./pages/FAQ";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -93,7 +94,7 @@ const App = () => {
           <Route path="/help/getting-started" element={<GettingStarted />} />
           <Route path="/help/user-manual" element={<UserManual />} />
           <Route path="/help/faq" element={<FAQ />} />
-          <Route path="/help/video-tutorials" element={<GettingStarted />} />
+          <Route path="/help/video-tutorials" element={<VideoTutorials />} />
           {/* Policy Pages */}
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/cookie-policy" element={<PrivacyPolicy />} />
