@@ -104,7 +104,20 @@ const LoadOwnerDashboard = () => {
       });
   };
 
+  // Get trips that have been repaid
+  const getRepaidTrips = () => {
+    return trips
+      .filter(trip => trip.status === 'repaid' && trip.lenderId)
+      .sort((a, b) => {
+        // Sort by repaid date (most recent first)
+        const dateA = a.repaidAt ? new Date(a.repaidAt).getTime() : 0;
+        const dateB = b.repaidAt ? new Date(b.repaidAt).getTime() : 0;
+        return dateB - dateA;
+      });
+  };
+
   const repaymentTrips = getRepaymentTrips();
+  const repaidTrips = getRepaidTrips();
 
   // Handle repayment
   const handleRepayment = async (trip: Trip) => {
@@ -239,12 +252,15 @@ const LoadOwnerDashboard = () => {
           </Button>
         </div>
 
-        {/* Tabs for Dashboard and Repayments */}
+        {/* Tabs for Dashboard, Repayments, and Repaid Loans */}
         <Tabs defaultValue="dashboard" className="space-y-6">
           <TabsList>
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="repayments">
-              Repayments {repaymentTrips.length > 0 && `(${repaymentTrips.length})`}
+              Pending Repayments {repaymentTrips.length > 0 && `(${repaymentTrips.length})`}
+            </TabsTrigger>
+            <TabsTrigger value="repaid">
+              Repaid Loans {repaidTrips.length > 0 && `(${repaidTrips.length})`}
             </TabsTrigger>
           </TabsList>
 
@@ -462,6 +478,125 @@ const LoadOwnerDashboard = () => {
                                 {isOverdue && (
                                   <p className="text-xs text-red-600 font-medium">
                                     Late payment penalties may apply
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Repaid Loans Tab */}
+          <TabsContent value="repaid" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle2 className="h-6 w-6 text-green-600" />
+                  Repaid Loans
+                </CardTitle>
+                <CardDescription>
+                  Successfully completed loan repayments - View repayment details and history
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {repaidTrips.length === 0 ? (
+                  <div className="text-center py-12">
+                    <CheckCircle2 className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
+                    <p className="text-lg font-medium text-muted-foreground">No repaid loans yet</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Completed loan repayments will appear here
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {repaidTrips.map((trip: Trip) => {
+                      const repaidDate = trip.repaidAt ? new Date(trip.repaidAt) : null;
+                      const formattedDate = repaidDate ? repaidDate.toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : 'N/A';
+
+                      return (
+                        <Card key={trip.id} className="border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-950/20">
+                          <CardContent className="p-6">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 space-y-3">
+                                {/* Trip Info */}
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="font-semibold text-lg">
+                                      {trip.origin} → {trip.destination}
+                                    </h4>
+                                    <Badge className="bg-green-600">
+                                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                                      Repaid
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    {trip.loadType} • {trip.weight}kg • {trip.distance}km
+                                  </p>
+                                </div>
+
+                                {/* Lender Info */}
+                                <div className="bg-muted/50 p-3 rounded-lg">
+                                  <p className="text-xs text-muted-foreground mb-1">Lender</p>
+                                  <p className="font-medium">{trip.lenderName || 'Unknown Lender'}</p>
+                                </div>
+
+                                {/* Repayment Details */}
+                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Principal</p>
+                                    <p className="font-semibold">₹{((trip.repaymentPrincipal || trip.amount) / 1000).toFixed(0)}K</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Interest Paid</p>
+                                    <p className="font-semibold text-orange-600">₹{((trip.repaymentInterest || 0) / 1000).toFixed(2)}K</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Total Repaid</p>
+                                    <p className="font-semibold text-green-600">₹{((trip.repaymentAmount || trip.amount) / 1000).toFixed(2)}K</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Days</p>
+                                    <p className="font-semibold">{trip.repaymentDays || trip.maturityDays || 0} days</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Repaid On</p>
+                                    <p className="font-semibold text-xs">{formattedDate}</p>
+                                  </div>
+                                </div>
+
+                                {/* Calculation Summary */}
+                                <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                                  <p className="text-xs font-semibold text-green-700 dark:text-green-400 mb-2">Repayment Calculation</p>
+                                  <div className="text-xs text-muted-foreground space-y-1">
+                                    <p>Principal: ₹{((trip.repaymentPrincipal || trip.amount) / 1000).toFixed(2)}K</p>
+                                    <p>Interest ({trip.interestRate}% for {trip.repaymentDays || trip.maturityDays} days): ₹{((trip.repaymentInterest || 0) / 1000).toFixed(2)}K</p>
+                                    <p className="font-bold text-green-700 dark:text-green-400 pt-1 border-t">
+                                      Total: ₹{((trip.repaymentAmount || trip.amount) / 1000).toFixed(2)}K
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Status Badge */}
+                              <div className="flex flex-col items-end gap-2">
+                                <Badge className="bg-green-600 text-white">
+                                  ✓ Loan Closed
+                                </Badge>
+                                {trip.repaidAt && (
+                                  <p className="text-xs text-muted-foreground text-right">
+                                    Closed {Math.floor((Date.now() - new Date(trip.repaidAt).getTime()) / (1000 * 60 * 60 * 24))} days ago
                                   </p>
                                 )}
                               </div>

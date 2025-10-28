@@ -1254,6 +1254,20 @@ const LoadAgentDashboard = () => {
 
   const loanClosureTrips = getLoanClosureTrips();
 
+  // Get trips that have been repaid
+  const getRepaidTrips = () => {
+    return allTrips
+      .filter(trip => trip.status === 'repaid' && (trip.lenderId || (trip as any).lender_id))
+      .sort((a, b) => {
+        // Sort by repaid date (most recent first)
+        const dateA = a.repaidAt ? new Date(a.repaidAt).getTime() : 0;
+        const dateB = b.repaidAt ? new Date(b.repaidAt).getTime() : 0;
+        return dateB - dateA;
+      });
+  };
+
+  const repaidTrips = getRepaidTrips();
+
   // Open repayment confirmation dialog
   const handleLoanRepayment = (trip: Trip) => {
     setTripForRepayment(trip);
@@ -1731,12 +1745,15 @@ const LoadAgentDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Tabs for All Trips and Loan Closure */}
+        {/* Tabs for All Trips, Loan Closure, and Repaid Loans */}
         <Tabs defaultValue="all-trips" className="space-y-6">
           <TabsList>
             <TabsTrigger value="all-trips">All Trips</TabsTrigger>
             <TabsTrigger value="loan-closure">
-              Loan Closure {loanClosureTrips.length > 0 && `(${loanClosureTrips.length})`}
+              Pending Repayments {loanClosureTrips.length > 0 && `(${loanClosureTrips.length})`}
+            </TabsTrigger>
+            <TabsTrigger value="repaid-loans">
+              Repaid Loans {repaidTrips.length > 0 && `(${repaidTrips.length})`}
             </TabsTrigger>
           </TabsList>
 
@@ -2237,6 +2254,172 @@ const LoadAgentDashboard = () => {
                                     ⏰ Payment due in {daysToMaturity} days
                                   </p>
                                 )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Repaid Loans Tab */}
+          <TabsContent value="repaid-loans" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                  Repaid Loans
+                </CardTitle>
+                <CardDescription>
+                  Successfully completed loan repayments with full calculation details and closure timestamps
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {repaidTrips.length === 0 ? (
+                  <div className="text-center py-12">
+                    <CheckCircle className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
+                    <p className="text-lg font-medium text-muted-foreground">No repaid loans yet</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Completed loan repayments will appear here with full calculation details
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {repaidTrips.map((trip: any) => {
+                      const repaidDate = trip.repaidAt || trip.repaid_at ? new Date(trip.repaidAt || trip.repaid_at) : null;
+                      const formattedDate = repaidDate ? repaidDate.toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : 'N/A';
+
+                      const lenderName = trip.lenderName || trip.lender_name || 'Unknown Lender';
+                      const principal = trip.repaymentPrincipal || trip.repayment_principal || trip.amount;
+                      const interest = trip.repaymentInterest || trip.repayment_interest || 0;
+                      const total = trip.repaymentAmount || trip.repayment_amount || trip.amount;
+                      const days = trip.repaymentDays || trip.repayment_days || trip.maturityDays || trip.maturity_days || 0;
+                      const rate = trip.interestRate || trip.interest_rate || 0;
+
+                      return (
+                        <Card key={trip.id} className="border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-950/20">
+                          <CardContent className="p-6">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 space-y-4">
+                                {/* Trip Info */}
+                                <div>
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h4 className="font-bold text-xl">
+                                      {trip.origin} → {trip.destination}
+                                    </h4>
+                                    <Badge className="bg-green-600 text-white">
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                      Repaid
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    {trip.loadType} • {trip.weight}kg • {trip.distance}km
+                                  </p>
+                                </div>
+
+                                {/* Lender Info */}
+                                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                                  <p className="text-xs text-muted-foreground mb-1">Lender</p>
+                                  <p className="font-bold text-lg">{lenderName}</p>
+                                </div>
+
+                                {/* Repayment Calculation Details */}
+                                <div className="bg-white dark:bg-gray-900 p-5 rounded-lg border-2 border-green-300 dark:border-green-700 space-y-3">
+                                  <p className="font-bold text-base text-green-700 dark:text-green-400 flex items-center gap-2">
+                                    <IndianRupee className="h-4 w-4" />
+                                    Repayment Calculation
+                                  </p>
+
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                      <p className="text-xs text-muted-foreground mb-1">Principal</p>
+                                      <p className="font-bold text-lg">₹{(principal / 1000).toFixed(2)}K</p>
+                                      <p className="text-xs text-muted-foreground mt-1">Loan amount</p>
+                                    </div>
+
+                                    <div className="p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                                      <p className="text-xs text-muted-foreground mb-1">Interest</p>
+                                      <p className="font-bold text-lg text-orange-600">₹{(interest / 1000).toFixed(2)}K</p>
+                                      <p className="text-xs text-muted-foreground mt-1">{rate}% for {days} days</p>
+                                    </div>
+
+                                    <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                                      <p className="text-xs text-muted-foreground mb-1">Total Repaid</p>
+                                      <p className="font-bold text-lg text-green-700">₹{(total / 1000).toFixed(2)}K</p>
+                                      <p className="text-xs text-muted-foreground mt-1">Principal + Interest</p>
+                                    </div>
+
+                                    <div className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                                      <p className="text-xs text-muted-foreground mb-1">Duration</p>
+                                      <p className="font-bold text-lg">{days} days</p>
+                                      <p className="text-xs text-muted-foreground mt-1">Actual period</p>
+                                    </div>
+                                  </div>
+
+                                  {/* Formula */}
+                                  <div className="p-3 bg-gray-50 dark:bg-gray-950 rounded border">
+                                    <p className="text-xs font-semibold mb-2">Calculation Formula:</p>
+                                    <div className="font-mono text-xs text-muted-foreground space-y-1">
+                                      <p>Interest = Principal × (Rate/365) × Days</p>
+                                      <p>= ₹{(principal / 1000).toFixed(0)}K × ({rate}%/365) × {days} days</p>
+                                      <p className="text-green-700 dark:text-green-400 font-bold">= ₹{(interest / 1000).toFixed(2)}K</p>
+                                    </div>
+                                  </div>
+
+                                  {/* Total Summary */}
+                                  <div className="p-4 bg-gradient-to-r from-green-100 to-purple-100 dark:from-green-900/30 dark:to-purple-900/30 rounded-lg border-2 border-green-400 dark:border-green-600">
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Total Amount Repaid</p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          ₹{(principal / 1000).toFixed(0)}K + ₹{(interest / 1000).toFixed(2)}K
+                                        </p>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <IndianRupee className="h-6 w-6 text-green-600" />
+                                        <p className="text-3xl font-bold text-green-700 dark:text-green-400">
+                                          ₹{(total / 1000).toFixed(2)}K
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Closure Information */}
+                                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900 rounded-lg border">
+                                  <div>
+                                    <p className="text-xs text-muted-foreground mb-1">Loan Closed On</p>
+                                    <p className="font-bold text-sm">{formattedDate}</p>
+                                  </div>
+                                  {trip.repaidAt && (
+                                    <div className="text-right">
+                                      <p className="text-xs text-muted-foreground mb-1">Time Since Closure</p>
+                                      <p className="font-bold text-sm text-green-600">
+                                        {Math.floor((Date.now() - new Date(trip.repaidAt).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Status Badge */}
+                              <div className="flex flex-col items-end gap-2">
+                                <Badge className="bg-green-600 text-white text-base px-4 py-2">
+                                  ✓ Loan Closed
+                                </Badge>
+                                <p className="text-xs text-muted-foreground text-right">
+                                  Trip ID: {trip.id.substring(0, 8)}
+                                </p>
                               </div>
                             </div>
                           </CardContent>

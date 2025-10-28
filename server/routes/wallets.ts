@@ -290,10 +290,19 @@ router.post('/repayment', async (req: Request, res: Response) => {
       });
     }
 
-    // Update trip status if trip_id is provided
+    // Update trip status to 'repaid' and store repayment details
     if (trip_id) {
       const { updateTrip } = await import('../../src/db/queries/trips.ts');
-      await updateTrip(trip_id, { status: 'completed', completed_at: new Date().toISOString() });
+      await updateTrip(trip_id, {
+        status: 'repaid',
+        repaid_at: new Date().toISOString(),
+        repayment_amount: totalRepayment,
+        repayment_principal: principalNum,
+        repayment_interest: interestAmount,
+        repayment_days: maturityDaysNum,
+        completed_at: new Date().toISOString() // Keep completed_at for backward compatibility
+      });
+      console.log('✅ [REPAYMENT] Trip marked as repaid:', trip_id);
     }
 
     res.json({

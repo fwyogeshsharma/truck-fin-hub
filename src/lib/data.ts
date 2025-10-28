@@ -36,10 +36,15 @@ export interface Trip {
   interestRate?: number; // Same as loanInterestRate, kept for backward compatibility
   riskLevel?: 'low' | 'medium' | 'high';
   insuranceStatus?: boolean;
-  status: 'pending' | 'escrowed' | 'funded' | 'in_transit' | 'completed' | 'cancelled';
+  status: 'pending' | 'escrowed' | 'funded' | 'in_transit' | 'completed' | 'cancelled' | 'repaid';
   createdAt: string;
   fundedAt?: string;
   completedAt?: string;
+  repaidAt?: string;
+  repaymentAmount?: number;
+  repaymentPrincipal?: number;
+  repaymentInterest?: number;
+  repaymentDays?: number;
   lenderId?: string;
   lenderName?: string;
   bids?: Array<{
