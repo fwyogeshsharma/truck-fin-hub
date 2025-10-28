@@ -832,11 +832,6 @@ const InvestmentOpportunities = () => {
     }
   };
 
-  const handleResetData = () => {
-    localStorage.removeItem("logistics_trips");
-    window.location.reload();
-  };
-
   if (loading) {
     return (
       <DashboardLayout role="lender">
@@ -877,14 +872,6 @@ const InvestmentOpportunities = () => {
                 <span className="hidden sm:inline">
                   {isCompactView ? "Expand" : "Compact"}
                 </span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleResetData}
-                className="hidden sm:inline-flex"
-              >
-                Reset Data
               </Button>
             </div>
           </div>
