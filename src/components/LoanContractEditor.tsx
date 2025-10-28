@@ -27,6 +27,7 @@ export interface LoanContract {
   latePaymentClause: string;
   defaultClause: string;
   customClauses: string[];
+  customTerms?: string; // Optional custom terms added by lender
   lenderSignature: string; // Base64 image
   saveAsTemplate: boolean;
   templateName?: string;
@@ -47,6 +48,8 @@ const LoanContractEditor = ({
   const [signaturePreview, setSignaturePreview] = useState<string>('');
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const [templateName, setTemplateName] = useState('');
+
+  const [customTerms, setCustomTerms] = useState<string>('');
 
   const [contract, setContract] = useState<LoanContract>({
     termsAndConditions: `LOAN AGREEMENT
@@ -164,6 +167,7 @@ The loan is provided specifically for financing a transportation trip as detaile
 
     const finalContract = {
       ...contract,
+      customTerms: customTerms.trim() || undefined,
       saveAsTemplate,
       templateName: saveAsTemplate ? templateName : undefined,
     };
@@ -185,67 +189,92 @@ The loan is provided specifically for financing a transportation trip as detaile
         </DialogHeader>
 
         <Tabs value={currentTab} onValueChange={setCurrentTab}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="terms">Terms</TabsTrigger>
             <TabsTrigger value="interest">Interest</TabsTrigger>
             <TabsTrigger value="repayment">Repayment</TabsTrigger>
             <TabsTrigger value="penalties">Penalties</TabsTrigger>
+            <TabsTrigger value="custom">Custom</TabsTrigger>
             <TabsTrigger value="signature">Signature</TabsTrigger>
           </TabsList>
 
           <TabsContent value="terms" className="space-y-4">
             <div>
-              <Label>General Terms and Conditions</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label>General Terms and Conditions</Label>
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Read-Only</span>
+              </div>
               <Textarea
                 value={contract.termsAndConditions}
-                onChange={(e) => setContract(prev => ({ ...prev, termsAndConditions: e.target.value }))}
+                readOnly
                 rows={12}
-                className="mt-2 font-mono text-sm"
+                className="mt-2 font-mono text-sm bg-muted/50 cursor-not-allowed"
               />
+              <p className="text-xs text-muted-foreground mt-2">
+                Standard terms are automatically generated. Use the "Custom" tab to add additional clauses.
+              </p>
             </div>
           </TabsContent>
 
           <TabsContent value="interest" className="space-y-4">
             <div>
-              <Label>Interest Rate Clause</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Interest Rate Clause</Label>
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Read-Only</span>
+              </div>
               <Textarea
                 value={contract.interestRateClause}
-                onChange={(e) => setContract(prev => ({ ...prev, interestRateClause: e.target.value }))}
+                readOnly
                 rows={12}
-                className="mt-2 font-mono text-sm"
+                className="mt-2 font-mono text-sm bg-muted/50 cursor-not-allowed"
               />
+              <p className="text-xs text-muted-foreground mt-2">
+                Interest terms are automatically calculated based on your bid. Use the "Custom" tab to add additional clauses.
+              </p>
             </div>
           </TabsContent>
 
           <TabsContent value="repayment" className="space-y-4">
             <div>
-              <Label>Repayment Terms</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Repayment Terms</Label>
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Read-Only</span>
+              </div>
               <Textarea
                 value={contract.repaymentClause}
-                onChange={(e) => setContract(prev => ({ ...prev, repaymentClause: e.target.value }))}
+                readOnly
                 rows={12}
-                className="mt-2 font-mono text-sm"
+                className="mt-2 font-mono text-sm bg-muted/50 cursor-not-allowed"
               />
             </div>
 
             <div>
-              <Label>Late Payment Clause</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Late Payment Clause</Label>
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Read-Only</span>
+              </div>
               <Textarea
                 value={contract.latePaymentClause}
-                onChange={(e) => setContract(prev => ({ ...prev, latePaymentClause: e.target.value }))}
+                readOnly
                 rows={8}
-                className="mt-2 font-mono text-sm"
+                className="mt-2 font-mono text-sm bg-muted/50 cursor-not-allowed"
               />
             </div>
 
             <div>
-              <Label>Default Clause</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Default Clause</Label>
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Read-Only</span>
+              </div>
               <Textarea
                 value={contract.defaultClause}
-                onChange={(e) => setContract(prev => ({ ...prev, defaultClause: e.target.value }))}
+                readOnly
                 rows={10}
-                className="mt-2 font-mono text-sm"
+                className="mt-2 font-mono text-sm bg-muted/50 cursor-not-allowed"
               />
+              <p className="text-xs text-muted-foreground mt-2">
+                Standard repayment and penalty clauses. Use the "Custom" tab to add your own specific terms.
+              </p>
             </div>
           </TabsContent>
 
@@ -267,6 +296,43 @@ The loan is provided specifically for financing a transportation trip as detaile
 
                   <div className="font-medium">Default Period:</div>
                   <div>15 days after due date</div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="custom" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Custom Terms & Conditions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="customTerms">Additional Clauses (Optional)</Label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Add any specific terms or conditions you want to include in this loan agreement. This space is fully editable.
+                  </p>
+                  <Textarea
+                    id="customTerms"
+                    value={customTerms}
+                    onChange={(e) => setCustomTerms(e.target.value)}
+                    placeholder="Enter additional terms, special conditions, or specific requirements...
+
+Examples:
+• Payment method preferences
+• Communication protocols
+• Trip-specific requirements
+• Special collateral arrangements
+• Any other custom conditions"
+                    rows={15}
+                    className="mt-2 font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    These custom terms will be included in the final contract along with the standard clauses.
+                  </p>
                 </div>
               </CardContent>
             </Card>

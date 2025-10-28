@@ -23,6 +23,7 @@ interface ContractAcceptanceDialogProps {
     repaymentClause: string;
     latePaymentClause: string;
     defaultClause: string;
+    customTerms?: string;
     tripAmount: number;
     interestRate: number;
     maturityDays: number;
@@ -117,12 +118,13 @@ const ContractAcceptanceDialog = ({
         </div>
 
         <Tabs value={currentTab} onValueChange={setCurrentTab}>
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className={`grid w-full ${contract.customTerms ? 'grid-cols-7' : 'grid-cols-6'}`}>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="terms">Terms</TabsTrigger>
             <TabsTrigger value="interest">Interest</TabsTrigger>
             <TabsTrigger value="repayment">Repayment</TabsTrigger>
             <TabsTrigger value="penalties">Penalties</TabsTrigger>
+            {contract.customTerms && <TabsTrigger value="custom">Custom</TabsTrigger>}
             <TabsTrigger value="accept">Accept</TabsTrigger>
           </TabsList>
 
@@ -251,6 +253,28 @@ const ContractAcceptanceDialog = ({
               </CardContent>
             </Card>
           </TabsContent>
+
+          {contract.customTerms && (
+            <TabsContent value="custom">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Custom Terms & Conditions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 p-3 rounded-lg mb-4">
+                    <p className="text-sm text-blue-900 dark:text-blue-100">
+                      The lender has added the following custom terms to this agreement. Please review carefully.
+                    </p>
+                  </div>
+                  <ScrollArea className="h-[400px] pr-4">
+                    <pre className="whitespace-pre-wrap text-sm font-mono bg-muted p-4 rounded">
+                      {contract.customTerms}
+                    </pre>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           <TabsContent value="accept" className="space-y-4">
             <Card>
