@@ -73,6 +73,11 @@ export const authAPI = {
     return apiClient.get('/auth/me');
   },
 
+  async getUserById(userId: string): Promise<User> {
+    const response = await apiClient.get<User>(`/users/${userId}`);
+    return response;
+  },
+
   logout() {
     setAuthToken(null);
   },

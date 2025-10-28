@@ -33,6 +33,7 @@ import AdminPanel from "./pages/AdminPanel";
 import UserManagement from "./pages/UserManagement";
 import TransactionRequests from "./pages/TransactionRequests";
 import AdminSetupDebug from "./pages/AdminSetupDebug";
+import Defaulters from "./pages/Defaulters";
 import NotFound from "./pages/NotFound";
 import GettingStarted from "./pages/help/GettingStarted";
 
@@ -81,6 +82,7 @@ const App = () => {
           <Route path="/user-management" element={<UserManagement />} />
           <Route path="/transaction-requests" element={<TransactionRequests />} />
           <Route path="/admin/setup-debug" element={<AdminSetupDebug />} />
+          <Route path="/defaulters" element={<Defaulters />} />
           {/* Help Pages */}
           <Route path="/help/getting-started" element={<GettingStarted />} />
           <Route path="/help/user-manual" element={<GettingStarted />} />

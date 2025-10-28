@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { TruckIcon, LogOut, Home, Package, Wallet, Shield, Users, User as UserIcon, Settings, FileCheck, Bell as BellIcon, FileText, Menu, X, ArrowLeftRight } from "lucide-react";
+import { TruckIcon, LogOut, Home, Package, Wallet, Shield, Users, User as UserIcon, Settings, FileCheck, Bell as BellIcon, FileText, Menu, X, ArrowLeftRight, AlertTriangle } from "lucide-react";
 import { auth, User } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -75,6 +75,7 @@ const roleConfig = {
     nav: [
       { label: "Dashboard", path: "/dashboard/super_admin", icon: Home },
       { label: "Platform Config", path: "/platform-config", icon: Settings },
+      { label: "Defaulters", path: "/defaulters", icon: AlertTriangle },
       { label: "Transaction Requests", path: "/transaction-requests", icon: ArrowLeftRight },
       { label: "Admin Panel", path: "/dashboard/admin", icon: Shield },
       { label: "Users", path: "/admin/users", icon: Users },

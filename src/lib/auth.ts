@@ -110,6 +110,17 @@ export const auth = {
     return [];
   },
 
+  // Get user by ID
+  getUserById: async (userId: string): Promise<User | null> => {
+    try {
+      const response = await authAPI.getUserById(userId);
+      return response;
+    } catch (error) {
+      console.error('Failed to get user by ID:', error);
+      return null;
+    }
+  },
+
   // Check if user is authenticated
   isAuthenticated: (): boolean => {
     return !!auth.getCurrentUser();
