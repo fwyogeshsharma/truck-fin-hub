@@ -1,5 +1,6 @@
 // API Client for Truck Finance Hub
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? 'https://34.93.247.3/api' : '/api');
 
 // Use sessionStorage for tokens (tab-specific) instead of localStorage (shared across tabs)
 export const setAuthToken = (token: string | null) => {

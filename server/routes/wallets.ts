@@ -187,9 +187,19 @@ router.post('/:userId/return', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/wallets/repayment/test - Test endpoint to verify route is working
+router.get('/repayment/test', async (req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    message: 'Repayment endpoint is accessible',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // POST /api/wallets/repayment - Process loan repayment with interest
 router.post('/repayment', async (req: Request, res: Response) => {
   try {
+    console.log('🔵 [REPAYMENT] Endpoint hit! Body:', JSON.stringify(req.body, null, 2));
     const { trip_id, loan_agreement_id, borrower_id, lender_id, principal_amount, interest_rate, maturity_days } = req.body;
 
     // Validate required fields

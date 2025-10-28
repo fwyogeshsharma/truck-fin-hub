@@ -1305,7 +1305,10 @@ const LoadAgentDashboard = () => {
       });
 
       // Process repayment via new repayment endpoint
-      const response = await fetch('/api/wallets/repayment', {
+      const API_URL = import.meta.env.VITE_API_URL ||
+        (import.meta.env.PROD ? 'https://34.93.247.3/api' : '/api');
+
+      const response = await fetch(`${API_URL}/wallets/repayment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
