@@ -39,6 +39,7 @@ const LenderDashboard = () => {
   const [documentViewOpen, setDocumentViewOpen] = useState(false);
   const [showFinancialQuestionnaire, setShowFinancialQuestionnaire] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [questionnaireShown, setQuestionnaireShown] = useState(false);
 
   // Pagination state
   const [pendingBidsPage, setPendingBidsPage] = useState(1);
@@ -108,8 +109,14 @@ const LenderDashboard = () => {
         setUserProfile(userData);
 
         // Show financial questionnaire if not completed (only for lenders, not admins)
-        if (!userData.financial_profile_completed && user.role === 'lender' && !user.is_admin) {
+        // Only show once per session to avoid annoying the user
+        const questionnaireShownKey = `questionnaire_shown_${user.id}`;
+        const hasShownThisSession = sessionStorage.getItem(questionnaireShownKey);
+
+        if (!userData.financial_profile_completed && user.role === 'lender' && !user.is_admin && !hasShownThisSession && !questionnaireShown) {
           setShowFinancialQuestionnaire(true);
+          setQuestionnaireShown(true);
+          sessionStorage.setItem(questionnaireShownKey, 'true');
         }
 
         // Fetch pending approvals if user is admin
@@ -914,7 +921,24 @@ const LenderDashboard = () => {
       {user?.id && (
         <LenderFinancialQuestionnaire
           open={showFinancialQuestionnaire}
-          onClose={() => setShowFinancialQuestionnaire(false)}
+          onClose={async () => {
+            setShowFinancialQuestionnaire(false);
+            // Reload user data to get updated financial_profile_completed flag
+            try {
+              const userData = await apiClient.get(`/users/${user.id}`);
+              setUserProfile(userData);
+              // If profile is now completed, mark as permanently shown
+              if (userData.financial_profile_completed) {
+                setQuestionnaireShown(true);
+                // No need to keep the session flag if profile is completed
+                if (user?.id) {
+                  sessionStorage.removeItem(`questionnaire_shown_${user.id}`);
+                }
+              }
+            } catch (error) {
+              console.error('Failed to reload user data:', error);
+            }
+          }}
           userId={user.id}
           userName={user.name}
         />
