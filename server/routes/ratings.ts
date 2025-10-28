@@ -1,11 +1,13 @@
 import express, { Request, Response } from 'express';
-import { db } from '../../src/db/database.ts';
+import { getDatabase } from '../../src/db/database.js';
 
 const router = express.Router();
 
 // POST /api/ratings - Create a new rating
 router.post('/', async (req: Request, res: Response) => {
   try {
+    const db = getDatabase();
+
     const {
       trip_id,
       lender_id,
@@ -101,6 +103,7 @@ router.post('/', async (req: Request, res: Response) => {
 // GET /api/ratings/lender/:lenderId - Get all ratings for a lender
 router.get('/lender/:lenderId', async (req: Request, res: Response) => {
   try {
+    const db = getDatabase();
     const { lenderId } = req.params;
 
     const result = await db.query(
@@ -137,6 +140,7 @@ router.get('/lender/:lenderId', async (req: Request, res: Response) => {
 // GET /api/ratings/trip/:tripId - Get rating for a specific trip
 router.get('/trip/:tripId', async (req: Request, res: Response) => {
   try {
+    const db = getDatabase();
     const { tripId } = req.params;
 
     const result = await db.query(
@@ -164,6 +168,7 @@ router.get('/trip/:tripId', async (req: Request, res: Response) => {
 // GET /api/ratings/stats/:lenderId - Get rating statistics for a lender
 router.get('/stats/:lenderId', async (req: Request, res: Response) => {
   try {
+    const db = getDatabase();
     const { lenderId } = req.params;
 
     const result = await db.query(
