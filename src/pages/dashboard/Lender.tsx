@@ -906,18 +906,18 @@ const LenderDashboard = () => {
                                 const blob = await response.blob();
 
                                 // Create a blob URL
-                                const blobUrl = window.URL.createObjectURL(blob);
+                                const blobUrl = URL.createObjectURL(blob);
 
                                 // Create and trigger download
-                                const link = window.document.createElement('a');
+                                const link = document.createElement('a');
                                 link.href = blobUrl;
                                 link.download = `${docLabels[docType as keyof typeof docLabels]}-${selectedTripForDocs.id}.pdf`;
-                                window.document.body.appendChild(link);
+                                document.body.appendChild(link);
                                 link.click();
 
                                 // Cleanup
-                                window.document.body.removeChild(link);
-                                window.URL.revokeObjectURL(blobUrl);
+                                document.body.removeChild(link);
+                                URL.revokeObjectURL(blobUrl);
                               } catch (error) {
                                 console.error('Download failed:', error);
                                 // Fallback: open in new tab
