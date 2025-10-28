@@ -4,7 +4,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Search, HelpCircle, TruckIcon, Wallet, UserCircle, IndianRupee, FileText, Shield } from "lucide-react";
+import { Search, HelpCircle, TruckIcon, Wallet, UserCircle, IndianRupee, FileText, Shield, Mail, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const FAQ = () => {
