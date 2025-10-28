@@ -120,22 +120,34 @@ const LoadOwnerDashboard = () => {
     setRepaying(prev => ({ ...prev, [trip.id]: true }));
 
     try {
-      // Calculate total repayment amount (principal + interest)
+      // Calculate repayment details
       const principal = trip.amount;
       const interestRate = trip.interestRate || 0;
       const maturityDays = trip.maturityDays || 30;
-      const interest = (principal * (interestRate / 365) * maturityDays) / 100;
-      const totalRepayment = principal + interest;
 
-      // Process repayment via transaction
-      await data.createTransaction({
-        fromUserId: user?.id || '',
-        toUserId: trip.lenderId,
-        amount: totalRepayment,
-        type: 'repayment',
-        tripId: trip.id,
-        description: `Loan repayment for trip ${trip.origin} → ${trip.destination}`,
+      // Process repayment via new repayment endpoint
+      const response = await fetch('/api/wallets/repayment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trip_id: trip.id,
+          borrower_id: user?.id || '',
+          lender_id: trip.lenderId,
+          principal_amount: principal,
+          interest_rate: interestRate,
+          maturity_days: maturityDays,
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to process repayment');
+      }
+
+      const repaymentResult = await response.json();
+      const totalRepayment = repaymentResult.repayment_details.total;
 
       toast({
         title: 'Repayment Successful',

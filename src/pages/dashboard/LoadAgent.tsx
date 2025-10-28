@@ -1301,21 +1301,36 @@ const LoadAgentDashboard = () => {
         principal,
         interest,
         totalRepayment,
+        actualDays,
       });
 
-      // Process repayment via transaction
-      await data.createTransaction({
-        fromUserId: user?.id || '',
-        toUserId: lenderId,
-        amount: totalRepayment,
-        type: 'repayment',
-        tripId: trip.id,
-        description: `Loan repayment for trip ${trip.origin} → ${trip.destination}`,
+      // Process repayment via new repayment endpoint
+      const response = await fetch('/api/wallets/repayment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trip_id: trip.id,
+          borrower_id: user?.id || '',
+          lender_id: lenderId,
+          principal_amount: principal,
+          interest_rate: interestRate,
+          maturity_days: actualDays, // Use actual days for interest calculation
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to process repayment');
+      }
+
+      const repaymentResult = await response.json();
+      const finalTotalRepayment = repaymentResult.repayment_details.total;
 
       toast({
         title: 'Repayment Successful',
-        description: `Successfully repaid ₹${(totalRepayment / 1000).toFixed(2)}K to ${lenderName} (${actualDays} days)`,
+        description: `Successfully repaid ₹${(finalTotalRepayment / 1000).toFixed(2)}K to ${lenderName} (${actualDays} days)`,
       });
 
       // Close repayment dialog and reload trips
