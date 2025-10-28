@@ -1331,14 +1331,25 @@ const LoadAgentDashboard = () => {
       const repaymentResult = await response.json();
       const finalTotalRepayment = repaymentResult.repayment_details.total;
 
+      // Update wallet state with new balance
+      if (repaymentResult.borrower_wallet) {
+        setWallet(repaymentResult.borrower_wallet);
+      }
+
       toast({
         title: 'Repayment Successful',
-        description: `Successfully repaid ₹${(finalTotalRepayment / 1000).toFixed(2)}K to ${lenderName} (${actualDays} days)`,
+        description: `Successfully repaid ₹${(finalTotalRepayment / 1000).toFixed(2)}K to ${lenderName} (${actualDays} days). New balance: ₹${((repaymentResult.borrower_wallet?.balance || 0) / 1000).toFixed(2)}K`,
       });
 
-      // Close repayment dialog and reload trips
+      // Close repayment dialog and reload trips and wallet
       setRepaymentDialogOpen(false);
       setRefreshKey(prev => prev + 1);
+
+      // Refresh wallet data from server
+      if (user?.id) {
+        const walletData = await data.getWallet(user.id);
+        setWallet(walletData);
+      }
 
     } catch (error: any) {
       console.error('Repayment error:', error);
@@ -3730,13 +3741,13 @@ print(response.json())`;
 
         {/* Loan Repayment Confirmation Dialog */}
         <Dialog open={repaymentDialogOpen} onOpenChange={setRepaymentDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <IndianRupee className="h-5 w-5 text-primary" />
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <IndianRupee className="h-6 w-6 text-primary" />
                 Loan Repayment Calculation
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-base">
                 Detailed breakdown of loan repayment based on actual days
               </DialogDescription>
             </DialogHeader>
@@ -3769,107 +3780,115 @@ print(response.json())`;
               return (
                 <div className="space-y-6">
                   {/* Trip Info */}
-                  <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-1">Trip</p>
-                    <p className="font-semibold">
+                  <div className="p-5 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900 rounded-lg border-2 border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-2 mb-3">
+                      <TruckIcon className="h-5 w-5 text-primary" />
+                      <p className="text-base font-semibold text-muted-foreground">Trip Details</p>
+                    </div>
+                    <p className="font-bold text-xl mb-2">
                       {tripForRepayment.origin} → {tripForRepayment.destination}
                     </p>
                     {tripForRepayment.lenderName && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Lender: {tripForRepayment.lenderName}
+                      <p className="text-base text-muted-foreground">
+                        <span className="font-semibold">Lender:</span> {tripForRepayment.lenderName}
                       </p>
                     )}
                   </div>
 
                   {/* Calculation Breakdown */}
-                  <div className="space-y-3">
-                    <h4 className="font-semibold">Calculation Breakdown:</h4>
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-lg">Calculation Breakdown:</h4>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
                       {/* Principal */}
-                      <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <p className="text-xs text-muted-foreground mb-1">Principal Amount</p>
-                        <p className="text-2xl font-bold">₹{(principal / 1000).toFixed(0)}K</p>
-                        <p className="text-xs text-muted-foreground mt-1">Original loan amount</p>
+                      <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                        <p className="text-sm text-muted-foreground mb-2">Principal Amount</p>
+                        <p className="text-3xl font-bold text-blue-700 dark:text-blue-400">₹{(principal / 1000).toFixed(0)}K</p>
+                        <p className="text-sm text-muted-foreground mt-2">Original loan amount</p>
                       </div>
 
                       {/* Interest Rate */}
-                      <div className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                        <p className="text-xs text-muted-foreground mb-1">Annual Interest Rate</p>
-                        <p className="text-2xl font-bold">{interestRate}%</p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                      <div className="p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border-2 border-purple-200 dark:border-purple-800">
+                        <p className="text-sm text-muted-foreground mb-2">Annual Interest Rate</p>
+                        <p className="text-3xl font-bold text-purple-700 dark:text-purple-400">{interestRate}%</p>
+                        <p className="text-sm text-muted-foreground mt-2">
                           Per day: {interestRatePerDay.toFixed(4)}%
                         </p>
                       </div>
 
                       {/* Maturity Days */}
-                      <div className="p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                        <p className="text-xs text-muted-foreground mb-1">Maturity Period</p>
-                        <p className="text-2xl font-bold">{maturityDays} days</p>
-                        <p className="text-xs text-muted-foreground mt-1">Original loan term</p>
+                      <div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border-2 border-orange-200 dark:border-orange-800">
+                        <p className="text-sm text-muted-foreground mb-2">Maturity Period</p>
+                        <p className="text-3xl font-bold text-orange-700 dark:text-orange-400">{maturityDays} days</p>
+                        <p className="text-sm text-muted-foreground mt-2">Original loan term</p>
                       </div>
 
                       {/* Actual Days */}
-                      <div className={`p-3 rounded-lg border ${isEarlyPayment ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800'}`}>
-                        <p className="text-xs text-muted-foreground mb-1">Actual Days</p>
-                        <p className="text-2xl font-bold">{actualDays} days</p>
-                        <p className={`text-xs font-semibold mt-1 ${isEarlyPayment ? 'text-green-600' : 'text-red-600'}`}>
+                      <div className={`p-4 rounded-lg border-2 ${isEarlyPayment ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800'}`}>
+                        <p className="text-sm text-muted-foreground mb-2">Actual Days</p>
+                        <p className={`text-3xl font-bold ${isEarlyPayment ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>{actualDays} days</p>
+                        <p className={`text-sm font-semibold mt-2 ${isEarlyPayment ? 'text-green-600' : 'text-red-600'}`}>
                           {isEarlyPayment ? `Early by ${maturityDays - actualDays} days` : `Overdue by ${actualDays - maturityDays} days`}
                         </p>
                       </div>
                     </div>
 
                     {/* Interest Calculation Formula */}
-                    <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border">
-                      <p className="text-sm font-semibold mb-2">Interest Calculation:</p>
-                      <div className="font-mono text-sm space-y-1">
-                        <p>Interest = Principal × (Rate/365) × Actual Days</p>
+                    <div className="p-5 bg-gray-50 dark:bg-gray-900 rounded-lg border-2 border-gray-300 dark:border-gray-700">
+                      <p className="text-base font-semibold mb-3">Interest Calculation Formula:</p>
+                      <div className="font-mono text-sm space-y-2 bg-white dark:bg-gray-950 p-4 rounded border">
+                        <p className="text-base">Interest = Principal × (Rate/365) × Actual Days</p>
                         <p className="text-muted-foreground">
                           = ₹{(principal / 1000).toFixed(0)}K × ({interestRate}%/365) × {actualDays} days
                         </p>
-                        <p className="text-primary font-semibold">
+                        <p className="text-primary font-bold text-lg">
                           = ₹{(actualInterest / 1000).toFixed(2)}K
                         </p>
                       </div>
                     </div>
 
                     {/* Total Repayment */}
-                    <div className="p-4 bg-gradient-to-r from-green-50 to-purple-50 dark:from-green-950/20 dark:to-purple-950/20 rounded-lg border-2 border-primary">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="font-semibold">Total Repayment Amount:</p>
-                        <p className="text-3xl font-bold text-primary">₹{(actualTotalRepayment / 1000).toFixed(2)}K</p>
-                      </div>
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        <p>Principal: ₹{(principal / 1000).toFixed(0)}K</p>
-                        <p>Interest ({actualDays} days): ₹{(actualInterest / 1000).toFixed(2)}K</p>
+                    <div className="p-6 bg-gradient-to-r from-green-50 to-purple-50 dark:from-green-950/20 dark:to-purple-950/20 rounded-lg border-4 border-primary shadow-lg">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                          <p className="font-semibold text-lg mb-2">Total Repayment Amount:</p>
+                          <div className="text-base text-muted-foreground space-y-1">
+                            <p>Principal: ₹{(principal / 1000).toFixed(0)}K</p>
+                            <p>Interest ({actualDays} days): ₹{(actualInterest / 1000).toFixed(2)}K</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <IndianRupee className="h-8 w-8 text-primary" />
+                          <p className="text-4xl md:text-5xl font-bold text-primary">₹{(actualTotalRepayment / 1000).toFixed(2)}K</p>
+                        </div>
                       </div>
                     </div>
 
                     {/* Early Payment Savings */}
                     {isEarlyPayment && savings > 0 && (
-                      <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-300 dark:border-green-700">
-                        <div className="flex items-center gap-2 mb-2">
-                          <CheckCircle className="h-5 w-5 text-green-600" />
-                          <p className="font-semibold text-green-900 dark:text-green-100">Early Payment Savings!</p>
+                      <div className="p-5 bg-green-50 dark:bg-green-950/20 rounded-lg border-2 border-green-400 dark:border-green-700 shadow-md">
+                        <div className="flex items-center gap-3 mb-3">
+                          <CheckCircle className="h-6 w-6 text-green-600" />
+                          <p className="font-bold text-lg text-green-900 dark:text-green-100">Early Payment Savings!</p>
                         </div>
-                        <p className="text-sm">
-                          By paying {maturityDays - actualDays} days early, you save ₹{(savings / 1000).toFixed(2)}K in interest.
+                        <p className="text-base mb-2">
+                          By paying {maturityDays - actualDays} days early, you save <span className="font-bold text-green-700">₹{(savings / 1000).toFixed(2)}K</span> in interest.
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          (At maturity: ₹{(maturityTotalRepayment / 1000).toFixed(2)}K)
+                        <p className="text-sm text-muted-foreground">
+                          (At maturity, total would be: ₹{(maturityTotalRepayment / 1000).toFixed(2)}K)
                         </p>
                       </div>
                     )}
 
                     {/* Overdue Warning */}
                     {!isEarlyPayment && actualDays > maturityDays && (
-                      <div className="p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-300 dark:border-red-700">
-                        <div className="flex items-center gap-2 mb-2">
-                          <AlertCircle className="h-5 w-5 text-red-600" />
-                          <p className="font-semibold text-red-900 dark:text-red-100">Payment Overdue</p>
+                      <div className="p-5 bg-red-50 dark:bg-red-950/20 rounded-lg border-2 border-red-400 dark:border-red-700 shadow-md">
+                        <div className="flex items-center gap-3 mb-3">
+                          <AlertCircle className="h-6 w-6 text-red-600" />
+                          <p className="font-bold text-lg text-red-900 dark:text-red-100">Payment Overdue</p>
                         </div>
-                        <p className="text-sm">
-                          Payment is {actualDays - maturityDays} days overdue. Additional interest of ₹{((actualInterest - maturityInterest) / 1000).toFixed(2)}K has accrued.
+                        <p className="text-base">
+                          Payment is <span className="font-bold text-red-700">{actualDays - maturityDays} days overdue</span>. Additional interest of <span className="font-bold text-red-700">₹{((actualInterest - maturityInterest) / 1000).toFixed(2)}K</span> has accrued.
                         </p>
                       </div>
                     )}
@@ -3878,25 +3897,31 @@ print(response.json())`;
               );
             })()}
 
-            <DialogFooter>
-              <div className="flex items-center justify-between w-full gap-4">
-                <Button variant="outline" onClick={() => setRepaymentDialogOpen(false)}>
+            <DialogFooter className="border-t pt-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between w-full gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setRepaymentDialogOpen(false)}
+                  className="order-2 sm:order-1"
+                  size="lg"
+                >
                   Cancel
                 </Button>
                 {tripForRepayment && (
                   <Button
                     onClick={() => processLoanRepayment(tripForRepayment)}
                     disabled={repaying[tripForRepayment.id]}
-                    className="bg-gradient-to-r from-green-600 to-purple-600 hover:from-green-700 hover:to-purple-700"
+                    className="bg-gradient-to-r from-green-600 to-purple-600 hover:from-green-700 hover:to-purple-700 order-1 sm:order-2"
+                    size="lg"
                   >
                     {repaying[tripForRepayment.id] ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Processing...
+                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                        Processing Repayment...
                       </>
                     ) : (
                       <>
-                        <CheckCircle className="h-4 w-4 mr-2" />
+                        <CheckCircle className="h-5 w-5 mr-2" />
                         Confirm Repayment
                       </>
                     )}

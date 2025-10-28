@@ -152,17 +152,27 @@ const LoadOwnerDashboard = () => {
       const repaymentResult = await response.json();
       const totalRepayment = repaymentResult.repayment_details.total;
 
+      // Update local wallet state with new balance
+      if (repaymentResult.borrower_wallet) {
+        setWallet(repaymentResult.borrower_wallet);
+      }
+
       toast({
         title: 'Repayment Successful',
-        description: `Successfully repaid ${formatCurrency(totalRepayment)} to ${trip.lenderName}`,
+        description: `Successfully repaid ${formatCurrency(totalRepayment)} to ${trip.lenderName}. New balance: ${formatCurrency(repaymentResult.borrower_wallet?.balance || 0)}`,
       });
 
-      // Reload trips data
-      const allTrips = await data.getTrips();
+      // Reload trips and wallet data
+      const [allTrips, walletData] = await Promise.all([
+        data.getTrips(),
+        data.getWallet(user?.id || 'lo1')
+      ]);
+
       const filteredTrips = allTrips.filter(t =>
         t.loadOwnerId === user?.id || t.loadOwnerName.includes('ABC')
       );
       setTrips(filteredTrips);
+      setWallet(walletData);
 
     } catch (error: any) {
       console.error('Repayment error:', error);

@@ -252,9 +252,25 @@ router.post('/repayment', async (req: Request, res: Response) => {
       balance_after: lenderWallet.balance,
     });
 
-    // If borrower_id is provided, create transaction for borrower as well
+    // If borrower_id is provided, deduct money from borrower and create transaction
+    let borrowerWallet = null;
     if (borrower_id) {
-      const borrowerWallet = await getWallet(borrower_id);
+      // Check if borrower has sufficient balance
+      const currentBorrowerWallet = await getWallet(borrower_id);
+      if (currentBorrowerWallet.balance < totalRepayment) {
+        return res.status(400).json({
+          error: 'Insufficient balance',
+          message: `Borrower has insufficient balance. Required: ₹${totalRepayment.toFixed(2)}, Available: ₹${currentBorrowerWallet.balance.toFixed(2)}`,
+          required: totalRepayment,
+          available: currentBorrowerWallet.balance,
+          shortfall: totalRepayment - currentBorrowerWallet.balance
+        });
+      }
+
+      // Deduct the total repayment amount from borrower's balance
+      borrowerWallet = await deductFromBalance(borrower_id, totalRepayment);
+
+      // Create transaction record for borrower
       await createTransaction({
         user_id: borrower_id,
         type: 'debit',
@@ -264,6 +280,13 @@ router.post('/repayment', async (req: Request, res: Response) => {
           ? `Repayment made for trip ${trip_id}: ₹${principalNum.toFixed(2)} principal + ₹${interestAmount.toFixed(2)} interest`
           : `Loan repayment: ₹${principalNum.toFixed(2)} principal + ₹${interestAmount.toFixed(2)} interest`,
         balance_after: borrowerWallet.balance,
+      });
+
+      console.log('✅ [REPAYMENT] Borrower wallet updated:', {
+        borrower_id,
+        old_balance: borrowerWallet.balance + totalRepayment,
+        deducted: totalRepayment,
+        new_balance: borrowerWallet.balance
       });
     }
 
@@ -276,6 +299,7 @@ router.post('/repayment', async (req: Request, res: Response) => {
     res.json({
       success: true,
       lender_wallet: lenderWallet,
+      borrower_wallet: borrowerWallet,
       repayment_details: {
         principal: principalNum,
         interest: interestAmount,
