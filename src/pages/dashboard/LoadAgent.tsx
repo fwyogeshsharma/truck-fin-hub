@@ -1815,7 +1815,7 @@ const LoadAgentDashboard = () => {
                                   {trip.origin} → {trip.destination}
                                 </h3>
                                 <p className="text-sm text-muted-foreground">
-                                  {trip.loadType} • {trip.distance}km • ₹{(trip.amount / 1000).toFixed(0)}K
+                                  {trip.loadType} • {trip.distance} km • ₹{(trip.amount / 1000).toFixed(0)}K
                                 </p>
                               </div>
                             </div>
@@ -1943,14 +1943,14 @@ const LoadAgentDashboard = () => {
                               <p className="font-medium">
                                 {trip.origin} → {trip.destination}
                               </p>
-                              <p className="text-xs text-muted-foreground">{trip.distance}km</p>
+                              <p className="text-xs text-muted-foreground">{trip.distance} km</p>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div>
                             <p className="font-medium">{trip.loadType}</p>
-                            <p className="text-xs text-muted-foreground">{trip.weight}kg</p>
+                            <p className="text-xs text-muted-foreground">{trip.weight} kg</p>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -2187,7 +2187,7 @@ const LoadAgentDashboard = () => {
                                     )}
                                   </div>
                                   <p className="text-sm text-muted-foreground">
-                                    {trip.loadType} • {trip.weight}kg • {trip.distance}km
+                                    {trip.loadType} • {trip.weight} kg • {trip.distance} km
                                   </p>
                                 </div>
 
@@ -2333,7 +2333,7 @@ const LoadAgentDashboard = () => {
                                     </Badge>
                                   </div>
                                   <p className="text-sm text-muted-foreground">
-                                    {trip.loadType} • {trip.weight}kg • {trip.distance}km
+                                    {trip.loadType} • {trip.weight} kg • {trip.distance} km
                                   </p>
                                 </div>
 
@@ -3431,7 +3431,7 @@ print(response.json())`;
                       {selectedTrip.origin} → {selectedTrip.destination}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {selectedTrip.distance}km
+                      {selectedTrip.distance} km
                     </p>
                   </div>
 
@@ -3439,7 +3439,7 @@ print(response.json())`;
                     <p className="text-sm text-muted-foreground mb-1">Load Type</p>
                     <p className="font-semibold">{selectedTrip.loadType}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {selectedTrip.weight}kg
+                      {selectedTrip.weight} kg
                     </p>
                   </div>
 

@@ -1013,8 +1013,8 @@ const InvestmentOpportunities = () => {
                                   </p>
                                 </div>
                                 <p className="text-xs text-muted-foreground truncate">
-                                  {trip.loadType} • {trip.weight}kg •{" "}
-                                  {trip.distance}km
+                                  {trip.loadType} • {trip.weight} kg •{" "}
+                                  {trip.distance} km
                                 </p>
                               </div>
 
@@ -1187,7 +1187,7 @@ const InvestmentOpportunities = () => {
                                 </p>
                               </div>
                               <p className="text-[10px] text-muted-foreground truncate">
-                                {trip.loadType} • {trip.weight}kg
+                                {trip.loadType} • {trip.weight} kg
                               </p>
                             </div>
                           </div>
@@ -1448,7 +1448,7 @@ const InvestmentOpportunities = () => {
                             </p>
                           </div>
                           <p className="text-xs text-muted-foreground truncate">
-                            {trip.loadType} • {trip.weight}kg • {trip.distance}
+                            {trip.loadType} • {trip.weight} kg • {trip.distance}
                             km
                           </p>
                         </div>
@@ -2008,8 +2008,8 @@ const InvestmentOpportunities = () => {
                               </CardTitle>
                             </div>
                             <CardDescription>
-                              {trip.loadType} • {trip.weight}kg •{" "}
-                              {trip.distance}km
+                              {trip.loadType} • {trip.weight} kg •{" "}
+                              {trip.distance} km
                             </CardDescription>
                             {trip.loadOwnerLogo && (
                               <div className="flex items-center gap-2 mt-3">
@@ -2777,8 +2777,8 @@ const InvestmentOpportunities = () => {
                         </h4>
                         <p className="text-xs text-muted-foreground">
                           {selectedTripForBid.loadType} •{" "}
-                          {selectedTripForBid.weight}kg •{" "}
-                          {selectedTripForBid.distance}km
+                          {selectedTripForBid.weight} kg •{" "}
+                          {selectedTripForBid.distance} km
                         </p>
                         <div className="flex items-center gap-2 mt-2">
                           <span className="text-xs text-muted-foreground">

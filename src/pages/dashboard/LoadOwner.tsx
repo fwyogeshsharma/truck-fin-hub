@@ -345,7 +345,7 @@ const LoadOwnerDashboard = () => {
                       </span>
                     </div>
                     {/* Trip details: load type, weight, and distance */}
-                    <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight}kg • {trip.distance}km</p>
+                    <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg • {trip.distance} km</p>
                   </div>
                   {/* Financial information section */}
                   <div className="text-right">
@@ -418,7 +418,7 @@ const LoadOwnerDashboard = () => {
                                     )}
                                   </div>
                                   <p className="text-sm text-muted-foreground">
-                                    {trip.loadType} • {trip.weight}kg • {trip.distance}km
+                                    {trip.loadType} • {trip.weight} kg • {trip.distance} km
                                   </p>
                                 </div>
 
@@ -552,7 +552,7 @@ const LoadOwnerDashboard = () => {
                                     </Badge>
                                   </div>
                                   <p className="text-sm text-muted-foreground">
-                                    {trip.loadType} • {trip.weight}kg • {trip.distance}km
+                                    {trip.loadType} • {trip.weight} kg • {trip.distance} km
                                   </p>
                                 </div>
 

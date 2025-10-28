@@ -269,7 +269,7 @@ const TransporterDashboard = () => {
                       <MapPin className="h-4 w-4 text-primary" />
                       <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
                     </div>
-                    <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight}kg • {trip.distance}km</p>
+                    <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg • {trip.distance} km</p>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
@@ -302,7 +302,7 @@ const TransporterDashboard = () => {
                       <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
                       <span className="text-xs px-2 py-1 rounded-full bg-secondary/20 text-secondary">In Transit</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight}kg</p>
+                    <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg</p>
                   </div>
                   <Button variant="outline" onClick={() => handleCompleteTrip(trip.id)}>
                     Mark Complete

@@ -210,7 +210,7 @@ const MyInvestments = () => {
                 </CardTitle>
               </div>
               <CardDescription>
-                {trip.loadType} • {trip.weight}kg • {trip.distance}km
+                {trip.loadType} • {trip.weight} kg • {trip.distance} km
               </CardDescription>
               <p className="text-sm text-muted-foreground mt-1">
                 Borrower: {toTitleCase(trip.loadOwnerName)}
@@ -350,7 +350,7 @@ const MyInvestments = () => {
                 </CardTitle>
               </div>
               <CardDescription>
-                {trip.loadType} • {trip.weight}kg • {trip.distance}km
+                {trip.loadType} • {trip.weight} kg • {trip.distance} km
               </CardDescription>
               <p className="text-sm text-muted-foreground mt-1">
                 Borrower: {toTitleCase(trip.loadOwnerName)}

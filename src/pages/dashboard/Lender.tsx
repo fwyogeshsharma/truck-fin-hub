@@ -659,7 +659,7 @@ const LenderDashboard = () => {
                         <div>
                           <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
                           <p className="text-sm text-muted-foreground">
-                            {trip.loadType} • {trip.distance}km
+                            {trip.loadType} • {trip.distance} km
                           </p>
                         </div>
                       </div>
@@ -755,7 +755,7 @@ const LenderDashboard = () => {
                         <div>
                           <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
                           <p className="text-sm text-muted-foreground">
-                            {trip.loadType} • {trip.distance}km
+                            {trip.loadType} • {trip.distance} km
                           </p>
                         </div>
                       </div>
