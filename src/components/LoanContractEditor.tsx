@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Upload, Save, Eye } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { FileText, Upload, Save, Eye, Info, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface LoanContractEditorProps {
@@ -52,9 +53,14 @@ const LoanContractEditor = ({
   const [customTerms, setCustomTerms] = useState<string>('');
 
   const [contract, setContract] = useState<LoanContract>({
-    termsAndConditions: `LOAN AGREEMENT
+    termsAndConditions: `THREE-PARTY LOAN AGREEMENT
 
-This Loan Agreement ("Agreement") is entered into as of ${new Date().toLocaleDateString()} between the Lender and the Borrower for the purpose of financing a transportation trip.
+This Loan Agreement ("Agreement") is entered into as of ${new Date().toLocaleDateString()} between the Lender, the Borrower, and LogiFin (Platform) for the purpose of financing a transportation trip.
+
+PARTIES TO THIS AGREEMENT:
+1. LENDER ("First Party"): The party providing the loan funds
+2. BORROWER ("Second Party"): The party receiving the loan funds (Load Agent/Transporter)
+3. LOGIFIN ("Third Party/Platform"): Digital platform facilitating this transaction as an INTERMEDIARY ONLY
 
 LOAN DETAILS:
 - Loan Amount: ₹${tripAmount.toLocaleString()}
@@ -62,12 +68,20 @@ LOAN DETAILS:
 - Maturity Period: ${maturityDays} days
 - Repayment Date: ${new Date(Date.now() + maturityDays * 24 * 60 * 60 * 1000).toLocaleDateString()}
 
-PARTIES:
-1. LENDER: The party providing the loan funds
-2. BORROWER: The party receiving the loan funds (Load Agent/Transporter)
-
 PURPOSE:
-The loan is provided specifically for financing a transportation trip as detailed in the trip document referenced in this agreement.`,
+The loan is provided specifically for financing a transportation trip as detailed in the trip document referenced in this agreement.
+
+⚠️ IMPORTANT DISCLAIMER - PLATFORM LIABILITY:
+LogiFin acts solely as a digital intermediary platform connecting lenders and borrowers. LogiFin:
+• IS NOT a party to the financial transaction between Lender and Borrower
+• DOES NOT provide investment advice or guarantee any returns
+• IS NOT responsible for any financial losses, defaults, or disputes
+• DOES NOT verify creditworthiness or guarantee loan repayment
+• Acts only as a technology platform facilitating peer-to-peer lending
+
+This contract is EXCLUSIVELY between the LENDER and BORROWER. Any legal disputes, claims, or litigation arising from this agreement shall be between the Lender and Borrower only. LogiFin shall NOT be made a party to any legal proceedings, arbitration, or dispute resolution related to this loan agreement.
+
+The Lender and Borrower acknowledge that they enter into this agreement at their own risk and discretion, and LogiFin bears no liability for the performance or non-performance of obligations under this contract.`,
 
     interestRateClause: `INTEREST RATE CLAUSE:
 
@@ -116,7 +130,18 @@ The loan is provided specifically for financing a transportation trip as detaile
    - Reporting to credit bureaus
    - Seeking attachment of assets
 
-4. The Borrower shall be liable for all legal costs and attorney fees incurred in collection efforts.`,
+4. The Borrower shall be liable for all legal costs and attorney fees incurred in collection efforts.
+
+5. DISPUTE RESOLUTION AND LEGAL PROCEEDINGS:
+   Any disputes, claims, or legal proceedings arising from this loan agreement shall be EXCLUSIVELY between the LENDER (First Party) and BORROWER (Second Party) only.
+
+   LogiFin (Third Party/Platform) shall NOT be:
+   - Named as a defendant or respondent in any legal proceedings
+   - Held liable for any losses, defaults, or damages
+   - Required to provide testimony or documentation beyond platform transaction records
+   - Responsible for enforcement of this contract
+
+   Both Lender and Borrower explicitly agree to indemnify and hold harmless LogiFin, its officers, employees, and affiliates from any claims, demands, or legal actions related to this loan agreement.`,
 
     customClauses: [],
     lenderSignature: '',
@@ -345,7 +370,57 @@ Examples:
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="signature">Upload Your Signature</Label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Label htmlFor="signature">Upload Your Signature</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-5 w-5 p-0 hover:bg-transparent">
+                          <Info className="h-4 w-4 text-blue-600 hover:text-blue-700" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80" align="start">
+                        <div className="space-y-3">
+                          <div className="flex items-start gap-2">
+                            <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="font-semibold text-sm">Acceptable Signature Formats</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                We accept the following types of signatures:
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2 pl-7">
+                            <div className="text-sm">
+                              <p className="font-medium">✓ Digital Signature</p>
+                              <p className="text-xs text-muted-foreground">Created using signature pad or tablet</p>
+                            </div>
+
+                            <div className="text-sm">
+                              <p className="font-medium">✓ Scanned Signature</p>
+                              <p className="text-xs text-muted-foreground">Clear scan of your handwritten signature on white paper</p>
+                            </div>
+
+                            <div className="text-sm">
+                              <p className="font-medium">✓ Photo of Signature</p>
+                              <p className="text-xs text-muted-foreground">High-quality photo with good lighting and contrast</p>
+                            </div>
+                          </div>
+
+                          <div className="border-t pt-2 space-y-1">
+                            <p className="text-xs font-semibold">Requirements:</p>
+                            <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
+                              <li>Image format: JPG, PNG, or similar</li>
+                              <li>Maximum file size: 2MB</li>
+                              <li>Clear and legible</li>
+                              <li>No background clutter</li>
+                              <li>Matches your legal name</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                   <div className="mt-2 flex items-center gap-4">
                     <Button variant="outline" onClick={() => document.getElementById('signature')?.click()}>
                       <Upload className="h-4 w-4 mr-2" />
