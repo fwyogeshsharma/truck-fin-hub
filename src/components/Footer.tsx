@@ -129,20 +129,20 @@ const Footer = () => {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="mailto:support@logifin.com"
+                  href="mailto:support@rollingradius.com"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
                 >
                   <Mail className="h-4 w-4" />
-                  support@logifin.com
+                  support@rollingradius.com
                 </a>
               </li>
               <li>
                 <a
-                  href="tel:+911234567890"
+                  href="tel:+919024822434"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
                 >
                   <Phone className="h-4 w-4" />
-                  +91 123 456 7890
+                  +91 90248-22434
                 </a>
               </li>
               <li className="text-sm text-muted-foreground">
@@ -160,21 +160,20 @@ const Footer = () => {
 
           {/* Address & Office */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Our Office</h3>
+            <h3 className="text-lg font-semibold text-foreground">Registered Office</h3>
             <div className="space-y-3">
               <div className="text-sm text-muted-foreground flex gap-2">
                 <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-foreground">LogiFin Headquarters</p>
-                  <p>123, Logistics Plaza</p>
-                  <p>Transport Nagar, Sector 10</p>
-                  <p>Gurugram, Haryana 122001</p>
-                  <p>India</p>
+                  <p>121 - 122, Metropolis Tower</p>
+                  <p>Purani Chungi, Ajmer Road</p>
+                  <p>Jaipur-302019</p>
+                  <p>Rajasthan, India</p>
                 </div>
               </div>
               <div className="pt-2">
                 <a
-                  href="https://maps.google.com"
+                  href="https://www.google.com/maps/dir//Manglam+Metropolis+Tower,+238,+Purani+Chungi,+Panchsheel+Colony,+Jaipur,+Rajasthan+302019/@26.8960422,75.6733714,12z/data=!4m8!4m7!1m0!1m5!1m1!1s0x396db48beb718be7:0x403ceb9d0f59d3f5!2m2!1d75.7557729!2d26.8960661?entry=ttu&g_ep=EgoyMDI1MTAyMi4wIKXMDSoASAFQAw%3D%3D"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-primary hover:underline"
