@@ -9,6 +9,7 @@ import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
+import { CityCombobox } from "@/components/CityCombobox";
 
 const CreateTrip = () => {
   const navigate = useNavigate();
@@ -24,19 +25,13 @@ const CreateTrip = () => {
     amount: "",
   });
 
-  const capitalizeFirstLetter = (text: string): string => {
-    return text.charAt(0).toUpperCase() + text.slice(1);
-  };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
 
-    // Capitalize first letter for origin and destination fields
-    if (name === 'origin' || name === 'destination') {
-      setFormData({ ...formData, [name]: capitalizeFirstLetter(value) });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+  const handleCityChange = (field: 'origin' | 'destination', value: string) => {
+    setFormData({ ...formData, [field]: value });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -74,25 +69,21 @@ const CreateTrip = () => {
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="origin">Origin City</Label>
-                  <Input
+                  <CityCombobox
                     id="origin"
-                    name="origin"
-                    placeholder="e.g., Mumbai, Maharashtra"
                     value={formData.origin}
-                    onChange={handleChange}
-                    required
+                    onChange={(value) => handleCityChange('origin', value)}
+                    placeholder="Select origin city..."
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="destination">Destination City</Label>
-                  <Input
+                  <CityCombobox
                     id="destination"
-                    name="destination"
-                    placeholder="e.g., Delhi, NCR"
                     value={formData.destination}
-                    onChange={handleChange}
-                    required
+                    onChange={(value) => handleCityChange('destination', value)}
+                    placeholder="Select destination city..."
                   />
                 </div>
               </div>
