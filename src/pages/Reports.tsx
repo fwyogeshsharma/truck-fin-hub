@@ -211,7 +211,7 @@ const Reports = () => {
                 return (
                   <Card
                     key={report.type}
-                    className="group hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 cursor-pointer border-2 hover:border-primary/50 relative overflow-hidden"
+                    className="group hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 cursor-pointer border-2 hover:border-primary/50 relative overflow-hidden flex flex-col"
                   >
                     {/* Background gradient effect on hover */}
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -237,8 +237,8 @@ const Reports = () => {
                         {report.description}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="relative">
-                      <div className="space-y-3">
+                    <CardContent className="relative flex-1 flex flex-col">
+                      <div className="flex-1 space-y-3">
                         <div>
                           <p className="text-xs text-muted-foreground mb-2">Key Metrics:</p>
                           <div className="flex flex-wrap gap-1">
@@ -254,25 +254,25 @@ const Reports = () => {
                             )}
                           </div>
                         </div>
-                        <Button
-                          onClick={() => handleGenerateReport(report.type)}
-                          className="w-full"
-                          size="sm"
-                          disabled={isGenerating}
-                        >
-                          {isGenerating ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="h-4 w-4 mr-2" />
-                              Generate Report
-                            </>
-                          )}
-                        </Button>
                       </div>
+                      <Button
+                        onClick={() => handleGenerateReport(report.type)}
+                        className="w-full mt-3"
+                        size="sm"
+                        disabled={isGenerating}
+                      >
+                        {isGenerating ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Generate Report
+                          </>
+                        )}
+                      </Button>
                     </CardContent>
                   </Card>
                 );
