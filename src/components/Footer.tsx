@@ -10,8 +10,10 @@ import {
   Twitter,
   Linkedin,
   Instagram,
-  Youtube
+  Youtube,
+  Cookie
 } from "lucide-react";
+import { resetCookieConsent } from "./CookieConsent";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -219,6 +221,13 @@ const Footer = () => {
               >
                 Cookies
               </Link>
+              <button
+                onClick={resetCookieConsent}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+              >
+                <Cookie className="h-3 w-3" />
+                Cookie Settings
+              </button>
             </div>
           </div>
         </div>

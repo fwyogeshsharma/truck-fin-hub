@@ -37,6 +37,7 @@ import Defaulters from "./pages/Defaulters";
 import NotFound from "./pages/NotFound";
 import GettingStarted from "./pages/help/GettingStarted";
 import FAQ from "./pages/FAQ";
+import CookieConsent from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => {
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <CookieConsent />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
