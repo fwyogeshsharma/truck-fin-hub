@@ -2250,7 +2250,7 @@ const LoadAgentDashboard = () => {
                                   ) : (
                                     <>
                                       <IndianRupee className="h-4 w-4 mr-2" />
-                                      Close Loan - ₹{(totalRepayment / 1000).toFixed(2)}K
+                                      Close Loan - {(totalRepayment / 1000).toFixed(2)}K
                                     </>
                                   )}
                                 </Button>
@@ -2398,7 +2398,7 @@ const LoadAgentDashboard = () => {
                                       <div className="flex items-center gap-2">
                                         <IndianRupee className="h-6 w-6 text-green-600" />
                                         <p className="text-3xl font-bold text-green-700 dark:text-green-400">
-                                          ₹{(total / 1000).toFixed(2)}K
+                                          {(total / 1000).toFixed(2)}K
                                         </p>
                                       </div>
                                     </div>
@@ -4052,7 +4052,7 @@ print(response.json())`;
                         </div>
                         <div className="flex items-center gap-2">
                           <IndianRupee className="h-8 w-8 text-primary" />
-                          <p className="text-4xl md:text-5xl font-bold text-primary">₹{(actualTotalRepayment / 1000).toFixed(2)}K</p>
+                          <p className="text-4xl md:text-5xl font-bold text-primary">{(actualTotalRepayment / 1000).toFixed(2)}K</p>
                         </div>
                       </div>
                     </div>

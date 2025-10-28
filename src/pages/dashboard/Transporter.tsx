@@ -163,7 +163,6 @@ const TransporterDashboard = () => {
               {/* Total Earnings */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <IndianRupee className="h-4 w-4" />
                   <span>Total Earnings</span>
                 </div>
                 <p className="text-2xl font-bold text-primary">
@@ -221,7 +220,6 @@ const TransporterDashboard = () => {
             {repaidTrips.length > 0 && (
               <div className="mt-6 pt-6 border-t">
                 <h4 className="font-semibold mb-4 flex items-center gap-2">
-                  <IndianRupee className="h-4 w-4" />
                   Interest Paid Breakdown
                 </h4>
                 <div className="space-y-3">

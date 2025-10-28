@@ -2312,7 +2312,6 @@ const InvestmentOpportunities = () => {
                     <CardContent className="space-y-4">
                       <div className="grid md:grid-cols-4 gap-4">
                         <div className="flex items-center gap-2">
-                          <IndianRupee className="h-4 w-4 text-muted-foreground" />
                           <div>
                             <p className="text-xs text-muted-foreground">
                               Trip Value
@@ -2429,9 +2428,10 @@ const InvestmentOpportunities = () => {
                           <div className="flex gap-2">
                             <Button
                               className="bg-gradient-primary flex-1"
-                              onClick={() =>
-                                handleInvest(trip.id, trip.amount, tripRate)
-                              }
+                              onClick={() => {
+                                const tripWithCustomRate = { ...trip, interestRate: tripRate };
+                                handleOpenBidDialog(tripWithCustomRate);
+                              }}
                             >
                               Confirm Bid
                             </Button>

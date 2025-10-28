@@ -230,7 +230,6 @@ const MyInvestments = () => {
             </p>
             <div className="grid md:grid-cols-3 gap-4 mt-4">
               <div className="flex items-center gap-2">
-                <IndianRupee className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">Escrowed Amount</p>
                   <p className="font-semibold">₹{(investment.amount / 1000).toFixed(0)}K</p>
@@ -379,7 +378,6 @@ const MyInvestments = () => {
           {/* Investment Details */}
           <div className="grid md:grid-cols-4 gap-4">
             <div className="flex items-center gap-2">
-              <IndianRupee className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">Invested Amount</p>
                 <p className="font-semibold">₹{(investment.amount / 1000).toFixed(0)}K</p>

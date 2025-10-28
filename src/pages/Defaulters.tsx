@@ -162,7 +162,6 @@ const Defaulters = () => {
             <CardContent className="pt-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <IndianRupee className="h-4 w-4 text-orange-600" />
                   <span>Total Amount Due</span>
                 </div>
                 <p className="text-3xl font-bold text-orange-600">
@@ -179,7 +178,6 @@ const Defaulters = () => {
             <CardContent className="pt-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <IndianRupee className="h-4 w-4 text-red-600" />
                   <span>Interest Pending</span>
                 </div>
                 <p className="text-3xl font-bold text-red-600">
