@@ -117,3 +117,28 @@ export const parseCurrency = (formattedAmount: string): number => {
 export const formatPercentage = (value: number, decimals: number = 2): string => {
   return parseFloat(value.toFixed(decimals)).toString();
 };
+
+/**
+ * Format currency for transporter view
+ * Shows full number below 100,000, uses K notation for 100,000+
+ *
+ * @param amount - Amount in rupees
+ * @returns Formatted currency string
+ *
+ * Examples:
+ * - 5000 → "₹5,000"
+ * - 50000 → "₹50,000"
+ * - 95000 → "₹95,000"
+ * - 100000 → "₹100K"
+ * - 500000 → "₹500K"
+ * - 1500000 → "₹1500K"
+ */
+export const formatCurrencyForTransporter = (amount: number): string => {
+  // Below 100,000: Show full number with Indian formatting
+  if (amount < 100000) {
+    return formatCurrency(amount);
+  }
+
+  // 100,000 and above: Use K notation
+  return `₹${(amount / 1000).toFixed(0)}K`;
+};

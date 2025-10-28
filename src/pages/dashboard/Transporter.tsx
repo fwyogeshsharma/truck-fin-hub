@@ -5,6 +5,7 @@ import { TruckIcon, CheckCircle2, Clock, MapPin } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data, Trip, Wallet } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
+import { formatCurrencyForTransporter } from "@/lib/currency";
 
 const TransporterDashboard = () => {
   const user = auth.getCurrentUser();
@@ -151,7 +152,7 @@ const TransporterDashboard = () => {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="font-semibold text-secondary">₹{(trip.amount / 1000).toFixed(0)}K</p>
+                      <p className="font-semibold text-secondary">{formatCurrencyForTransporter(trip.amount)}</p>
                       <p className="text-xs text-muted-foreground">Payment</p>
                     </div>
                     <Button className="bg-gradient-primary" onClick={() => handleAcceptTrip(trip.id)}>
