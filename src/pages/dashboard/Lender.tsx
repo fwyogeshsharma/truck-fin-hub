@@ -38,6 +38,7 @@ const LenderDashboard = () => {
   const [approvingUserId, setApprovingUserId] = useState<string | null>(null);
   const [selectedTripForDocs, setSelectedTripForDocs] = useState<Trip | null>(null);
   const [documentViewOpen, setDocumentViewOpen] = useState(false);
+  const [viewingDocument, setViewingDocument] = useState<{ url: string; name: string } | null>(null);
   const [showFinancialQuestionnaire, setShowFinancialQuestionnaire] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [questionnaireShown, setQuestionnaireShown] = useState(false);
@@ -890,7 +891,7 @@ const LenderDashboard = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => window.open(document, '_blank')}
+                            onClick={() => setViewingDocument({ url: document, name: docLabels[docType as keyof typeof docLabels] })}
                           >
                             <Eye className="h-3 w-3 mr-1" />
                             View
@@ -915,6 +916,28 @@ const LenderDashboard = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Document Viewer Dialog */}
+      <Dialog open={viewingDocument !== null} onOpenChange={() => setViewingDocument(null)}>
+        <DialogContent className="max-w-5xl h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>{viewingDocument?.name || 'Document'}</DialogTitle>
+            <DialogDescription>
+              View and download document
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 h-full overflow-hidden">
+            {viewingDocument && (
+              <iframe
+                src={viewingDocument.url}
+                className="w-full h-full border-0 rounded"
+                title={viewingDocument.name}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
