@@ -1,13 +1,16 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import DashboardLayout from "@/components/DashboardLayout";
-import { Search, HelpCircle, TruckIcon, Wallet, UserCircle, IndianRupee, FileText, Shield, Mail, Phone } from "lucide-react";
+import { Search, HelpCircle, TruckIcon, Wallet, UserCircle, IndianRupee, FileText, Shield, Mail, Phone, ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import Footer from "@/components/Footer";
 
 const FAQ = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
 
   const faqCategories = {
@@ -208,15 +211,30 @@ const FAQ = () => {
   );
 
   return (
-    <DashboardLayout role="transporter">
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">Frequently Asked Questions</h1>
-          <p className="text-muted-foreground mt-1">
-            Find answers to common questions about LogiFin platform
-          </p>
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex flex-col">
+      {/* Header */}
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(-1)}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">Frequently Asked Questions</h1>
+              <p className="text-sm text-muted-foreground">Find answers to common questions about LogiFin</p>
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
         {/* Search Bar */}
         <Card>
@@ -347,7 +365,9 @@ const FAQ = () => {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+
+      <Footer />
+    </div>
   );
 };
 
