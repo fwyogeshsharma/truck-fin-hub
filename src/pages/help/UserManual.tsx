@@ -35,24 +35,23 @@ const UserManual = () => {
       {/* Main Content */}
       <div className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-        <Tabs defaultValue="borrower" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="borrower">Borrower</TabsTrigger>
-            <TabsTrigger value="lender">Lender</TabsTrigger>
+        <Tabs defaultValue="transporter" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="transporter">Transporter</TabsTrigger>
+            <TabsTrigger value="lender">Lender</TabsTrigger>
             <TabsTrigger value="common">Common Features</TabsTrigger>
           </TabsList>
 
-          {/* BORROWER TAB */}
-          <TabsContent value="borrower" className="space-y-6">
+          {/* TRANSPORTER TAB */}
+          <TabsContent value="transporter" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TruckIcon className="h-6 w-6 text-blue-600" />
-                  Borrower Guide
+                  Transporter Guide
                 </CardTitle>
                 <CardDescription>
-                  Complete guide for borrowers who need financing for their transportation business
+                  Complete guide for transporters who need financing for their transportation business
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -312,123 +311,6 @@ const UserManual = () => {
             </Card>
           </TabsContent>
 
-          {/* TRANSPORTER TAB */}
-          <TabsContent value="transporter" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TruckIcon className="h-6 w-6 text-purple-600" />
-                  Transporter Guide
-                </CardTitle>
-                <CardDescription>
-                  Complete guide for transporters who accept and complete trips
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Accordion type="single" collapsible className="w-full">
-
-                  {/* Dashboard */}
-                  <AccordionItem value="dashboard">
-                    <AccordionTrigger>Dashboard Overview</AccordionTrigger>
-                    <AccordionContent className="space-y-3 text-muted-foreground">
-                      <p>Your transporter dashboard shows:</p>
-                      <ul className="list-disc list-inside space-y-2">
-                        <li><strong>Active Trips:</strong> Trips you're currently transporting</li>
-                        <li><strong>Completed This Month:</strong> Successfully delivered trips</li>
-                        <li><strong>Pending Acceptance:</strong> Trips available for you to accept</li>
-                        <li><strong>Total Earnings:</strong> Your earnings from completed trips</li>
-                      </ul>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  {/* Accepting Trip */}
-                  <AccordionItem value="accept">
-                    <AccordionTrigger>Accepting a Trip</AccordionTrigger>
-                    <AccordionContent className="space-y-3 text-muted-foreground">
-                      <ol className="list-decimal list-inside space-y-3">
-                        <li>View <strong>"Available Trips"</strong> section on your dashboard</li>
-                        <li>Review trip details carefully:
-                          <ul className="list-disc list-inside ml-6 mt-2 space-y-1">
-                            <li>Route (Origin → Destination)</li>
-                            <li>Load type</li>
-                            <li>Weight and distance</li>
-                            <li>Payment amount</li>
-                            <li>Expected delivery timeframe</li>
-                          </ul>
-                        </li>
-                        <li>Click <strong>"Accept"</strong> to commit to the trip</li>
-                        <li>Trip status changes to <strong>"In Transit"</strong></li>
-                      </ol>
-                      <p className="mt-4 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded">
-                        <strong>Important:</strong> Only accept trips you can realistically complete. Canceling after acceptance may affect your rating.
-                      </p>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  {/* Completing Trip */}
-                  <AccordionItem value="complete">
-                    <AccordionTrigger>Completing a Trip</AccordionTrigger>
-                    <AccordionContent className="space-y-3 text-muted-foreground">
-                      <ol className="list-decimal list-inside space-y-3">
-                        <li>Go to <strong>"Your Active Trips"</strong> section</li>
-                        <li>Once delivery is completed, find the trip</li>
-                        <li>Upload all required documents (if not already uploaded)</li>
-                        <li>Click <strong>"Mark Complete"</strong></li>
-                        <li>Trip status changes to <strong>"Completed"</strong></li>
-                        <li>Payment will be credited to your wallet after borrower confirmation</li>
-                      </ol>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  {/* Documents */}
-                  <AccordionItem value="documents">
-                    <AccordionTrigger>Required Documents</AccordionTrigger>
-                    <AccordionContent className="space-y-3 text-muted-foreground">
-                      <p>For each trip, you need to upload the following documents:</p>
-                      <ul className="space-y-3">
-                        <li><strong>E-Way Bill:</strong> Electronic waybill required for goods movement</li>
-                        <li><strong>Bilty (Lorry Receipt):</strong> Consignment note issued by the transporter</li>
-                        <li><strong>Advance Invoice:</strong> Invoice issued before/during transport</li>
-                        <li><strong>POD (Proof of Delivery):</strong> Signed delivery confirmation from recipient</li>
-                        <li><strong>Final Invoice:</strong> Final billing document</li>
-                        <li><strong>RC Copy:</strong> Vehicle Registration Certificate copy</li>
-                      </ul>
-                      <p className="mt-4 bg-muted p-3 rounded">
-                        Upload documents promptly to avoid delays in payment processing.
-                      </p>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  {/* Payment */}
-                  <AccordionItem value="payment">
-                    <AccordionTrigger>Payment Information</AccordionTrigger>
-                    <AccordionContent className="space-y-3 text-muted-foreground">
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="font-semibold text-foreground mb-2">Currency Display Format</h4>
-                          <ul className="list-disc list-inside space-y-1">
-                            <li>Amounts below ₹1,00,000: Shown in full (e.g., ₹50,000)</li>
-                            <li>Amounts ₹1,00,000+: Shown with K notation (e.g., ₹500K for ₹5,00,000)</li>
-                          </ul>
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-foreground mb-2">Payment Process</h4>
-                          <ol className="list-decimal list-inside space-y-1">
-                            <li>Complete the trip and upload documents</li>
-                            <li>Mark trip as complete</li>
-                            <li>Wait for borrower/load owner confirmation</li>
-                            <li>Payment credited to your wallet</li>
-                            <li>Withdraw funds to your bank account</li>
-                          </ol>
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                </Accordion>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {/* COMMON FEATURES TAB */}
           <TabsContent value="common" className="space-y-6">

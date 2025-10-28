@@ -47,21 +47,16 @@ const GettingStarted = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 gap-4">
               <div className="p-4 border rounded-lg">
                 <TruckIcon className="h-8 w-8 text-blue-600 mb-2" />
-                <h3 className="font-semibold mb-1">Borrowers</h3>
+                <h3 className="font-semibold mb-1">Transporters</h3>
                 <p className="text-sm text-muted-foreground">Get financing for trips and manage repayments</p>
               </div>
               <div className="p-4 border rounded-lg">
                 <Wallet className="h-8 w-8 text-green-600 mb-2" />
                 <h3 className="font-semibold mb-1">Lenders</h3>
                 <p className="text-sm text-muted-foreground">Invest in trips and earn returns</p>
-              </div>
-              <div className="p-4 border rounded-lg">
-                <TruckIcon className="h-8 w-8 text-purple-600 mb-2" />
-                <h3 className="font-semibold mb-1">Transporters</h3>
-                <p className="text-sm text-muted-foreground">Accept and complete trips</p>
               </div>
             </div>
           </CardContent>
@@ -87,7 +82,7 @@ const GettingStarted = () => {
                   </h3>
                   <p className="text-sm text-muted-foreground mb-2">
                     Visit the registration page and fill in your details including name, email, phone number, password,
-                    company name, and select your role (Borrower/Lender/Transporter).
+                    company name, and select your role (Transporter/Lender).
                   </p>
                   <Button size="sm" onClick={() => navigate('/auth')}>Go to Registration</Button>
                 </div>
@@ -156,8 +151,7 @@ const GettingStarted = () => {
                     Start Using the Platform
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    You're all set! Borrowers can create trips, Lenders can browse investment opportunities,
-                    and Transporters can accept and complete trips.
+                    You're all set! Transporters can create trips and manage financing, while Lenders can browse investment opportunities and fund trips.
                   </p>
                 </div>
               </div>
@@ -174,12 +168,12 @@ const GettingStarted = () => {
           <CardContent>
             <Accordion type="single" collapsible className="w-full">
 
-              {/* Borrower Guide */}
-              <AccordionItem value="borrower">
+              {/* Transporter Guide */}
+              <AccordionItem value="transporter">
                 <AccordionTrigger className="text-lg font-semibold">
                   <div className="flex items-center gap-2">
                     <TruckIcon className="h-5 w-5 text-blue-600" />
-                    Borrower Guide
+                    Transporter Guide
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="space-y-4 pt-4">
@@ -258,45 +252,6 @@ const GettingStarted = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              {/* Transporter Guide */}
-              <AccordionItem value="transporter">
-                <AccordionTrigger className="text-lg font-semibold">
-                  <div className="flex items-center gap-2">
-                    <TruckIcon className="h-5 w-5 text-purple-600" />
-                    Transporter Guide
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="space-y-4 pt-4">
-                  <div>
-                    <h4 className="font-semibold mb-2">Accepting a Trip</h4>
-                    <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                      <li>View "Available Trips" section on your dashboard</li>
-                      <li>Review trip details: Route, Load type, Weight, Distance, Payment</li>
-                      <li>Click "Accept" to commit to the trip</li>
-                      <li>Trip status changes to "In Transit"</li>
-                    </ol>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold mb-2">Completing a Trip</h4>
-                    <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                      <li>Go to "Your Active Trips"</li>
-                      <li>Find the completed delivery</li>
-                      <li>Click "Mark Complete"</li>
-                      <li>Payment will be credited to your wallet</li>
-                    </ol>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold mb-2">Required Documents</h4>
-                    <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                      <li>E-Way Bill</li>
-                      <li>Bilty (Lorry Receipt)</li>
-                      <li>POD (Proof of Delivery)</li>
-                      <li>Relevant invoices</li>
-                    </ul>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-
             </Accordion>
           </CardContent>
         </Card>
@@ -332,11 +287,11 @@ const GettingStarted = () => {
             <CardTitle>Best Practices</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <h3 className="font-semibold mb-3 flex items-center gap-2">
                   <TruckIcon className="h-5 w-5 text-blue-600" />
-                  For Borrowers
+                  For Transporters
                 </h3>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
@@ -353,6 +308,10 @@ const GettingStarted = () => {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-green-600" />
+                    Upload documents promptly
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-green-600" />
                     Maintain sufficient wallet balance
                   </li>
                 </ul>
@@ -365,11 +324,11 @@ const GettingStarted = () => {
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-green-600" />
-                    Diversify across multiple borrowers
+                    Diversify across multiple transporters
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-green-600" />
-                    Review borrower history before investing
+                    Review transporter history before investing
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-green-600" />
@@ -378,30 +337,6 @@ const GettingStarted = () => {
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-green-600" />
                     Monitor document uploads
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <TruckIcon className="h-5 w-5 text-purple-600" />
-                  For Transporters
-                </h3>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-green-600" />
-                    Accept only trips you can complete
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-green-600" />
-                    Upload documents promptly
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-green-600" />
-                    Mark trips complete immediately
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-green-600" />
-                    Maintain good communication
                   </li>
                 </ul>
               </div>

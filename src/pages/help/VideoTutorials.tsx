@@ -18,12 +18,12 @@ const VideoTutorials = () => {
       category: "Beginner"
     },
     {
-      id: "borrower",
-      title: "Borrower Guide - Creating Trip Requests",
+      id: "transporter",
+      title: "Transporter Guide - Creating Trip Requests",
       description: "Step-by-step guide on how to create trip financing requests and manage loans.",
       videoId: "dQw4w9WgXcQ", // Replace with actual video ID
       duration: "8:45",
-      category: "Borrower"
+      category: "Transporter"
     },
     {
       id: "lender",
@@ -32,14 +32,6 @@ const VideoTutorials = () => {
       videoId: "dQw4w9WgXcQ", // Replace with actual video ID
       duration: "10:20",
       category: "Lender"
-    },
-    {
-      id: "transporter",
-      title: "Transporter Guide - Accepting and Completing Trips",
-      description: "How to accept trips, upload documents, and get paid as a transporter.",
-      videoId: "dQw4w9WgXcQ", // Replace with actual video ID
-      duration: "7:15",
-      category: "Transporter"
     },
     {
       id: "wallet",
@@ -63,12 +55,10 @@ const VideoTutorials = () => {
     switch (category) {
       case "Beginner":
         return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-      case "Borrower":
+      case "Transporter":
         return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
       case "Lender":
         return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
-      case "Transporter":
-        return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
       default:
         return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400";
     }

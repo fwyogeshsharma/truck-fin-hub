@@ -45,8 +45,8 @@ const FAQ = () => {
         }
       ]
     },
-    borrower: {
-      title: "Borrower Questions",
+    transporter: {
+      title: "Transporter Questions",
       icon: TruckIcon,
       color: "green",
       questions: [
