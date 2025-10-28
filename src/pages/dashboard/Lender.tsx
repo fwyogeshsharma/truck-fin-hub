@@ -12,6 +12,7 @@ import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { formatCurrency, formatCurrencyCompact } from "@/lib/currency";
 import { getChartColors, getChartColorPalette } from "@/lib/chartColors";
 import { apiClient } from '@/api/client';
+import { toTitleCase } from "@/lib/utils";
 import MaturityCountdown from '@/components/MaturityCountdown';
 import DocumentProgress from '@/components/DocumentProgress';
 import LenderFinancialQuestionnaire from '@/components/LenderFinancialQuestionnaire';
@@ -346,7 +347,7 @@ const LenderDashboard = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">{user?.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : "User"}'s Dashboard</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">{toTitleCase(user?.name) || "User"}'s Dashboard</h1>
             <p className="text-sm sm:text-base text-muted-foreground mt-1">Invest in trips and earn returns</p>
           </div>
           <Button
@@ -425,13 +426,13 @@ const LenderDashboard = () => {
                             <UserCheck className="h-5 w-5 text-primary" />
                           </div>
                           <div>
-                            <p className="text-sm font-semibold">{pendingUser.name}</p>
+                            <p className="text-sm font-semibold">{toTitleCase(pendingUser.name)}</p>
                             <p className="text-xs text-muted-foreground">{pendingUser.email}</p>
                           </div>
                         </div>
                         <div className="ml-12 space-y-1">
                           <p className="text-xs text-muted-foreground">Phone: {pendingUser.phone || 'N/A'}</p>
-                          <p className="text-xs text-muted-foreground">Company: <span className="font-medium text-foreground">{pendingUser.company}</span></p>
+                          <p className="text-xs text-muted-foreground">Company: <span className="font-medium text-foreground">{toTitleCase(pendingUser.company)}</span></p>
                           <p className="text-xs text-muted-foreground">Role: <span className="font-medium text-foreground">{pendingUser.role?.replace('_', ' ')}</span></p>
                           <p className="text-xs text-muted-foreground">Requested: {new Date(pendingUser.created_at).toLocaleDateString()}</p>
                         </div>
@@ -587,7 +588,7 @@ const LenderDashboard = () => {
                           className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: borrower.color }}
                         />
-                        <span className="text-muted-foreground">{borrower.name}</span>
+                        <span className="text-muted-foreground">{toTitleCase(borrower.name)}</span>
                       </div>
                       <span className="font-medium">{formatCurrency(borrower.amount)} ({borrower.value}%)</span>
                     </div>

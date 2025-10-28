@@ -7,6 +7,7 @@ import { data, Trip, Wallet } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
 import { formatCurrencyForTransporter, formatCurrency } from "@/lib/currency";
 import WalletCard from "@/components/WalletCard";
+import { toTitleCase } from "@/lib/utils";
 
 const TransporterDashboard = () => {
   const user = auth.getCurrentUser();
@@ -119,7 +120,7 @@ const TransporterDashboard = () => {
     <DashboardLayout role="transporter">
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">{user?.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : "User"}'s Dashboard</h1>
+          <h1 className="text-3xl font-bold">{toTitleCase(user?.name) || "User"}'s Dashboard</h1>
           <p className="text-muted-foreground mt-1">Manage your trips and deliveries</p>
         </div>
 
