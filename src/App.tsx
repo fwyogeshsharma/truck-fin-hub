@@ -36,6 +36,7 @@ import AdminSetupDebug from "./pages/AdminSetupDebug";
 import Defaulters from "./pages/Defaulters";
 import NotFound from "./pages/NotFound";
 import GettingStarted from "./pages/help/GettingStarted";
+import FAQ from "./pages/FAQ";
 
 const queryClient = new QueryClient();
 
@@ -86,7 +87,7 @@ const App = () => {
           {/* Help Pages */}
           <Route path="/help/getting-started" element={<GettingStarted />} />
           <Route path="/help/user-manual" element={<GettingStarted />} />
-          <Route path="/help/faq" element={<GettingStarted />} />
+          <Route path="/help/faq" element={<FAQ />} />
           <Route path="/help/video-tutorials" element={<GettingStarted />} />
           <Route path="/privacy-policy" element={<GettingStarted />} />
           <Route path="/cookie-policy" element={<GettingStarted />} />
