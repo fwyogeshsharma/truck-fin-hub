@@ -18,12 +18,12 @@ const VideoTutorials = () => {
       category: "Beginner"
     },
     {
-      id: "load-owner",
-      title: "Load Owner Guide - Creating Trip Requests",
+      id: "borrower",
+      title: "Borrower Guide - Creating Trip Requests",
       description: "Step-by-step guide on how to create trip financing requests and manage loans.",
       videoId: "dQw4w9WgXcQ", // Replace with actual video ID
       duration: "8:45",
-      category: "Load Owner"
+      category: "Borrower"
     },
     {
       id: "lender",
@@ -63,7 +63,7 @@ const VideoTutorials = () => {
     switch (category) {
       case "Beginner":
         return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-      case "Load Owner":
+      case "Borrower":
         return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
       case "Lender":
         return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";

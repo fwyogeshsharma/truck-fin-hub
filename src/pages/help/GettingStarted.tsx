@@ -50,7 +50,7 @@ const GettingStarted = () => {
             <div className="grid md:grid-cols-3 gap-4">
               <div className="p-4 border rounded-lg">
                 <TruckIcon className="h-8 w-8 text-blue-600 mb-2" />
-                <h3 className="font-semibold mb-1">Load Owners</h3>
+                <h3 className="font-semibold mb-1">Borrowers</h3>
                 <p className="text-sm text-muted-foreground">Get financing for trips and manage repayments</p>
               </div>
               <div className="p-4 border rounded-lg">
@@ -87,7 +87,7 @@ const GettingStarted = () => {
                   </h3>
                   <p className="text-sm text-muted-foreground mb-2">
                     Visit the registration page and fill in your details including name, email, phone number, password,
-                    company name, and select your role (Load Owner/Lender/Transporter).
+                    company name, and select your role (Borrower/Lender/Transporter).
                   </p>
                   <Button size="sm" onClick={() => navigate('/auth')}>Go to Registration</Button>
                 </div>
@@ -156,7 +156,7 @@ const GettingStarted = () => {
                     Start Using the Platform
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    You're all set! Load Owners can create trips, Lenders can browse investment opportunities,
+                    You're all set! Borrowers can create trips, Lenders can browse investment opportunities,
                     and Transporters can accept and complete trips.
                   </p>
                 </div>
@@ -174,12 +174,12 @@ const GettingStarted = () => {
           <CardContent>
             <Accordion type="single" collapsible className="w-full">
 
-              {/* Load Owner Guide */}
-              <AccordionItem value="load-owner">
+              {/* Borrower Guide */}
+              <AccordionItem value="borrower">
                 <AccordionTrigger className="text-lg font-semibold">
                   <div className="flex items-center gap-2">
                     <TruckIcon className="h-5 w-5 text-blue-600" />
-                    Load Owner Guide
+                    Borrower Guide
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="space-y-4 pt-4">
@@ -336,7 +336,7 @@ const GettingStarted = () => {
               <div>
                 <h3 className="font-semibold mb-3 flex items-center gap-2">
                   <TruckIcon className="h-5 w-5 text-blue-600" />
-                  For Load Owners
+                  For Borrowers
                 </h3>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">

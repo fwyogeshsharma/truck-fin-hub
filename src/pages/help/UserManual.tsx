@@ -35,24 +35,24 @@ const UserManual = () => {
       {/* Main Content */}
       <div className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-        <Tabs defaultValue="load-owner" className="w-full">
+        <Tabs defaultValue="borrower" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="load-owner">Load Owner</TabsTrigger>
+            <TabsTrigger value="borrower">Borrower</TabsTrigger>
             <TabsTrigger value="lender">Lender</TabsTrigger>
             <TabsTrigger value="transporter">Transporter</TabsTrigger>
             <TabsTrigger value="common">Common Features</TabsTrigger>
           </TabsList>
 
-          {/* LOAD OWNER TAB */}
-          <TabsContent value="load-owner" className="space-y-6">
+          {/* BORROWER TAB */}
+          <TabsContent value="borrower" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TruckIcon className="h-6 w-6 text-blue-600" />
-                  Load Owner Guide
+                  Borrower Guide
                 </CardTitle>
                 <CardDescription>
-                  Complete guide for load owners who need financing for their transportation business
+                  Complete guide for borrowers who need financing for their transportation business
                 </CardDescription>
               </CardHeader>
               <CardContent>
