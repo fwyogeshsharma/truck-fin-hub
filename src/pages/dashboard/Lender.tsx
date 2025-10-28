@@ -887,47 +887,14 @@ const LenderDashboard = () => {
                         </div>
                       </div>
                       {document && (
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setViewingDocument({ url: document, name: docLabels[docType as keyof typeof docLabels] })}
-                          >
-                            <Eye className="h-3 w-3 mr-1" />
-                            View
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={async () => {
-                              try {
-                                // Fetch the document
-                                const response = await fetch(document);
-                                const blob = await response.blob();
-
-                                // Create a blob URL
-                                const blobUrl = URL.createObjectURL(blob);
-
-                                // Create and trigger download
-                                const link = document.createElement('a');
-                                link.href = blobUrl;
-                                link.download = `${docLabels[docType as keyof typeof docLabels]}-${selectedTripForDocs.id}.pdf`;
-                                document.body.appendChild(link);
-                                link.click();
-
-                                // Cleanup
-                                document.body.removeChild(link);
-                                URL.revokeObjectURL(blobUrl);
-                              } catch (error) {
-                                console.error('Download failed:', error);
-                                // Fallback: open in new tab
-                                window.open(document, '_blank');
-                              }
-                            }}
-                          >
-                            Download
-                          </Button>
-                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setViewingDocument({ url: document, name: docLabels[docType as keyof typeof docLabels] })}
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          View
+                        </Button>
                       )}
                     </div>
                   );
