@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/currency";
+import RatingDialog from "@/components/RatingDialog";
 
 /**
  * LoadOwnerDashboard Component
@@ -42,6 +43,10 @@ const LoadOwnerDashboard = () => {
   // Loading state for data fetching
   const [loading, setLoading] = useState(true);
   const [repaying, setRepaying] = useState<Record<string, boolean>>({});
+
+  // Rating dialog states
+  const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
+  const [tripForRating, setTripForRating] = useState<Trip | null>(null);
 
   /**
    * Effect hook to load trips and wallet data when component mounts
@@ -186,6 +191,10 @@ const LoadOwnerDashboard = () => {
       );
       setTrips(filteredTrips);
       setWallet(walletData);
+
+      // Open rating dialog after successful repayment
+      setTripForRating(trip);
+      setRatingDialogOpen(true);
 
     } catch (error: any) {
       console.error('Repayment error:', error);
@@ -611,6 +620,32 @@ const LoadOwnerDashboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Rating Dialog */}
+        {tripForRating && (
+          <RatingDialog
+            open={ratingDialogOpen}
+            onClose={() => {
+              setRatingDialogOpen(false);
+              setTripForRating(null);
+            }}
+            onRatingSubmitted={async () => {
+              // Reload trips after rating is submitted
+              const allTrips = await data.getTrips();
+              const filteredTrips = allTrips.filter(t =>
+                t.loadOwnerId === user?.id || t.loadOwnerName.includes('ABC')
+              );
+              setTrips(filteredTrips);
+            }}
+            tripId={tripForRating.id}
+            lenderId={tripForRating.lenderId || ''}
+            lenderName={tripForRating.lenderName || 'Unknown'}
+            borrowerId={user?.id || ''}
+            borrowerName={user?.name || ''}
+            loanAmount={tripForRating.amount || 0}
+            interestRate={tripForRating.interestRate || 0}
+          />
+        )}
       </div>
     </DashboardLayout>
   );

@@ -68,6 +68,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import DocumentProgress from '@/components/DocumentProgress';
 import ContractAcceptanceDialog from '@/components/ContractAcceptanceDialog';
+import RatingDialog from '@/components/RatingDialog';
 import { formatPercentage } from '@/lib/currency';
 
 const LoadAgentDashboard = () => {
@@ -92,6 +93,10 @@ const LoadAgentDashboard = () => {
     agreementId: string;
   } | null>(null);
   const [contractLoading, setContractLoading] = useState(false);
+
+  // Rating dialog states
+  const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
+  const [tripForRating, setTripForRating] = useState<Trip | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -1364,6 +1369,10 @@ const LoadAgentDashboard = () => {
         const walletData = await data.getWallet(user.id);
         setWallet(walletData);
       }
+
+      // Open rating dialog after successful repayment
+      setTripForRating(trip);
+      setRatingDialogOpen(true);
 
     } catch (error: any) {
       console.error('Repayment error:', error);
@@ -4138,6 +4147,27 @@ print(response.json())`;
           }}
           loading={contractLoading}
         />
+
+        {/* Rating Dialog */}
+        {tripForRating && (
+          <RatingDialog
+            open={ratingDialogOpen}
+            onClose={() => {
+              setRatingDialogOpen(false);
+              setTripForRating(null);
+            }}
+            onRatingSubmitted={() => {
+              setRefreshKey(prev => prev + 1);
+            }}
+            tripId={tripForRating.id}
+            lenderId={tripForRating.lenderId || (tripForRating as any).lender_id || ''}
+            lenderName={tripForRating.lenderName || (tripForRating as any).lender_name || 'Unknown'}
+            borrowerId={user?.id || ''}
+            borrowerName={user?.name || ''}
+            loanAmount={tripForRating.amount || 0}
+            interestRate={tripForRating.interestRate || (tripForRating as any).interest_rate || 0}
+          />
+        )}
       </div>
     </DashboardLayout>
   );
