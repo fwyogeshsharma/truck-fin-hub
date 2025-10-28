@@ -36,7 +36,10 @@ import AdminSetupDebug from "./pages/AdminSetupDebug";
 import Defaulters from "./pages/Defaulters";
 import NotFound from "./pages/NotFound";
 import GettingStarted from "./pages/help/GettingStarted";
+import UserManual from "./pages/help/UserManual";
 import FAQ from "./pages/FAQ";
+import TermsAndConditions from "./pages/TermsAndConditions";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookieConsent from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
@@ -88,11 +91,13 @@ const App = () => {
           <Route path="/defaulters" element={<Defaulters />} />
           {/* Help Pages */}
           <Route path="/help/getting-started" element={<GettingStarted />} />
-          <Route path="/help/user-manual" element={<GettingStarted />} />
+          <Route path="/help/user-manual" element={<UserManual />} />
           <Route path="/help/faq" element={<FAQ />} />
           <Route path="/help/video-tutorials" element={<GettingStarted />} />
-          <Route path="/privacy-policy" element={<GettingStarted />} />
-          <Route path="/cookie-policy" element={<GettingStarted />} />
+          {/* Policy Pages */}
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/cookie-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-conditions" element={<TermsAndConditions />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

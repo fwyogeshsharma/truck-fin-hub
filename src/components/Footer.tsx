@@ -115,7 +115,7 @@ const Footer = () => {
               </li>
               <li>
                 <a
-                  href="/terms"
+                  href="/terms-conditions"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
                 >
                   <FileText className="h-4 w-4" />
@@ -204,7 +204,7 @@ const Footer = () => {
             </p>
             <div className="flex gap-6">
               <Link
-                to="/terms"
+                to="/terms-conditions"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 Terms
