@@ -338,9 +338,9 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
                         <Info className="h-5 w-5 text-blue-600 hover:text-blue-700 cursor-pointer" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[500px]" align="start" side="bottom">
-                      <div className="space-y-4">
-                        <div>
+                    <PopoverContent className="w-[500px] max-h-[600px] overflow-hidden" align="start" side="bottom">
+                      <div className="space-y-4 flex flex-col max-h-[580px]">
+                        <div className="flex-shrink-0">
                           <h4 className="font-semibold text-base mb-2 flex items-center gap-2">
                             <FileText className="h-5 w-5 text-blue-600" />
                             Types of Clauses You Can Add
@@ -350,7 +350,7 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
                           </p>
                         </div>
 
-                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                        <div className="space-y-3 overflow-y-auto pr-2 flex-1" style={{ maxHeight: '380px' }}>
                           {/* Payment Related Clauses */}
                           <div className="border-l-2 border-blue-500 pl-3">
                             <p className="font-semibold text-sm text-blue-700">💰 Payment & Transaction Clauses</p>
@@ -461,22 +461,24 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
                           </div>
                         </div>
 
-                        <div className="border-t pt-3 mt-3">
-                          <p className="text-xs font-semibold text-red-600 mb-2">⚠️ What NOT to Include:</p>
-                          <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
-                            <li>Terms that contradict standard clauses</li>
-                            <li>Illegal or unenforceable conditions</li>
-                            <li>Discriminatory or unfair terms</li>
-                            <li>Personal information of third parties without consent</li>
-                          </ul>
-                        </div>
+                        <div className="border-t pt-3 flex-shrink-0 space-y-3">
+                          <div>
+                            <p className="text-xs font-semibold text-red-600 mb-2">⚠️ What NOT to Include:</p>
+                            <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
+                              <li>Terms that contradict standard clauses</li>
+                              <li>Illegal or unenforceable conditions</li>
+                              <li>Discriminatory or unfair terms</li>
+                              <li>Personal information of third parties without consent</li>
+                            </ul>
+                          </div>
 
-                        <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                          <p className="text-xs font-semibold text-blue-900 mb-1">💡 Pro Tip:</p>
-                          <p className="text-xs text-blue-800">
-                            Be specific and clear. Use bullet points or numbered lists for multiple conditions.
-                            Keep it professional and legally sound. When in doubt, consult a legal advisor.
-                          </p>
+                          <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                            <p className="text-xs font-semibold text-blue-900 mb-1">💡 Pro Tip:</p>
+                            <p className="text-xs text-blue-800">
+                              Be specific and clear. Use bullet points or numbered lists for multiple conditions.
+                              Keep it professional and legally sound. When in doubt, consult a legal advisor.
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </PopoverContent>
