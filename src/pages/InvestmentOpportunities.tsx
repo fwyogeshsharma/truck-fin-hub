@@ -1018,6 +1018,52 @@ const InvestmentOpportunities = () => {
                                 </p>
                               </div>
 
+                              {/* Document Status - Compact */}
+                              <div className="w-32 flex-shrink-0">
+                                <p className="text-xs text-muted-foreground mb-1">
+                                  Documents
+                                </p>
+                                <div className="flex flex-wrap gap-1">
+                                  {(() => {
+                                    const docs = trip.documents as any;
+                                    return (
+                                      <>
+                                        <Badge
+                                          variant="outline"
+                                          className={`text-xs px-1.5 py-0 h-5 ${
+                                            docs?.ewaybill
+                                              ? "bg-green-100 text-green-700 border-green-300"
+                                              : "bg-gray-100 text-gray-400 border-gray-200"
+                                          }`}
+                                        >
+                                          E-Way
+                                        </Badge>
+                                        <Badge
+                                          variant="outline"
+                                          className={`text-xs px-1.5 py-0 h-5 ${
+                                            docs?.bilty
+                                              ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                                              : "bg-gray-100 text-gray-400 border-gray-200"
+                                          }`}
+                                        >
+                                          Bilty
+                                        </Badge>
+                                        <Badge
+                                          variant="outline"
+                                          className={`text-xs px-1.5 py-0 h-5 ${
+                                            docs?.pod
+                                              ? "bg-blue-100 text-blue-700 border-blue-300"
+                                              : "bg-gray-100 text-gray-400 border-gray-200"
+                                          }`}
+                                        >
+                                          POD
+                                        </Badge>
+                                      </>
+                                    );
+                                  })()}
+                                </div>
+                              </div>
+
                               {/* Trip Value - Compact */}
                               <div className="w-24 flex-shrink-0 text-center">
                                 <p className="text-xs text-muted-foreground">
