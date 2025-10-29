@@ -1215,54 +1215,96 @@ const InvestmentOpportunities = () => {
                       />
                       <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-3 items-center">
                         {/* Mobile: Single column layout */}
-                        <div className="md:hidden flex items-center gap-3 w-full">
-                          {/* Logos and Route */}
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {trip.clientLogo && (
-                              <img
-                                src={trip.clientLogo}
-                                alt={trip.clientCompany || "Company"}
-                                className="h-6 w-auto object-contain flex-shrink-0"
-                              />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1 mb-0.5">
-                                <MapPin className="h-3 w-3 text-primary flex-shrink-0" />
-                                <p className="font-semibold text-xs truncate">
-                                  {trip.origin} → {trip.destination}
+                        <div className="md:hidden w-full">
+                          <div className="flex items-center gap-3 w-full mb-1.5">
+                            {/* Logos and Route */}
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              {trip.clientLogo && (
+                                <img
+                                  src={trip.clientLogo}
+                                  alt={trip.clientCompany || "Company"}
+                                  className="h-6 w-auto object-contain flex-shrink-0"
+                                />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1 mb-0.5">
+                                  <MapPin className="h-3 w-3 text-primary flex-shrink-0" />
+                                  <p className="font-semibold text-xs truncate">
+                                    {trip.origin} → {trip.destination}
+                                  </p>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground truncate">
+                                  {trip.loadType} • {trip.weight} kg
                                 </p>
                               </div>
-                              <p className="text-[10px] text-muted-foreground truncate">
-                                {trip.loadType} • {trip.weight} kg
-                              </p>
+                            </div>
+                            {/* Action Button */}
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              {trip.riskLevel && (
+                                <Badge
+                                  className={`text-[10px] px-1.5 py-0 ${
+                                    trip.riskLevel === "low"
+                                      ? "bg-green-600"
+                                      : trip.riskLevel === "medium"
+                                        ? "bg-yellow-600"
+                                        : "bg-red-600"
+                                  } text-white`}
+                                >
+                                  {trip.riskLevel === "low"
+                                    ? "L"
+                                    : trip.riskLevel === "medium"
+                                      ? "M"
+                                      : "H"}
+                                </Badge>
+                              )}
+                              <Button
+                                size="sm"
+                                onClick={() => handleOpenBidDialog(trip)}
+                                className="bg-gradient-primary h-7 px-2 text-xs"
+                              >
+                                Bid
+                              </Button>
                             </div>
                           </div>
-                          {/* Action Button */}
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            {trip.riskLevel && (
-                              <Badge
-                                className={`text-[10px] px-1.5 py-0 ${
-                                  trip.riskLevel === "low"
-                                    ? "bg-green-600"
-                                    : trip.riskLevel === "medium"
-                                      ? "bg-yellow-600"
-                                      : "bg-red-600"
-                                } text-white`}
-                              >
-                                {trip.riskLevel === "low"
-                                  ? "L"
-                                  : trip.riskLevel === "medium"
-                                    ? "M"
-                                    : "H"}
-                              </Badge>
-                            )}
-                            <Button
-                              size="sm"
-                              onClick={() => handleOpenBidDialog(trip)}
-                              className="bg-gradient-primary h-7 px-2 text-xs"
-                            >
-                              Bid
-                            </Button>
+                          {/* Document Status Badges - Mobile */}
+                          <div className="flex flex-wrap gap-1 pl-8">
+                            {(() => {
+                              const docs = trip.documents as any;
+                              return (
+                                <>
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[9px] px-1 py-0 h-3.5 ${
+                                      docs?.ewaybill
+                                        ? "bg-green-100 text-green-700 border-green-300"
+                                        : "bg-gray-100 text-gray-500 border-gray-200"
+                                    }`}
+                                  >
+                                    E-Way
+                                  </Badge>
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[9px] px-1 py-0 h-3.5 ${
+                                      docs?.bilty
+                                        ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                                        : "bg-gray-100 text-gray-500 border-gray-200"
+                                    }`}
+                                  >
+                                    Bilty
+                                  </Badge>
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[9px] px-1 py-0 h-3.5 ${
+                                      docs?.pod
+                                        ? "bg-blue-100 text-blue-700 border-blue-300"
+                                        : "bg-gray-100 text-gray-500 border-gray-200"
+                                    }`}
+                                  >
+                                    POD
+                                  </Badge>
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
 
@@ -1493,10 +1535,50 @@ const InvestmentOpportunities = () => {
                               {trip.origin} → {trip.destination}
                             </p>
                           </div>
-                          <p className="text-xs text-muted-foreground truncate">
+                          <p className="text-xs text-muted-foreground truncate mb-1">
                             {trip.loadType} • {trip.weight} kg • {trip.distance}{" "}
                             km
                           </p>
+                          {/* Document Status Badges */}
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {(() => {
+                              const docs = trip.documents as any;
+                              return (
+                                <>
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[10px] px-1.5 py-0 h-4 ${
+                                      docs?.ewaybill
+                                        ? "bg-green-100 text-green-700 border-green-300"
+                                        : "bg-gray-100 text-gray-500 border-gray-200"
+                                    }`}
+                                  >
+                                    E-Way
+                                  </Badge>
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[10px] px-1.5 py-0 h-4 ${
+                                      docs?.bilty
+                                        ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                                        : "bg-gray-100 text-gray-500 border-gray-200"
+                                    }`}
+                                  >
+                                    Bilty
+                                  </Badge>
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[10px] px-1.5 py-0 h-4 ${
+                                      docs?.pod
+                                        ? "bg-blue-100 text-blue-700 border-blue-300"
+                                        : "bg-gray-100 text-gray-500 border-gray-200"
+                                    }`}
+                                  >
+                                    POD
+                                  </Badge>
+                                </>
+                              );
+                            })()}
+                          </div>
                         </div>
 
                         {/* Load Owner (Borrower) Logo with Rating - 2 columns */}
