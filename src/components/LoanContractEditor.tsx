@@ -155,7 +155,7 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
         toast({
           variant: 'destructive',
           title: 'File too large',
-          description: 'Signature image must be less than 2MB',
+          description: 'Signature image must be less than 2 MB',
         });
         return;
       }
@@ -562,7 +562,7 @@ Examples:
                             <p className="text-xs font-semibold">Requirements:</p>
                             <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
                               <li>Image format: JPG, PNG, or similar</li>
-                              <li>Maximum file size: 2MB</li>
+                              <li>Maximum file size: 2 MB</li>
                               <li>Clear and legible</li>
                               <li>No background clutter</li>
                               <li>Matches your legal name</li>

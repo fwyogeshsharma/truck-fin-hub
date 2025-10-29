@@ -71,7 +71,7 @@ const Landing = () => {
               { value: "₹25Cr+", label: "Financed" },
               { value: "10,000+", label: "Trips Completed" },
               { value: "8-12%", label: "Returns for Lenders" },
-              { value: "24-48hr", label: "Funding Speed" },
+              { value: "24-48 hr", label: "Funding Speed" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="text-3xl md:text-4xl font-bold text-primary">{stat.value}</div>

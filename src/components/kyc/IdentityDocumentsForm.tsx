@@ -50,12 +50,12 @@ const IdentityDocumentsForm = ({ kycData, onComplete, onBack }: IdentityDocument
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (max 5MB)
+    // Validate file size (max 5 MB)
     if (file.size > 5 * 1024 * 1024) {
       toast({
         variant: 'destructive',
         title: 'File Too Large',
-        description: 'Please upload a file smaller than 5MB',
+        description: 'Please upload a file smaller than 5 MB',
       });
       return;
     }

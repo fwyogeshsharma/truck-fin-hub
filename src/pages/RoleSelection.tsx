@@ -172,12 +172,12 @@ const RoleSelection = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (max 2MB)
+    // Validate file size (max 2 MB)
     if (file.size > 2 * 1024 * 1024) {
       toast({
         variant: 'destructive',
         title: 'File Too Large',
-        description: 'Logo must be less than 2MB',
+        description: 'Logo must be less than 2 MB',
       });
       return;
     }
@@ -599,7 +599,7 @@ const RoleSelection = () => {
                     onChange={handleLogoUpload}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    JPG, PNG, or SVG. Max 2MB.
+                    JPG, PNG, or SVG. Max 2 MB.
                   </p>
                 </div>
               </div>
