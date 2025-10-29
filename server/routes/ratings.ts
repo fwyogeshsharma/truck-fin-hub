@@ -195,4 +195,54 @@ router.get('/stats/:lenderId', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/ratings/pending/:lenderId - Get trips that need rating by lender
+router.get('/pending/:lenderId', async (req: Request, res: Response) => {
+  try {
+    const db = getDatabase();
+    const { lenderId } = req.params;
+
+    console.log('📊 [RATING] Fetching pending ratings for lender:', lenderId);
+
+    // Find all repaid trips where this lender invested but hasn't rated yet
+    const result = await db.query(
+      `SELECT
+        t.id as trip_id,
+        t.origin,
+        t.destination,
+        t.load_type,
+        t.amount,
+        t.user_id as borrower_id,
+        u.name as borrower_name,
+        tb.lender_id,
+        u2.name as lender_name,
+        tb.interest_rate,
+        tb.bid_amount as loan_amount,
+        t.repaid_at
+       FROM trips t
+       INNER JOIN trip_bids tb ON t.id = tb.trip_id AND tb.status = 'accepted'
+       INNER JOIN users u ON t.user_id = u.user_id
+       INNER JOIN users u2 ON tb.lender_id = u2.user_id
+       LEFT JOIN ratings r ON t.id = r.trip_id AND tb.lender_id = r.lender_id
+       WHERE t.status = 'repaid'
+         AND tb.lender_id = $1
+         AND r.id IS NULL
+       ORDER BY t.repaid_at DESC`,
+      [lenderId]
+    );
+
+    console.log(`📊 [RATING] Found ${result.rows.length} pending ratings for lender ${lenderId}`);
+
+    res.json({
+      success: true,
+      pendingRatings: result.rows
+    });
+  } catch (error: any) {
+    console.error('Get pending ratings error:', error);
+    res.status(500).json({
+      error: 'Failed to get pending ratings',
+      message: error.message
+    });
+  }
+});
+
 export default router;

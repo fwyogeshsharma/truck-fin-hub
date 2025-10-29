@@ -19,6 +19,8 @@ interface RatingDialogProps {
   borrowerName: string;
   loanAmount: number;
   interestRate: number;
+  mode?: 'lender-rates-borrower' | 'borrower-rates-lender'; // New prop to determine who is rating whom
+  canDismiss?: boolean; // Whether the dialog can be dismissed without rating
 }
 
 const RatingDialog = ({
@@ -32,6 +34,8 @@ const RatingDialog = ({
   borrowerName,
   loanAmount,
   interestRate,
+  mode = 'borrower-rates-lender',
+  canDismiss = true,
 }: RatingDialogProps) => {
   const { toast } = useToast();
   const [rating, setRating] = useState(0);
@@ -64,9 +68,10 @@ const RatingDialog = ({
         interest_rate: interestRate,
       });
 
+      const ratedPersonName = mode === 'lender-rates-borrower' ? borrowerName : lenderName;
       toast({
         title: 'Rating Submitted',
-        description: `Thank you for rating ${toTitleCase(lenderName)}!`,
+        description: `Thank you for rating ${toTitleCase(ratedPersonName)}!`,
       });
 
       // Reset form
@@ -91,20 +96,37 @@ const RatingDialog = ({
   };
 
   const handleClose = () => {
-    if (!isSubmitting) {
+    if (!isSubmitting && canDismiss) {
       setRating(0);
       setReviewText('');
       onClose();
+    } else if (!canDismiss) {
+      toast({
+        variant: 'destructive',
+        title: 'Rating Required',
+        description: 'Please rate the borrower before continuing. This helps maintain trust in our community.',
+      });
     }
   };
 
+  const isLenderRating = mode === 'lender-rates-borrower';
+  const ratedPersonName = isLenderRating ? borrowerName : lenderName;
+  const ratedPersonLabel = isLenderRating ? 'Borrower' : 'Lender';
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+    <Dialog open={open} onOpenChange={canDismiss ? handleClose : undefined}>
+      <DialogContent className="max-w-md" onPointerDownOutside={(e) => !canDismiss && e.preventDefault()}>
         <DialogHeader>
-          <DialogTitle className="text-2xl">Rate Your Lender</DialogTitle>
+          <DialogTitle className="text-2xl">
+            {isLenderRating ? 'Rate Your Borrower' : 'Rate Your Lender'}
+          </DialogTitle>
           <DialogDescription>
-            Share your experience with {toTitleCase(lenderName)}
+            Share your experience with {toTitleCase(ratedPersonName)}
+            {!canDismiss && (
+              <span className="block mt-1 text-orange-600 font-medium">
+                * Rating is required before you can continue
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -112,8 +134,8 @@ const RatingDialog = ({
           {/* Loan Details */}
           <div className="bg-blue-50 p-4 rounded-lg space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Lender:</span>
-              <span className="font-semibold">{toTitleCase(lenderName)}</span>
+              <span className="text-gray-600">{ratedPersonLabel}:</span>
+              <span className="font-semibold">{toTitleCase(ratedPersonName)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Loan Amount:</span>
@@ -171,7 +193,7 @@ const RatingDialog = ({
             </Label>
             <Textarea
               id="review"
-              placeholder="Share details about your experience with this lender..."
+              placeholder={`Share details about your experience with this ${ratedPersonLabel.toLowerCase()}...`}
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
               rows={4}
@@ -186,13 +208,20 @@ const RatingDialog = ({
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
+          {canDismiss && (
+            <Button
+              variant="outline"
+              onClick={handleClose}
+              disabled={isSubmitting}
+            >
+              Skip for Now
+            </Button>
+          )}
+          {!canDismiss && (
+            <p className="text-xs text-muted-foreground flex-1">
+              Please submit your rating to continue
+            </p>
+          )}
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting || rating === 0}

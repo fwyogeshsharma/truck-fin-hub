@@ -16,6 +16,7 @@ import { toTitleCase } from "@/lib/utils";
 import MaturityCountdown from '@/components/MaturityCountdown';
 import DocumentProgress from '@/components/DocumentProgress';
 import LenderFinancialQuestionnaire from '@/components/LenderFinancialQuestionnaire';
+import RatingDialog from '@/components/RatingDialog';
 
 const LenderDashboard = () => {
   const { toast } = useToast();
@@ -42,6 +43,11 @@ const LenderDashboard = () => {
   const [showFinancialQuestionnaire, setShowFinancialQuestionnaire] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [questionnaireShown, setQuestionnaireShown] = useState(false);
+
+  // Pending Ratings State
+  const [pendingRatings, setPendingRatings] = useState<any[]>([]);
+  const [currentRatingIndex, setCurrentRatingIndex] = useState(0);
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
 
   // Pagination state
   const [pendingBidsPage, setPendingBidsPage] = useState(1);
@@ -89,6 +95,64 @@ const LenderDashboard = () => {
     }
   };
 
+  // Fetch pending ratings for lender
+  const fetchPendingRatings = async () => {
+    if (!user?.id) return;
+
+    try {
+      console.log('🔍 Fetching pending ratings for lender:', user.id);
+      const response = await apiClient.get(`/ratings/pending/${user.id}`);
+
+      if (response.success && response.pendingRatings && response.pendingRatings.length > 0) {
+        console.log(`✅ Found ${response.pendingRatings.length} pending ratings`);
+        setPendingRatings(response.pendingRatings);
+        setCurrentRatingIndex(0);
+        setShowRatingDialog(true); // Show the first rating dialog
+      } else {
+        console.log('✅ No pending ratings found');
+        setPendingRatings([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch pending ratings:', error);
+    }
+  };
+
+  // Handle rating submission
+  const handleRatingSubmitted = () => {
+    console.log('✅ Rating submitted, checking for next rating...');
+
+    // Move to next rating
+    const nextIndex = currentRatingIndex + 1;
+
+    if (nextIndex < pendingRatings.length) {
+      // Show next rating dialog
+      console.log(`📋 Showing next rating (${nextIndex + 1}/${pendingRatings.length})`);
+      setCurrentRatingIndex(nextIndex);
+      setShowRatingDialog(true);
+    } else {
+      // All ratings completed
+      console.log('🎉 All ratings completed!');
+      setShowRatingDialog(false);
+      setPendingRatings([]);
+      setCurrentRatingIndex(0);
+
+      toast({
+        title: 'All Ratings Completed',
+        description: 'Thank you for rating all your borrowers!',
+      });
+
+      // Refresh dashboard data
+      setRefreshKey(prev => prev + 1);
+    }
+  };
+
+  // Handle rating dialog close (skip)
+  const handleRatingDialogClose = () => {
+    console.log('⏭️ Rating skipped, will show again on next visit');
+    setShowRatingDialog(false);
+    // Don't clear pendingRatings - they will show again on next dashboard load
+  };
+
   useEffect(() => {
     const loadData = async () => {
       if (!user?.id) {
@@ -109,6 +173,9 @@ const LenderDashboard = () => {
         setMyInvestments(investmentsData.filter(i => i.lenderId === user.id));
         setWallet(walletData);
         setUserProfile(userData);
+
+        // Fetch pending ratings (trips that need rating by lender)
+        await fetchPendingRatings();
 
         // Show financial questionnaire if not completed (only for lenders, not admins)
         // Only show once per session to avoid annoying the user
@@ -951,6 +1018,24 @@ const LenderDashboard = () => {
           }}
           userId={user.id}
           userName={user.name}
+        />
+      )}
+
+      {/* Pending Ratings Dialog - Show one at a time in queue */}
+      {pendingRatings.length > 0 && pendingRatings[currentRatingIndex] && (
+        <RatingDialog
+          open={showRatingDialog}
+          onClose={handleRatingDialogClose}
+          onRatingSubmitted={handleRatingSubmitted}
+          tripId={pendingRatings[currentRatingIndex].trip_id}
+          lenderId={pendingRatings[currentRatingIndex].lender_id}
+          lenderName={pendingRatings[currentRatingIndex].lender_name}
+          borrowerId={pendingRatings[currentRatingIndex].borrower_id}
+          borrowerName={pendingRatings[currentRatingIndex].borrower_name}
+          loanAmount={pendingRatings[currentRatingIndex].loan_amount}
+          interestRate={pendingRatings[currentRatingIndex].interest_rate}
+          mode="lender-rates-borrower"
+          canDismiss={true}
         />
       )}
     </DashboardLayout>
