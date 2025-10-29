@@ -211,17 +211,15 @@ router.get('/pending/:lenderId', async (req: Request, res: Response) => {
         t.destination,
         t.load_type,
         t.amount,
-        t.user_id as borrower_id,
-        u.name as borrower_name,
+        t.load_owner_id as borrower_id,
+        t.load_owner_name as borrower_name,
         tb.lender_id,
-        u2.name as lender_name,
+        tb.lender_name,
         tb.interest_rate,
         tb.bid_amount as loan_amount,
         t.repaid_at
        FROM trips t
        INNER JOIN trip_bids tb ON t.id = tb.trip_id AND tb.status = 'accepted'
-       INNER JOIN users u ON t.user_id = u.user_id
-       INNER JOIN users u2 ON tb.lender_id = u2.user_id
        LEFT JOIN ratings r ON t.id = r.trip_id AND tb.lender_id = r.lender_id
        WHERE t.status = 'repaid'
          AND tb.lender_id = $1
