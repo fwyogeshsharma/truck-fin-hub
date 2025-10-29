@@ -52,7 +52,7 @@ const LenderDashboard = () => {
   // Pagination state
   const [pendingBidsPage, setPendingBidsPage] = useState(1);
   const [activeInvestmentsPage, setActiveInvestmentsPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   // Update chart colors when theme changes
   useEffect(() => {
