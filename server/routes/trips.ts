@@ -186,10 +186,113 @@ router.post('/', async (req: Request, res: Response) => {
 // PUT /api/trips/:id - Update trip
 router.put('/:id', async (req: Request, res: Response) => {
   try {
+    // Get the old trip to check for status changes
+    const oldTrip = await getTrip(req.params.id);
+
     const trip = await updateTrip(req.params.id, req.body);
     if (!trip) {
       return res.status(404).json({ error: 'Trip not found' });
     }
+
+    // Send notifications based on status changes
+    if (oldTrip && oldTrip.status !== trip.status) {
+      console.log(`📊 [TRIP STATUS CHANGE] ${oldTrip.status} -> ${trip.status} for trip ${trip.id}`);
+
+      // Trip started (in_transit)
+      if (trip.status === 'in_transit') {
+        // Notify borrower (load owner)
+        if (trip.load_owner_id) {
+          try {
+            await createNotification({
+              userId: trip.load_owner_id,
+              type: 'trip_started',
+              title: 'Trip Started',
+              message: `Your trip from ${trip.origin} to ${trip.destination} has started and is in transit`,
+              priority: 'high',
+              actionUrl: `/trips/${trip.id}`,
+              metadata: { tripId: trip.id }
+            });
+          } catch (error) {
+            console.error('❌ [NOTIFICATION] Failed to create trip started notification:', error);
+          }
+        }
+
+        // Notify lender
+        if (trip.lender_id) {
+          try {
+            await createNotification({
+              userId: trip.lender_id,
+              type: 'trip_started',
+              title: 'Investment Trip Started',
+              message: `The trip from ${trip.origin} to ${trip.destination} you invested in has started`,
+              priority: 'medium',
+              actionUrl: `/trips/${trip.id}`,
+              metadata: { tripId: trip.id }
+            });
+          } catch (error) {
+            console.error('❌ [NOTIFICATION] Failed to create lender trip started notification:', error);
+          }
+        }
+      }
+
+      // Trip completed
+      if (trip.status === 'completed') {
+        // Notify borrower (load owner)
+        if (trip.load_owner_id) {
+          try {
+            await createNotification({
+              userId: trip.load_owner_id,
+              type: 'trip_completed',
+              title: 'Trip Completed',
+              message: `Your trip from ${trip.origin} to ${trip.destination} has been completed successfully`,
+              priority: 'high',
+              actionUrl: `/trips/${trip.id}`,
+              metadata: { tripId: trip.id }
+            });
+          } catch (error) {
+            console.error('❌ [NOTIFICATION] Failed to create trip completed notification:', error);
+          }
+        }
+
+        // Notify lender
+        if (trip.lender_id) {
+          try {
+            await createNotification({
+              userId: trip.lender_id,
+              type: 'trip_completed',
+              title: 'Investment Trip Completed',
+              message: `The trip from ${trip.origin} to ${trip.destination} has been completed successfully. Awaiting repayment.`,
+              priority: 'high',
+              actionUrl: `/trips/${trip.id}`,
+              metadata: { tripId: trip.id }
+            });
+          } catch (error) {
+            console.error('❌ [NOTIFICATION] Failed to create lender trip completed notification:', error);
+          }
+        }
+      }
+
+      // Trip funded (escrowed)
+      if (trip.status === 'escrowed') {
+        // Notify borrower (load owner)
+        if (trip.load_owner_id) {
+          try {
+            await createNotification({
+              userId: trip.load_owner_id,
+              type: 'funding_received',
+              title: 'Funding Received',
+              message: `Your trip from ${trip.origin} to ${trip.destination} has been funded by ${trip.lender_name || 'a lender'}`,
+              priority: 'high',
+              actionUrl: `/trips/${trip.id}`,
+              metadata: { tripId: trip.id, lenderId: trip.lender_id }
+            });
+          } catch (error) {
+            console.error('❌ [NOTIFICATION] Failed to create funding received notification:', error);
+          }
+        }
+      }
+    }
+
     res.json(trip);
   } catch (error: any) {
     console.error('Update trip error:', error);

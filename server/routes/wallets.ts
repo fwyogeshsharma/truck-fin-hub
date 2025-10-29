@@ -9,6 +9,8 @@ import {
   returnInvestment,
 } from '../../src/db/queries/wallets.ts';
 import { createTransaction } from '../../src/db/queries/transactions.ts';
+import { createNotification } from '../../src/db/queries/notifications.ts';
+import { getNotificationTemplate } from '../../src/services/notificationTemplates.ts';
 
 const router = Router();
 
@@ -58,6 +60,22 @@ router.post('/:userId/add-money', async (req: Request, res: Response) => {
       description: `Added ₹${amount} to wallet`,
       balance_after: wallet.balance,
     });
+
+    // Create notification
+    try {
+      await createNotification({
+        userId: req.params.userId,
+        type: 'payment_received',
+        title: 'Money Added to Wallet',
+        message: `₹${amount.toFixed(2)} has been added to your wallet. New balance: ₹${wallet.balance.toFixed(2)}`,
+        priority: 'medium',
+        actionUrl: '/dashboard',
+        metadata: { amount, newBalance: wallet.balance }
+      });
+      console.log('✅ [NOTIFICATION] Money added notification sent to user:', req.params.userId);
+    } catch (error) {
+      console.error('❌ [NOTIFICATION] Failed to create money added notification:', error);
+    }
 
     res.json(wallet);
   } catch (error: any) {
@@ -291,8 +309,9 @@ router.post('/repayment', async (req: Request, res: Response) => {
     }
 
     // Update trip status to 'repaid' and store repayment details
+    let tripInfo = null;
     if (trip_id) {
-      const { updateTrip } = await import('../../src/db/queries/trips.ts');
+      const { updateTrip, getTrip } = await import('../../src/db/queries/trips.ts');
       await updateTrip(trip_id, {
         status: 'repaid',
         repaid_at: new Date().toISOString(),
@@ -303,6 +322,59 @@ router.post('/repayment', async (req: Request, res: Response) => {
         completed_at: new Date().toISOString() // Keep completed_at for backward compatibility
       });
       console.log('✅ [REPAYMENT] Trip marked as repaid:', trip_id);
+
+      // Get trip info for notifications
+      tripInfo = await getTrip(trip_id);
+    }
+
+    // Create notification for lender (receiving repayment)
+    try {
+      await createNotification({
+        userId: lender_id,
+        type: 'payment_received',
+        title: 'Repayment Received',
+        message: trip_id && tripInfo
+          ? `You received ₹${totalRepayment.toFixed(2)} (₹${principalNum.toFixed(2)} principal + ₹${interestAmount.toFixed(2)} interest) for trip from ${tripInfo.origin} to ${tripInfo.destination}`
+          : `You received loan repayment of ₹${totalRepayment.toFixed(2)} (₹${principalNum.toFixed(2)} principal + ₹${interestAmount.toFixed(2)} interest)`,
+        priority: 'high',
+        actionUrl: '/dashboard',
+        metadata: {
+          tripId: trip_id,
+          principal: principalNum,
+          interest: interestAmount,
+          total: totalRepayment,
+          borrowerId: borrower_id
+        }
+      });
+      console.log('✅ [NOTIFICATION] Repayment received notification sent to lender:', lender_id);
+    } catch (error) {
+      console.error('❌ [NOTIFICATION] Failed to create lender repayment notification:', error);
+    }
+
+    // Create notification for borrower (making repayment)
+    if (borrower_id) {
+      try {
+        await createNotification({
+          userId: borrower_id,
+          type: 'payment_made',
+          title: 'Repayment Successful',
+          message: trip_id && tripInfo
+            ? `Your repayment of ₹${totalRepayment.toFixed(2)} for trip from ${tripInfo.origin} to ${tripInfo.destination} was successful`
+            : `Your loan repayment of ₹${totalRepayment.toFixed(2)} was successful`,
+          priority: 'medium',
+          actionUrl: '/dashboard',
+          metadata: {
+            tripId: trip_id,
+            principal: principalNum,
+            interest: interestAmount,
+            total: totalRepayment,
+            lenderId: lender_id
+          }
+        });
+        console.log('✅ [NOTIFICATION] Repayment made notification sent to borrower:', borrower_id);
+      } catch (error) {
+        console.error('❌ [NOTIFICATION] Failed to create borrower repayment notification:', error);
+      }
     }
 
     res.json({
