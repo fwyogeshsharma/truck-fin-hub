@@ -203,8 +203,41 @@ router.get('/pending/:lenderId', async (req: Request, res: Response) => {
 
     console.log('📊 [RATING] Fetching pending ratings for lender:', lenderId);
 
+    // Debug: Check all repaid trips for this lender
+    const repaidTripsDebug = await db.query(
+      `SELECT id, status, lender_id, load_owner_name, repaid_at, has_rating
+       FROM trips
+       WHERE lender_id = $1 AND status = 'repaid'
+       ORDER BY repaid_at DESC`,
+      [lenderId]
+    );
+    console.log(`📊 [DEBUG] Found ${repaidTripsDebug.rows.length} repaid trips for lender:`,
+      JSON.stringify(repaidTripsDebug.rows, null, 2));
+
+    // Debug: Check trip_bids for this lender
+    const bidsDebug = await db.query(
+      `SELECT trip_id, lender_id, interest_rate, amount
+       FROM trip_bids
+       WHERE lender_id = $1
+       LIMIT 10`,
+      [lenderId]
+    );
+    console.log(`📊 [DEBUG] Found ${bidsDebug.rows.length} bids for lender:`,
+      JSON.stringify(bidsDebug.rows, null, 2));
+
+    // Debug: Check existing ratings
+    const ratingsDebug = await db.query(
+      `SELECT id, trip_id, lender_id, rating, created_at
+       FROM ratings
+       WHERE lender_id = $1
+       LIMIT 10`,
+      [lenderId]
+    );
+    console.log(`📊 [DEBUG] Found ${ratingsDebug.rows.length} existing ratings:`,
+      JSON.stringify(ratingsDebug.rows, null, 2));
+
     // Find all repaid trips where this lender invested but hasn't rated yet
-    // The accepted bid is identified by matching trip.lender_id with trip_bids.lender_id
+    // Use LEFT JOIN for trip_bids to ensure we don't miss trips without bid records
     const result = await db.query(
       `SELECT
         t.id as trip_id,
@@ -216,11 +249,11 @@ router.get('/pending/:lenderId', async (req: Request, res: Response) => {
         t.load_owner_name as borrower_name,
         t.lender_id,
         t.lender_name,
-        tb.interest_rate,
-        tb.amount as loan_amount,
+        COALESCE(tb.interest_rate, 0) as interest_rate,
+        COALESCE(tb.amount, t.amount) as loan_amount,
         t.repaid_at
        FROM trips t
-       INNER JOIN trip_bids tb ON t.id = tb.trip_id AND t.lender_id = tb.lender_id
+       LEFT JOIN trip_bids tb ON t.id = tb.trip_id AND t.lender_id = tb.lender_id
        LEFT JOIN ratings r ON t.id = r.trip_id AND t.lender_id = r.lender_id
        WHERE t.status = 'repaid'
          AND t.lender_id = $1
@@ -229,7 +262,10 @@ router.get('/pending/:lenderId', async (req: Request, res: Response) => {
       [lenderId]
     );
 
-    console.log(`📊 [RATING] Found ${result.rows.length} pending ratings for lender ${lenderId}`);
+    console.log(`📊 [RATING] Query result: ${result.rows.length} pending ratings`);
+    if (result.rows.length > 0) {
+      console.log('📊 [RATING] Pending ratings:', JSON.stringify(result.rows, null, 2));
+    }
 
     res.json({
       success: true,
