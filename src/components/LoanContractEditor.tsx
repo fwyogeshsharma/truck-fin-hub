@@ -332,13 +332,162 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
                   Custom Terms & Conditions
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-transparent ml-auto">
+                        <Info className="h-5 w-5 text-blue-600 hover:text-blue-700 cursor-pointer" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[500px]" align="start" side="bottom">
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-semibold text-base mb-2 flex items-center gap-2">
+                            <FileText className="h-5 w-5 text-blue-600" />
+                            Types of Clauses You Can Add
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            Customize your loan contract with additional terms specific to your requirements
+                          </p>
+                        </div>
+
+                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                          {/* Payment Related Clauses */}
+                          <div className="border-l-2 border-blue-500 pl-3">
+                            <p className="font-semibold text-sm text-blue-700">💰 Payment & Transaction Clauses</p>
+                            <ul className="text-xs text-muted-foreground mt-1 space-y-1">
+                              <li>• Preferred payment methods (UPI, Bank Transfer, Cheque)</li>
+                              <li>• Partial payment terms and schedules</li>
+                              <li>• Payment confirmation requirements</li>
+                              <li>• Bank account details for transactions</li>
+                              <li>• Payment receipt acknowledgment terms</li>
+                            </ul>
+                          </div>
+
+                          {/* Communication Clauses */}
+                          <div className="border-l-2 border-green-500 pl-3">
+                            <p className="font-semibold text-sm text-green-700">📞 Communication & Updates</p>
+                            <ul className="text-xs text-muted-foreground mt-1 space-y-1">
+                              <li>• Required frequency of trip status updates</li>
+                              <li>• Contact person details and backup contacts</li>
+                              <li>• Preferred communication channels (phone, email, WhatsApp)</li>
+                              <li>• Response time expectations for queries</li>
+                              <li>• Emergency notification procedures</li>
+                            </ul>
+                          </div>
+
+                          {/* Documentation Clauses */}
+                          <div className="border-l-2 border-purple-500 pl-3">
+                            <p className="font-semibold text-sm text-purple-700">📄 Documentation Requirements</p>
+                            <ul className="text-xs text-muted-foreground mt-1 space-y-1">
+                              <li>• Mandatory documents (Bilty, E-Way Bill, POD, Invoice)</li>
+                              <li>• Document submission timelines</li>
+                              <li>• Photo/video proof requirements at checkpoints</li>
+                              <li>• Original document collection terms</li>
+                              <li>• Digital document acceptance criteria</li>
+                            </ul>
+                          </div>
+
+                          {/* Security & Collateral */}
+                          <div className="border-l-2 border-orange-500 pl-3">
+                            <p className="font-semibold text-sm text-orange-700">🔒 Security & Collateral</p>
+                            <ul className="text-xs text-muted-foreground mt-1 space-y-1">
+                              <li>• Additional security deposit requirements</li>
+                              <li>• Post-dated cheques as security</li>
+                              <li>• Vehicle RC or other document as collateral</li>
+                              <li>• Guarantor requirements and details</li>
+                              <li>• Bank guarantee specifications</li>
+                            </ul>
+                          </div>
+
+                          {/* Trip Specific Terms */}
+                          <div className="border-l-2 border-red-500 pl-3">
+                            <p className="font-semibold text-sm text-red-700">🚚 Trip-Specific Conditions</p>
+                            <ul className="text-xs text-muted-foreground mt-1 space-y-1">
+                              <li>• GPS tracking requirements and sharing</li>
+                              <li>• Specific route or highway preferences</li>
+                              <li>• Loading/unloading supervision terms</li>
+                              <li>• Temperature control or special handling requirements</li>
+                              <li>• Maximum transit time limitations</li>
+                              <li>• Stop-over restrictions or permissions</li>
+                            </ul>
+                          </div>
+
+                          {/* Insurance & Liability */}
+                          <div className="border-l-2 border-yellow-600 pl-3">
+                            <p className="font-semibold text-sm text-yellow-700">🛡️ Insurance & Liability</p>
+                            <ul className="text-xs text-muted-foreground mt-1 space-y-1">
+                              <li>• Goods insurance coverage requirements</li>
+                              <li>• Vehicle insurance verification</li>
+                              <li>• Liability in case of damage or loss</li>
+                              <li>• Accident reporting procedures</li>
+                              <li>• Insurance claim process and timelines</li>
+                            </ul>
+                          </div>
+
+                          {/* Dispute Resolution */}
+                          <div className="border-l-2 border-indigo-500 pl-3">
+                            <p className="font-semibold text-sm text-indigo-700">⚖️ Dispute Resolution</p>
+                            <ul className="text-xs text-muted-foreground mt-1 space-y-1">
+                              <li>• Jurisdiction for legal proceedings</li>
+                              <li>• Arbitration clause and arbiter selection</li>
+                              <li>• Mediation requirements before litigation</li>
+                              <li>• Governing law specification</li>
+                              <li>• Legal notice period and format</li>
+                            </ul>
+                          </div>
+
+                          {/* Early Termination */}
+                          <div className="border-l-2 border-pink-500 pl-3">
+                            <p className="font-semibold text-sm text-pink-700">🔄 Early Termination & Amendments</p>
+                            <ul className="text-xs text-muted-foreground mt-1 space-y-1">
+                              <li>• Trip cancellation terms and penalties</li>
+                              <li>• Early loan closure procedures</li>
+                              <li>• Conditions for contract amendment</li>
+                              <li>• Refund policy for cancelled trips</li>
+                              <li>• Mutual consent requirements for changes</li>
+                            </ul>
+                          </div>
+
+                          {/* Force Majeure */}
+                          <div className="border-l-2 border-gray-500 pl-3">
+                            <p className="font-semibold text-sm text-gray-700">⚠️ Force Majeure & Special Conditions</p>
+                            <ul className="text-xs text-muted-foreground mt-1 space-y-1">
+                              <li>• Natural disaster or emergency provisions</li>
+                              <li>• Government restrictions or lockdown terms</li>
+                              <li>• Strike or civil unrest contingencies</li>
+                              <li>• Vehicle breakdown handling procedures</li>
+                              <li>• Unforeseen delay notification requirements</li>
+                            </ul>
+                          </div>
+                        </div>
+
+                        <div className="border-t pt-3 mt-3">
+                          <p className="text-xs font-semibold text-red-600 mb-2">⚠️ What NOT to Include:</p>
+                          <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
+                            <li>Terms that contradict standard clauses</li>
+                            <li>Illegal or unenforceable conditions</li>
+                            <li>Discriminatory or unfair terms</li>
+                            <li>Personal information of third parties without consent</li>
+                          </ul>
+                        </div>
+
+                        <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                          <p className="text-xs font-semibold text-blue-900 mb-1">💡 Pro Tip:</p>
+                          <p className="text-xs text-blue-800">
+                            Be specific and clear. Use bullet points or numbered lists for multiple conditions.
+                            Keep it professional and legally sound. When in doubt, consult a legal advisor.
+                          </p>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="customTerms">Additional Clauses (Optional)</Label>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Add any specific terms or conditions you want to include in this loan agreement. This space is fully editable.
+                    Add any specific terms or conditions you want to include in this loan agreement. Click the info icon above for ideas and examples.
                   </p>
                   <Textarea
                     id="customTerms"
