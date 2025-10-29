@@ -29,38 +29,52 @@ export interface CreateNotificationInput {
  * Create a new notification
  */
 export const createNotification = async (input: CreateNotificationInput): Promise<DbNotification> => {
-  const db = await getDatabase();
-  const id = `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  try {
+    const db = getDatabase();
+    const id = `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-  await db.query(`
-    INSERT INTO notifications (
-      id, user_id, type, title, message, priority, read, link, action_url, metadata
-    ) VALUES ($1, $2, $3, $4, $5, $6, FALSE, $7, $8, $9)
-  `, [
-    id,
-    input.userId,
-    input.type,
-    input.title,
-    input.message,
-    input.priority || 'medium',
-    input.actionUrl || null,
-    input.actionUrl || null,
-    input.metadata ? JSON.stringify(input.metadata) : null
-  ]);
+    console.log('🔔 [NOTIFICATION] Creating notification:', {
+      id,
+      userId: input.userId,
+      type: input.type,
+      title: input.title
+    });
 
-  const notification = await getNotificationById(id);
-  if (!notification) {
-    throw new Error('Failed to create notification');
+    await db.query(`
+      INSERT INTO notifications (
+        id, user_id, type, title, message, priority, read, link, action_url, metadata
+      ) VALUES ($1, $2, $3, $4, $5, $6, FALSE, $7, $8, $9)
+    `, [
+      id,
+      input.userId,
+      input.type,
+      input.title,
+      input.message,
+      input.priority || 'medium',
+      input.actionUrl || null,
+      input.actionUrl || null,
+      input.metadata ? JSON.stringify(input.metadata) : null
+    ]);
+
+    console.log('✅ [NOTIFICATION] Notification created successfully:', id);
+
+    const notification = await getNotificationById(id);
+    if (!notification) {
+      throw new Error('Failed to create notification');
+    }
+
+    return notification;
+  } catch (error) {
+    console.error('❌ [NOTIFICATION] Error creating notification:', error);
+    throw error;
   }
-
-  return notification;
 };
 
 /**
  * Get notification by ID
  */
 export const getNotificationById = async (id: string): Promise<DbNotification | null> => {
-  const db = await getDatabase();
+  const db = getDatabase();
   const result = await db.query('SELECT * FROM notifications WHERE id = $1', [id]);
   return result.rows[0] || null;
 };
@@ -69,13 +83,15 @@ export const getNotificationById = async (id: string): Promise<DbNotification | 
  * Get all notifications for a user
  */
 export const getUserNotifications = async (userId: string, limit: number = 50): Promise<DbNotification[]> => {
-  const db = await getDatabase();
+  const db = getDatabase();
+  console.log(`🔔 [NOTIFICATION] Fetching notifications for user: ${userId}, limit: ${limit}`);
   const result = await db.query(`
     SELECT * FROM notifications
     WHERE user_id = $1
     ORDER BY created_at DESC
     LIMIT $2
   `, [userId, limit]);
+  console.log(`✅ [NOTIFICATION] Found ${result.rows.length} notifications for user: ${userId}`);
   return result.rows;
 };
 
@@ -83,16 +99,18 @@ export const getUserNotifications = async (userId: string, limit: number = 50): 
  * Get unread notifications count for a user
  */
 export const getUnreadCount = async (userId: string): Promise<number> => {
-  const db = await getDatabase();
+  const db = getDatabase();
   const result = await db.query('SELECT COUNT(*) as count FROM notifications WHERE user_id = $1 AND read = FALSE', [userId]);
-  return parseInt(result.rows[0].count);
+  const count = parseInt(result.rows[0].count);
+  console.log(`🔔 [NOTIFICATION] Unread count for user ${userId}: ${count}`);
+  return count;
 };
 
 /**
  * Mark notification as read
  */
 export const markAsRead = async (userId: string, notificationId: string): Promise<boolean> => {
-  const db = await getDatabase();
+  const db = getDatabase();
   const result = await db.query(`
     UPDATE notifications
     SET read = TRUE, read_at = NOW()
@@ -105,7 +123,7 @@ export const markAsRead = async (userId: string, notificationId: string): Promis
  * Mark all notifications as read for a user
  */
 export const markAllAsRead = async (userId: string): Promise<boolean> => {
-  const db = await getDatabase();
+  const db = getDatabase();
   const result = await db.query(`
     UPDATE notifications
     SET read = TRUE, read_at = NOW()
@@ -118,7 +136,7 @@ export const markAllAsRead = async (userId: string): Promise<boolean> => {
  * Delete a notification
  */
 export const deleteNotification = async (userId: string, notificationId: string): Promise<boolean> => {
-  const db = await getDatabase();
+  const db = getDatabase();
   const result = await db.query('DELETE FROM notifications WHERE id = $1 AND user_id = $2', [notificationId, userId]);
   return result.rowCount > 0;
 };
@@ -127,7 +145,7 @@ export const deleteNotification = async (userId: string, notificationId: string)
  * Delete all notifications for a user
  */
 export const deleteAllNotifications = async (userId: string): Promise<boolean> => {
-  const db = await getDatabase();
+  const db = getDatabase();
   const result = await db.query('DELETE FROM notifications WHERE user_id = $1', [userId]);
   return result.rowCount > 0;
 };
@@ -136,7 +154,7 @@ export const deleteAllNotifications = async (userId: string): Promise<boolean> =
  * Get notifications by type
  */
 export const getNotificationsByType = async (userId: string, type: NotificationType): Promise<DbNotification[]> => {
-  const db = await getDatabase();
+  const db = getDatabase();
   const result = await db.query(`
     SELECT * FROM notifications
     WHERE user_id = $1 AND type = $2
