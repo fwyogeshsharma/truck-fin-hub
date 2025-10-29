@@ -1448,7 +1448,7 @@ const InvestmentOpportunities = () => {
                             </p>
                           </div>
                           <p className="text-xs text-muted-foreground truncate">
-                            {trip.loadType} • {trip.weight} kg • {trip.distance}
+                            {trip.loadType} • {trip.weight} kg • {trip.distance}{" "}
                             km
                           </p>
                         </div>

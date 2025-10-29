@@ -16,7 +16,7 @@ export const notificationTemplates: Record<string, NotificationTemplate> = {
       <ul>
         <li>Load Type: ${data.loadType}</li>
         <li>Amount: ${formatCurrency(data.amount)}</li>
-        <li>Distance: ${data.distance}km</li>
+        <li>Distance: ${data.distance} km</li>
       </ul>
       <p>Your trip is now available for lenders to bid on.</p>
     `,
@@ -75,7 +75,7 @@ export const notificationTemplates: Record<string, NotificationTemplate> = {
         <li>Route: ${data.origin} → ${data.destination}</li>
         <li>Load Type: ${data.loadType}</li>
         <li>Amount: ${formatCurrency(data.amount)}</li>
-        <li>Distance: ${data.distance}km</li>
+        <li>Distance: ${data.distance} km</li>
         <li>Interest Rate: ${data.interestRate || 'N/A'}%</li>
         <li>Risk Level: ${data.riskLevel || 'Low'}</li>
         <li>Maturity: ${data.maturityDays || 30} days</li>
