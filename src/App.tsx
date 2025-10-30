@@ -42,6 +42,7 @@ import FAQ from "./pages/FAQ";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookieConsent from "./components/CookieConsent";
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ const App = () => {
       <Sonner />
       <CookieConsent />
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
