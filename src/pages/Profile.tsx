@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { UserIcon, Mail, Phone, MapPin, Briefcase, Calendar, Shield, Wallet, ArrowRight, Edit } from 'lucide-react';
+import { UserIcon, Mail, Phone, Briefcase, Calendar, Shield, Wallet, ArrowRight, Edit } from 'lucide-react';
 import { apiClient } from '@/api/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,6 +24,7 @@ const Profile = () => {
     name: user?.name || '',
     phone: user?.phone || '',
     email: user?.email || '',
+    location: user?.location || '',
     company: user?.company || '',
   });
 
@@ -38,6 +39,7 @@ const Profile = () => {
       name: user?.name || '',
       phone: user?.phone || '',
       email: user?.email || '',
+      location: user?.location || '',
       company: user?.company || '',
     });
     setEditDialogOpen(true);
@@ -155,16 +157,7 @@ const Profile = () => {
                     <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="text-sm text-muted-foreground">Phone</p>
-                      <p className="font-medium">{user.phone || '+91 XXXXX XXXXX'}</p>
-                    </div>
-                  </div>
-
-                  {/* Location */}
-                  <div className="flex items-start gap-3">
-                    <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Location</p>
-                      <p className="font-medium">{user.location || 'Not specified'}</p>
+                      <p className="font-medium">{user.phone || 'Not specified'}</p>
                     </div>
                   </div>
 
@@ -184,10 +177,7 @@ const Profile = () => {
                       <p className="text-sm text-muted-foreground">Member Since</p>
                       <p className="font-medium">
                         {user.createdAt
-                          ? new Date(user.createdAt).toLocaleDateString('en-IN', {
-                              month: 'short',
-                              year: 'numeric',
-                            })
+                          ? new Date(user.createdAt).getFullYear()
                           : 'N/A'}
                       </p>
                     </div>
@@ -259,6 +249,15 @@ const Profile = () => {
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="Enter your phone number"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="Enter your location (City, State)"
                 />
               </div>
               <div className="space-y-2">
