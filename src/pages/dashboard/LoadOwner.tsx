@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { TruckIcon, Plus, IndianRupee, TrendingUp, Calendar, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data, Trip, Wallet } from "@/lib/data";
+import { apiClient } from "@/api/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -56,19 +57,19 @@ const LoadOwnerDashboard = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Fetch both trips and wallet data in parallel for better performance
-        const [allTrips, walletData] = await Promise.all([
-          data.getTrips(),
-          data.getWallet(user?.id || 'lo1')
-        ]);
+        // Load trips for this load owner by user ID using API
+        let trips;
+        if (user?.id) {
+          // Use API to get trips by load_owner_id
+          trips = await apiClient.get<Trip[]>(`/trips?loadOwnerId=${user.id}`);
+        } else {
+          trips = await data.getTrips();
+        }
 
-        // Filter trips to only show those belonging to this load owner
-        // Checks both loadOwnerId match and legacy loadOwnerName filter
-        const filteredTrips = allTrips.filter(t =>
-          t.loadOwnerId === user?.id || t.loadOwnerName.includes('ABC')
-        );
+        // Fetch wallet data
+        const walletData = await data.getWallet(user?.id || 'lo1');
 
-        setTrips(filteredTrips);
+        setTrips(trips);
         setWallet(walletData);
       } catch (error) {
         console.error('Failed to load data:', error);
@@ -182,15 +183,13 @@ const LoadOwnerDashboard = () => {
       });
 
       // Reload trips and wallet data
-      const [allTrips, walletData] = await Promise.all([
-        data.getTrips(),
-        data.getWallet(user?.id || 'lo1')
-      ]);
+      // Reload trips and wallet after repayment
+      const trips = user?.id
+        ? await apiClient.get<Trip[]>(`/trips?loadOwnerId=${user.id}`)
+        : await data.getTrips();
+      const walletData = await data.getWallet(user?.id || 'lo1');
 
-      const filteredTrips = allTrips.filter(t =>
-        t.loadOwnerId === user?.id || t.loadOwnerName.includes('ABC')
-      );
-      setTrips(filteredTrips);
+      setTrips(trips);
       setWallet(walletData);
 
       // Open rating dialog after successful repayment
@@ -631,11 +630,10 @@ const LoadOwnerDashboard = () => {
             }}
             onRatingSubmitted={async () => {
               // Reload trips after rating is submitted
-              const allTrips = await data.getTrips();
-              const filteredTrips = allTrips.filter(t =>
-                t.loadOwnerId === user?.id || t.loadOwnerName.includes('ABC')
-              );
-              setTrips(filteredTrips);
+              const trips = user?.id
+                ? await apiClient.get<Trip[]>(`/trips?loadOwnerId=${user.id}`)
+                : await data.getTrips();
+              setTrips(trips);
             }}
             tripId={tripForRating.id}
             lenderId={tripForRating.lenderId || ''}
