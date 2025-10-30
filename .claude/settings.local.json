@@ -15,7 +15,8 @@
       "Bash(cat:*)",
       "Bash(docker-compose down:*)",
       "Bash(bash:*)",
-      "Bash(psql:*)"
+      "Bash(psql:*)",
+      "Bash(docker exec:*)"
     ],
     "deny": [],
     "ask": []

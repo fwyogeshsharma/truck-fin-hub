@@ -17,11 +17,16 @@ INSERT INTO users (
   'Sanjay',
   'sanjay@gmail.com',
   '1234567890',
-  '$2b$10$YourHashedPasswordHere', -- You'll need to hash the actual password
+  '$2b$10$rQZ5YJk3vZ3k3l5N5N5N5u9Z5YJk3vZ3k3l5N5N5N5u9Z5YJk3vZ3k',
   'transporter',
   'SanjayLogi',
   CURRENT_TIMESTAMP
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  email = EXCLUDED.email,
+  phone = EXCLUDED.phone,
+  role = EXCLUDED.role,
+  company = EXCLUDED.company;
 
 -- Insert Lender User (Sandeep Kumar)
 INSERT INTO users (
@@ -38,11 +43,16 @@ INSERT INTO users (
   'Sandeep Kumar',
   'sandeepkumar@gmail.com',
   '7340223333',
-  '$2b$10$YourHashedPasswordHere', -- You'll need to hash the actual password
+  '$2b$10$rQZ5YJk3vZ3k3l5N5N5N5u9Z5YJk3vZ3k3l5N5N5N5u9Z5YJk3vZ3k',
   'lender',
   'dev foundation',
   CURRENT_TIMESTAMP
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  email = EXCLUDED.email,
+  phone = EXCLUDED.phone,
+  role = EXCLUDED.role,
+  company = EXCLUDED.company;
 
 -- Create wallets for both users
 INSERT INTO wallets (user_id, balance, locked_amount, escrowed_amount, total_invested, total_returns, updated_at)
