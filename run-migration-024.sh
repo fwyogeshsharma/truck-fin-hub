@@ -15,11 +15,13 @@ echo ""
 CONTAINER_NAME="${POSTGRES_CONTAINER:-logifin-postgres}"
 DB_NAME="${DB_NAME:-logifin}"
 DB_USER="${DB_USER:-postgres}"
+DB_PORT="${DB_PORT:-5433}"
 
 echo "⚙️  Configuration:"
 echo "   Container: $CONTAINER_NAME"
 echo "   Database: $DB_NAME"
 echo "   User: $DB_USER"
+echo "   Port: $DB_PORT"
 echo ""
 
 # Check if Docker is available
