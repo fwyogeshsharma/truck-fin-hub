@@ -1112,13 +1112,16 @@ const InvestmentOpportunities = () => {
                                 </p>
                               </div>
 
-                              {/* ARR Amount - Compact */}
-                              <div className="w-24 flex-shrink-0 text-center">
+                              {/* Yearly Return - Compact */}
+                              <div className="w-28 flex-shrink-0 text-center">
                                 <p className="text-xs text-muted-foreground">
-                                  ARR
+                                  Yearly Return
                                 </p>
                                 <p className="font-semibold text-sm text-green-600">
-                                  {formatCurrencyCompact(tripReturn, true)}
+                                  {formatCurrencyCompact((trip.amount * tripARR) / 100, true)}
+                                </p>
+                                <p className="text-[9px] text-muted-foreground">
+                                  (365 days)
                                 </p>
                               </div>
                             </div>
@@ -1833,17 +1836,18 @@ const InvestmentOpportunities = () => {
                         {/* ARR - 2 columns */}
                         <div className="hidden md:block md:col-span-2 text-center">
                           <p className="text-xs text-muted-foreground">
-                            ARR (
-                            {formatPercentage(((trip.interestRate || 12) / (trip.maturityDays || 30)) * 365)}
-                            %)
+                            ARR: {formatPercentage(((trip.interestRate || 12) / (trip.maturityDays || 30)) * 365)}%
                           </p>
                           <p className="font-semibold text-green-600">
                             {formatCurrencyCompact(
                               trip.amount *
-                                (trip.interestRate || 12) /
+                                (((trip.interestRate || 12) / (trip.maturityDays || 30)) * 365) /
                                 100,
                               true,
                             )}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            Yearly (365 days)
                           </p>
                         </div>
 
@@ -2460,6 +2464,9 @@ const InvestmentOpportunities = () => {
                             <p className="font-semibold text-green-600">
                               {formatPercentage(tripARR)}%
                             </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {formatCurrencyCompact((trip.amount * tripARR) / 100, true)}/year
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -2538,9 +2545,25 @@ const InvestmentOpportunities = () => {
                             </div>
                             <div className="flex justify-between text-sm">
                               <span className="text-muted-foreground">
-                                ARR (Annual Return)
+                                ARR
+                              </span>
+                              <span className="font-semibold text-green-600">
+                                {formatPercentage(tripARR)}%
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">
+                                Yearly Return (365 days)
                               </span>
                               <span className="font-semibold text-accent">
+                                {formatCurrency((trip.amount * tripARR) / 100)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">
+                                Maturity Return ({daysToMaturity} days)
+                              </span>
+                              <span className="font-semibold">
                                 {formatCurrency(expectedReturn)}
                               </span>
                             </div>
@@ -2954,10 +2977,10 @@ const InvestmentOpportunities = () => {
                   </div>
 
                   {/* Expected Return */}
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium text-green-900">
-                        Expected Return
+                        Maturity Return ({selectedTripForBid.maturityDays || 30} days)
                       </span>
                       <span className="text-lg font-bold text-green-700">
                         {formatCurrency(
@@ -2965,13 +2988,28 @@ const InvestmentOpportunities = () => {
                         )}
                       </span>
                     </div>
-                    <p className="text-xs text-green-700 mt-1">
-                      ARR:{" "}
-                      {formatPercentage(
-                        (customBidRate / (selectedTripForBid.maturityDays || 30)) * 365,
-                      )}
-                      % on {formatCurrency(selectedTripForBid.amount)} for {selectedTripForBid.maturityDays || 30} days
-                    </p>
+                    <div className="pt-2 border-t border-green-200">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-green-800">
+                          ARR
+                        </span>
+                        <span className="font-semibold text-green-800">
+                          {formatPercentage(
+                            (customBidRate / (selectedTripForBid.maturityDays || 30)) * 365,
+                          )}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm mt-1">
+                        <span className="text-green-800">
+                          Yearly Return (365 days)
+                        </span>
+                        <span className="font-semibold text-green-800">
+                          {formatCurrency(
+                            (selectedTripForBid.amount * ((customBidRate / (selectedTripForBid.maturityDays || 30)) * 365)) / 100,
+                          )}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Wallet Balance Check */}
