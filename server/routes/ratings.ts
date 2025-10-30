@@ -17,7 +17,8 @@ router.post('/', async (req: Request, res: Response) => {
       rating,
       review_text,
       loan_amount,
-      interest_rate
+      interest_rate,
+      mode // 'lender-rates-borrower' or 'borrower-rates-lender'
     } = req.body;
 
     // Validate required fields
@@ -36,28 +37,35 @@ router.post('/', async (req: Request, res: Response) => {
       });
     }
 
-    // Check if rating already exists for this trip and borrower
+    // Determine rating direction
+    const isLenderRating = mode === 'lender-rates-borrower';
+    const ratingType = isLenderRating ? 'lender_rates_borrower' : 'borrower_rates_lender';
+    const ratedById = isLenderRating ? lender_id : borrower_id;
+    const ratedUserId = isLenderRating ? borrower_id : lender_id;
+
+    // Check if this specific rating already exists (same trip, same rater, same rating type)
     const existingRating = await db.query(
-      'SELECT id FROM ratings WHERE trip_id = $1 AND borrower_id = $2',
-      [trip_id, borrower_id]
+      'SELECT id FROM ratings WHERE trip_id = $1 AND rated_by_id = $2 AND rating_type = $3',
+      [trip_id, ratedById, ratingType]
     );
 
     if (existingRating.rows.length > 0) {
       return res.status(400).json({
         error: 'Rating already exists',
-        message: 'You have already rated this lender for this trip'
+        message: `You have already rated this ${isLenderRating ? 'borrower' : 'lender'} for this trip`
       });
     }
 
     // Generate ID
     const id = `rating_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Insert rating
+    // Insert rating with new direction fields
     const result = await db.query(
       `INSERT INTO ratings (
         id, trip_id, lender_id, lender_name, borrower_id, borrower_name,
-        rating, review_text, loan_amount, interest_rate
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        rating, review_text, loan_amount, interest_rate,
+        rated_by_id, rated_user_id, rating_type
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *`,
       [
         id,
@@ -69,20 +77,19 @@ router.post('/', async (req: Request, res: Response) => {
         rating,
         review_text || null,
         loan_amount || null,
-        interest_rate || null
+        interest_rate || null,
+        ratedById,
+        ratedUserId,
+        ratingType
       ]
-    );
-
-    // Update trip to mark as rated
-    await db.query(
-      'UPDATE trips SET has_rating = true, rating_id = $1 WHERE id = $2',
-      [id, trip_id]
     );
 
     console.log('✅ [RATING] Rating created:', {
       id,
       trip_id,
-      lender_id,
+      rating_type: ratingType,
+      rated_by: ratedById,
+      rated_user: ratedUserId,
       rating,
       has_review: !!review_text
     });
@@ -236,11 +243,11 @@ router.get('/pending/:lenderId', async (req: Request, res: Response) => {
     console.log(`📊 [DEBUG] Found ${ratingsDebug.rows.length} existing ratings:`,
       JSON.stringify(ratingsDebug.rows, null, 2));
 
-    // Find all repaid trips where this lender invested but hasn't rated yet
-    // Use LEFT JOIN for trip_bids to ensure we don't miss trips without bid records
-    // IMPORTANT: Check if rating exists by matching trip_id and borrower_id (since lender rates the borrower)
+    // Find all repaid trips where this lender invested and:
+    // 1. Borrower has already rated the lender (borrower_rates_lender exists)
+    // 2. Lender has NOT yet rated the borrower back (lender_rates_borrower doesn't exist)
     const result = await db.query(
-      `SELECT
+      `SELECT DISTINCT
         t.id as trip_id,
         t.origin,
         t.destination,
@@ -255,10 +262,15 @@ router.get('/pending/:lenderId', async (req: Request, res: Response) => {
         t.repaid_at
        FROM trips t
        LEFT JOIN trip_bids tb ON t.id = tb.trip_id AND t.lender_id = tb.lender_id
-       LEFT JOIN ratings r ON t.id = r.trip_id AND t.load_owner_id = r.borrower_id
+       INNER JOIN ratings r_borrower ON t.id = r_borrower.trip_id
+         AND r_borrower.rating_type = 'borrower_rates_lender'
+         AND r_borrower.rated_by_id = t.load_owner_id
+       LEFT JOIN ratings r_lender ON t.id = r_lender.trip_id
+         AND r_lender.rating_type = 'lender_rates_borrower'
+         AND r_lender.rated_by_id = t.lender_id
        WHERE t.status = 'repaid'
          AND t.lender_id = $1
-         AND r.id IS NULL
+         AND r_lender.id IS NULL
        ORDER BY t.repaid_at DESC`,
       [lenderId]
     );

@@ -4345,6 +4345,8 @@ print(response.json())`;
             borrowerName={user?.name || ''}
             loanAmount={tripForRating.amount || 0}
             interestRate={tripForRating.interestRate || (tripForRating as any).interest_rate || 0}
+            mode="borrower-rates-lender"
+            canDismiss={false}
           />
         )}
 

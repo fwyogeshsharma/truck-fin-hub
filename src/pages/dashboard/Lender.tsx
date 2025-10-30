@@ -1079,7 +1079,7 @@ const LenderDashboard = () => {
           loanAmount={pendingRatings[currentRatingIndex].loan_amount}
           interestRate={pendingRatings[currentRatingIndex].interest_rate}
           mode="lender-rates-borrower"
-          canDismiss={true}
+          canDismiss={false}
         />
       )}
     </DashboardLayout>
