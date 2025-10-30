@@ -324,7 +324,7 @@ const InvestmentOpportunities = () => {
       // Initialize interest rate for newly selected trip using displayed rate from screen
       if (!prev.includes(tripId) && !tripInterestRates[tripId]) {
         const trip = trips.find((t) => t.id === tripId);
-        const lenderRate = (trip?.interestRate || 12) * 0.7;
+        const lenderRate = trip?.interestRate || 12;
         setTripInterestRates((prevRates) => ({
           ...prevRates,
           [tripId]: lenderRate,
@@ -361,9 +361,8 @@ const InvestmentOpportunities = () => {
   );
   const totalExpectedReturn = selectedTripsData.reduce((sum, trip) => {
     const rate = tripInterestRates[trip.id] || trip.interestRate || 12;
-    const maturityDays = trip.maturityDays || 30;
-    // rate is ARR, calculate return for maturity period
-    return sum + (trip.amount * (rate / 365) * maturityDays) / 100;
+    // Calculate return for maturity period (rate is for the maturity period)
+    return sum + (trip.amount * rate) / 100;
   }, 0);
 
   // Calculate average interest rate (raw rate) from selected trips
@@ -382,8 +381,10 @@ const InvestmentOpportunities = () => {
           const trip = trips.find((t) => t.id === tripId);
           if (!trip) return sum;
           const rate = tripInterestRates[tripId] || trip?.interestRate || 12;
-          // rate is already ARR, no conversion needed
-          return sum + rate;
+          const maturityDays = trip?.maturityDays || 30;
+          // Calculate annualized rate: (rate / maturityDays) * 365
+          const annualizedRate = (rate / maturityDays) * 365;
+          return sum + annualizedRate;
         }, 0) / selectedTrips.length
       : 0;
 
@@ -979,14 +980,15 @@ const InvestmentOpportunities = () => {
                         const tripRate =
                           tripInterestRates[trip.id] || trip.interestRate || 12;
                         const maturityDays = trip.maturityDays || 30;
-                        // tripRate is ARR, calculate return for maturity period
+                        // Calculate ARR (annualized rate): (rate / maturityDays) * 365
+                        const tripARR = (tripRate / maturityDays) * 365;
+                        // Calculate return for maturity period
                         const tripReturn =
-                          (trip.amount * (tripRate / 365) * maturityDays) / 100;
+                          (trip.amount * tripRate) / 100;
 
-                        // Handler to update ARR directly
-                        const handleYearlyRateChange = (yearlyARR: number) => {
-                          // yearlyARR is already the ARR, store it directly
-                          updateTripInterestRate(trip.id, yearlyARR);
+                        // Handler to update interest rate
+                        const handleYearlyRateChange = (rate: number) => {
+                          updateTripInterestRate(trip.id, rate);
                         };
 
                         return (
@@ -1106,7 +1108,7 @@ const InvestmentOpportunities = () => {
                                   ARR %
                                 </p>
                                 <p className="font-bold text-sm text-primary">
-                                  {tripRate.toFixed(1)}%
+                                  {tripARR.toFixed(1)}%
                                 </p>
                               </div>
 
@@ -1832,14 +1834,13 @@ const InvestmentOpportunities = () => {
                         <div className="hidden md:block md:col-span-2 text-center">
                           <p className="text-xs text-muted-foreground">
                             ARR (
-                            {formatPercentage((trip.interestRate || 12) * 0.7)}
+                            {formatPercentage(((trip.interestRate || 12) / (trip.maturityDays || 30)) * 365)}
                             %)
                           </p>
                           <p className="font-semibold text-green-600">
                             {formatCurrencyCompact(
                               trip.amount *
-                                ((((trip.interestRate || 12) * 0.7) / 365) *
-                                  (trip.maturityDays || 30)) /
+                                (trip.interestRate || 12) /
                                 100,
                               true,
                             )}
@@ -1885,9 +1886,10 @@ const InvestmentOpportunities = () => {
                 const daysToMaturity = trip.maturityDays || 30;
                 const tripRate =
                   tripInterestRates[trip.id] || trip.interestRate || 12;
-                // tripRate is ARR, calculate return for maturity period
-                const expectedReturn =
-                  (trip.amount * (tripRate / 365) * daysToMaturity) / 100;
+                // Calculate ARR (annualized rate)
+                const tripARR = (tripRate / daysToMaturity) * 365;
+                // Calculate return for maturity period
+                const expectedReturn = (trip.amount * tripRate) / 100;
 
                 const isMultiSelected = selectedTrips.includes(trip.id);
 
@@ -2453,11 +2455,10 @@ const InvestmentOpportunities = () => {
                           <TrendingUp className="h-4 w-4 text-green-600" />
                           <div>
                             <p className="text-xs text-muted-foreground">
-                              Offered Rate
+                              ARR
                             </p>
                             <p className="font-semibold text-green-600">
-                              {formatPercentage((trip.interestRate || 12) * 0.7)}
-                              % ARR
+                              {formatPercentage(tripARR)}%
                             </p>
                           </div>
                         </div>
@@ -2948,35 +2949,28 @@ const InvestmentOpportunities = () => {
                       className="mt-1"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Recommended range: 0-20% annually
+                      Rate for {selectedTripForBid.maturityDays || 30} days maturity period
                     </p>
                   </div>
 
-                  {/* ARR (Annual Return) */}
+                  {/* Expected Return */}
                   <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium text-green-900">
-                        ARR (Annual Return)
+                        Expected Return
                       </span>
                       <span className="text-lg font-bold text-green-700">
                         {formatCurrency(
-                          (selectedTripForBid.amount *
-                            ((customBidRate * 365) /
-                              (selectedTripForBid.maturityDays || 30)) *
-                            0.7) /
-                            100,
+                          (selectedTripForBid.amount * customBidRate) / 100,
                         )}
                       </span>
                     </div>
                     <p className="text-xs text-green-700 mt-1">
-                      At{" "}
+                      ARR:{" "}
                       {formatPercentage(
-                        ((customBidRate * 365) /
-                          (selectedTripForBid.maturityDays || 30)) *
-                          0.7,
+                        (customBidRate / (selectedTripForBid.maturityDays || 30)) * 365,
                       )}
-                      % yearly interest on{" "}
-                      {formatCurrency(selectedTripForBid.amount)}
+                      % on {formatCurrency(selectedTripForBid.amount)} for {selectedTripForBid.maturityDays || 30} days
                     </p>
                   </div>
 
