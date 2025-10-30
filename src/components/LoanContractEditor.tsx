@@ -8,13 +8,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { FileText, Upload, Save, Eye, Info, CheckCircle2 } from 'lucide-react';
+import { FileText, Upload, Save, Eye, Info, CheckCircle2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface LoanContractEditorProps {
   open: boolean;
   onClose: () => void;
-  onSave: (contract: LoanContract) => void;
+  onSave: (contract: LoanContract) => Promise<void>;
   tripAmount: number;
   interestRate: number;
   maturityDays: number;
@@ -49,6 +49,7 @@ const LoanContractEditor = ({
   const [signaturePreview, setSignaturePreview] = useState<string>('');
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const [templateName, setTemplateName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [customTerms, setCustomTerms] = useState<string>('');
 
@@ -171,7 +172,7 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!contract.lenderSignature) {
       toast({
         variant: 'destructive',
@@ -197,7 +198,19 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
       templateName: saveAsTemplate ? templateName : undefined,
     };
 
-    onSave(finalContract);
+    setIsSubmitting(true);
+    try {
+      await onSave(finalContract);
+    } catch (error) {
+      console.error('Error saving contract:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to save contract. Please try again.',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -626,12 +639,21 @@ Examples:
         </Tabs>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSave} className="bg-gradient-primary">
-            <Save className="h-4 w-4 mr-2" />
-            Save & Proceed with Bid
+          <Button onClick={handleSave} className="bg-gradient-primary" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save & Proceed with Bid
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
