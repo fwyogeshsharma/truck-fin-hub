@@ -10,7 +10,10 @@
       "Bash(npx tsx:*)",
       "Bash(find:*)",
       "Bash(netstat:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(cat:*)",
+      "Bash(docker-compose down:*)"
     ],
     "deny": [],
     "ask": []
