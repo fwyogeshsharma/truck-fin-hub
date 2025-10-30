@@ -1460,8 +1460,9 @@ const LoadAgentDashboard = () => {
       // Calculate profit for this month
       const monthProfit = completedTrips
         .filter(t => {
-          if (!t.completedAt) return false;
-          const completedDate = new Date(t.completedAt);
+          const completedAt = t.completedAt || (t as any).completed_at;
+          if (!completedAt) return false;
+          const completedDate = new Date(completedAt);
           return completedDate.getMonth() === date.getMonth() &&
                  completedDate.getFullYear() === date.getFullYear();
         })
@@ -1476,8 +1477,9 @@ const LoadAgentDashboard = () => {
       // Calculate loans taken for this month
       const monthLoansTaken = fundedTrips
         .filter(t => {
-          if (!t.fundedAt) return false;
-          const fundedDate = new Date(t.fundedAt);
+          const fundedAt = t.fundedAt || (t as any).funded_at;
+          if (!fundedAt) return false;
+          const fundedDate = new Date(fundedAt);
           return fundedDate.getMonth() === date.getMonth() &&
                  fundedDate.getFullYear() === date.getFullYear();
         })
