@@ -238,6 +238,7 @@ router.get('/pending/:lenderId', async (req: Request, res: Response) => {
 
     // Find all repaid trips where this lender invested but hasn't rated yet
     // Use LEFT JOIN for trip_bids to ensure we don't miss trips without bid records
+    // IMPORTANT: Check if rating exists by matching trip_id and borrower_id (since lender rates the borrower)
     const result = await db.query(
       `SELECT
         t.id as trip_id,
@@ -254,7 +255,7 @@ router.get('/pending/:lenderId', async (req: Request, res: Response) => {
         t.repaid_at
        FROM trips t
        LEFT JOIN trip_bids tb ON t.id = tb.trip_id AND t.lender_id = tb.lender_id
-       LEFT JOIN ratings r ON t.id = r.trip_id AND t.lender_id = r.lender_id
+       LEFT JOIN ratings r ON t.id = r.trip_id AND t.load_owner_id = r.borrower_id
        WHERE t.status = 'repaid'
          AND t.lender_id = $1
          AND r.id IS NULL
