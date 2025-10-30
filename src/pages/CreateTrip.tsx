@@ -25,6 +25,9 @@ const CreateTrip = () => {
     amount: "",
   });
 
+  const [ewayBillFile, setEwayBillFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -34,26 +37,102 @@ const CreateTrip = () => {
     setFormData({ ...formData, [field]: value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file size (10 MB limit)
+      const MAX_FILE_SIZE = 10 * 1024 * 1024;
+      if (file.size > MAX_FILE_SIZE) {
+        toast({
+          title: "File Too Large",
+          description: "E-Way bill file size must be less than 10 MB",
+          variant: "destructive",
+        });
+        e.target.value = '';
+        return;
+      }
+      setEwayBillFile(file);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    const trip = data.createTrip({
-      loadOwnerId: user?.id || 'lo1',
-      loadOwnerName: user?.name || 'Load Provider',
-      origin: formData.origin,
-      destination: formData.destination,
-      distance: parseFloat(formData.distance),
-      loadType: formData.loadType,
-      weight: parseFloat(formData.weight),
-      amount: parseFloat(formData.amount),
-    });
+    try {
+      // Create trip first
+      const trip = await data.createTrip({
+        loadOwnerId: user?.id || 'lo1',
+        loadOwnerName: user?.name || 'Load Provider',
+        origin: formData.origin,
+        destination: formData.destination,
+        distance: parseFloat(formData.distance),
+        loadType: formData.loadType,
+        weight: parseFloat(formData.weight),
+        amount: parseFloat(formData.amount),
+      });
 
-    toast({
-      title: "Trip created successfully!",
-      description: "Your financing request is now live for lenders",
-    });
+      // If eWay bill is uploaded, convert to Base64 and save it
+      if (ewayBillFile && trip) {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          try {
+            const base64String = reader.result as string;
 
-    navigate('/dashboard/load_owner');
+            // Update trip with eWay bill document
+            await data.updateTrip(trip.id, {
+              documents: {
+                ewaybill: base64String,
+              },
+            });
+
+            toast({
+              title: "Trip created successfully!",
+              description: "Your financing request with e-Way bill is now live for lenders",
+            });
+
+            navigate('/dashboard/load_owner');
+          } catch (error) {
+            console.error('Error uploading eWay bill:', error);
+            toast({
+              title: "Trip created, but eWay bill upload failed",
+              description: "You can upload the eWay bill later from the trip details",
+              variant: "destructive",
+            });
+            navigate('/dashboard/load_owner');
+          } finally {
+            setIsSubmitting(false);
+          }
+        };
+
+        reader.onerror = () => {
+          toast({
+            title: "Trip created, but eWay bill upload failed",
+            description: "You can upload the eWay bill later from the trip details",
+            variant: "destructive",
+          });
+          navigate('/dashboard/load_owner');
+          setIsSubmitting(false);
+        };
+
+        reader.readAsDataURL(ewayBillFile);
+      } else {
+        toast({
+          title: "Trip created successfully!",
+          description: "Your financing request is now live for lenders",
+        });
+        navigate('/dashboard/load_owner');
+        setIsSubmitting(false);
+      }
+    } catch (error) {
+      console.error('Error creating trip:', error);
+      toast({
+        title: "Error creating trip",
+        description: "Please try again",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -142,6 +221,24 @@ const CreateTrip = () => {
                 <p className="text-xs text-muted-foreground">Enter trip value</p>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="ewayBill">E-Way Bill (Optional)</Label>
+                <Input
+                  id="ewayBill"
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.pdf"
+                  onChange={handleFileChange}
+                />
+                {ewayBillFile && (
+                  <p className="text-xs text-green-600 flex items-center gap-1">
+                    ✓ {ewayBillFile.name} ({(ewayBillFile.size / 1024).toFixed(2)} KB)
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Upload your e-Way bill document (JPG, PNG, or PDF - max 10 MB)
+                </p>
+              </div>
+
               <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                 <h4 className="font-semibold text-sm">Financing Summary</h4>
                 <div className="grid grid-cols-2 gap-2 text-sm">
@@ -157,10 +254,10 @@ const CreateTrip = () => {
               </div>
 
               <div className="flex gap-4">
-                <Button type="submit" className="bg-gradient-primary flex-1">
-                  Submit Financing Request
+                <Button type="submit" className="bg-gradient-primary flex-1" disabled={isSubmitting}>
+                  {isSubmitting ? 'Creating Trip...' : 'Submit Financing Request'}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => navigate('/dashboard/load_owner')}>
+                <Button type="button" variant="outline" onClick={() => navigate('/dashboard/load_owner')} disabled={isSubmitting}>
                   Cancel
                 </Button>
               </div>
