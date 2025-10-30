@@ -1425,14 +1425,14 @@ const LoadAgentDashboard = () => {
   };
 
   // Loan Analytics Calculations
-  const fundedTrips = allTrips.filter(t => t.lenderId && (t.status === 'funded' || t.status === 'in_transit' || t.status === 'completed'));
-  const completedTrips = allTrips.filter(t => t.status === 'completed' && t.lenderId);
+  const fundedTrips = allTrips.filter(t => (t.lenderId || (t as any).lender_id) && (t.status === 'funded' || t.status === 'in_transit' || t.status === 'completed'));
+  const completedTrips = allTrips.filter(t => t.status === 'completed' && (t.lenderId || (t as any).lender_id));
 
   const loanTaken = fundedTrips.reduce((sum, t) => sum + (t.amount || t.loanAmount || 0), 0);
   const loanRepaid = completedTrips.reduce((sum, t) => {
     const principal = t.amount || t.loanAmount || 0;
-    const interestRate = t.interestRate || t.loanInterestRate || 0;
-    const maturityDays = t.maturityDays || 30;
+    const interestRate = (t as any).interest_rate || t.interestRate || t.loanInterestRate || 0;
+    const maturityDays = (t as any).maturity_days || t.maturityDays || 30;
     const interest = (principal * (interestRate / 365) * maturityDays) / 100;
     return sum + principal + interest;
   }, 0);
@@ -1441,8 +1441,8 @@ const LoadAgentDashboard = () => {
   // Calculate interest paid (interest paid to lenders on completed trips)
   const profit = completedTrips.reduce((sum, t) => {
     const principal = t.amount || t.loanAmount || 0;
-    const interestRate = t.interestRate || t.loanInterestRate || 0;
-    const maturityDays = t.maturityDays || 30;
+    const interestRate = (t as any).interest_rate || t.interestRate || t.loanInterestRate || 0;
+    const maturityDays = (t as any).maturity_days || t.maturityDays || 30;
     const interest = (principal * (interestRate / 365) * maturityDays) / 100;
     return sum + interest;
   }, 0);
@@ -1467,8 +1467,8 @@ const LoadAgentDashboard = () => {
         })
         .reduce((sum, t) => {
           const principal = t.amount || t.loanAmount || 0;
-          const interestRate = t.interestRate || t.loanInterestRate || 0;
-          const maturityDays = t.maturityDays || 30;
+          const interestRate = (t as any).interest_rate || t.interestRate || t.loanInterestRate || 0;
+          const maturityDays = (t as any).maturity_days || t.maturityDays || 30;
           const interest = (principal * (interestRate / 365) * maturityDays) / 100;
           return sum + interest;
         }, 0);
