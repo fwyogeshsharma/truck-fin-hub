@@ -30,12 +30,13 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   : [
       'http://localhost:8080',
       'http://localhost:4000',
-      'http://34.93.247.3',
-      'https://34.93.247.3',
-      'http://34.93.247.3:4000',
-      'https://34.93.247.3:4000',
-      'http://34.93.247.3:8080',
+      'http://34.127.125.215',
+      'https://34.127.125.215',
+      'http://34.127.125.215:4000',
+      'https://34.127.125.215:4000',
+      'http://34.127.125.215:8080',
       'https://tf.rollingradius.com',
+      'https://demologifin.netlify.app',
       'https://*.netlify.app'
     ];
 
