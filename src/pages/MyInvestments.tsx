@@ -236,6 +236,42 @@ const MyInvestments = () => {
     setDocumentViewDialogOpen(true);
   };
 
+  // Helper function to generate pagination range with ellipsis
+  const getPaginationRange = (currentPage: number, totalPages: number) => {
+    const delta = 2; // Number of pages to show on each side of current page
+    const range: (number | string)[] = [];
+    const rangeWithDots: (number | string)[] = [];
+
+    // Always show first page
+    range.push(1);
+
+    // Calculate range around current page
+    for (let i = currentPage - delta; i <= currentPage + delta; i++) {
+      if (i > 1 && i < totalPages) {
+        range.push(i);
+      }
+    }
+
+    // Always show last page
+    if (totalPages > 1) {
+      range.push(totalPages);
+    }
+
+    // Add ellipsis where there are gaps
+    let prev = 0;
+    for (const i of range) {
+      if (typeof i === 'number') {
+        if (prev && i - prev > 1) {
+          rangeWithDots.push('...');
+        }
+        rangeWithDots.push(i);
+        prev = i;
+      }
+    }
+
+    return rangeWithDots;
+  };
+
   const EscrowedInvestmentCard = ({ investment }: { investment: any }) => {
     const trip = getTripDetails(investment.tripId);
     if (!trip) return null;
@@ -742,16 +778,20 @@ const MyInvestments = () => {
                         Previous
                       </Button>
                       <div className="flex items-center gap-1">
-                        {Array.from({ length: totalAllPages }, (_, i) => i + 1).map((page) => (
-                          <Button
-                            key={page}
-                            variant={allInvestmentsPage === page ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setAllInvestmentsPage(page)}
-                            className="min-w-[36px]"
-                          >
-                            {page}
-                          </Button>
+                        {getPaginationRange(allInvestmentsPage, totalAllPages).map((page, idx) => (
+                          page === '...' ? (
+                            <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">...</span>
+                          ) : (
+                            <Button
+                              key={page}
+                              variant={allInvestmentsPage === page ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setAllInvestmentsPage(page as number)}
+                              className="min-w-[36px]"
+                            >
+                              {page}
+                            </Button>
+                          )
                         ))}
                       </div>
                       <Button
@@ -806,16 +846,20 @@ const MyInvestments = () => {
                         Previous
                       </Button>
                       <div className="flex items-center gap-1">
-                        {Array.from({ length: totalEscrowedPages }, (_, i) => i + 1).map((page) => (
-                          <Button
-                            key={page}
-                            variant={escrowedPage === page ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setEscrowedPage(page)}
-                            className="min-w-[36px]"
-                          >
-                            {page}
-                          </Button>
+                        {getPaginationRange(escrowedPage, totalEscrowedPages).map((page, idx) => (
+                          page === '...' ? (
+                            <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">...</span>
+                          ) : (
+                            <Button
+                              key={page}
+                              variant={escrowedPage === page ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setEscrowedPage(page as number)}
+                              className="min-w-[36px]"
+                            >
+                              {page}
+                            </Button>
+                          )
                         ))}
                       </div>
                       <Button
@@ -867,16 +911,20 @@ const MyInvestments = () => {
                         Previous
                       </Button>
                       <div className="flex items-center gap-1">
-                        {Array.from({ length: totalActivePages }, (_, i) => i + 1).map((page) => (
-                          <Button
-                            key={page}
-                            variant={activePage === page ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setActivePage(page)}
-                            className="min-w-[36px]"
-                          >
-                            {page}
-                          </Button>
+                        {getPaginationRange(activePage, totalActivePages).map((page, idx) => (
+                          page === '...' ? (
+                            <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">...</span>
+                          ) : (
+                            <Button
+                              key={page}
+                              variant={activePage === page ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setActivePage(page as number)}
+                              className="min-w-[36px]"
+                            >
+                              {page}
+                            </Button>
+                          )
                         ))}
                       </div>
                       <Button
@@ -928,16 +976,20 @@ const MyInvestments = () => {
                         Previous
                       </Button>
                       <div className="flex items-center gap-1">
-                        {Array.from({ length: totalCompletedPages }, (_, i) => i + 1).map((page) => (
-                          <Button
-                            key={page}
-                            variant={completedPage === page ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCompletedPage(page)}
-                            className="min-w-[36px]"
-                          >
-                            {page}
-                          </Button>
+                        {getPaginationRange(completedPage, totalCompletedPages).map((page, idx) => (
+                          page === '...' ? (
+                            <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">...</span>
+                          ) : (
+                            <Button
+                              key={page}
+                              variant={completedPage === page ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCompletedPage(page as number)}
+                              className="min-w-[36px]"
+                            >
+                              {page}
+                            </Button>
+                          )
                         ))}
                       </div>
                       <Button
@@ -981,16 +1033,20 @@ const MyInvestments = () => {
                       Previous
                     </Button>
                     <div className="flex items-center gap-1">
-                      {Array.from({ length: totalDefaultedPages }, (_, i) => i + 1).map((page) => (
-                        <Button
-                          key={page}
-                          variant={defaultedPage === page ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setDefaultedPage(page)}
-                          className="min-w-[36px]"
-                        >
-                          {page}
-                        </Button>
+                      {getPaginationRange(defaultedPage, totalDefaultedPages).map((page, idx) => (
+                        page === '...' ? (
+                          <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">...</span>
+                        ) : (
+                          <Button
+                            key={page}
+                            variant={defaultedPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setDefaultedPage(page as number)}
+                            className="min-w-[36px]"
+                          >
+                            {page}
+                          </Button>
+                        )
                       ))}
                     </div>
                     <Button

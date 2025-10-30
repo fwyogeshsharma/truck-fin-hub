@@ -153,6 +153,42 @@ const LenderDashboard = () => {
     // Don't clear pendingRatings - they will show again on next dashboard load
   };
 
+  // Helper function to generate pagination range with ellipsis
+  const getPaginationRange = (currentPage: number, totalPages: number) => {
+    const delta = 2; // Number of pages to show on each side of current page
+    const range: (number | string)[] = [];
+    const rangeWithDots: (number | string)[] = [];
+
+    // Always show first page
+    range.push(1);
+
+    // Calculate range around current page
+    for (let i = currentPage - delta; i <= currentPage + delta; i++) {
+      if (i > 1 && i < totalPages) {
+        range.push(i);
+      }
+    }
+
+    // Always show last page
+    if (totalPages > 1) {
+      range.push(totalPages);
+    }
+
+    // Add ellipsis where there are gaps
+    let prev = 0;
+    for (const i of range) {
+      if (typeof i === 'number') {
+        if (prev && i - prev > 1) {
+          rangeWithDots.push('...');
+        }
+        rangeWithDots.push(i);
+        prev = i;
+      }
+    }
+
+    return rangeWithDots;
+  };
+
   useEffect(() => {
     const loadData = async () => {
       if (!user?.id) {
@@ -763,16 +799,20 @@ const LenderDashboard = () => {
                       Previous
                     </Button>
                     <div className="flex items-center gap-1">
-                      {Array.from({ length: totalPendingPages }, (_, i) => i + 1).map((page) => (
-                        <Button
-                          key={page}
-                          variant={pendingBidsPage === page ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setPendingBidsPage(page)}
-                          className="min-w-[36px]"
-                        >
-                          {page}
-                        </Button>
+                      {getPaginationRange(pendingBidsPage, totalPendingPages).map((page, idx) => (
+                        page === '...' ? (
+                          <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">...</span>
+                        ) : (
+                          <Button
+                            key={page}
+                            variant={pendingBidsPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setPendingBidsPage(page as number)}
+                            className="min-w-[36px]"
+                          >
+                            {page}
+                          </Button>
+                        )
                       ))}
                     </div>
                     <Button
@@ -881,16 +921,20 @@ const LenderDashboard = () => {
                     Previous
                   </Button>
                   <div className="flex items-center gap-1">
-                    {Array.from({ length: totalActivePages }, (_, i) => i + 1).map((page) => (
-                      <Button
-                        key={page}
-                        variant={activeInvestmentsPage === page ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setActiveInvestmentsPage(page)}
-                        className="min-w-[36px]"
-                      >
-                        {page}
-                      </Button>
+                    {getPaginationRange(activeInvestmentsPage, totalActivePages).map((page, idx) => (
+                      page === '...' ? (
+                        <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">...</span>
+                      ) : (
+                        <Button
+                          key={page}
+                          variant={activeInvestmentsPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setActiveInvestmentsPage(page as number)}
+                          className="min-w-[36px]"
+                        >
+                          {page}
+                        </Button>
+                      )
                     ))}
                   </div>
                   <Button
