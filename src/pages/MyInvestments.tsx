@@ -16,7 +16,9 @@ import {
   AlertCircle,
   Lock,
   FileText,
-  Eye
+  Eye,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
@@ -41,6 +43,14 @@ const MyInvestments = () => {
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [documentViewDialogOpen, setDocumentViewDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<{ type: string; data: string } | null>(null);
+
+  // Pagination state
+  const [allInvestmentsPage, setAllInvestmentsPage] = useState(1);
+  const [escrowedPage, setEscrowedPage] = useState(1);
+  const [activePage, setActivePage] = useState(1);
+  const [completedPage, setCompletedPage] = useState(1);
+  const [defaultedPage, setDefaultedPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Filter configuration
   const filterConfig: FilterConfig[] = [
@@ -155,10 +165,42 @@ const MyInvestments = () => {
     });
   };
 
-  const escrowedInvestments = applyFilters(myInvestments.filter(i => i.status === 'escrowed'));
-  const activeInvestments = applyFilters(myInvestments.filter(i => i.status === 'active'));
-  const completedInvestments = applyFilters(myInvestments.filter(i => i.status === 'completed'));
-  const defaultedInvestments = applyFilters(myInvestments.filter(i => i.status === 'defaulted'));
+  // Apply filters to get all filtered investments
+  const allFilteredInvestments = applyFilters(myInvestments);
+  const allEscrowedInvestments = applyFilters(myInvestments.filter(i => i.status === 'escrowed'));
+  const allActiveInvestments = applyFilters(myInvestments.filter(i => i.status === 'active'));
+  const allCompletedInvestments = applyFilters(myInvestments.filter(i => i.status === 'completed'));
+  const allDefaultedInvestments = applyFilters(myInvestments.filter(i => i.status === 'defaulted'));
+
+  // Pagination calculations for All tab
+  const totalAllPages = Math.ceil(allFilteredInvestments.length / itemsPerPage);
+  const allStartIndex = (allInvestmentsPage - 1) * itemsPerPage;
+  const allEndIndex = allStartIndex + itemsPerPage;
+  const paginatedAllInvestments = allFilteredInvestments.slice(allStartIndex, allEndIndex);
+
+  // Pagination calculations for Escrowed tab
+  const totalEscrowedPages = Math.ceil(allEscrowedInvestments.length / itemsPerPage);
+  const escrowedStartIndex = (escrowedPage - 1) * itemsPerPage;
+  const escrowedEndIndex = escrowedStartIndex + itemsPerPage;
+  const escrowedInvestments = allEscrowedInvestments.slice(escrowedStartIndex, escrowedEndIndex);
+
+  // Pagination calculations for Active tab
+  const totalActivePages = Math.ceil(allActiveInvestments.length / itemsPerPage);
+  const activeStartIndex = (activePage - 1) * itemsPerPage;
+  const activeEndIndex = activeStartIndex + itemsPerPage;
+  const activeInvestments = allActiveInvestments.slice(activeStartIndex, activeEndIndex);
+
+  // Pagination calculations for Completed tab
+  const totalCompletedPages = Math.ceil(allCompletedInvestments.length / itemsPerPage);
+  const completedStartIndex = (completedPage - 1) * itemsPerPage;
+  const completedEndIndex = completedStartIndex + itemsPerPage;
+  const completedInvestments = allCompletedInvestments.slice(completedStartIndex, completedEndIndex);
+
+  // Pagination calculations for Defaulted tab
+  const totalDefaultedPages = Math.ceil(allDefaultedInvestments.length / itemsPerPage);
+  const defaultedStartIndex = (defaultedPage - 1) * itemsPerPage;
+  const defaultedEndIndex = defaultedStartIndex + itemsPerPage;
+  const defaultedInvestments = allDefaultedInvestments.slice(defaultedStartIndex, defaultedEndIndex);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -620,7 +662,7 @@ const MyInvestments = () => {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">Escrowed</p>
-                <p className="text-3xl font-bold mt-2 text-primary">{escrowedInvestments.length}</p>
+                <p className="text-3xl font-bold mt-2 text-primary">{allEscrowedInvestments.length}</p>
               </div>
             </CardContent>
           </Card>
@@ -628,7 +670,7 @@ const MyInvestments = () => {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">Active</p>
-                <p className="text-3xl font-bold mt-2 text-secondary">{activeInvestments.length}</p>
+                <p className="text-3xl font-bold mt-2 text-secondary">{allActiveInvestments.length}</p>
               </div>
             </CardContent>
           </Card>
@@ -636,7 +678,7 @@ const MyInvestments = () => {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">Completed</p>
-                <p className="text-3xl font-bold mt-2 text-green-500">{completedInvestments.length}</p>
+                <p className="text-3xl font-bold mt-2 text-green-500">{allCompletedInvestments.length}</p>
               </div>
             </CardContent>
           </Card>
@@ -655,17 +697,17 @@ const MyInvestments = () => {
         {/* Investments Tabs */}
         <Tabs defaultValue="all" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="all">All ({myInvestments.length})</TabsTrigger>
-            <TabsTrigger value="escrowed">Escrowed ({escrowedInvestments.length})</TabsTrigger>
-            <TabsTrigger value="active">Active ({activeInvestments.length})</TabsTrigger>
-            <TabsTrigger value="completed">Completed ({completedInvestments.length})</TabsTrigger>
-            {defaultedInvestments.length > 0 && (
-              <TabsTrigger value="defaulted">Defaulted ({defaultedInvestments.length})</TabsTrigger>
+            <TabsTrigger value="all">All ({allFilteredInvestments.length})</TabsTrigger>
+            <TabsTrigger value="escrowed">Escrowed ({allEscrowedInvestments.length})</TabsTrigger>
+            <TabsTrigger value="active">Active ({allActiveInvestments.length})</TabsTrigger>
+            <TabsTrigger value="completed">Completed ({allCompletedInvestments.length})</TabsTrigger>
+            {allDefaultedInvestments.length > 0 && (
+              <TabsTrigger value="defaulted">Defaulted ({allDefaultedInvestments.length})</TabsTrigger>
             )}
           </TabsList>
 
           <TabsContent value="all" className="space-y-4">
-            {myInvestments.length === 0 ? (
+            {allFilteredInvestments.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
                   <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -674,21 +716,63 @@ const MyInvestments = () => {
               </Card>
             ) : (
               <>
-                {escrowedInvestments.map(investment => (
-                  <EscrowedInvestmentCard key={investment.id} investment={investment} />
-                ))}
-                {activeInvestments.map(investment => (
-                  <InvestmentCard key={investment.id} investment={investment} />
-                ))}
-                {completedInvestments.map(investment => (
-                  <InvestmentCard key={investment.id} investment={investment} />
-                ))}
+                {paginatedAllInvestments.map(investment =>
+                  investment.status === 'escrowed' ? (
+                    <EscrowedInvestmentCard key={investment.id} investment={investment} />
+                  ) : (
+                    <InvestmentCard key={investment.id} investment={investment} />
+                  )
+                )}
+
+                {/* Pagination Controls for All Investments */}
+                {totalAllPages > 1 && (
+                  <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {allStartIndex + 1} to {Math.min(allEndIndex, allFilteredInvestments.length)} of {allFilteredInvestments.length} investments
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAllInvestmentsPage(prev => Math.max(1, prev - 1))}
+                        disabled={allInvestmentsPage === 1}
+                        className="gap-1"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalAllPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={allInvestmentsPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setAllInvestmentsPage(page)}
+                            className="min-w-[36px]"
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAllInvestmentsPage(prev => Math.min(totalAllPages, prev + 1))}
+                        disabled={allInvestmentsPage === totalAllPages}
+                        className="gap-1"
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </TabsContent>
 
           <TabsContent value="escrowed" className="space-y-4">
-            {escrowedInvestments.length === 0 ? (
+            {allEscrowedInvestments.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
                   <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -699,14 +783,60 @@ const MyInvestments = () => {
                 </CardContent>
               </Card>
             ) : (
-              escrowedInvestments.map(investment => (
-                <EscrowedInvestmentCard key={investment.id} investment={investment} />
-              ))
+              <>
+                {escrowedInvestments.map(investment => (
+                  <EscrowedInvestmentCard key={investment.id} investment={investment} />
+                ))}
+
+                {/* Pagination Controls for Escrowed Investments */}
+                {totalEscrowedPages > 1 && (
+                  <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {escrowedStartIndex + 1} to {Math.min(escrowedEndIndex, allEscrowedInvestments.length)} of {allEscrowedInvestments.length} investments
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEscrowedPage(prev => Math.max(1, prev - 1))}
+                        disabled={escrowedPage === 1}
+                        className="gap-1"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalEscrowedPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={escrowedPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setEscrowedPage(page)}
+                            className="min-w-[36px]"
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEscrowedPage(prev => Math.min(totalEscrowedPages, prev + 1))}
+                        disabled={escrowedPage === totalEscrowedPages}
+                        className="gap-1"
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </TabsContent>
 
           <TabsContent value="active" className="space-y-4">
-            {activeInvestments.length === 0 ? (
+            {allActiveInvestments.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
                   <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -714,14 +844,60 @@ const MyInvestments = () => {
                 </CardContent>
               </Card>
             ) : (
-              activeInvestments.map(investment => (
-                <InvestmentCard key={investment.id} investment={investment} />
-              ))
+              <>
+                {activeInvestments.map(investment => (
+                  <InvestmentCard key={investment.id} investment={investment} />
+                ))}
+
+                {/* Pagination Controls for Active Investments */}
+                {totalActivePages > 1 && (
+                  <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {activeStartIndex + 1} to {Math.min(activeEndIndex, allActiveInvestments.length)} of {allActiveInvestments.length} investments
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setActivePage(prev => Math.max(1, prev - 1))}
+                        disabled={activePage === 1}
+                        className="gap-1"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalActivePages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={activePage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setActivePage(page)}
+                            className="min-w-[36px]"
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setActivePage(prev => Math.min(totalActivePages, prev + 1))}
+                        disabled={activePage === totalActivePages}
+                        className="gap-1"
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </TabsContent>
 
           <TabsContent value="completed" className="space-y-4">
-            {completedInvestments.length === 0 ? (
+            {allCompletedInvestments.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
                   <CheckCircle2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -729,17 +905,107 @@ const MyInvestments = () => {
                 </CardContent>
               </Card>
             ) : (
-              completedInvestments.map(investment => (
-                <InvestmentCard key={investment.id} investment={investment} />
-              ))
+              <>
+                {completedInvestments.map(investment => (
+                  <InvestmentCard key={investment.id} investment={investment} />
+                ))}
+
+                {/* Pagination Controls for Completed Investments */}
+                {totalCompletedPages > 1 && (
+                  <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {completedStartIndex + 1} to {Math.min(completedEndIndex, allCompletedInvestments.length)} of {allCompletedInvestments.length} investments
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCompletedPage(prev => Math.max(1, prev - 1))}
+                        disabled={completedPage === 1}
+                        className="gap-1"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalCompletedPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={completedPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCompletedPage(page)}
+                            className="min-w-[36px]"
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCompletedPage(prev => Math.min(totalCompletedPages, prev + 1))}
+                        disabled={completedPage === totalCompletedPages}
+                        className="gap-1"
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </TabsContent>
 
-          {defaultedInvestments.length > 0 && (
+          {allDefaultedInvestments.length > 0 && (
             <TabsContent value="defaulted" className="space-y-4">
               {defaultedInvestments.map(investment => (
                 <InvestmentCard key={investment.id} investment={investment} />
               ))}
+
+              {/* Pagination Controls for Defaulted Investments */}
+              {totalDefaultedPages > 1 && (
+                <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {defaultedStartIndex + 1} to {Math.min(defaultedEndIndex, allDefaultedInvestments.length)} of {allDefaultedInvestments.length} investments
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDefaultedPage(prev => Math.max(1, prev - 1))}
+                      disabled={defaultedPage === 1}
+                      className="gap-1"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalDefaultedPages }, (_, i) => i + 1).map((page) => (
+                        <Button
+                          key={page}
+                          variant={defaultedPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setDefaultedPage(page)}
+                          className="min-w-[36px]"
+                        >
+                          {page}
+                        </Button>
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDefaultedPage(prev => Math.min(totalDefaultedPages, prev + 1))}
+                      disabled={defaultedPage === totalDefaultedPages}
+                      className="gap-1"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </TabsContent>
           )}
         </Tabs>
