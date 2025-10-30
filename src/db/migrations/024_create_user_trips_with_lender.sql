@@ -124,7 +124,6 @@ DECLARE
   expected_return NUMERIC(10,2);
   actual_return NUMERIC(10,2);
   platform_fee NUMERIC(10,2);
-  maturity_period_rate NUMERIC(5,2);
 
   -- Get transporter and lender names
   transporter_record RECORD;
@@ -217,12 +216,9 @@ BEGIN
     -- Random maturity days (15-45 days)
     trip_days := 15 + floor(random() * 30)::INTEGER;
 
-    -- Random maturity period return between 2% and 5%
-    -- Then convert to annual rate for storage (ARR = annualized rate of return)
-    -- Formula: annual_rate = (maturity_period_rate / maturity_days) * 365
-    maturity_period_rate := 2 + (random() * 3); -- 2% to 5% for maturity period
-    maturity_period_rate := ROUND(maturity_period_rate * 2) / 2; -- Round to nearest 0.5
-    trip_interest_rate := (maturity_period_rate / trip_days) * 365; -- Convert to annual rate
+    -- Random annual interest rate between 2% and 5%
+    -- This is the ARR (Annual Rate of Return)
+    trip_interest_rate := 2 + (random() * 3); -- 2% to 5% annually
     trip_interest_rate := ROUND(trip_interest_rate * 2) / 2; -- Round to nearest 0.5
 
     -- Set Sanjay Singh as both load owner and transporter
