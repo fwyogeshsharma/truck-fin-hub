@@ -17,7 +17,6 @@ import MaturityCountdown from '@/components/MaturityCountdown';
 import DocumentProgress from '@/components/DocumentProgress';
 import LenderFinancialQuestionnaire from '@/components/LenderFinancialQuestionnaire';
 import RatingDialog from '@/components/RatingDialog';
-import AIInvestmentSuggestions from '@/components/AIInvestmentSuggestions';
 
 const LenderDashboard = () => {
   const { toast } = useToast();
@@ -493,22 +492,6 @@ const LenderDashboard = () => {
 
         {/* Wallet */}
         {user?.id && <WalletCard userId={user.id} showDetails={true} />}
-
-        {/* AI Investment Suggestions */}
-        {myInvestments.length > 0 && (
-          <AIInvestmentSuggestions
-            totalInvested={wallet.totalInvested}
-            totalReturns={wallet.totalReturns}
-            activeInvestments={activeInvestments.length}
-            completedInvestments={completedInvestments.length}
-            portfolioDistribution={portfolioData}
-            monthlyReturns={monthlyReturnsData}
-            walletBalance={wallet.balance}
-            escrowedAmount={wallet.escrowedAmount || 0}
-            riskAppetite={userProfile?.risk_appetite}
-            investmentExperience={userProfile?.investment_experience}
-          />
-        )}
 
         {/* Grant Access - Pending Approvals (Only for Admin users) */}
         {user?.is_admin && (

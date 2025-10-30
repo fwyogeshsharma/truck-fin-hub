@@ -8,11 +8,7 @@
       "Bash(npx tsx run-migration-024.ts)",
       "Bash(curl:*)",
       "Bash(npx tsx:*)",
-      "Bash(find:*)",
-      "Bash(if [ -f .env.example ])",
-      "Bash(then cat .env.example)",
-      "Bash(else echo \"File not found\")",
-      "Bash(fi)"
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
