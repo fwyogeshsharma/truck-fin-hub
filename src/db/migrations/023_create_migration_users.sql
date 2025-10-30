@@ -8,7 +8,6 @@ INSERT INTO users (
   name,
   email,
   phone,
-  password,
   role,
   company,
   created_at
@@ -17,7 +16,6 @@ INSERT INTO users (
   'Sanjay',
   'sanjay@gmail.com',
   '1234567890',
-  '$2b$10$rQZ5YJk3vZ3k3l5N5N5N5u9Z5YJk3vZ3k3l5N5N5N5u9Z5YJk3vZ3k',
   'transporter',
   'SanjayLogi',
   CURRENT_TIMESTAMP
@@ -34,7 +32,6 @@ INSERT INTO users (
   name,
   email,
   phone,
-  password,
   role,
   company,
   created_at
@@ -43,7 +40,6 @@ INSERT INTO users (
   'Sandeep Kumar',
   'sandeepkumar@gmail.com',
   '7340223333',
-  '$2b$10$rQZ5YJk3vZ3k3l5N5N5N5u9Z5YJk3vZ3k3l5N5N5N5u9Z5YJk3vZ3k',
   'lender',
   'dev foundation',
   CURRENT_TIMESTAMP
