@@ -7,17 +7,19 @@
   # Output directory (Vite builds to dist/)
   publish = "dist"
 
+  # Netlify Functions directory
+  functions = "netlify/functions"
+
   # Environment variables for build
   [build.environment]
     NODE_VERSION = "20"
     VITE_API_URL = "/api"
 
-# API Proxy - Forward /api/* requests to backend server
+# API Proxy - Forward /api/* requests to Netlify Function
 [[redirects]]
   from = "/api/*"
-  to = "http://34.127.125.215:4000/api/:splat"
+  to = "/.netlify/functions/api-proxy/api/:splat"
   status = 200
-  force = true
 
 # SPA redirect rules - send all routes to index.html
 [[redirects]]
