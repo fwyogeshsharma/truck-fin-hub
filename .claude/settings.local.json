@@ -13,7 +13,9 @@
       "Bash(findstr:*)",
       "Bash(docker-compose up:*)",
       "Bash(cat:*)",
-      "Bash(docker-compose down:*)"
+      "Bash(docker-compose down:*)",
+      "Bash(bash:*)",
+      "Bash(psql:*)"
     ],
     "deny": [],
     "ask": []
