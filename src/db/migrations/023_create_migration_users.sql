@@ -1,54 +1,29 @@
--- Migration: Create Users for Migration 024
+-- Migration: Verify Users for Migration 024
 -- Date: 2025-10-30
--- Description: Creates the transporter and lender users needed for migration 024
+-- Description: Verifies existing users and prepares wallets for migration 024
 
--- Insert Transporter User (Sanjay)
-INSERT INTO users (
-  id,
-  name,
-  email,
-  phone,
-  role,
-  company,
-  created_at
-) VALUES (
-  'u-1761660716425-uiowj5sbt',
-  'Sanjay',
-  'sanjay@gmail.com',
-  '1234567890',
-  'transporter',
-  'SanjayLogi',
-  CURRENT_TIMESTAMP
-) ON CONFLICT (id) DO UPDATE SET
-  name = EXCLUDED.name,
-  email = EXCLUDED.email,
-  phone = EXCLUDED.phone,
-  role = EXCLUDED.role,
-  company = EXCLUDED.company;
+-- Verify users exist
+DO $$
+DECLARE
+  v_transporter_name TEXT;
+  v_lender_name TEXT;
+BEGIN
+  -- Check transporter exists
+  SELECT name INTO v_transporter_name FROM users WHERE id = 'u-1761660716425-uiowj5sbt';
+  IF v_transporter_name IS NULL THEN
+    RAISE EXCEPTION 'Transporter user u-1761660716425-uiowj5sbt does not exist!';
+  END IF;
 
--- Insert Lender User (Sandeep Kumar)
-INSERT INTO users (
-  id,
-  name,
-  email,
-  phone,
-  role,
-  company,
-  created_at
-) VALUES (
-  'u-1761816242012-6x0isqt5u',
-  'Sandeep Kumar',
-  'sandeepkumar@gmail.com',
-  '7340223333',
-  'lender',
-  'dev foundation',
-  CURRENT_TIMESTAMP
-) ON CONFLICT (id) DO UPDATE SET
-  name = EXCLUDED.name,
-  email = EXCLUDED.email,
-  phone = EXCLUDED.phone,
-  role = EXCLUDED.role,
-  company = EXCLUDED.company;
+  -- Check lender exists
+  SELECT name INTO v_lender_name FROM users WHERE id = 'u-1761816242012-6x0isqt5u';
+  IF v_lender_name IS NULL THEN
+    RAISE EXCEPTION 'Lender user u-1761816242012-6x0isqt5u does not exist!';
+  END IF;
+
+  RAISE NOTICE '✅ Users verified:';
+  RAISE NOTICE '   Transporter: % (ID: u-1761660716425-uiowj5sbt)', v_transporter_name;
+  RAISE NOTICE '   Lender: % (ID: u-1761816242012-6x0isqt5u)', v_lender_name;
+END $$;
 
 -- Create wallets for both users
 INSERT INTO wallets (user_id, balance, locked_amount, escrowed_amount, total_invested, total_returns, updated_at)
@@ -59,12 +34,13 @@ ON CONFLICT (user_id) DO UPDATE SET
   balance = EXCLUDED.balance,
   updated_at = EXCLUDED.updated_at;
 
--- Verify users were created
+-- Display user information
 DO $$
 BEGIN
-  RAISE NOTICE '✅ Users created successfully!';
   RAISE NOTICE '';
-  RAISE NOTICE '👥 Created Users:';
+  RAISE NOTICE '✅ Wallets initialized successfully!';
+  RAISE NOTICE '';
+  RAISE NOTICE '👥 Users for Migration:';
 END $$;
 
 SELECT
