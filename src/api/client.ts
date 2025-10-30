@@ -1,6 +1,7 @@
 // API Client for Truck Finance Hub
-const API_BASE_URL = import.meta.env.VITE_API_URL ||
-  (import.meta.env.PROD ? 'http://34.127.125.215:4000/api' : '/api');
+// In production (Netlify), use relative /api path which gets proxied to backend
+// In development, use /api which gets proxied by Vite dev server
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Use sessionStorage for tokens (tab-specific) instead of localStorage (shared across tabs)
 export const setAuthToken = (token: string | null) => {
