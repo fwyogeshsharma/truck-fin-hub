@@ -3690,7 +3690,7 @@ print(response.json())`;
                             disabled={uploadingDocuments[`${selectedTrip.id}-ewaybill`]}
                           >
                             <Upload className="h-3 w-3 mr-1" />
-                            Replace Document
+                            Edit Document
                           </Button>
                         </div>
                       ) : (
@@ -3771,7 +3771,7 @@ print(response.json())`;
                             disabled={uploadingDocuments[`${selectedTrip.id}-bilty`]}
                           >
                             <Upload className="h-3 w-3 mr-1" />
-                            Replace Document
+                            Edit Document
                           </Button>
                         </div>
                       ) : (
@@ -3852,7 +3852,7 @@ print(response.json())`;
                             disabled={uploadingDocuments[`${selectedTrip.id}-advance_invoice`]}
                           >
                             <Upload className="h-3 w-3 mr-1" />
-                            Replace Document
+                            Edit Document
                           </Button>
                         </div>
                       ) : (
@@ -3933,7 +3933,7 @@ print(response.json())`;
                             disabled={uploadingDocuments[`${selectedTrip.id}-pod`]}
                           >
                             <Upload className="h-3 w-3 mr-1" />
-                            Replace Document
+                            Edit Document
                           </Button>
                         </div>
                       ) : (
@@ -4014,7 +4014,7 @@ print(response.json())`;
                             disabled={uploadingDocuments[`${selectedTrip.id}-final_invoice`]}
                           >
                             <Upload className="h-3 w-3 mr-1" />
-                            Replace Document
+                            Edit Document
                           </Button>
                         </div>
                       ) : (
