@@ -140,6 +140,10 @@ const LoadAgentDashboard = () => {
   const [uploadingDocuments, setUploadingDocuments] = useState<Record<string, boolean>>({});
   const [repaymentDialogOpen, setRepaymentDialogOpen] = useState(false);
   const [tripForRepayment, setTripForRepayment] = useState<any>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [tripForEdit, setTripForEdit] = useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [tripForDelete, setTripForDelete] = useState<any>(null);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -512,6 +516,38 @@ const LoadAgentDashboard = () => {
     console.log('📊 Document types available:', Object.keys(trip.documents || {}));
     setSelectedTrip(trip);
     setViewDialogOpen(true);
+  };
+
+  const handleEditTrip = (trip: any) => {
+    setTripForEdit(trip);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteTrip = (trip: any) => {
+    setTripForDelete(trip);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteTrip = async () => {
+    if (!tripForDelete) return;
+
+    try {
+      await data.deleteTrip(tripForDelete.id);
+      toast({
+        title: 'Trip Deleted',
+        description: 'The trip has been successfully deleted.',
+      });
+      setDeleteDialogOpen(false);
+      setTripForDelete(null);
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      console.error('Error deleting trip:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete trip. Please try again.',
+      });
+    }
   };
 
   const handleDownloadSampleExcel = () => {
@@ -2027,9 +2063,26 @@ const LoadAgentDashboard = () => {
                               size="sm"
                               onClick={() => handleViewTrip(trip)}
                             >
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
+                              <Eye className="h-4 w-4" />
                             </Button>
+                            {trip.status === 'pending' && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditTrip(trip)}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteTrip(trip)}
+                                >
+                                  Delete
+                                </Button>
+                              </>
+                            )}
                             {trip.status === 'escrowed' && trip.bids && trip.bids.length > 0 && (
                               <Button
                                 size="sm"
@@ -4169,6 +4222,171 @@ print(response.json())`;
             interestRate={tripForRating.interestRate || (tripForRating as any).interest_rate || 0}
           />
         )}
+
+        {/* Edit Trip Dialog */}
+        {tripForEdit && (
+          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Edit Trip</DialogTitle>
+                <DialogDescription>
+                  Update trip details for {tripForEdit.origin} → {tripForEdit.destination}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-pickup">Pickup Location</Label>
+                    <Input
+                      id="edit-pickup"
+                      defaultValue={tripForEdit.pickup || tripForEdit.origin}
+                      onChange={(e) => setTripForEdit({ ...tripForEdit, pickup: e.target.value, origin: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-destination">Destination</Label>
+                    <Input
+                      id="edit-destination"
+                      defaultValue={tripForEdit.destination}
+                      onChange={(e) => setTripForEdit({ ...tripForEdit, destination: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-distance">Distance (km)</Label>
+                    <Input
+                      id="edit-distance"
+                      type="number"
+                      defaultValue={tripForEdit.distance}
+                      onChange={(e) => setTripForEdit({ ...tripForEdit, distance: parseFloat(e.target.value) })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-weight">Weight (kg)</Label>
+                    <Input
+                      id="edit-weight"
+                      type="number"
+                      defaultValue={tripForEdit.weight}
+                      onChange={(e) => setTripForEdit({ ...tripForEdit, weight: parseFloat(e.target.value) })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-loadType">Load Type</Label>
+                    <Input
+                      id="edit-loadType"
+                      defaultValue={tripForEdit.loadType}
+                      onChange={(e) => setTripForEdit({ ...tripForEdit, loadType: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-amount">Loan Amount (₹)</Label>
+                    <Input
+                      id="edit-amount"
+                      type="number"
+                      defaultValue={tripForEdit.amount || tripForEdit.loanAmount}
+                      onChange={(e) => setTripForEdit({ ...tripForEdit, amount: parseFloat(e.target.value), loanAmount: parseFloat(e.target.value) })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-interestRate">Interest Rate (%)</Label>
+                    <Input
+                      id="edit-interestRate"
+                      type="number"
+                      step="0.1"
+                      defaultValue={tripForEdit.interestRate || tripForEdit.loanInterestRate}
+                      onChange={(e) => setTripForEdit({ ...tripForEdit, interestRate: parseFloat(e.target.value), loanInterestRate: parseFloat(e.target.value) })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-maturityDays">Maturity Days</Label>
+                    <Input
+                      id="edit-maturityDays"
+                      type="number"
+                      defaultValue={tripForEdit.maturityDays}
+                      onChange={(e) => setTripForEdit({ ...tripForEdit, maturityDays: parseInt(e.target.value) })}
+                    />
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      await data.updateTrip(tripForEdit.id, {
+                        pickup: tripForEdit.pickup,
+                        origin: tripForEdit.origin,
+                        destination: tripForEdit.destination,
+                        distance: tripForEdit.distance,
+                        weight: tripForEdit.weight,
+                        loadType: tripForEdit.loadType,
+                        amount: tripForEdit.amount,
+                        loanAmount: tripForEdit.loanAmount,
+                        interestRate: tripForEdit.interestRate,
+                        loanInterestRate: tripForEdit.loanInterestRate,
+                        maturityDays: tripForEdit.maturityDays,
+                      });
+                      toast({
+                        title: 'Trip Updated',
+                        description: 'The trip has been successfully updated.',
+                      });
+                      setEditDialogOpen(false);
+                      setTripForEdit(null);
+                      setRefreshKey(prev => prev + 1);
+                    } catch (error) {
+                      console.error('Error updating trip:', error);
+                      toast({
+                        variant: 'destructive',
+                        title: 'Error',
+                        description: 'Failed to update trip. Please try again.',
+                      });
+                    }
+                  }}
+                >
+                  Save Changes
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Delete</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this trip? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            {tripForDelete && (
+              <div className="py-4">
+                <p className="text-sm font-semibold">Trip Details:</p>
+                <p className="text-sm text-muted-foreground">
+                  {tripForDelete.origin || tripForDelete.pickup} → {tripForDelete.destination}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {tripForDelete.loadType} • {tripForDelete.weight} kg
+                </p>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmDeleteTrip}>
+                Delete Trip
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

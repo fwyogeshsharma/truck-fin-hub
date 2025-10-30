@@ -3,7 +3,12 @@
     "allow": [
       "Bash(Select-Object -Property Id, ProcessName)",
       "Bash(Format-Table)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(chmod:*)",
+      "Bash(npx tsx run-migration-024.ts)",
+      "Bash(curl:*)",
+      "Bash(npx tsx:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

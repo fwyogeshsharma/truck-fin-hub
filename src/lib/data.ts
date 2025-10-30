@@ -186,6 +186,15 @@ export const data = {
     }
   },
 
+  deleteTrip: async (id: string): Promise<{ message: string }> => {
+    try {
+      return await tripsAPI.delete(id);
+    } catch (error) {
+      console.error('Failed to delete trip:', error);
+      throw error;
+    }
+  },
+
   addBid: async (tripId: string, lenderId: string, lenderName: string, amount: number, interestRate: number): Promise<any> => {
     try {
       const bid = await tripsAPI.addBid(tripId, {
