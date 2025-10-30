@@ -78,6 +78,8 @@ const CreateTrip = () => {
         reader.onloadend = async () => {
           try {
             const base64String = reader.result as string;
+            console.log('📤 Uploading eWay bill for trip:', trip.id);
+            console.log('📄 File size:', base64String.length, 'characters');
 
             // Update trip with eWay bill document
             await data.updateTrip(trip.id, {
@@ -86,6 +88,16 @@ const CreateTrip = () => {
               },
             });
 
+            console.log('✅ eWay bill uploaded successfully');
+
+            // Verify the document was saved by fetching the trip again
+            const verifyTrip = await data.getTrip(trip.id);
+            if (verifyTrip?.documents?.ewaybill) {
+              console.log('✅ Verified: eWay bill is saved in database');
+            } else {
+              console.warn('⚠️  Warning: eWay bill might not be saved correctly');
+            }
+
             toast({
               title: "Trip created successfully!",
               description: "Your financing request with e-Way bill is now live for lenders",
@@ -93,7 +105,7 @@ const CreateTrip = () => {
 
             navigate('/dashboard/load_owner');
           } catch (error) {
-            console.error('Error uploading eWay bill:', error);
+            console.error('❌ Error uploading eWay bill:', error);
             toast({
               title: "Trip created, but eWay bill upload failed",
               description: "You can upload the eWay bill later from the trip details",
