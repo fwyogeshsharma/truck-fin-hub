@@ -81,12 +81,12 @@ echo ""
 # Find users by name and get their IDs
 echo "🔍 Finding users Sanjay and Sandeep Kumar..."
 
-TRANSPORTER_ID=$(docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -t -c "SELECT id FROM users WHERE name ILIKE '%sanjay%' AND role = 'transporter' LIMIT 1;" 2>/dev/null | tr -d ' ')
+TRANSPORTER_ID=$(docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -t -c "SELECT id FROM users WHERE name ILIKE '%sanjay%' AND role IN ('transporter', 'load_agent', 'load_owner') LIMIT 1;" 2>/dev/null | tr -d ' ')
 LENDER_ID=$(docker exec "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -t -c "SELECT id FROM users WHERE name ILIKE '%sandeep%' AND role = 'lender' LIMIT 1;" 2>/dev/null | tr -d ' ')
 
 if [ -z "$TRANSPORTER_ID" ]; then
-    echo "❌ Error: Could not find transporter user with name containing 'Sanjay'"
-    echo "   Please ensure a transporter user exists with name 'Sanjay'"
+    echo "❌ Error: Could not find load_agent/transporter user with name containing 'Sanjay'"
+    echo "   Please ensure a load_agent or transporter user exists with name 'Sanjay'"
     exit 1
 fi
 
