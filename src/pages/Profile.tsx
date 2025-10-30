@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import WalletCard from '@/components/WalletCard';
 import { auth } from '@/lib/auth';
@@ -7,17 +7,71 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { UserIcon, Mail, Phone, MapPin, Briefcase, Calendar, Shield, Wallet, ArrowRight } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { UserIcon, Mail, Phone, MapPin, Briefcase, Calendar, Shield, Wallet, ArrowRight, Edit } from 'lucide-react';
+import { apiClient } from '@/api/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Profile = () => {
   const navigate = useNavigate();
   const user = auth.getCurrentUser();
+  const { toast } = useToast();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    phone: user?.phone || '',
+    email: user?.email || '',
+    company: user?.company || '',
+  });
 
   useEffect(() => {
     if (!user) {
       navigate('/auth');
     }
   }, [user, navigate]);
+
+  const handleEditProfile = () => {
+    setFormData({
+      name: user?.name || '',
+      phone: user?.phone || '',
+      email: user?.email || '',
+      company: user?.company || '',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user?.id) return;
+
+    setSaving(true);
+    try {
+      const updatedUser = await apiClient.put(`/users/${user.id}`, formData);
+
+      // Update local auth state in sessionStorage
+      sessionStorage.setItem('auth_user', JSON.stringify(updatedUser));
+
+      toast({
+        title: 'Profile Updated',
+        description: 'Your profile has been updated successfully.',
+      });
+
+      setEditDialogOpen(false);
+      // Force page refresh to show updated data
+      window.location.reload();
+    } catch (error: any) {
+      console.error('Failed to update profile:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: error.message || 'Failed to update profile. Please try again.',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const getRoleDisplayName = (role: string) => {
     switch (role) {
@@ -54,24 +108,35 @@ const Profile = () => {
             {/* Basic Info Card */}
             <Card>
               <CardHeader>
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-20 w-20">
-                    <AvatarFallback className="bg-gradient-primary text-primary-foreground text-2xl">
-                      {user.name?.charAt(0).toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <CardTitle className="text-2xl">{user.name}</CardTitle>
-                    <CardDescription className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary">
-                        {getRoleDisplayName(user.role)}
-                      </Badge>
-                      <Badge variant="outline" className="capitalize flex items-center gap-1">
-                        <Shield className="h-3 w-3" />
-                        KYC Pending
-                      </Badge>
-                    </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-20 w-20">
+                      <AvatarFallback className="bg-gradient-primary text-primary-foreground text-2xl">
+                        {user.name?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <CardTitle className="text-2xl">{user.name}</CardTitle>
+                      <CardDescription className="flex items-center gap-2 mt-1">
+                        <Badge variant="secondary">
+                          {getRoleDisplayName(user.role)}
+                        </Badge>
+                        <Badge variant="outline" className="capitalize flex items-center gap-1">
+                          <Shield className="h-3 w-3" />
+                          KYC Pending
+                        </Badge>
+                      </CardDescription>
+                    </div>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleEditProfile}
+                    className="gap-2"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit Profile
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -139,32 +204,6 @@ const Profile = () => {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Activity Stats */}
-            {user.role === 'lender' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Investment Stats</CardTitle>
-                  <CardDescription>Your investment performance overview</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-muted rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-1">Active Investments</p>
-                      <p className="text-2xl font-bold">0</p>
-                    </div>
-                    <div className="p-4 bg-muted rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-1">Completed</p>
-                      <p className="text-2xl font-bold">0</p>
-                    </div>
-                    <div className="p-4 bg-muted rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-1">Average Return</p>
-                      <p className="text-2xl font-bold">0%</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
           {/* Right Column - Wallet */}
@@ -183,6 +222,65 @@ const Profile = () => {
             </Button>
           </div>
         </div>
+
+        {/* Edit Profile Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Edit Profile</DialogTitle>
+              <DialogDescription>
+                Update your profile information. Click save when you're done.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Enter your name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="Enter your email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="Enter your phone number"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="company">Company</Label>
+                <Input
+                  id="company"
+                  value={formData.company}
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                  placeholder="Enter your company name"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={saving}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveProfile} disabled={saving}>
+                {saving ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
