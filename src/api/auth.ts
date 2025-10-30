@@ -5,6 +5,8 @@ export interface User {
   userId: string;
   email: string;
   name: string;
+  phone?: string;
+  location?: string;
   role?: 'load_owner' | 'vehicle_owner' | 'lender' | 'admin' | 'super_admin' | 'load_agent' | 'vehicle_agent';
   company?: string;
   company_id?: string;
@@ -18,6 +20,8 @@ export interface User {
   termsAccepted?: boolean;
   termsAcceptedAt?: string;
   is_admin?: boolean;
+  created_at?: string;
+  createdAt?: string;
   // Lender Financial Profile
   annual_income?: 'below_5L' | '5L_10L' | '10L_25L' | '25L_50L' | 'above_50L';
   investable_surplus?: 'below_1L' | '1L_5L' | '5L_10L' | '10L_25L' | 'above_25L';
