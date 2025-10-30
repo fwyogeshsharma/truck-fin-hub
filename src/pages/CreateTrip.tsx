@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -25,7 +24,6 @@ const CreateTrip = () => {
     amount: "",
   });
 
-  const [ewayBillFile, setEwayBillFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -37,31 +35,12 @@ const CreateTrip = () => {
     setFormData({ ...formData, [field]: value });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Check file size (10 MB limit)
-      const MAX_FILE_SIZE = 10 * 1024 * 1024;
-      if (file.size > MAX_FILE_SIZE) {
-        toast({
-          title: "File Too Large",
-          description: "E-Way bill file size must be less than 10 MB",
-          variant: "destructive",
-        });
-        e.target.value = '';
-        return;
-      }
-      setEwayBillFile(file);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // Create trip first
-      const trip = await data.createTrip({
+      await data.createTrip({
         loadOwnerId: user?.id || 'lo1',
         loadOwnerName: user?.name || 'Load Provider',
         origin: formData.origin,
@@ -72,70 +51,12 @@ const CreateTrip = () => {
         amount: parseFloat(formData.amount),
       });
 
-      // If eWay bill is uploaded, convert to Base64 and save it
-      if (ewayBillFile && trip) {
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-          try {
-            const base64String = reader.result as string;
-            console.log('📤 Uploading eWay bill for trip:', trip.id);
-            console.log('📄 File size:', base64String.length, 'characters');
+      toast({
+        title: "Trip created successfully!",
+        description: "Your financing request is now live for lenders",
+      });
 
-            // Update trip with eWay bill document
-            await data.updateTrip(trip.id, {
-              documents: {
-                ewaybill: base64String,
-              },
-            });
-
-            console.log('✅ eWay bill uploaded successfully');
-
-            // Verify the document was saved by fetching the trip again
-            const verifyTrip = await data.getTrip(trip.id);
-            if (verifyTrip?.documents?.ewaybill) {
-              console.log('✅ Verified: eWay bill is saved in database');
-            } else {
-              console.warn('⚠️  Warning: eWay bill might not be saved correctly');
-            }
-
-            toast({
-              title: "Trip created successfully!",
-              description: "Your financing request with e-Way bill is now live for lenders",
-            });
-
-            navigate('/dashboard/load_owner');
-          } catch (error) {
-            console.error('❌ Error uploading eWay bill:', error);
-            toast({
-              title: "Trip created, but eWay bill upload failed",
-              description: "You can upload the eWay bill later from the trip details",
-              variant: "destructive",
-            });
-            navigate('/dashboard/load_owner');
-          } finally {
-            setIsSubmitting(false);
-          }
-        };
-
-        reader.onerror = () => {
-          toast({
-            title: "Trip created, but eWay bill upload failed",
-            description: "You can upload the eWay bill later from the trip details",
-            variant: "destructive",
-          });
-          navigate('/dashboard/load_owner');
-          setIsSubmitting(false);
-        };
-
-        reader.readAsDataURL(ewayBillFile);
-      } else {
-        toast({
-          title: "Trip created successfully!",
-          description: "Your financing request is now live for lenders",
-        });
-        navigate('/dashboard/load_owner');
-        setIsSubmitting(false);
-      }
+      navigate('/dashboard/load_owner');
     } catch (error) {
       console.error('Error creating trip:', error);
       toast({
@@ -143,6 +64,7 @@ const CreateTrip = () => {
         description: "Please try again",
         variant: "destructive",
       });
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -231,24 +153,6 @@ const CreateTrip = () => {
                   required
                 />
                 <p className="text-xs text-muted-foreground">Enter trip value</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="ewayBill">E-Way Bill (Optional)</Label>
-                <Input
-                  id="ewayBill"
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.pdf"
-                  onChange={handleFileChange}
-                />
-                {ewayBillFile && (
-                  <p className="text-xs text-green-600 flex items-center gap-1">
-                    ✓ {ewayBillFile.name} ({(ewayBillFile.size / 1024).toFixed(2)} KB)
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Upload your e-Way bill document (JPG, PNG, or PDF - max 10 MB)
-                </p>
               </div>
 
               <div className="bg-muted/50 p-4 rounded-lg space-y-2">
