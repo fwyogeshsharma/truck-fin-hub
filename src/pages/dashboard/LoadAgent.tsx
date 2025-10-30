@@ -3664,9 +3664,34 @@ print(response.json())`;
                                 link.click();
                               }}
                             >
+                              <Download className="h-3 w-3 mr-1" />
                               Download
                             </Button>
                           </div>
+                          <Input
+                            id={`replace-ewaybill-${selectedTrip.id}`}
+                            type="file"
+                            accept=".jpg,.jpeg,.png"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleDocumentUpload(selectedTrip.id, 'ewaybill', file);
+                                e.target.value = '';
+                              }
+                            }}
+                            className="hidden"
+                            disabled={uploadingDocuments[`${selectedTrip.id}-ewaybill`]}
+                          />
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="text-xs h-8 w-full"
+                            onClick={() => document.getElementById(`replace-ewaybill-${selectedTrip.id}`)?.click()}
+                            disabled={uploadingDocuments[`${selectedTrip.id}-ewaybill`]}
+                          >
+                            <Upload className="h-3 w-3 mr-1" />
+                            Replace Document
+                          </Button>
                         </div>
                       ) : (
                         <Input
@@ -3720,9 +3745,34 @@ print(response.json())`;
                                 link.click();
                               }}
                             >
+                              <Download className="h-3 w-3 mr-1" />
                               Download
                             </Button>
                           </div>
+                          <Input
+                            id={`replace-bilty-${selectedTrip.id}`}
+                            type="file"
+                            accept=".jpg,.jpeg,.png"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleDocumentUpload(selectedTrip.id, 'bilty', file);
+                                e.target.value = '';
+                              }
+                            }}
+                            className="hidden"
+                            disabled={uploadingDocuments[`${selectedTrip.id}-bilty`]}
+                          />
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="text-xs h-8 w-full"
+                            onClick={() => document.getElementById(`replace-bilty-${selectedTrip.id}`)?.click()}
+                            disabled={uploadingDocuments[`${selectedTrip.id}-bilty`]}
+                          >
+                            <Upload className="h-3 w-3 mr-1" />
+                            Replace Document
+                          </Button>
                         </div>
                       ) : (
                         <Input
@@ -3776,9 +3826,34 @@ print(response.json())`;
                                 link.click();
                               }}
                             >
+                              <Download className="h-3 w-3 mr-1" />
                               Download
                             </Button>
                           </div>
+                          <Input
+                            id={`replace-advance_invoice-${selectedTrip.id}`}
+                            type="file"
+                            accept=".jpg,.jpeg,.png"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleDocumentUpload(selectedTrip.id, 'advance_invoice', file);
+                                e.target.value = '';
+                              }
+                            }}
+                            className="hidden"
+                            disabled={uploadingDocuments[`${selectedTrip.id}-advance_invoice`]}
+                          />
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="text-xs h-8 w-full"
+                            onClick={() => document.getElementById(`replace-advance_invoice-${selectedTrip.id}`)?.click()}
+                            disabled={uploadingDocuments[`${selectedTrip.id}-advance_invoice`]}
+                          >
+                            <Upload className="h-3 w-3 mr-1" />
+                            Replace Document
+                          </Button>
                         </div>
                       ) : (
                         <Input
@@ -3832,9 +3907,34 @@ print(response.json())`;
                                 link.click();
                               }}
                             >
+                              <Download className="h-3 w-3 mr-1" />
                               Download
                             </Button>
                           </div>
+                          <Input
+                            id={`replace-pod-${selectedTrip.id}`}
+                            type="file"
+                            accept=".jpg,.jpeg,.png"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleDocumentUpload(selectedTrip.id, 'pod', file);
+                                e.target.value = '';
+                              }
+                            }}
+                            className="hidden"
+                            disabled={uploadingDocuments[`${selectedTrip.id}-pod`]}
+                          />
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="text-xs h-8 w-full"
+                            onClick={() => document.getElementById(`replace-pod-${selectedTrip.id}`)?.click()}
+                            disabled={uploadingDocuments[`${selectedTrip.id}-pod`]}
+                          >
+                            <Upload className="h-3 w-3 mr-1" />
+                            Replace Document
+                          </Button>
                         </div>
                       ) : (
                         <Input
@@ -3888,9 +3988,34 @@ print(response.json())`;
                                 link.click();
                               }}
                             >
+                              <Download className="h-3 w-3 mr-1" />
                               Download
                             </Button>
                           </div>
+                          <Input
+                            id={`replace-final_invoice-${selectedTrip.id}`}
+                            type="file"
+                            accept=".jpg,.jpeg,.png"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleDocumentUpload(selectedTrip.id, 'final_invoice', file);
+                                e.target.value = '';
+                              }
+                            }}
+                            className="hidden"
+                            disabled={uploadingDocuments[`${selectedTrip.id}-final_invoice`]}
+                          />
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="text-xs h-8 w-full"
+                            onClick={() => document.getElementById(`replace-final_invoice-${selectedTrip.id}`)?.click()}
+                            disabled={uploadingDocuments[`${selectedTrip.id}-final_invoice`]}
+                          >
+                            <Upload className="h-3 w-3 mr-1" />
+                            Replace Document
+                          </Button>
                         </div>
                       ) : (
                         <Input
