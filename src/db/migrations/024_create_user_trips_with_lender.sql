@@ -1,6 +1,6 @@
 -- Migration: Create 300+ Trips for Specific Transporter with Lender Integration
--- Date: 2025-10-29
--- Description: Creates 300+ trips for transporter u-1761726616725-79ngqd0bs with lender u-1761737271624-utzb3tkl5
+-- Date: 2025-10-30
+-- Description: Creates 300+ trips for transporter u-1761660716425-uiowj5sbt with lender u-1761816242012-6x0isqt5u
 --             Updates all related tables: trips, investments, wallets, transactions
 --             Ensures complete data synchronization across the system
 
@@ -20,7 +20,7 @@ BEGIN
   -- Delete transactions for both users
   RAISE NOTICE '   🗑️   Deleting transactions...';
   DELETE FROM transactions
-  WHERE user_id IN ('u-1761726616725-79ngqd0bs', 'u-1761737271624-utzb3tkl5')
+  WHERE user_id IN ('u-1761660716425-uiowj5sbt', 'u-1761816242012-6x0isqt5u')
      OR id LIKE 'txn_%trip_custom_%';
   GET DIAGNOSTICS v_transactions_deleted = ROW_COUNT;
   RAISE NOTICE '      ✅  Deleted % transactions', v_transactions_deleted;
@@ -28,7 +28,7 @@ BEGIN
   -- Delete investments for lender
   RAISE NOTICE '   🗑️   Deleting investments...';
   DELETE FROM investments
-  WHERE lender_id = 'u-1761737271624-utzb3tkl5'
+  WHERE lender_id = 'u-1761816242012-6x0isqt5u'
      OR id LIKE 'inv_trip_custom_%';
   GET DIAGNOSTICS v_investments_deleted = ROW_COUNT;
   RAISE NOTICE '      ✅  Deleted % investments', v_investments_deleted;
@@ -36,8 +36,8 @@ BEGIN
   -- Delete trips for transporter/load owner
   RAISE NOTICE '   🗑️   Deleting trips...';
   DELETE FROM trips
-  WHERE transporter_id = 'u-1761726616725-79ngqd0bs'
-     OR load_owner_id = 'u-1761726616725-79ngqd0bs'
+  WHERE transporter_id = 'u-1761660716425-uiowj5sbt'
+     OR load_owner_id = 'u-1761660716425-uiowj5sbt'
      OR id LIKE 'trip_custom_%';
   GET DIAGNOSTICS v_trips_deleted = ROW_COUNT;
   RAISE NOTICE '      ✅  Deleted % trips', v_trips_deleted;
@@ -52,7 +52,7 @@ BEGIN
     total_invested = 0,
     total_returns = 0,
     updated_at = CURRENT_TIMESTAMP
-  WHERE user_id IN ('u-1761726616725-79ngqd0bs', 'u-1761737271624-utzb3tkl5');
+  WHERE user_id IN ('u-1761660716425-uiowj5sbt', 'u-1761816242012-6x0isqt5u');
   RAISE NOTICE '      ✅  Reset wallet balances to zero';
 
   RAISE NOTICE '';
@@ -70,12 +70,12 @@ END $$;
 -- Ensure transporter exists (if not, you'll need to create manually)
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM users WHERE id = 'u-1761726616725-79ngqd0bs') THEN
-    RAISE EXCEPTION 'Transporter user u-1761726616725-79ngqd0bs does not exist. Please create this user first.';
+  IF NOT EXISTS (SELECT 1 FROM users WHERE id = 'u-1761660716425-uiowj5sbt') THEN
+    RAISE EXCEPTION 'Transporter user u-1761660716425-uiowj5sbt does not exist. Please create this user first.';
   END IF;
 
-  IF NOT EXISTS (SELECT 1 FROM users WHERE id = 'u-1761737271624-utzb3tkl5') THEN
-    RAISE EXCEPTION 'Lender user u-1761737271624-utzb3tkl5 does not exist. Please create this user first.';
+  IF NOT EXISTS (SELECT 1 FROM users WHERE id = 'u-1761816242012-6x0isqt5u') THEN
+    RAISE EXCEPTION 'Lender user u-1761816242012-6x0isqt5u does not exist. Please create this user first.';
   END IF;
 
   RAISE NOTICE '✅  Both users verified';
@@ -85,8 +85,8 @@ END $$;
 -- Lender needs ~15M to fund 320 trips (avg 50k each), setting to 25M to ensure sufficient funds
 INSERT INTO wallets (user_id, balance, locked_amount, escrowed_amount, total_invested, total_returns, updated_at)
 VALUES
-  ('u-1761726616725-79ngqd0bs', 0, 0, 0, 0, 0, CURRENT_TIMESTAMP),
-  ('u-1761737271624-utzb3tkl5', 25000000, 0, 0, 0, 0, CURRENT_TIMESTAMP)
+  ('u-1761660716425-uiowj5sbt', 0, 0, 0, 0, 0, CURRENT_TIMESTAMP),
+  ('u-1761816242012-6x0isqt5u', 25000000, 0, 0, 0, 0, CURRENT_TIMESTAMP)
 ON CONFLICT (user_id) DO UPDATE SET
   balance = EXCLUDED.balance,
   locked_amount = EXCLUDED.locked_amount,
@@ -111,9 +111,9 @@ DECLARE
   trip_days INTEGER;
   load_owner_id TEXT;
   load_owner_name TEXT;
-  transporter_id TEXT := 'u-1761726616725-79ngqd0bs';
+  transporter_id TEXT := 'u-1761660716425-uiowj5sbt';
   transporter_name TEXT;
-  lender_id TEXT := 'u-1761737271624-utzb3tkl5';
+  lender_id TEXT := 'u-1761816242012-6x0isqt5u';
   lender_name TEXT;
   origin_city TEXT;
   destination_city TEXT;
@@ -500,30 +500,30 @@ BEGIN
     total_invested = (
       SELECT COALESCE(SUM(i.amount), 0)
       FROM investments i
-      WHERE i.lender_id = 'u-1761737271624-utzb3tkl5'
+      WHERE i.lender_id = 'u-1761816242012-6x0isqt5u'
     ),
     total_returns = (
       SELECT COALESCE(SUM(t.amount), 0)
       FROM transactions t
-      WHERE t.user_id = 'u-1761737271624-utzb3tkl5'
+      WHERE t.user_id = 'u-1761816242012-6x0isqt5u'
         AND t.type = 'credit'
         AND t.category = 'return'
     ),
     escrowed_amount = (
       SELECT COALESCE(SUM(i.amount), 0)
       FROM investments i
-      WHERE i.lender_id = 'u-1761737271624-utzb3tkl5'
+      WHERE i.lender_id = 'u-1761816242012-6x0isqt5u'
       AND i.status = 'escrowed'
     ),
     updated_at = CURRENT_TIMESTAMP
-  WHERE user_id = 'u-1761737271624-utzb3tkl5';
+  WHERE user_id = 'u-1761816242012-6x0isqt5u';
 
   -- Update transporter wallet
   UPDATE wallets
   SET
     balance = transporter_wallet_balance,
     updated_at = CURRENT_TIMESTAMP
-  WHERE user_id = 'u-1761726616725-79ngqd0bs';
+  WHERE user_id = 'u-1761660716425-uiowj5sbt';
 
   RAISE NOTICE '✅  Updated wallet balances';
   RAISE NOTICE '   Lender Final Balance: ₹%', lender_wallet_balance;
@@ -553,7 +553,7 @@ BEGIN
       COUNT(*) as count,
       SUM(amount) as total_amount
     FROM trips
-    WHERE transporter_id = 'u-1761726616725-79ngqd0bs'
+    WHERE transporter_id = 'u-1761660716425-uiowj5sbt'
     GROUP BY status
     ORDER BY count DESC
   LOOP
@@ -572,7 +572,7 @@ BEGIN
     AVG(maturity_days) as avg_days
   INTO summary_record
   FROM trips
-  WHERE transporter_id = 'u-1761726616725-79ngqd0bs';
+  WHERE transporter_id = 'u-1761660716425-uiowj5sbt';
 
   RAISE NOTICE '   Total Trips      : %', summary_record.total_trips;
   RAISE NOTICE '   Total Loan Value : ₹%', summary_record.total_loan_value;
@@ -589,7 +589,7 @@ BEGIN
     SUM(expected_return - amount) as total_expected_interest
   INTO summary_record
   FROM investments
-  WHERE lender_id = 'u-1761737271624-utzb3tkl5';
+  WHERE lender_id = 'u-1761816242012-6x0isqt5u';
 
   RAISE NOTICE '   Total Investments       : %', summary_record.total_investments;
   RAISE NOTICE '   Total Amount Invested   : ₹%', summary_record.total_invested;
@@ -608,7 +608,7 @@ BEGIN
       w.total_returns
     FROM wallets w
     JOIN users u ON u.id = w.user_id
-    WHERE w.user_id IN ('u-1761726616725-79ngqd0bs', 'u-1761737271624-utzb3tkl5')
+    WHERE w.user_id IN ('u-1761660716425-uiowj5sbt', 'u-1761816242012-6x0isqt5u')
   LOOP
     RAISE NOTICE '   %:', summary_record.name;
     RAISE NOTICE '      Current Balance : ₹%', summary_record.balance;
@@ -623,7 +623,7 @@ BEGIN
     COUNT(*) as total_transactions
   INTO summary_record
   FROM transactions
-  WHERE user_id IN ('u-1761726616725-79ngqd0bs', 'u-1761737271624-utzb3tkl5');
+  WHERE user_id IN ('u-1761660716425-uiowj5sbt', 'u-1761816242012-6x0isqt5u');
 
   RAISE NOTICE '   Total Transactions: %', summary_record.total_transactions;
   RAISE NOTICE '';

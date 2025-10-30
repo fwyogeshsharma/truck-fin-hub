@@ -58,11 +58,11 @@ echo ""
 
 # Verify users exist before running migration
 echo "🔍 Verifying users exist..."
-USER1_EXISTS=$(PGPASSWORD="${DB_PASSWORD}" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -c "SELECT COUNT(*) FROM users WHERE id = 'u-1761726616725-79ngqd0bs';" 2>/dev/null | tr -d ' ')
-USER2_EXISTS=$(PGPASSWORD="${DB_PASSWORD}" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -c "SELECT COUNT(*) FROM users WHERE id = 'u-1761737271624-utzb3tkl5';" 2>/dev/null | tr -d ' ')
+USER1_EXISTS=$(PGPASSWORD="${DB_PASSWORD}" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -c "SELECT COUNT(*) FROM users WHERE id = 'u-1761660716425-uiowj5sbt';" 2>/dev/null | tr -d ' ')
+USER2_EXISTS=$(PGPASSWORD="${DB_PASSWORD}" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -c "SELECT COUNT(*) FROM users WHERE id = 'u-1761816242012-6x0isqt5u';" 2>/dev/null | tr -d ' ')
 
 if [ "$USER1_EXISTS" -eq "0" ]; then
-    echo "⚠️  Warning: Transporter user (u-1761726616725-79ngqd0bs) not found in database"
+    echo "⚠️  Warning: Transporter user (u-1761660716425-uiowj5sbt) not found in database"
     echo "   The migration will fail. Please create this user first."
     read -p "Do you want to continue anyway? (y/N): " -n 1 -r
     echo
@@ -72,7 +72,7 @@ if [ "$USER1_EXISTS" -eq "0" ]; then
 fi
 
 if [ "$USER2_EXISTS" -eq "0" ]; then
-    echo "⚠️  Warning: Lender user (u-1761737271624-utzb3tkl5) not found in database"
+    echo "⚠️  Warning: Lender user (u-1761816242012-6x0isqt5u) not found in database"
     echo "   The migration will fail. Please create this user first."
     read -p "Do you want to continue anyway? (y/N): " -n 1 -r
     echo
@@ -95,7 +95,7 @@ if [ "$USER1_EXISTS" -eq "1" ] && [ "$USER2_EXISTS" -eq "1" ]; then
       role,
       company
     FROM users
-    WHERE id IN ('u-1761726616725-79ngqd0bs', 'u-1761737271624-utzb3tkl5');
+    WHERE id IN ('u-1761660716425-uiowj5sbt', 'u-1761816242012-6x0isqt5u');
     " 2>/dev/null
     echo ""
 fi
@@ -126,7 +126,7 @@ SELECT
   COUNT(*) as count,
   CONCAT('₹', ROUND(SUM(amount), 2)) as total_amount
 FROM trips
-WHERE transporter_id = 'u-1761726616725-79ngqd0bs'
+WHERE transporter_id = 'u-1761660716425-uiowj5sbt'
 GROUP BY status
 ORDER BY count DESC;
 " 2>/dev/null
@@ -139,7 +139,7 @@ SELECT
   CONCAT('₹', ROUND(SUM(amount), 2)) as total_invested,
   CONCAT('₹', ROUND(SUM(expected_return), 2)) as expected_returns
 FROM investments
-WHERE lender_id = 'u-1761737271624-utzb3tkl5';
+WHERE lender_id = 'u-1761816242012-6x0isqt5u';
 " 2>/dev/null
 
 echo ""
@@ -154,7 +154,7 @@ SELECT
   CONCAT('₹', ROUND(w.total_returns, 2)) as total_returns
 FROM wallets w
 JOIN users u ON u.id = w.user_id
-WHERE w.user_id IN ('u-1761726616725-79ngqd0bs', 'u-1761737271624-utzb3tkl5');
+WHERE w.user_id IN ('u-1761660716425-uiowj5sbt', 'u-1761816242012-6x0isqt5u');
 " 2>/dev/null
 
 echo ""
@@ -167,7 +167,7 @@ SELECT
   SUM(CASE WHEN t.type = 'debit' THEN 1 ELSE 0 END) as debits
 FROM transactions t
 JOIN users u ON u.id = t.user_id
-WHERE t.user_id IN ('u-1761726616725-79ngqd0bs', 'u-1761737271624-utzb3tkl5')
+WHERE t.user_id IN ('u-1761660716425-uiowj5sbt', 'u-1761816242012-6x0isqt5u')
 GROUP BY u.name;
 " 2>/dev/null
 
