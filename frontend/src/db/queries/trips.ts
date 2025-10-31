@@ -211,6 +211,9 @@ export const updateTrip = (id: string, updates: Partial<Trip>): Trip | null => {
   // Map field names from API to database column names
   const fieldMapping: Record<string, string> = {
     'pickup': 'origin',  // Map pickup to origin
+    'loan_interest_rate': 'interest_rate',  // Map loan_interest_rate to interest_rate
+    'loan_amount': 'amount',  // Map loan_amount to amount
+    'maturity_days': 'maturity_days',  // Keep as is
     // Add any other field mappings here if needed
   };
 
@@ -222,17 +225,16 @@ export const updateTrip = (id: string, updates: Partial<Trip>): Trip | null => {
       // Use mapped field name if it exists, otherwise use the original key
       const dbFieldName = fieldMapping[key] || key;
 
-      // If origin already exists and we're trying to add pickup, skip pickup
-      // Prefer the actual database column name over the alias
-      if (dbFieldName === 'origin' && fieldMap.has('origin') && key === 'pickup') {
-        return; // Skip pickup if origin is already set
-      }
-
-      // If we're setting origin and pickup was already added, remove pickup
-      if (key === 'origin' && fieldMap.has('origin')) {
-        // Origin takes precedence, just update the value
-        fieldMap.set(dbFieldName, value);
+      // Check if this dbFieldName already exists in the map
+      if (fieldMap.has(dbFieldName)) {
+        // If the current key is the actual database column name, it takes precedence
+        // For example: 'origin' takes precedence over 'pickup'
+        if (key === dbFieldName) {
+          fieldMap.set(dbFieldName, value);
+        }
+        // Otherwise skip (the mapped alias is ignored if the real column was already set)
       } else {
+        // First time seeing this database column, add it
         fieldMap.set(dbFieldName, value);
       }
     }
