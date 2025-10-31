@@ -5,6 +5,7 @@ import { TruckIcon, CheckCircle2, Clock, MapPin } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data, Trip, Wallet } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
+import WalletCard from "@/components/WalletCard";
 
 const TransporterDashboard = () => {
   const user = auth.getCurrentUser();
@@ -131,6 +132,9 @@ const TransporterDashboard = () => {
             );
           })}
         </div>
+
+        {/* Wallet */}
+        {user?.id && <WalletCard userId={user.id} showDetails={true} />}
 
         {/* Available Trips */}
         <Card>
