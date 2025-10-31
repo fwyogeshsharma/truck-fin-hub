@@ -435,19 +435,27 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
               <Input
                 id="transactionImage"
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
-                    // Validate file type - only allow images
+                    // Validate file type - only allow images (check both MIME type and extension)
                     const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-                    if (!validImageTypes.includes(file.type)) {
+                    const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+
+                    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+                    const isValidType = validImageTypes.includes(file.type.toLowerCase());
+                    const isValidExtension = validExtensions.includes(fileExtension);
+
+                    if (!isValidType || !isValidExtension) {
                       toast({
                         title: 'Invalid File Type',
                         description: 'Please upload an image file only (JPG, PNG, GIF, or WebP)',
                         variant: 'destructive',
                       });
                       e.target.value = ''; // Reset the input
+                      setTransactionImage('');
+                      setTransactionImageFile(null);
                       return;
                     }
 
