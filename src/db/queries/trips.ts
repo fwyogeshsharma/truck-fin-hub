@@ -354,18 +354,38 @@ export const updateTrip = async (id: string, updates: Partial<Trip & { documents
     // Add any other field mappings here if needed
   };
 
-  const fields: string[] = [];
-  const values: any[] = [];
-  let paramIndex = 1;
+  // Use a Map to avoid duplicate column assignments
+  const fieldMap = new Map<string, any>();
 
   Object.entries(tripUpdates).forEach(([key, value]) => {
     if (value !== undefined && key !== 'id' && key !== 'documents') {
       // Use mapped field name if it exists, otherwise use the original key
       const dbFieldName = fieldMapping[key] || key;
-      fields.push(`${dbFieldName} = $${paramIndex}`);
-      values.push(value);
-      paramIndex++;
+
+      // If origin already exists and we're trying to add pickup, skip pickup
+      // Prefer the actual database column name over the alias
+      if (dbFieldName === 'origin' && fieldMap.has('origin') && key === 'pickup') {
+        return; // Skip pickup if origin is already set
+      }
+
+      // If we're setting origin and pickup was already added, remove pickup
+      if (key === 'origin' && fieldMap.has('origin')) {
+        // Origin takes precedence, just update the value
+        fieldMap.set(dbFieldName, value);
+      } else {
+        fieldMap.set(dbFieldName, value);
+      }
     }
+  });
+
+  const fields: string[] = [];
+  const values: any[] = [];
+  let paramIndex = 1;
+
+  fieldMap.forEach((value, dbFieldName) => {
+    fields.push(`${dbFieldName} = $${paramIndex}`);
+    values.push(value);
+    paramIndex++;
   });
 
   if (fields.length > 0) {
