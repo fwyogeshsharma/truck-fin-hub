@@ -144,10 +144,10 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-background prevent-horizontal-scroll">
+      {/* Header - Mobile optimized sticky header */}
+      <header className="mobile-sticky-header">
+        <div className="container mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 md:gap-6">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
               <img src="/logiFin.png" alt="LogiFin" className="h-8 w-auto md:h-10 object-contain" />
@@ -172,21 +172,21 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4">
-            {/* Role Badge - Hidden on small screens */}
-            <div className="hidden sm:flex items-center gap-2 px-2 md:px-3 py-1 md:py-1.5 bg-primary/10 rounded-full">
-              <RoleIcon className="h-3 w-3 md:h-4 md:w-4 text-primary" />
-              <span className="text-xs md:text-sm font-medium">{config.title}</span>
+          <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
+            {/* Role Badge - Hidden on small screens, mobile optimized */}
+            <div className="hidden sm:flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 bg-primary/10 rounded-full">
+              <RoleIcon className="h-3 w-3 md:h-4 md:w-4 text-primary flex-shrink-0" />
+              <span className="text-xs md:text-sm font-medium truncate max-w-[80px] md:max-w-none">{config.title}</span>
             </div>
 
-            {/* Notification Bell */}
+            {/* Notification Bell - Touch optimized */}
             {user?.id && <NotificationBell userId={user.id} />}
 
-            {/* User Menu */}
+            {/* User Menu - Touch optimized */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 md:h-10 md:w-10 rounded-full">
-                  <Avatar className="h-8 w-8 md:h-10 md:w-10">
+                <Button variant="ghost" className="relative touch-target h-10 w-10 md:h-10 md:w-10 rounded-full p-0">
+                  <Avatar className="h-9 w-9 md:h-10 md:w-10">
                     <AvatarFallback className="bg-gradient-primary text-primary-foreground text-sm md:text-base">
                       {user?.name?.charAt(0).toUpperCase() || 'U'}
                     </AvatarFallback>
@@ -227,82 +227,83 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Mobile Menu Trigger */}
+            {/* Mobile Menu Trigger - Touch optimized */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden">
+                <Button variant="ghost" size="icon" className="lg:hidden touch-target h-10 w-10">
                   <Menu className="h-5 w-5" />
+                  <span className="sr-only">Open menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[280px] sm:w-[350px]">
+              <SheetContent side="right" className="w-[280px] sm:w-[350px] safe-area-inset-bottom">
                 <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
+                  <SheetTitle className="flex items-center gap-2 text-lg">
                     <RoleIcon className="h-5 w-5 text-primary" />
                     {config.title}
                   </SheetTitle>
                 </SheetHeader>
-                <div className="mt-6 flex flex-col gap-2">
+                <nav className="mt-6 flex flex-col gap-2" aria-label="Mobile navigation">
                   {navigationItems.map((item) => {
                     const NavIcon = item.icon;
                     return (
                       <Button
                         key={item.path}
                         variant="ghost"
-                        className="justify-start gap-3 h-12"
+                        className="justify-start gap-3 touch-target min-h-[48px]"
                         onClick={() => {
                           navigate(item.path);
                           setMobileMenuOpen(false);
                         }}
                       >
-                        <NavIcon className="h-5 w-5" />
+                        <NavIcon className="h-5 w-5 flex-shrink-0" />
                         <span className="text-base">{item.label}</span>
                       </Button>
                     );
                   })}
-                  <div className="my-4 border-t" />
+                  <div className="my-2 border-t" />
                   <Button
                     variant="ghost"
-                    className="justify-start gap-3 h-12"
+                    className="justify-start gap-3 touch-target min-h-[48px]"
                     onClick={() => {
                       navigate('/profile');
                       setMobileMenuOpen(false);
                     }}
                   >
-                    <UserIcon className="h-5 w-5" />
+                    <UserIcon className="h-5 w-5 flex-shrink-0" />
                     <span className="text-base">Profile</span>
                   </Button>
                   <Button
                     variant="ghost"
-                    className="justify-start gap-3 h-12"
+                    className="justify-start gap-3 touch-target min-h-[48px]"
                     onClick={() => {
                       navigate('/reports');
                       setMobileMenuOpen(false);
                     }}
                   >
-                    <FileText className="h-5 w-5" />
+                    <FileText className="h-5 w-5 flex-shrink-0" />
                     <span className="text-base">Reports</span>
                   </Button>
-                  <div className="my-4 border-t" />
+                  <div className="my-2 border-t" />
                   <Button
                     variant="destructive"
-                    className="justify-start gap-3 h-12"
+                    className="justify-start gap-3 touch-target min-h-[48px]"
                     onClick={() => {
                       handleLogout();
                       setMobileMenuOpen(false);
                     }}
                   >
-                    <LogOut className="h-5 w-5" />
+                    <LogOut className="h-5 w-5 flex-shrink-0" />
                     <span className="text-base">Log out</span>
                   </Button>
-                </div>
+                </nav>
               </SheetContent>
             </Sheet>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8">
+      {/* Main Content - Mobile optimized spacing */}
+      <main className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 prevent-horizontal-scroll">
         {children}
       </main>
 
