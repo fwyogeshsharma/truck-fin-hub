@@ -193,15 +193,13 @@ const Reports = () => {
         </div>
 
         <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-          <div className="w-full overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
-            <TabsList className="w-full sm:w-auto inline-flex min-w-full sm:min-w-0">
-              <TabsTrigger value="all" className="text-xs sm:text-sm flex-1 sm:flex-none">All Reports</TabsTrigger>
-              <TabsTrigger value="financial" className="text-xs sm:text-sm flex-1 sm:flex-none">Financial</TabsTrigger>
-              <TabsTrigger value="operational" className="text-xs sm:text-sm flex-1 sm:flex-none">Operational</TabsTrigger>
-              <TabsTrigger value="performance" className="text-xs sm:text-sm flex-1 sm:flex-none">Performance</TabsTrigger>
-              <TabsTrigger value="compliance" className="text-xs sm:text-sm flex-1 sm:flex-none">Compliance</TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="w-full h-auto grid grid-cols-6 md:inline-flex md:w-auto gap-1">
+            <TabsTrigger value="all" className="text-xs sm:text-sm col-span-2 md:col-span-1">All Reports</TabsTrigger>
+            <TabsTrigger value="financial" className="text-xs sm:text-sm col-span-2 md:col-span-1">Financial</TabsTrigger>
+            <TabsTrigger value="operational" className="text-xs sm:text-sm col-span-2 md:col-span-1">Operational</TabsTrigger>
+            <TabsTrigger value="performance" className="text-xs sm:text-sm col-span-3 md:col-span-1">Performance</TabsTrigger>
+            <TabsTrigger value="compliance" className="text-xs sm:text-sm col-span-3 md:col-span-1">Compliance</TabsTrigger>
+          </TabsList>
 
           <TabsContent value={activeCategory} className="mt-6">
             {/* Available Reports Grid */}
