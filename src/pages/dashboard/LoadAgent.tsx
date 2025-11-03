@@ -1615,13 +1615,13 @@ const LoadAgentDashboard = () => {
 
   return (
     <DashboardLayout role="load_agent">
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Transporter Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Create and manage trips across the portal</p>
+      <div className="space-y-4 md:space-y-6">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0">
+          <div className="px-1">
+            <h1 className="text-lg md:text-2xl lg:text-3xl font-bold">Transporter Dashboard</h1>
+            <p className="text-[10px] md:text-sm text-muted-foreground mt-0.5 md:mt-1">Create and manage trips across the portal</p>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)} className="bg-gradient-primary">
+          <Button onClick={() => setCreateDialogOpen(true)} className="bg-gradient-primary w-full md:w-auto h-9 md:h-10 text-sm md:text-base">
             <Plus className="h-4 w-4 mr-2" />
             Create Trip
           </Button>
@@ -1645,13 +1645,15 @@ const LoadAgentDashboard = () => {
               className={filterStatus ? 'cursor-pointer hover:border-primary transition-colors hover:shadow-md' : ''}
               onClick={filterStatus ? () => scrollToAllTripsTab(filterStatus) : undefined}
             >
-              <CardContent className="pt-4 pb-4 px-3 md:pt-6 md:pb-6 md:px-6">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0">
-                  <div className="w-full">
-                    <p className="text-xs md:text-sm text-muted-foreground">{stat.title}</p>
-                    <p className="text-2xl md:text-3xl font-bold mt-1 md:mt-2">{stat.value}</p>
+              <CardContent className="p-3 md:pt-6 md:pb-6 md:px-6">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] md:text-sm text-muted-foreground truncate">{stat.title}</p>
+                    <p className="text-xl md:text-2xl lg:text-3xl font-bold mt-1 md:mt-2 tabular-nums">{stat.value}</p>
                   </div>
-                  <Icon className={`h-6 w-6 md:h-8 md:w-8 ${stat.color} md:ml-2`} />
+                  <div className="flex-shrink-0">
+                    <Icon className={`h-5 w-5 md:h-6 md:w-6 lg:h-8 lg:w-8 ${stat.color}`} />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1661,70 +1663,70 @@ const LoadAgentDashboard = () => {
 
         {/* Loan Analytics Card */}
         <Card className="bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-primary" />
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+              <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-primary" />
               Financial Analytics
             </CardTitle>
-            <CardDescription>Comprehensive view of loans, repayments, and profit</CardDescription>
+            <CardDescription className="text-xs md:text-sm">Comprehensive view of loans, repayments, and profit</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               {/* Loan Metrics Summary */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                <div className="bg-white dark:bg-card p-3 md:p-4 rounded-lg border">
-                  <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
-                    <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4 text-blue-600" />
-                    <p className="text-[10px] md:text-xs font-medium text-muted-foreground">Loan Taken</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3 lg:gap-4">
+                <div className="bg-white dark:bg-card p-2.5 md:p-3 lg:p-4 rounded-lg border">
+                  <div className="flex items-center gap-1 md:gap-1.5 mb-1 md:mb-1.5">
+                    <TrendingUp className="h-3 w-3 md:h-3.5 md:w-3.5 lg:h-4 lg:w-4 text-blue-600 flex-shrink-0" />
+                    <p className="text-[9px] md:text-[10px] lg:text-xs font-medium text-muted-foreground truncate">Loan Taken</p>
                   </div>
-                  <p className="text-xl md:text-2xl font-bold text-blue-600">₹{(loanTaken / 1000).toFixed(1)}K</p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">{fundedTrips.length} trips</p>
+                  <p className="text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-blue-600">₹{(loanTaken / 1000).toFixed(1)}K</p>
+                  <p className="text-[9px] md:text-[10px] lg:text-xs text-muted-foreground mt-0.5">{fundedTrips.length} trips</p>
                 </div>
 
-                <div className="bg-white dark:bg-card p-3 md:p-4 rounded-lg border">
-                  <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
-                    <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-600" />
-                    <p className="text-[10px] md:text-xs font-medium text-muted-foreground">Loan Repaid</p>
+                <div className="bg-white dark:bg-card p-2.5 md:p-3 lg:p-4 rounded-lg border">
+                  <div className="flex items-center gap-1 md:gap-1.5 mb-1 md:mb-1.5">
+                    <CheckCircle className="h-3 w-3 md:h-3.5 md:w-3.5 lg:h-4 lg:w-4 text-green-600 flex-shrink-0" />
+                    <p className="text-[9px] md:text-[10px] lg:text-xs font-medium text-muted-foreground truncate">Loan Repaid</p>
                   </div>
-                  <p className="text-xl md:text-2xl font-bold text-green-600">₹{(loanRepaid / 1000).toFixed(1)}K</p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">{completedTrips.length} trips</p>
+                  <p className="text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-green-600">₹{(loanRepaid / 1000).toFixed(1)}K</p>
+                  <p className="text-[9px] md:text-[10px] lg:text-xs text-muted-foreground mt-0.5">{completedTrips.length} trips</p>
                 </div>
 
-                <div className="bg-white dark:bg-card p-3 md:p-4 rounded-lg border">
-                  <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
-                    <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-orange-600" />
-                    <p className="text-[10px] md:text-xs font-medium text-muted-foreground">Pending</p>
+                <div className="bg-white dark:bg-card p-2.5 md:p-3 lg:p-4 rounded-lg border">
+                  <div className="flex items-center gap-1 md:gap-1.5 mb-1 md:mb-1.5">
+                    <Clock className="h-3 w-3 md:h-3.5 md:w-3.5 lg:h-4 lg:w-4 text-orange-600 flex-shrink-0" />
+                    <p className="text-[9px] md:text-[10px] lg:text-xs font-medium text-muted-foreground truncate">Pending</p>
                   </div>
-                  <p className="text-xl md:text-2xl font-bold text-orange-600">₹{(loanPending / 1000).toFixed(1)}K</p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">{fundedTrips.length - completedTrips.length} active</p>
+                  <p className="text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-orange-600">₹{(loanPending / 1000).toFixed(1)}K</p>
+                  <p className="text-[9px] md:text-[10px] lg:text-xs text-muted-foreground mt-0.5">{fundedTrips.length - completedTrips.length} active</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 p-3 md:p-4 rounded-lg border border-primary/30">
-                  <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
-                    <Star className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
-                    <p className="text-[10px] md:text-xs font-medium text-muted-foreground">Interest</p>
+                <div className="bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 p-2.5 md:p-3 lg:p-4 rounded-lg border border-primary/30">
+                  <div className="flex items-center gap-1 md:gap-1.5 mb-1 md:mb-1.5">
+                    <Star className="h-3 w-3 md:h-3.5 md:w-3.5 lg:h-4 lg:w-4 text-primary flex-shrink-0" />
+                    <p className="text-[9px] md:text-[10px] lg:text-xs font-medium text-muted-foreground truncate">Interest</p>
                   </div>
-                  <p className="text-xl md:text-2xl font-bold text-primary">₹{(profit / 1000).toFixed(1)}K</p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">Total paid</p>
+                  <p className="text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-primary">₹{(profit / 1000).toFixed(1)}K</p>
+                  <p className="text-[9px] md:text-[10px] lg:text-xs text-muted-foreground mt-0.5">Total paid</p>
                 </div>
               </div>
 
               {/* Charts Section */}
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-2 gap-4 md:gap-6">
                 {/* Monthly Interest Paid Trend */}
-                <div className="bg-white dark:bg-card p-4 rounded-lg border">
-                  <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-primary" />
-                    Monthly Interest Paid Trend (Last 6 Months)
+                <div className="bg-white dark:bg-card p-3 md:p-4 rounded-lg border">
+                  <h4 className="text-xs md:text-sm font-semibold mb-3 md:mb-4 flex items-center gap-1.5 md:gap-2">
+                    <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                    <span className="truncate">Monthly Interest (6 Months)</span>
                   </h4>
-                  <ResponsiveContainer width="100%" height={200}>
+                  <ResponsiveContainer width="100%" height={180} className="md:h-[200px]">
                     <AreaChart data={monthlyData}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                      <YAxis tick={{ fontSize: 10 }} />
+                      <XAxis dataKey="month" tick={{ fontSize: 8 }} className="md:text-[10px]" />
+                      <YAxis tick={{ fontSize: 8 }} className="md:text-[10px]" />
                       <Tooltip
                         formatter={(value: any) => `₹${value.toLocaleString()}`}
-                        contentStyle={{ fontSize: '12px' }}
+                        contentStyle={{ fontSize: '10px' }}
                       />
                       <Area
                         type="monotone"
@@ -1739,21 +1741,21 @@ const LoadAgentDashboard = () => {
                 </div>
 
                 {/* Monthly Loans vs Interest Paid */}
-                <div className="bg-white dark:bg-card p-4 rounded-lg border">
-                  <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-secondary" />
-                    Loans Taken vs Interest Paid
+                <div className="bg-white dark:bg-card p-3 md:p-4 rounded-lg border">
+                  <h4 className="text-xs md:text-sm font-semibold mb-3 md:mb-4 flex items-center gap-1.5 md:gap-2">
+                    <DollarSign className="h-3.5 w-3.5 md:h-4 md:w-4 text-secondary flex-shrink-0" />
+                    <span className="truncate">Loans vs Interest</span>
                   </h4>
-                  <ResponsiveContainer width="100%" height={200}>
+                  <ResponsiveContainer width="100%" height={180} className="md:h-[200px]">
                     <RechartsBarChart data={monthlyData}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                      <YAxis tick={{ fontSize: 10 }} />
+                      <XAxis dataKey="month" tick={{ fontSize: 8 }} className="md:text-[10px]" />
+                      <YAxis tick={{ fontSize: 8 }} className="md:text-[10px]" />
                       <Tooltip
                         formatter={(value: any) => `₹${value.toLocaleString()}`}
-                        contentStyle={{ fontSize: '12px' }}
+                        contentStyle={{ fontSize: '10px' }}
                       />
-                      <Legend wrapperStyle={{ fontSize: '12px' }} />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
                       <Bar dataKey="loansTaken" fill="#3b82f6" name="Loans Taken" />
                       <Bar dataKey="profit" fill="#10b981" name="Interest Paid" />
                     </RechartsBarChart>
@@ -1762,14 +1764,14 @@ const LoadAgentDashboard = () => {
               </div>
 
               {/* Loan Status Breakdown */}
-              <div className="bg-white dark:bg-card p-4 rounded-lg border">
-                <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                  <Percent className="h-4 w-4 text-accent" />
-                  Loan Status Breakdown
+              <div className="bg-white dark:bg-card p-3 md:p-4 rounded-lg border">
+                <h4 className="text-xs md:text-sm font-semibold mb-3 md:mb-4 flex items-center gap-1.5 md:gap-2">
+                  <Percent className="h-3.5 w-3.5 md:h-4 md:w-4 text-accent flex-shrink-0" />
+                  <span>Loan Status Breakdown</span>
                 </h4>
-                <div className="flex items-center justify-between gap-6">
-                  <div className="flex-1">
-                    <ResponsiveContainer width="100%" height={200}>
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
+                  <div className="flex-1 w-full">
+                    <ResponsiveContainer width="100%" height={160} className="md:h-[200px]">
                       <PieChart>
                         <Pie
                           data={[
@@ -1780,7 +1782,7 @@ const LoadAgentDashboard = () => {
                           cy="50%"
                           labelLine={false}
                           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          outerRadius={80}
+                          outerRadius={60}
                           fill="#8884d8"
                           dataKey="value"
                         >
@@ -1791,31 +1793,31 @@ const LoadAgentDashboard = () => {
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip contentStyle={{ fontSize: '12px' }} />
+                        <Tooltip contentStyle={{ fontSize: '10px' }} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-green-600"></div>
-                        <span className="text-sm font-medium">Repaid Loans</span>
+                  <div className="flex-1 w-full space-y-2 md:space-y-3">
+                    <div className="flex items-center justify-between p-2 md:p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                      <div className="flex items-center gap-1.5 md:gap-2">
+                        <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-600 flex-shrink-0"></div>
+                        <span className="text-xs md:text-sm font-medium">Repaid Loans</span>
                       </div>
-                      <span className="text-sm font-bold">{completedTrips.length}</span>
+                      <span className="text-xs md:text-sm font-bold">{completedTrips.length}</span>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-orange-600"></div>
-                        <span className="text-sm font-medium">Pending Loans</span>
+                    <div className="flex items-center justify-between p-2 md:p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
+                      <div className="flex items-center gap-1.5 md:gap-2">
+                        <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-orange-600 flex-shrink-0"></div>
+                        <span className="text-xs md:text-sm font-medium">Pending Loans</span>
                       </div>
-                      <span className="text-sm font-bold">{fundedTrips.length - completedTrips.length}</span>
+                      <span className="text-xs md:text-sm font-bold">{fundedTrips.length - completedTrips.length}</span>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-blue-600"></div>
-                        <span className="text-sm font-medium">Total Funded</span>
+                    <div className="flex items-center justify-between p-2 md:p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                      <div className="flex items-center gap-1.5 md:gap-2">
+                        <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-blue-600 flex-shrink-0"></div>
+                        <span className="text-xs md:text-sm font-medium">Total Funded</span>
                       </div>
-                      <span className="text-sm font-bold">{fundedTrips.length}</span>
+                      <span className="text-xs md:text-sm font-bold">{fundedTrips.length}</span>
                     </div>
                   </div>
                 </div>
@@ -1826,52 +1828,54 @@ const LoadAgentDashboard = () => {
 
         {/* Tabs for All Trips, Loan Closure, and Repaid Loans */}
         <div ref={allTripsTabRef}>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="all-trips">
-              All Trips
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
+          <TabsList className="grid w-full grid-cols-3 h-auto">
+            <TabsTrigger value="all-trips" className="text-[10px] md:text-sm py-2 md:py-2.5 flex-col md:flex-row gap-1 md:gap-2">
+              <span>All Trips</span>
               {statusFilter && statusFilter !== 'all' && (
-                <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-primary/20">
+                <span className="text-[8px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full bg-primary/20">
                   Filtered
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="loan-closure">
-              Pending Repayments {loanClosureTrips.length > 0 && `(${loanClosureTrips.length})`}
+            <TabsTrigger value="loan-closure" className="text-[10px] md:text-sm py-2 md:py-2.5 flex-col md:flex-row gap-1 md:gap-2">
+              <span className="truncate">Pending</span>
+              {loanClosureTrips.length > 0 && <span className="text-[8px] md:text-xs">({loanClosureTrips.length})</span>}
             </TabsTrigger>
-            <TabsTrigger value="repaid-loans">
-              Repaid Loans {repaidTrips.length > 0 && `(${repaidTrips.length})`}
+            <TabsTrigger value="repaid-loans" className="text-[10px] md:text-sm py-2 md:py-2.5 flex-col md:flex-row gap-1 md:gap-2">
+              <span className="truncate">Repaid</span>
+              {repaidTrips.length > 0 && <span className="text-[8px] md:text-xs">({repaidTrips.length})</span>}
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="all-trips" className="space-y-6">
+          <TabsContent value="all-trips" className="space-y-4 md:space-y-6">
         {/* Filter Status Display */}
         {statusFilter && statusFilter !== 'all' && (
           <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
+            <CardContent className="py-3 md:py-4">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0">
+                <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+                  <div className="flex items-center gap-1.5 md:gap-2">
                     {statusFilter === 'pending' && (
                       <>
-                        <Clock className="h-5 w-5 text-accent" />
-                        <span className="font-semibold">Showing Pending Trips Only</span>
+                        <Clock className="h-4 w-4 md:h-5 md:w-5 text-accent flex-shrink-0" />
+                        <span className="font-semibold text-xs md:text-sm">Showing Pending Trips Only</span>
                       </>
                     )}
                     {statusFilter === 'active' && (
                       <>
-                        <TruckIcon className="h-5 w-5 text-primary" />
-                        <span className="font-semibold">Showing Active Trips Only</span>
+                        <TruckIcon className="h-4 w-4 md:h-5 md:w-5 text-primary flex-shrink-0" />
+                        <span className="font-semibold text-xs md:text-sm">Showing Active Trips Only</span>
                       </>
                     )}
                     {statusFilter === 'completed' && (
                       <>
-                        <CheckCircle className="h-5 w-5 text-secondary" />
-                        <span className="font-semibold">Showing Completed Trips Only</span>
+                        <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-secondary flex-shrink-0" />
+                        <span className="font-semibold text-xs md:text-sm">Showing Completed Trips Only</span>
                       </>
                     )}
                   </div>
-                  <Badge variant="secondary" className="ml-2">
+                  <Badge variant="secondary" className="text-[10px] md:text-xs">
                     {allTrips.filter(t => {
                       if (statusFilter === 'pending') return t.status === 'pending';
                       if (statusFilter === 'active') return t.status === 'funded' || t.status === 'in_transit' || t.status === 'escrowed';
@@ -1884,9 +1888,9 @@ const LoadAgentDashboard = () => {
                   variant="outline"
                   size="sm"
                   onClick={clearFilter}
-                  className="gap-2"
+                  className="gap-1.5 md:gap-2 h-8 md:h-9 text-xs md:text-sm w-full md:w-auto"
                 >
-                  <XCircle className="h-4 w-4" />
+                  <XCircle className="h-3 w-3 md:h-4 md:w-4" />
                   Clear Filter
                 </Button>
               </div>
@@ -1897,59 +1901,63 @@ const LoadAgentDashboard = () => {
         {/* Escrowed Trips - Pending Allotment */}
         {(!statusFilter || statusFilter === 'all' || statusFilter === 'active') && allTrips.filter((t) => t.status === 'escrowed').length > 0 && (
           <Card className="border-orange-500/50 bg-orange-50/50 dark:bg-orange-950/20">
-            <CardHeader>
-              <div className="flex items-center justify-between">
+            <CardHeader className="pb-3">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-orange-600" />
-                    Escrowed Trips - Awaiting Allotment
+                  <CardTitle className="flex items-center gap-1.5 md:gap-2 text-sm md:text-base lg:text-lg">
+                    <Shield className="h-4 w-4 md:h-5 md:w-5 text-orange-600 flex-shrink-0" />
+                    <span className="truncate">Escrowed Trips - Awaiting Allotment</span>
                   </CardTitle>
-                  <CardDescription>Trips with lender bids pending your approval</CardDescription>
+                  <CardDescription className="text-[10px] md:text-xs lg:text-sm mt-1">Trips with lender bids pending your approval</CardDescription>
                 </div>
                 <Button
                   onClick={handleAllotAllTrips}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 w-full md:w-auto h-8 md:h-9 lg:h-10 text-xs md:text-sm"
                 >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Allot All Trips
+                  <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 mr-1.5 md:mr-2" />
+                  Allot All
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {allTrips
                   .filter((t) => t.status === 'escrowed')
                   .map((trip) => (
                     <Card key={trip.id} className="border-orange-300 bg-white dark:bg-card">
-                      <CardContent className="pt-6">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-4 mb-3">
+                      <CardContent className="p-3 md:pt-6 md:pb-6 md:px-6">
+                        <div className="flex flex-col md:flex-row items-start justify-between gap-3 md:gap-0">
+                          <div className="flex-1 w-full">
+                            <div className="flex items-start gap-2 md:gap-4 mb-3">
                               {trip.loadOwnerLogo ? (
                                 <img
                                   src={trip.loadOwnerLogo}
                                   alt={trip.loadOwnerName}
-                                  className="h-10 w-10 object-contain rounded border p-1"
+                                  className="h-8 w-8 md:h-10 md:w-10 object-contain rounded border p-1 flex-shrink-0"
                                 />
                               ) : (
-                                <div className="flex items-center justify-center gap-2 h-10 w-10 rounded border p-1 bg-muted">
-                                  <Building2 className="h-5 w-5 text-muted-foreground" />
+                                <div className="flex items-center justify-center h-8 w-8 md:h-10 md:w-10 rounded border p-1 bg-muted flex-shrink-0">
+                                  <Building2 className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                                 </div>
                               )}
-                              <div>
-                                <h3 className="font-semibold text-lg">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-sm md:text-base lg:text-lg truncate">
                                   {trip.origin} → {trip.destination}
                                 </h3>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-[10px] md:text-xs lg:text-sm text-muted-foreground">
                                   {trip.loadType} • {trip.distance} km • ₹{(trip.amount / 1000).toFixed(0)}K
                                 </p>
                               </div>
+                              <Badge className="bg-orange-600 flex-shrink-0 text-[10px] md:text-xs">
+                                <Shield className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
+                                Escrowed
+                              </Badge>
                             </div>
 
                             {/* Bids Section */}
                             {trip.bids && trip.bids.length > 0 && (
-                              <div className="mt-4 p-4 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                                <h4 className="font-semibold text-sm mb-3 text-orange-900 dark:text-orange-100">
+                              <div className="mt-3 md:mt-4 p-2.5 md:p-4 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                                <h4 className="font-semibold text-xs md:text-sm mb-2 md:mb-3 text-orange-900 dark:text-orange-100">
                                   Lender Bids ({trip.bids.length})
                                 </h4>
                                 <div className="space-y-2">
@@ -1957,20 +1965,20 @@ const LoadAgentDashboard = () => {
                                     return (
                                       <div
                                         key={index}
-                                        className="flex items-center justify-between p-3 bg-white dark:bg-card rounded border"
+                                        className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 p-2.5 md:p-3 bg-white dark:bg-card rounded border"
                                       >
-                                        <div>
-                                          <p className="font-medium">{toTitleCase(bid.lenderName)}</p>
-                                          <p className="text-sm text-muted-foreground">
+                                        <div className="flex-1 min-w-0">
+                                          <p className="font-medium text-xs md:text-sm truncate">{toTitleCase(bid.lenderName)}</p>
+                                          <p className="text-[10px] md:text-xs text-muted-foreground">
                                             Amount: ₹{(bid.amount / 1000).toFixed(0)}K • Rate: {formatPercentage(bid.interestRate)}%
                                           </p>
                                         </div>
                                         <Button
                                           size="sm"
                                           onClick={() => handleAllotTrip(trip.id, bid.lenderId, bid.lenderName)}
-                                          className="bg-green-600 hover:bg-green-700"
+                                          className="bg-green-600 hover:bg-green-700 h-7 md:h-8 px-2.5 md:px-3 text-xs md:text-sm w-full md:w-auto"
                                         >
-                                          <CheckCircle className="h-4 w-4 mr-1" />
+                                          <CheckCircle className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                                           Allot
                                         </Button>
                                       </div>
@@ -1980,10 +1988,6 @@ const LoadAgentDashboard = () => {
                               </div>
                             )}
                           </div>
-                          <Badge className="bg-orange-600 ml-4">
-                            <Shield className="h-3 w-3 mr-1" />
-                            Escrowed
-                          </Badge>
                         </div>
                       </CardContent>
                     </Card>
@@ -1995,13 +1999,13 @@ const LoadAgentDashboard = () => {
 
         {/* All Trips */}
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
+          <CardHeader className="pb-3">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0">
               <div>
-                <CardTitle>All Trips in Portal</CardTitle>
-                <CardDescription>View and search all trips across the platform</CardDescription>
+                <CardTitle className="text-base md:text-lg">All Trips in Portal</CardTitle>
+                <CardDescription className="text-[10px] md:text-xs lg:text-sm mt-0.5 md:mt-1">View and search all trips across the platform</CardDescription>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full md:w-auto">
                 <AdvancedFilter
                   filters={filterConfig}
                   currentFilters={advancedFilters}
@@ -2012,10 +2016,10 @@ const LoadAgentDashboard = () => {
                   variant="outline"
                   size="sm"
                   onClick={handleRefresh}
-                  className="gap-2"
+                  className="gap-1.5 md:gap-2 h-8 md:h-9 text-xs md:text-sm"
                 >
-                  <RefreshCw className="h-4 w-4" />
-                  Refresh
+                  <RefreshCw className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  <span className="hidden md:inline">Refresh</span>
                 </Button>
               </div>
             </div>
