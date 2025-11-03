@@ -213,8 +213,8 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={currentTab} onValueChange={setCurrentTab}>
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 gap-1">
+        <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-4 sm:space-y-6">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 gap-1 mb-4 sm:mb-0">
             <TabsTrigger value="terms" className="text-xs sm:text-sm">Terms</TabsTrigger>
             <TabsTrigger value="interest" className="text-xs sm:text-sm">Interest</TabsTrigger>
             <TabsTrigger value="repayment" className="text-xs sm:text-sm">Repayment</TabsTrigger>
@@ -223,7 +223,7 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
             <TabsTrigger value="signature" className="text-xs sm:text-sm">Signature</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="terms" className="space-y-4">
+          <TabsContent value="terms" className="space-y-4 mt-0">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label>General Terms and Conditions</Label>
@@ -241,7 +241,7 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
             </div>
           </TabsContent>
 
-          <TabsContent value="interest" className="space-y-4">
+          <TabsContent value="interest" className="space-y-4 mt-0">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label>Interest Rate Clause</Label>
@@ -259,7 +259,7 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
             </div>
           </TabsContent>
 
-          <TabsContent value="repayment" className="space-y-4">
+          <TabsContent value="repayment" className="space-y-4 mt-0">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label>Repayment Terms</Label>
@@ -303,7 +303,7 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
             </div>
           </TabsContent>
 
-          <TabsContent value="penalties" className="space-y-4">
+          <TabsContent value="penalties" className="space-y-4 mt-0">
             <Card>
               <CardHeader>
                 <CardTitle>Summary of Penalties</CardTitle>
@@ -326,7 +326,7 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
             </Card>
           </TabsContent>
 
-          <TabsContent value="custom" className="space-y-4">
+          <TabsContent value="custom" className="space-y-4 mt-0">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -514,7 +514,7 @@ Examples:
             </Card>
           </TabsContent>
 
-          <TabsContent value="signature" className="space-y-4">
+          <TabsContent value="signature" className="space-y-4 mt-0">
             <Card>
               <CardHeader>
                 <CardTitle>Lender Signature</CardTitle>

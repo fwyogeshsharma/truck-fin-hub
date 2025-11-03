@@ -118,8 +118,8 @@ const ContractAcceptanceDialog = ({
           </div>
         </div>
 
-        <Tabs value={currentTab} onValueChange={setCurrentTab}>
-          <TabsList className={`grid w-full gap-1 ${contract.customTerms ? 'grid-cols-3 sm:grid-cols-7' : 'grid-cols-3 sm:grid-cols-6'}`}>
+        <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-4 sm:space-y-6">
+          <TabsList className={`grid w-full gap-1 mb-4 sm:mb-0 ${contract.customTerms ? 'grid-cols-3 sm:grid-cols-7' : 'grid-cols-3 sm:grid-cols-6'}`}>
             <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
             <TabsTrigger value="terms" className="text-xs sm:text-sm">Terms</TabsTrigger>
             <TabsTrigger value="interest" className="text-xs sm:text-sm">Interest</TabsTrigger>
@@ -129,7 +129,7 @@ const ContractAcceptanceDialog = ({
             <TabsTrigger value="accept" className="text-xs sm:text-sm">Accept</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-4">
+          <TabsContent value="overview" className="space-y-4 mt-0">
             <Card>
               <CardHeader>
                 <CardTitle>Loan Summary</CardTitle>
@@ -225,7 +225,7 @@ const ContractAcceptanceDialog = ({
             </Card>
           </TabsContent>
 
-          <TabsContent value="terms">
+          <TabsContent value="terms" className="mt-0">
             <Card>
               <CardHeader>
                 <CardTitle>General Terms and Conditions</CardTitle>
@@ -240,7 +240,7 @@ const ContractAcceptanceDialog = ({
             </Card>
           </TabsContent>
 
-          <TabsContent value="interest">
+          <TabsContent value="interest" className="mt-0">
             <Card>
               <CardHeader>
                 <CardTitle>Interest Rate Terms</CardTitle>
@@ -255,7 +255,7 @@ const ContractAcceptanceDialog = ({
             </Card>
           </TabsContent>
 
-          <TabsContent value="repayment">
+          <TabsContent value="repayment" className="mt-0">
             <Card>
               <CardHeader>
                 <CardTitle>Repayment Terms</CardTitle>
@@ -270,7 +270,7 @@ const ContractAcceptanceDialog = ({
             </Card>
           </TabsContent>
 
-          <TabsContent value="penalties">
+          <TabsContent value="penalties" className="mt-0">
             <Card>
               <CardHeader>
                 <CardTitle>Late Payment & Default Terms</CardTitle>
@@ -298,7 +298,7 @@ const ContractAcceptanceDialog = ({
           </TabsContent>
 
           {contract.customTerms && (
-            <TabsContent value="custom">
+            <TabsContent value="custom" className="mt-0">
               <Card>
                 <CardHeader>
                   <CardTitle>Custom Terms & Conditions</CardTitle>
@@ -319,7 +319,7 @@ const ContractAcceptanceDialog = ({
             </TabsContent>
           )}
 
-          <TabsContent value="accept" className="space-y-4">
+          <TabsContent value="accept" className="space-y-4 mt-0">
             <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg mb-4">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
