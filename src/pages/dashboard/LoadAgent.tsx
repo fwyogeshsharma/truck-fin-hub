@@ -3046,15 +3046,17 @@ const LoadAgentDashboard = () => {
                         API Endpoint
                       </h4>
                       <div className="space-y-2">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-background rounded border">
-                          <div className="font-mono text-xs sm:text-sm break-all sm:break-normal flex-1 min-w-0">
-                            <span className="text-green-600 font-semibold">POST</span>
-                            <span className="ml-2">https://api.truckfinhub.com/v1/trips/create</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-2 sm:p-3 bg-background rounded border">
+                          <div className="font-mono text-[10px] sm:text-xs flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                              <span className="text-green-600 font-semibold shrink-0">POST</span>
+                              <span className="break-words" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>https://api.truckfinhub.com/v1/trips/create</span>
+                            </div>
                           </div>
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="self-end sm:self-auto shrink-0"
+                            className="self-start sm:self-auto shrink-0"
                             onClick={() => {
                               navigator.clipboard.writeText('https://api.truckfinhub.com/v1/trips/create');
                               toast({
@@ -3063,7 +3065,7 @@ const LoadAgentDashboard = () => {
                               });
                             }}
                           >
-                            <Copy className="h-4 w-4" />
+                            <Copy className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Button>
                         </div>
                       </div>
@@ -3079,7 +3081,7 @@ const LoadAgentDashboard = () => {
                         Include your API key in the request headers:
                       </p>
                       <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
-                        <pre className="whitespace-pre-wrap sm:whitespace-pre">{`Authorization: Bearer YOUR_API_KEY
+                        <pre className="whitespace-pre-wrap sm:whitespace-pre max-w-full" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>{`Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json`}</pre>
                         <Button
                           size="sm"
@@ -3097,7 +3099,8 @@ Content-Type: application/json`}</pre>
                         </Button>
                       </div>
                       <p className="text-[10px] sm:text-xs text-muted-foreground mt-2">
-                        Contact support to get your API key: support@truckfinhub.com
+                        Contact support to get your API key:{' '}
+                        <span className="break-words" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>support@truckfinhub.com</span>
                       </p>
                     </div>
 
@@ -3108,7 +3111,7 @@ Content-Type: application/json`}</pre>
                         Request Body (JSON)
                       </h4>
                       <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
-                        <pre className="max-w-full">{`{
+                        <pre className="max-w-full whitespace-pre-wrap sm:whitespace-pre" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>{`{
   "ewayBillNumber": "123456789012",
   "pickup": "Mumbai, Maharashtra",
   "destination": "Delhi, NCR",
@@ -3244,7 +3247,7 @@ Content-Type: application/json`}</pre>
                         <div>
                           <p className="text-[10px] sm:text-xs font-semibold mb-1 text-green-600">Success (200 OK)</p>
                           <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
-                            <pre className="max-w-full">{`{
+                            <pre className="max-w-full whitespace-pre-wrap sm:whitespace-pre" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>{`{
   "success": true,
   "tripId": "trip_abc123xyz",
   "message": "Trip created successfully",
@@ -3283,7 +3286,7 @@ Content-Type: application/json`}</pre>
                         <div>
                           <p className="text-[10px] sm:text-xs font-semibold mb-1 text-red-600">Error (400 Bad Request)</p>
                           <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
-                            <pre className="max-w-full">{`{
+                            <pre className="max-w-full whitespace-pre-wrap sm:whitespace-pre" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>{`{
   "success": false,
   "error": "Validation Error",
   "message": "Trip amount must be between ₹20,000 and ₹80,000",
@@ -3325,7 +3328,7 @@ Content-Type: application/json`}</pre>
                         <div>
                           <p className="text-[10px] sm:text-xs font-semibold mb-1">JavaScript (Fetch)</p>
                           <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
-                            <pre className="max-w-full">{`fetch('https://api.truckfinhub.com/v1/trips/create', {
+                            <pre className="max-w-full whitespace-pre-wrap sm:whitespace-pre" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>{`fetch('https://api.truckfinhub.com/v1/trips/create', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer YOUR_API_KEY',
@@ -3392,7 +3395,7 @@ Content-Type: application/json`}</pre>
                         <div>
                           <p className="text-[10px] sm:text-xs font-semibold mb-1">Python (Requests)</p>
                           <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
-                            <pre className="max-w-full">{`import requests
+                            <pre className="max-w-full whitespace-pre-wrap sm:whitespace-pre" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>{`import requests
 
 url = "https://api.truckfinhub.com/v1/trips/create"
 headers = {
@@ -3459,7 +3462,7 @@ print(response.json())`;
                         <div>
                           <p className="text-[10px] sm:text-xs font-semibold mb-1">cURL</p>
                           <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
-                            <pre className="max-w-full">{`curl -X POST https://api.truckfinhub.com/v1/trips/create \\
+                            <pre className="max-w-full whitespace-pre-wrap sm:whitespace-pre" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>{`curl -X POST https://api.truckfinhub.com/v1/trips/create \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -3534,14 +3537,16 @@ print(response.json())`;
                         Contact our support team for API key generation and integration assistance:
                       </p>
                       <div className="space-y-1 text-[10px] sm:text-xs">
-                        <p className="text-blue-900 dark:text-blue-100 break-all">
-                          <strong>Email:</strong> support@truckfinhub.com
+                        <p className="text-blue-900 dark:text-blue-100">
+                          <strong>Email:</strong>{' '}
+                          <span className="break-words" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>support@truckfinhub.com</span>
                         </p>
                         <p className="text-blue-900 dark:text-blue-100">
                           <strong>Phone:</strong> +91 1800-XXX-XXXX
                         </p>
-                        <p className="text-blue-900 dark:text-blue-100 break-all">
-                          <strong>Documentation:</strong> https://docs.truckfinhub.com
+                        <p className="text-blue-900 dark:text-blue-100">
+                          <strong>Documentation:</strong>{' '}
+                          <span className="break-words" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>https://docs.truckfinhub.com</span>
                         </p>
                       </div>
                     </div>
