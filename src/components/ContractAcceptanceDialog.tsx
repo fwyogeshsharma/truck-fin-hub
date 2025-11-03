@@ -95,21 +95,21 @@ const ContractAcceptanceDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <FileText className="h-6 w-6 text-primary" />
+      <DialogContent className="w-[95vw] sm:w-[90vw] max-w-5xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+        <DialogHeader className="pb-3 sm:pb-4">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
+            <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             Loan Contract Review & Acceptance
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             Please carefully review all terms and conditions before accepting this loan agreement from {toTitleCase(contract.lenderName)}.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg mb-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
-            <div className="text-sm">
+        <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 p-3 sm:p-4 rounded-lg mb-3 sm:mb-4">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 mt-0.5 shrink-0" />
+            <div className="text-xs sm:text-sm">
               <p className="font-semibold text-yellow-900 dark:text-yellow-100">Important Notice</p>
               <p className="text-yellow-800 dark:text-yellow-200 mt-1">
                 By accepting this contract, you are entering into a legally binding agreement. Please read all terms carefully before signing.
@@ -119,14 +119,14 @@ const ContractAcceptanceDialog = ({
         </div>
 
         <Tabs value={currentTab} onValueChange={setCurrentTab}>
-          <TabsList className={`grid w-full ${contract.customTerms ? 'grid-cols-7' : 'grid-cols-6'}`}>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="terms">Terms</TabsTrigger>
-            <TabsTrigger value="interest">Interest</TabsTrigger>
-            <TabsTrigger value="repayment">Repayment</TabsTrigger>
-            <TabsTrigger value="penalties">Penalties</TabsTrigger>
-            {contract.customTerms && <TabsTrigger value="custom">Custom</TabsTrigger>}
-            <TabsTrigger value="accept">Accept</TabsTrigger>
+          <TabsList className={`grid w-full gap-1 ${contract.customTerms ? 'grid-cols-3 sm:grid-cols-7' : 'grid-cols-3 sm:grid-cols-6'}`}>
+            <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
+            <TabsTrigger value="terms" className="text-xs sm:text-sm">Terms</TabsTrigger>
+            <TabsTrigger value="interest" className="text-xs sm:text-sm">Interest</TabsTrigger>
+            <TabsTrigger value="repayment" className="text-xs sm:text-sm">Repayment</TabsTrigger>
+            <TabsTrigger value="penalties" className="text-xs sm:text-sm">Penalties</TabsTrigger>
+            {contract.customTerms && <TabsTrigger value="custom" className="text-xs sm:text-sm">Custom</TabsTrigger>}
+            <TabsTrigger value="accept" className="text-xs sm:text-sm">Accept</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
@@ -498,24 +498,29 @@ const ContractAcceptanceDialog = ({
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="gap-3">
-          <Button variant="outline" onClick={onClose} disabled={loading}>
+        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-3">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={loading}
+            className="w-full sm:w-auto h-9 sm:h-10 text-xs sm:text-sm touch-target"
+          >
             Reject Contract
           </Button>
           <Button
             onClick={handleAccept}
             disabled={loading || !termsAccepted || !borrowerSignature}
-            className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
+            className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white w-full sm:w-auto h-9 sm:h-10 text-xs sm:text-sm touch-target"
           >
             {loading ? (
               <>
-                <div className="h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Processing Allotment...
+                <div className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span className="truncate">Processing Allotment...</span>
               </>
             ) : (
               <>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Sign Contract & Allot Trip
+                <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                <span className="truncate">Sign Contract & Allot Trip</span>
               </>
             )}
           </Button>

@@ -202,25 +202,25 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
+      <DialogContent className="w-[95vw] sm:w-[90vw] max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+        <DialogHeader className="pb-3 sm:pb-4">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
             Loan Contract Agreement
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             Review and customize the loan terms. Your signature is required to proceed with the bid.
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={currentTab} onValueChange={setCurrentTab}>
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="terms">Terms</TabsTrigger>
-            <TabsTrigger value="interest">Interest</TabsTrigger>
-            <TabsTrigger value="repayment">Repayment</TabsTrigger>
-            <TabsTrigger value="penalties">Penalties</TabsTrigger>
-            <TabsTrigger value="custom">Custom</TabsTrigger>
-            <TabsTrigger value="signature">Signature</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 gap-1">
+            <TabsTrigger value="terms" className="text-xs sm:text-sm">Terms</TabsTrigger>
+            <TabsTrigger value="interest" className="text-xs sm:text-sm">Interest</TabsTrigger>
+            <TabsTrigger value="repayment" className="text-xs sm:text-sm">Repayment</TabsTrigger>
+            <TabsTrigger value="penalties" className="text-xs sm:text-sm">Penalties</TabsTrigger>
+            <TabsTrigger value="custom" className="text-xs sm:text-sm">Custom</TabsTrigger>
+            <TabsTrigger value="signature" className="text-xs sm:text-sm">Signature</TabsTrigger>
           </TabsList>
 
           <TabsContent value="terms" className="space-y-4">
@@ -625,12 +625,19 @@ Examples:
           </TabsContent>
         </Tabs>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-3">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="w-full sm:w-auto h-9 sm:h-10 text-xs sm:text-sm touch-target"
+          >
             Cancel
           </Button>
-          <Button onClick={handleSave} className="bg-gradient-primary">
-            <Save className="h-4 w-4 mr-2" />
+          <Button
+            onClick={handleSave}
+            className="bg-gradient-primary w-full sm:w-auto h-9 sm:h-10 text-xs sm:text-sm touch-target"
+          >
+            <Save className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
             Save & Proceed with Bid
           </Button>
         </DialogFooter>
