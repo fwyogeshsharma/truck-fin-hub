@@ -64,6 +64,7 @@ import {
   UserX,
   Loader2,
   TrendingUp,
+  BadgeCheck,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import DocumentProgress from '@/components/DocumentProgress';
@@ -1568,6 +1569,13 @@ const LoadAgentDashboard = () => {
           <Badge className="bg-primary-dark text-white">
             <CheckCircle className="h-3 w-3 mr-1" />
             Completed
+          </Badge>
+        );
+      case 'repaid':
+        return (
+          <Badge className="bg-green-600 text-white">
+            <BadgeCheck className="h-3 w-3 mr-1" />
+            REPAID
           </Badge>
         );
       case 'cancelled':

@@ -18,7 +18,10 @@ import {
   FileText,
   Eye,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  BadgeCheck,
+  XCircle,
+  Shield
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
@@ -225,6 +228,62 @@ const MyInvestments = () => {
   const getTripStatus = (tripId: string) => {
     const trip = trips.get(tripId);
     return trip?.status || 'unknown';
+  };
+
+  const getTripStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return (
+          <Badge variant="outline">
+            <Clock className="h-3 w-3 mr-1" />
+            Pending
+          </Badge>
+        );
+      case 'escrowed':
+        return (
+          <Badge variant="outline" className="bg-accent/10 text-accent">
+            <Shield className="h-3 w-3 mr-1" />
+            Escrowed
+          </Badge>
+        );
+      case 'funded':
+        return (
+          <Badge variant="outline" className="bg-secondary/10 text-secondary">
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            Funded
+          </Badge>
+        );
+      case 'in_transit':
+        return (
+          <Badge variant="outline" className="bg-primary/10 text-primary">
+            <TruckIcon className="h-3 w-3 mr-1" />
+            In Transit
+          </Badge>
+        );
+      case 'completed':
+        return (
+          <Badge variant="outline" className="bg-green-500/10 text-green-600">
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            Completed
+          </Badge>
+        );
+      case 'repaid':
+        return (
+          <Badge variant="outline" className="bg-green-600/10 text-green-700">
+            <BadgeCheck className="h-3 w-3 mr-1" />
+            REPAID
+          </Badge>
+        );
+      case 'cancelled':
+        return (
+          <Badge variant="outline" className="bg-destructive/10 text-destructive">
+            <XCircle className="h-3 w-3 mr-1" />
+            Cancelled
+          </Badge>
+        );
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
   };
 
   const getTripDetails = (tripId: string) => {
@@ -445,9 +504,7 @@ const MyInvestments = () => {
                   {investment.status}
                 </span>
               </Badge>
-              <Badge variant="outline">
-                Trip: {trip.status}
-              </Badge>
+              {getTripStatusBadge(trip.status)}
             </div>
           </div>
         </CardHeader>
