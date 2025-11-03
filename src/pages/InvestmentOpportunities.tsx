@@ -1904,36 +1904,87 @@ const InvestmentOpportunities = () => {
                       isSelected || isMultiSelected ? "ring-2 ring-primary" : ""
                     }
                   >
-                    <CardHeader>
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-2">
+                    <CardHeader className="p-3 sm:p-4 md:p-6">
+                      <div className="flex flex-col gap-3 sm:gap-4">
+                        {/* Mobile: Checkbox and badges row */}
+                        <div className="flex items-center justify-between gap-2">
                           <Checkbox
                             checked={isMultiSelected}
                             onCheckedChange={() => toggleTripSelection(trip.id)}
                             id={`select-${trip.id}`}
+                            className="shrink-0"
                           />
+                          {/* Document Step & Badges on mobile */}
+                          <div className="flex items-center gap-1.5 sm:hidden flex-wrap">
+                            {(() => {
+                              const docStep = getDocumentStep(trip.documents);
+                              return (
+                                <Badge className={`${docStep.color} text-white flex items-center gap-1 text-xs px-1.5 py-0.5`}>
+                                  <FileText className="h-2.5 w-2.5" />
+                                  <span className="text-[10px]">{docStep.step}</span>
+                                </Badge>
+                              );
+                            })()}
+                            {trip.riskLevel && (
+                              <Badge
+                                variant={
+                                  trip.riskLevel === "low"
+                                    ? "default"
+                                    : trip.riskLevel === "medium"
+                                      ? "secondary"
+                                      : "destructive"
+                                }
+                                className={`text-xs px-1.5 py-0.5 ${
+                                  trip.riskLevel === "low"
+                                    ? "bg-green-600"
+                                    : trip.riskLevel === "medium"
+                                      ? "bg-yellow-600"
+                                      : "bg-red-600"
+                                } text-white`}
+                              >
+                                <span className="text-[10px]">{trip.riskLevel.toUpperCase()}</span>
+                              </Badge>
+                            )}
+                            {trip.insuranceStatus ? (
+                              <Badge className="bg-green-600 text-white flex items-center gap-0.5 px-1.5 py-0.5">
+                                <Shield className="h-2.5 w-2.5" />
+                                <span className="text-[10px]">Insured</span>
+                              </Badge>
+                            ) : (
+                              <Badge
+                                variant="outline"
+                                className="text-xs flex items-center gap-0.5 px-1.5 py-0.5"
+                              >
+                                <Shield className="h-2.5 w-2.5" />
+                                <span className="text-[10px]">Not Insured</span>
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex gap-4 flex-1">
-                          <div className="flex-shrink-0">
-                            {trip.clientLogo ? (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button className="relative group h-16 w-16 rounded-lg border border-border p-2 bg-card hover:border-primary transition-colors">
-                                    <img
-                                      src={trip.clientLogo}
-                                      alt={trip.clientCompany || "Company"}
-                                      className="h-full w-full object-contain"
-                                    />
-                                    <div className="absolute -top-2 -right-2 bg-primary rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
-                                      <Info className="h-3 w-3 text-white" />
-                                    </div>
-                                  </button>
-                                </PopoverTrigger>
-                                <PopoverContent
-                                  className="w-96 p-4"
-                                  side="right"
-                                  align="start"
-                                >
+
+                        {/* Main content area */}
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                          <div className="flex gap-2 sm:gap-4 flex-1 min-w-0">
+                            <div className="flex-shrink-0">
+                              {trip.clientLogo ? (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button className="relative group h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-lg border border-border p-1.5 sm:p-2 bg-card hover:border-primary transition-colors">
+                                      <img
+                                        src={trip.clientLogo}
+                                        alt={trip.clientCompany || "Company"}
+                                        className="h-full w-full object-contain"
+                                      />
+                                      <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-primary rounded-full p-0.5 sm:p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                                        <Info className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
+                                      </div>
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent
+                                    className="w-[90vw] sm:w-96 p-3 sm:p-4 max-h-[80vh] overflow-y-auto"
+                                    side="bottom"
+                                    align="start"
+                                  >
                                   {(() => {
                                     const companyInfo = getCompanyInfo(
                                       trip.clientCompany || "",
@@ -2129,24 +2180,24 @@ const InvestmentOpportunities = () => {
                                 </PopoverContent>
                               </Popover>
                             ) : (
-                              <div className="h-16 w-16 bg-muted rounded-lg border border-dashed flex items-center justify-center">
-                                <Package className="h-8 w-8 text-muted-foreground" />
+                              <div className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 bg-muted rounded-lg border border-dashed flex items-center justify-center">
+                                <Package className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-muted-foreground" />
                               </div>
                             )}
                           </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <MapPin className="h-4 w-4 text-primary" />
-                              <CardTitle className="text-xl">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                              <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary mt-0.5 shrink-0" />
+                              <CardTitle className="text-base sm:text-lg md:text-xl truncate">
                                 {trip.origin} → {trip.destination}
                               </CardTitle>
                             </div>
-                            <CardDescription>
+                            <CardDescription className="text-xs sm:text-sm truncate">
                               {trip.loadType} • {trip.weight} kg •{" "}
                               {trip.distance} km
                             </CardDescription>
                             {trip.loadOwnerLogo && (
-                              <div className="flex items-center gap-2 mt-3">
+                              <div className="flex items-center gap-2 mt-2 sm:mt-3">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <span className="text-xs text-muted-foreground cursor-help">
@@ -2161,11 +2212,11 @@ const InvestmentOpportunities = () => {
                                 </Tooltip>
                                 <Popover>
                                   <PopoverTrigger asChild>
-                                    <button className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg border border-border hover:bg-muted transition-colors">
+                                    <button className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-muted/50 rounded-lg border border-border hover:bg-muted transition-colors text-xs sm:text-sm">
                                       <img
                                         src={trip.loadOwnerLogo}
                                         alt={trip.loadOwnerName}
-                                        className="h-6 object-contain"
+                                        className="h-5 sm:h-6 object-contain"
                                       />
                                       {(() => {
                                         const companyInfo = getCompanyInfo(
@@ -2176,8 +2227,8 @@ const InvestmentOpportunities = () => {
                                           trip.loadOwnerRating;
                                         return (
                                           rating && (
-                                            <div className="flex items-center gap-0.5 pl-2 border-l border-border">
-                                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                            <div className="flex items-center gap-0.5 pl-1.5 sm:pl-2 border-l border-border">
+                                              <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 fill-yellow-400 text-yellow-400" />
                                               <span className="text-xs font-medium">
                                                 {Number(rating).toFixed(1)}
                                               </span>
@@ -2185,12 +2236,12 @@ const InvestmentOpportunities = () => {
                                           )
                                         );
                                       })()}
-                                      <Info className="h-3.5 w-3.5 text-primary ml-1" />
+                                      <Info className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary ml-0.5 sm:ml-1" />
                                     </button>
                                   </PopoverTrigger>
                                   <PopoverContent
-                                    className="w-96 p-4"
-                                    side="top"
+                                    className="w-[90vw] sm:w-96 p-3 sm:p-4 max-h-[80vh] overflow-y-auto"
+                                    side="bottom"
                                     align="start"
                                   >
                                     {(() => {
@@ -2388,7 +2439,8 @@ const InvestmentOpportunities = () => {
                             )}
                           </div>
                         </div>
-                        <div className="flex flex-col items-end gap-2">
+                        {/* Desktop badges - hidden on mobile */}
+                        <div className="hidden sm:flex flex-col items-end gap-2">
                           {/* Document Step Indicator */}
                           {(() => {
                             const docStep = getDocumentStep(trip.documents);
@@ -2441,52 +2493,53 @@ const InvestmentOpportunities = () => {
                           </div>
                         </div>
                       </div>
+                      </div>
                     </CardHeader>
 
-                    <CardContent className="space-y-4">
-                      <div className="grid md:grid-cols-4 gap-4">
-                        <div className="flex items-center gap-2">
-                          <div>
+                    <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <div className="min-w-0">
                             <p className="text-xs text-muted-foreground">
                               Trip Value
                             </p>
-                            <p className="font-semibold">
+                            <p className="font-semibold text-sm sm:text-base truncate">
                               {formatCurrency(trip.amount)}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4 text-green-600" />
-                          <div>
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 shrink-0" />
+                          <div className="min-w-0">
                             <p className="text-xs text-muted-foreground">
                               ARR
                             </p>
-                            <p className="font-semibold text-green-600">
+                            <p className="font-semibold text-sm sm:text-base text-green-600 truncate">
                               {formatPercentage(tripARR)}%
                             </p>
-                            <p className="text-[10px] text-muted-foreground">
+                            <p className="text-[10px] text-muted-foreground truncate">
                               {formatCurrencyCompact((trip.amount * tripARR) / 100, true)}/year
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <div>
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                          <div className="min-w-0">
                             <p className="text-xs text-muted-foreground">
                               Created
                             </p>
-                            <p className="font-semibold">
+                            <p className="font-semibold text-sm sm:text-base truncate">
                               {new Date(trip.createdAt).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <div>
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                          <div className="min-w-0">
                             <p className="text-xs text-muted-foreground">
                               Maturity Period
                             </p>
-                            <p className="font-semibold">
+                            <p className="font-semibold text-sm sm:text-base">
                               {trip.maturityDays || 30} days
                             </p>
                           </div>
@@ -2494,9 +2547,9 @@ const InvestmentOpportunities = () => {
                       </div>
 
                       {isSelected ? (
-                        <div className="border-t pt-4 space-y-4">
+                        <div className="border-t pt-3 sm:pt-4 space-y-3 sm:space-y-4">
                           <div className="space-y-2">
-                            <Label htmlFor={`rate-${trip.id}`}>
+                            <Label htmlFor={`rate-${trip.id}`} className="text-sm sm:text-base">
                               Your Bid Rate (%)
                             </Label>
                             <Input
@@ -2512,13 +2565,14 @@ const InvestmentOpportunities = () => {
                               min="0"
                               max="20"
                               step="0.5"
+                              className="text-sm sm:text-base h-10 touch-target"
                             />
                             <p className="text-xs text-muted-foreground">
                               Recommended range: 0-20% annually
                             </p>
                           </div>
 
-                          <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                          <div className="bg-muted/50 p-3 sm:p-4 rounded-lg space-y-2">
                             <div className="flex justify-between text-sm">
                               <span className="text-muted-foreground">
                                 Investment Amount
@@ -2577,9 +2631,9 @@ const InvestmentOpportunities = () => {
                             </div>
                           </div>
 
-                          <div className="flex gap-2">
+                          <div className="flex flex-col sm:flex-row gap-2">
                             <Button
-                              className="bg-gradient-primary flex-1"
+                              className="bg-gradient-primary flex-1 h-10 sm:h-9 touch-target"
                               onClick={() => {
                                 const tripWithCustomRate = { ...trip, interestRate: tripRate };
                                 handleOpenBidDialog(tripWithCustomRate);
@@ -2590,6 +2644,7 @@ const InvestmentOpportunities = () => {
                             <Button
                               variant="outline"
                               onClick={() => setSelectedTrip(null)}
+                              className="w-full sm:w-auto h-10 sm:h-9 touch-target"
                             >
                               Cancel
                             </Button>
@@ -2597,7 +2652,7 @@ const InvestmentOpportunities = () => {
                         </div>
                       ) : (
                         <Button
-                          className="w-full"
+                          className="w-full h-10 sm:h-9 touch-target"
                           variant="outline"
                           onClick={() => setSelectedTrip(trip.id)}
                         >
@@ -2899,35 +2954,35 @@ const InvestmentOpportunities = () => {
 
           {/* Bid Dialog */}
           <Dialog open={bidDialogOpen} onOpenChange={setBidDialogOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
+            <DialogContent className="w-[92vw] sm:w-[95vw] md:w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+              <DialogHeader className="pb-3 sm:pb-4">
+                <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   Place Your Bid
                 </DialogTitle>
-                <DialogDescription>
+                <DialogDescription className="text-xs sm:text-sm">
                   Enter your bid amount and interest rate for this trip
                 </DialogDescription>
               </DialogHeader>
 
               {selectedTripForBid && (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Trip Summary */}
-                  <div className="p-4 bg-muted/50 rounded-lg">
-                    <div className="flex items-start gap-3">
+                  <div className="p-3 sm:p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-start gap-2 sm:gap-3">
                       {selectedTripForBid.loadOwnerLogo && (
                         <img
                           src={selectedTripForBid.loadOwnerLogo}
                           alt={selectedTripForBid.loadOwnerName}
-                          className="h-12 object-contain"
+                          className="h-10 sm:h-12 object-contain shrink-0"
                         />
                       )}
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-sm mb-1">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm sm:text-base mb-1 truncate">
                           {selectedTripForBid.origin} →{" "}
                           {selectedTripForBid.destination}
                         </h4>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground truncate">
                           {selectedTripForBid.loadType} •{" "}
                           {selectedTripForBid.weight} kg •{" "}
                           {selectedTripForBid.distance} km
@@ -2936,7 +2991,7 @@ const InvestmentOpportunities = () => {
                           <span className="text-xs text-muted-foreground">
                             Trip Value:
                           </span>
-                          <span className="text-sm font-semibold">
+                          <span className="text-sm sm:text-base font-semibold">
                             {formatCurrency(selectedTripForBid.amount)}
                           </span>
                         </div>
@@ -3024,18 +3079,19 @@ const InvestmentOpportunities = () => {
                 </div>
               )}
 
-              <DialogFooter>
+              <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
                 <Button
                   variant="outline"
                   onClick={() => setBidDialogOpen(false)}
+                  className="w-full sm:w-auto h-10 sm:h-9 order-2 sm:order-1 touch-target"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleConfirmBid}
-                  className="bg-gradient-primary"
+                  className="bg-gradient-primary w-full sm:w-auto h-10 sm:h-9 order-1 sm:order-2 touch-target"
                 >
-                  <TrendingUp className="h-4 w-4 mr-2" />
+                  <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                   Confirm Bid
                 </Button>
               </DialogFooter>
