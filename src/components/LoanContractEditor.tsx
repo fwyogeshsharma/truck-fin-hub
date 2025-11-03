@@ -214,14 +214,16 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
         </DialogHeader>
 
         <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 gap-1 mb-4 sm:mb-0">
-            <TabsTrigger value="terms" className="text-xs sm:text-sm">Terms</TabsTrigger>
-            <TabsTrigger value="interest" className="text-xs sm:text-sm">Interest</TabsTrigger>
-            <TabsTrigger value="repayment" className="text-xs sm:text-sm">Repayment</TabsTrigger>
-            <TabsTrigger value="penalties" className="text-xs sm:text-sm">Penalties</TabsTrigger>
-            <TabsTrigger value="custom" className="text-xs sm:text-sm">Custom</TabsTrigger>
-            <TabsTrigger value="signature" className="text-xs sm:text-sm">Signature</TabsTrigger>
-          </TabsList>
+          <div className="border-b pb-1">
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 gap-1 h-auto p-1 bg-muted/50">
+              <TabsTrigger value="terms" className="text-xs sm:text-sm h-8 sm:h-9">Terms</TabsTrigger>
+              <TabsTrigger value="interest" className="text-xs sm:text-sm h-8 sm:h-9">Interest</TabsTrigger>
+              <TabsTrigger value="repayment" className="text-xs sm:text-sm h-8 sm:h-9">Repayment</TabsTrigger>
+              <TabsTrigger value="penalties" className="text-xs sm:text-sm h-8 sm:h-9">Penalties</TabsTrigger>
+              <TabsTrigger value="custom" className="text-xs sm:text-sm h-8 sm:h-9">Custom</TabsTrigger>
+              <TabsTrigger value="signature" className="text-xs sm:text-sm h-8 sm:h-9">Signature</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="terms" className="space-y-4 mt-0">
             <div>
