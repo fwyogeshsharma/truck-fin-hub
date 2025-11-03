@@ -141,12 +141,18 @@ const TransporterDashboard = () => {
         <div className="grid md:grid-cols-3 gap-6">
           {stats.map((stat) => {
             const Icon = stat.icon;
-            const isPending = stat.title === "Pending Acceptance";
+            const getFilterStatus = () => {
+              if (stat.title === "Pending Acceptance") return 'pending';
+              if (stat.title === "Active Trips") return 'active';
+              if (stat.title === "Completed This Month") return 'completed';
+              return null;
+            };
+            const filterStatus = getFilterStatus();
             return (
               <Card
                 key={stat.title}
-                className={isPending ? 'cursor-pointer hover:border-accent transition-colors' : ''}
-                onClick={isPending ? () => scrollToAvailableTrips('pending') : undefined}
+                className={filterStatus ? 'cursor-pointer hover:border-primary transition-colors hover:shadow-md' : ''}
+                onClick={filterStatus ? () => scrollToAvailableTrips(filterStatus) : undefined}
               >
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -270,24 +276,44 @@ const TransporterDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Available Trips */}
+        {/* All Trips Section with Filters */}
         <div ref={availableTripsRef}>
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  Available Trips
+                  {statusFilter === 'pending' && 'Available Trips'}
+                  {statusFilter === 'active' && 'Active Trips'}
+                  {statusFilter === 'completed' && 'Completed Trips'}
+                  {!statusFilter && 'All Trips'}
                   {statusFilter === 'pending' && (
                     <span className="text-xs px-2 py-1 rounded-full bg-accent/20 text-accent flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      Pending Only
+                      Pending Acceptance
+                    </span>
+                  )}
+                  {statusFilter === 'active' && (
+                    <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary flex items-center gap-1">
+                      <TruckIcon className="h-3 w-3" />
+                      In Transit
+                    </span>
+                  )}
+                  {statusFilter === 'completed' && (
+                    <span className="text-xs px-2 py-1 rounded-full bg-secondary/20 text-secondary flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Completed
                     </span>
                   )}
                 </CardTitle>
-                <CardDescription>Funded trips awaiting assignment</CardDescription>
+                <CardDescription>
+                  {statusFilter === 'pending' && 'Funded trips awaiting assignment'}
+                  {statusFilter === 'active' && 'Trips currently in transit'}
+                  {statusFilter === 'completed' && 'Successfully completed trips'}
+                  {!statusFilter && 'View all your trips'}
+                </CardDescription>
               </div>
-              {statusFilter === 'pending' && (
+              {statusFilter && (
                 <Button variant="ghost" size="sm" onClick={clearFilter} className="gap-1">
                   <X className="h-4 w-4" />
                   Clear Filter
@@ -297,64 +323,120 @@ const TransporterDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {myTrips.filter(t => t.status === 'funded' && !t.transporterId).length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Clock className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>No pending trips available at the moment</p>
-                </div>
-              ) : (
-                myTrips.filter(t => t.status === 'funded' && !t.transporterId).slice(0, statusFilter === 'pending' ? undefined : 3).map((trip) => (
-                  <div key={trip.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <MapPin className="h-4 w-4 text-primary" />
-                        <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg • {trip.distance} km</p>
+              {/* Pending Trips */}
+              {(statusFilter === 'pending' || !statusFilter) && (
+                <>
+                  {!statusFilter && myTrips.filter(t => t.status === 'funded' && !t.transporterId).length > 0 && (
+                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">Pending Acceptance</h3>
+                  )}
+                  {myTrips.filter(t => t.status === 'funded' && !t.transporterId).length === 0 && statusFilter === 'pending' ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Clock className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>No pending trips available at the moment</p>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="font-semibold text-secondary">{formatCurrencyForTransporter(trip.amount)}</p>
-                        <p className="text-xs text-muted-foreground">Payment</p>
+                  ) : (
+                    myTrips.filter(t => t.status === 'funded' && !t.transporterId).slice(0, statusFilter === 'pending' ? undefined : 3).map((trip) => (
+                      <div key={trip.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <MapPin className="h-4 w-4 text-primary" />
+                            <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
+                            <span className="text-xs px-2 py-1 rounded-full bg-accent/20 text-accent">Pending</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg • {trip.distance} km</p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="font-semibold text-secondary">{formatCurrencyForTransporter(trip.amount)}</p>
+                            <p className="text-xs text-muted-foreground">Payment</p>
+                          </div>
+                          <Button className="bg-gradient-primary" onClick={() => handleAcceptTrip(trip.id)}>
+                            Accept
+                          </Button>
+                        </div>
                       </div>
-                      <Button className="bg-gradient-primary" onClick={() => handleAcceptTrip(trip.id)}>
-                        Accept
-                      </Button>
+                    ))
+                  )}
+                </>
+              )}
+
+              {/* Active Trips */}
+              {(statusFilter === 'active' || !statusFilter) && (
+                <>
+                  {!statusFilter && myTrips.filter(t => t.status === 'in_transit').length > 0 && (
+                    <h3 className="font-semibold text-sm text-muted-foreground mb-2 mt-6">Active Trips</h3>
+                  )}
+                  {myTrips.filter(t => t.status === 'in_transit').length === 0 && statusFilter === 'active' ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <TruckIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>No active trips at the moment</p>
                     </div>
+                  ) : (
+                    myTrips.filter(t => t.status === 'in_transit').map((trip) => (
+                      <div key={trip.id} className="flex items-center justify-between p-4 border rounded-lg bg-primary/5">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <TruckIcon className="h-4 w-4 text-primary" />
+                            <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
+                            <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary">In Transit</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg</p>
+                        </div>
+                        <Button variant="outline" onClick={() => handleCompleteTrip(trip.id)}>
+                          Mark Complete
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </>
+              )}
+
+              {/* Completed Trips */}
+              {(statusFilter === 'completed' || !statusFilter) && (
+                <>
+                  {!statusFilter && myTrips.filter(t => t.status === 'completed').length > 0 && (
+                    <h3 className="font-semibold text-sm text-muted-foreground mb-2 mt-6">Completed Trips</h3>
+                  )}
+                  {myTrips.filter(t => t.status === 'completed').length === 0 && statusFilter === 'completed' ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <CheckCircle2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>No completed trips yet</p>
+                    </div>
+                  ) : (
+                    myTrips.filter(t => t.status === 'completed').slice(0, statusFilter === 'completed' ? undefined : 3).map((trip) => (
+                      <div key={trip.id} className="flex items-center justify-between p-4 border rounded-lg bg-secondary/5">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <CheckCircle2 className="h-4 w-4 text-secondary" />
+                            <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
+                            <span className="text-xs px-2 py-1 rounded-full bg-secondary/20 text-secondary">Completed</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-secondary">{formatCurrencyForTransporter(trip.amount)}</p>
+                          <p className="text-xs text-muted-foreground">Earned</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </>
+              )}
+
+              {/* Show message when no filter and no trips */}
+              {!statusFilter &&
+                myTrips.filter(t => t.status === 'funded' && !t.transporterId).length === 0 &&
+                myTrips.filter(t => t.status === 'in_transit').length === 0 &&
+                myTrips.filter(t => t.status === 'completed').length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <TruckIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No trips available</p>
                   </div>
-                ))
               )}
             </div>
           </CardContent>
         </Card>
         </div>
-
-        {/* Active Trips */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Active Trips</CardTitle>
-            <CardDescription>Trips in transit</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {myTrips.filter(t => t.status === 'in_transit').map((trip) => (
-                <div key={trip.id} className="flex items-center justify-between p-4 border rounded-lg bg-secondary/5">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <TruckIcon className="h-4 w-4 text-secondary" />
-                      <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
-                      <span className="text-xs px-2 py-1 rounded-full bg-secondary/20 text-secondary">In Transit</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg</p>
-                  </div>
-                  <Button variant="outline" onClick={() => handleCompleteTrip(trip.id)}>
-                    Mark Complete
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </DashboardLayout>
   );

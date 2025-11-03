@@ -17,7 +17,8 @@
       "Bash(bash:*)",
       "Bash(psql:*)",
       "Bash(docker exec:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
