@@ -475,11 +475,11 @@ const WalletPage = () => {
                       <select
                         value={filterType}
                         onChange={(e) => setFilterType(e.target.value as any)}
-                        className="bg-transparent border-none outline-none"
+                        className="bg-transparent border-none outline-none text-foreground cursor-pointer"
                       >
-                        <option value="all">All</option>
-                        <option value="credit">Credit</option>
-                        <option value="debit">Debit</option>
+                        <option value="all" className="text-foreground bg-background">All</option>
+                        <option value="credit" className="text-foreground bg-background">Credit</option>
+                        <option value="debit" className="text-foreground bg-background">Debit</option>
                       </select>
                     </Button>
                     <Button variant="outline" size="sm">
@@ -849,11 +849,11 @@ const WalletPage = () => {
                       id="bankSelect"
                       value={selectedBankId}
                       onChange={(e) => setSelectedBankId(e.target.value)}
-                      className="w-full mt-1 px-3 py-2 border rounded-md"
+                      className="w-full mt-1 px-3 py-2 border rounded-md text-foreground bg-background"
                     >
-                      <option value="">-- Select Bank --</option>
+                      <option value="" className="text-foreground bg-background">-- Select Bank --</option>
                       {bankAccounts.map((bank) => (
-                        <option key={bank.id} value={bank.id}>
+                        <option key={bank.id} value={bank.id} className="text-foreground bg-background">
                           {bank.bankName} - {bank.accountNumber.slice(-4)} {bank.isPrimary ? '(Primary)' : ''}
                         </option>
                       ))}
@@ -978,10 +978,10 @@ const WalletPage = () => {
                   id="accountType"
                   value={bankForm.accountType}
                   onChange={(e) => setBankForm({ ...bankForm, accountType: e.target.value as 'savings' | 'current' })}
-                  className="w-full mt-1 px-3 py-2 border rounded-md"
+                  className="w-full mt-1 px-3 py-2 border rounded-md text-foreground bg-background"
                 >
-                  <option value="savings">Savings Account</option>
-                  <option value="current">Current Account</option>
+                  <option value="savings" className="text-foreground bg-background">Savings Account</option>
+                  <option value="current" className="text-foreground bg-background">Current Account</option>
                 </select>
               </div>
             </div>
