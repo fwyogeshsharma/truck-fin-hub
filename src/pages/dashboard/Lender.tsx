@@ -523,30 +523,30 @@ const LenderDashboard = () => {
               ) : (
                 <div className="space-y-3">
                   {pendingApprovals.map((pendingUser) => (
-                    <div key={pendingUser.id} className="flex items-center justify-between p-4 border rounded-lg bg-white dark:bg-background shadow-sm hover:shadow-md transition-shadow">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <div key={pendingUser.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-3 sm:p-4 border rounded-lg bg-white dark:bg-background shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start sm:items-center gap-2 mb-2">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                             <UserCheck className="h-5 w-5 text-primary" />
                           </div>
-                          <div>
-                            <p className="text-sm font-semibold">{toTitleCase(pendingUser.name)}</p>
-                            <p className="text-xs text-muted-foreground">{pendingUser.email}</p>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold truncate">{toTitleCase(pendingUser.name)}</p>
+                            <p className="text-xs text-muted-foreground truncate">{pendingUser.email}</p>
                           </div>
                         </div>
-                        <div className="ml-12 space-y-1">
+                        <div className="sm:ml-12 space-y-1">
                           <p className="text-xs text-muted-foreground">Phone: {pendingUser.phone || 'N/A'}</p>
                           <p className="text-xs text-muted-foreground">Company: <span className="font-medium text-foreground">{toTitleCase(pendingUser.company)}</span></p>
                           <p className="text-xs text-muted-foreground">Role: <span className="font-medium text-foreground">{pendingUser.role?.replace('_', ' ')}</span></p>
                           <p className="text-xs text-muted-foreground">Requested: {new Date(pendingUser.created_at).toLocaleDateString()}</p>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-2">
+                      <div className="flex sm:flex-col gap-2 w-full sm:w-auto">
                         <Button
                           size="sm"
                           onClick={() => handleApprove(pendingUser.id)}
                           disabled={approvingUserId === pendingUser.id}
-                          className="bg-green-600 hover:bg-green-700 min-w-[120px]"
+                          className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-none sm:min-w-[120px] touch-target"
                         >
                           <UserCheck className="h-4 w-4 mr-1" />
                           {approvingUserId === pendingUser.id ? 'Approving...' : 'Grant Access'}
@@ -556,7 +556,7 @@ const LenderDashboard = () => {
                           variant="destructive"
                           onClick={() => handleReject(pendingUser.id)}
                           disabled={approvingUserId === pendingUser.id}
-                          className="min-w-[120px]"
+                          className="flex-1 sm:flex-none sm:min-w-[120px] touch-target"
                         >
                           <UserX className="h-4 w-4 mr-1" />
                           Deny Access
@@ -580,24 +580,24 @@ const LenderDashboard = () => {
             <CardDescription>Smart suggestions to maximize your returns</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {aiInsights.map((insight, index) => {
                 const Icon = insight.icon;
                 return (
-                  <div key={index} className="flex items-start gap-4 p-4 rounded-lg border bg-card hover:shadow-md transition-shadow">
+                  <div key={index} className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border bg-card hover:shadow-md transition-shadow">
                     <div className={`w-10 h-10 rounded-full ${insight.bgColor} flex items-center justify-center flex-shrink-0`}>
                       <Icon className={`h-5 w-5 ${insight.color}`} />
                     </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold mb-1">{insight.title}</h4>
-                      <p className="text-sm text-muted-foreground mb-1">{insight.description}</p>
-                      <p className={`text-sm font-medium ${insight.color}`}>{insight.action}</p>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-sm sm:text-base mb-1">{insight.title}</h4>
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-1">{insight.description}</p>
+                      <p className={`text-xs sm:text-sm font-medium ${insight.color}`}>{insight.action}</p>
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => window.location.href = '/opportunities'}
-                      className="flex items-center gap-1"
+                      className="flex items-center gap-1 w-full sm:w-auto touch-target self-stretch sm:self-start"
                     >
                       View
                       <ArrowUpRight className="h-4 w-4" />
@@ -751,30 +751,28 @@ const LenderDashboard = () => {
                   const trip = trips.find(t => t.id === investment.tripId);
                   if (!trip) return null;
                   return (
-                    <div key={investment.id} className="flex items-center justify-between p-4 border border-orange-300 rounded-lg bg-white">
-                      <div className="flex items-center gap-4">
+                    <div key={investment.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 p-3 sm:p-4 border border-orange-300 rounded-lg bg-white dark:bg-background">
+                      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                         {trip.loadOwnerLogo && (
                           <img
                             src={trip.loadOwnerLogo}
                             alt={trip.loadOwnerName}
-                            className="h-12 w-12 object-contain rounded border p-1"
+                            className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded border p-1 shrink-0"
                           />
                         )}
-                        <div>
-                          <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm sm:text-base truncate">{trip.origin} → {trip.destination}</h4>
+                          <p className="text-xs sm:text-sm text-muted-foreground truncate">
                             {trip.loadType} • {trip.distance} km
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-2">
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 flex items-center gap-1">
-                            <Lock className="h-3 w-3" />
-                            Awaiting Allotment
-                          </span>
-                        </div>
-                        <p className="text-sm font-semibold mt-1">{formatCurrency(investment.amount)} at {Number(investment.interestRate).toFixed(2)}%</p>
+                      <div className="flex flex-col sm:text-right gap-2">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 flex items-center gap-1 w-fit">
+                          <Lock className="h-3 w-3" />
+                          Awaiting Allotment
+                        </span>
+                        <p className="text-sm font-semibold">{formatCurrency(investment.amount)} at {Number(investment.interestRate).toFixed(2)}%</p>
                       </div>
                     </div>
                   );
@@ -783,32 +781,32 @@ const LenderDashboard = () => {
 
               {/* Pagination Controls for Pending Bids */}
               {totalPendingPages > 1 && (
-                <div className="flex items-center justify-between mt-6 pt-4 border-t">
-                  <div className="text-sm text-muted-foreground">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mt-4 sm:mt-6 pt-3 sm:pt-4 border-t">
+                  <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
                     Showing {pendingStartIndex + 1} to {Math.min(pendingEndIndex, allEscrowedInvestments.length)} of {allEscrowedInvestments.length} bids
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center gap-1 sm:gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setPendingBidsPage(prev => Math.max(1, prev - 1))}
                       disabled={pendingBidsPage === 1}
-                      className="gap-1"
+                      className="gap-1 h-8 px-2 sm:px-3 text-xs sm:text-sm touch-target"
                     >
-                      <ChevronLeft className="h-4 w-4" />
-                      Previous
+                      <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">Previous</span>
                     </Button>
                     <div className="flex items-center gap-1">
                       {getPaginationRange(pendingBidsPage, totalPendingPages).map((page, idx) => (
                         page === '...' ? (
-                          <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">...</span>
+                          <span key={`ellipsis-${idx}`} className="px-1 sm:px-2 text-muted-foreground text-xs">...</span>
                         ) : (
                           <Button
                             key={page}
                             variant={pendingBidsPage === page ? "default" : "outline"}
                             size="sm"
                             onClick={() => setPendingBidsPage(page as number)}
-                            className="min-w-[36px]"
+                            className="min-w-[32px] sm:min-w-[36px] h-8 p-0 text-xs sm:text-sm touch-target"
                           >
                             {page}
                           </Button>
@@ -820,10 +818,10 @@ const LenderDashboard = () => {
                       size="sm"
                       onClick={() => setPendingBidsPage(prev => Math.min(totalPendingPages, prev + 1))}
                       disabled={pendingBidsPage === totalPendingPages}
-                      className="gap-1"
+                      className="gap-1 h-8 px-2 sm:px-3 text-xs sm:text-sm touch-target"
                     >
-                      Next
-                      <ChevronRight className="h-4 w-4" />
+                      <span className="hidden sm:inline">Next</span>
+                      <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                 </div>
@@ -851,43 +849,48 @@ const LenderDashboard = () => {
                   const trip = item;
                   const investment = item.investment;
                   return (
-                    <div key={trip.id} className="flex items-center justify-between p-4 border rounded-lg bg-green-50/50 border-green-200">
-                      <div className="flex items-center gap-4">
+                    <div key={trip.id} className="flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg bg-green-50/50 border-green-200">
+                      {/* Header with logo and trip info */}
+                      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                         {trip.loadOwnerLogo && (
                           <img
                             src={trip.loadOwnerLogo}
                             alt={trip.loadOwnerName}
-                            className="h-12 w-12 object-contain rounded border p-1 bg-white"
+                            className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded border p-1 bg-white shrink-0"
                           />
                         )}
-                        <div>
-                          <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm sm:text-base truncate">{trip.origin} → {trip.destination}</h4>
+                          <p className="text-xs sm:text-sm text-muted-foreground truncate">
                             {trip.loadType} • {trip.distance} km
                           </p>
                         </div>
+                        <span className="px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-green-600 text-white flex items-center gap-1 shrink-0">
+                          <ArrowUpRight className="h-3 w-3" />
+                          Active
+                        </span>
                       </div>
-                      <div className="flex-1 ml-4">
-                        <DocumentProgress documents={trip.documents} className="mb-2" />
+
+                      {/* Document Progress - Full width on mobile */}
+                      <div className="w-full">
+                        <DocumentProgress documents={trip.documents} className="mb-0" />
                       </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 mb-2">
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-600 text-white flex items-center gap-1">
-                            <ArrowUpRight className="h-3 w-3" />
-                            Active
-                          </span>
+
+                      {/* Investment details and action */}
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex-1">
+                          <p className="text-sm sm:text-base font-semibold">{formatCurrency(investment.amount)} at {Number(investment.interestRate).toFixed(2)}%</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">
+                            Return: {formatCurrency(investment.expectedReturn)}
+                          </p>
+                          {investment.maturityDate && (
+                            <MaturityCountdown maturityDate={investment.maturityDate} className="mt-1" />
+                          )}
                         </div>
-                        <p className="text-sm font-semibold">{formatCurrency(investment.amount)} at {Number(investment.interestRate).toFixed(2)}%</p>
-                        <p className="text-xs text-muted-foreground">
-                          Return: {formatCurrency(investment.expectedReturn)}
-                        </p>
-                        {investment.maturityDate && (
-                          <MaturityCountdown maturityDate={investment.maturityDate} className="mt-1" />
-                        )}
                         <Button
                           size="sm"
                           variant="outline"
-                          className="mt-2 text-xs h-7"
+                          className="text-xs h-8 sm:h-7 w-full sm:w-auto touch-target"
                           onClick={() => {
                             setSelectedTripForDocs(trip);
                             setDocumentViewOpen(true);
@@ -905,32 +908,32 @@ const LenderDashboard = () => {
 
             {/* Pagination Controls for Active Investments */}
             {totalActivePages > 1 && (
-              <div className="flex items-center justify-between mt-6 pt-4 border-t">
-                <div className="text-sm text-muted-foreground">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mt-4 sm:mt-6 pt-3 sm:pt-4 border-t">
+                <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
                   Showing {activeStartIndex + 1} to {Math.min(activeEndIndex, allActiveInvestmentTrips.length)} of {allActiveInvestmentTrips.length} investments
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-1 sm:gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setActiveInvestmentsPage(prev => Math.max(1, prev - 1))}
                     disabled={activeInvestmentsPage === 1}
-                    className="gap-1"
+                    className="gap-1 h-8 px-2 sm:px-3 text-xs sm:text-sm touch-target"
                   >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
+                    <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Previous</span>
                   </Button>
                   <div className="flex items-center gap-1">
                     {getPaginationRange(activeInvestmentsPage, totalActivePages).map((page, idx) => (
                       page === '...' ? (
-                        <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">...</span>
+                        <span key={`ellipsis-${idx}`} className="px-1 sm:px-2 text-muted-foreground text-xs">...</span>
                       ) : (
                         <Button
                           key={page}
                           variant={activeInvestmentsPage === page ? "default" : "outline"}
                           size="sm"
                           onClick={() => setActiveInvestmentsPage(page as number)}
-                          className="min-w-[36px]"
+                          className="min-w-[32px] sm:min-w-[36px] h-8 p-0 text-xs sm:text-sm touch-target"
                         >
                           {page}
                         </Button>
@@ -942,10 +945,10 @@ const LenderDashboard = () => {
                     size="sm"
                     onClick={() => setActiveInvestmentsPage(prev => Math.min(totalActivePages, prev + 1))}
                     disabled={activeInvestmentsPage === totalActivePages}
-                    className="gap-1"
+                    className="gap-1 h-8 px-2 sm:px-3 text-xs sm:text-sm touch-target"
                   >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
+                    <span className="hidden sm:inline">Next</span>
+                    <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </div>
               </div>
@@ -956,19 +959,19 @@ const LenderDashboard = () => {
 
       {/* Document Viewer Dialog */}
       <Dialog open={documentViewOpen} onOpenChange={setDocumentViewOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Trip Documents</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="w-[92vw] sm:w-[95vw] md:w-full max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+          <DialogHeader className="pb-3 sm:pb-4">
+            <DialogTitle className="text-base sm:text-lg">Trip Documents</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               {selectedTripForDocs && `${selectedTripForDocs.origin} → ${selectedTripForDocs.destination}`}
             </DialogDescription>
           </DialogHeader>
 
           {selectedTripForDocs && (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <DocumentProgress documents={selectedTripForDocs.documents} showSteps={true} />
 
-              <div className="border-t pt-4 space-y-3">
+              <div className="border-t pt-3 sm:pt-4 space-y-2 sm:space-y-3">
                 {['ewaybill', 'bilty', 'advance_invoice', 'pod', 'final_invoice'].map((docType, index) => {
                   const docLabels = {
                     ewaybill: 'E-Way Bill',
@@ -981,17 +984,17 @@ const LenderDashboard = () => {
                   const document = selectedTripForDocs.documents?.[docKey];
 
                   return (
-                    <div key={docType} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${document ? 'bg-green-100 text-green-600' : 'bg-muted text-muted-foreground'}`}>
+                    <div key={docType} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-2.5 sm:p-3 border rounded-lg">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <div className={`flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full shrink-0 ${document ? 'bg-green-100 text-green-600' : 'bg-muted text-muted-foreground'}`}>
                           {document ? (
-                            <CheckCircle2 className="h-4 w-4" />
+                            <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           ) : (
                             <span className="text-xs font-semibold">{index + 1}</span>
                           )}
                         </div>
-                        <div>
-                          <p className="text-sm font-medium">{docLabels[docType as keyof typeof docLabels]}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs sm:text-sm font-medium truncate">{docLabels[docType as keyof typeof docLabels]}</p>
                           <p className="text-xs text-muted-foreground">
                             {document ? 'Uploaded' : 'Pending upload'}
                           </p>
@@ -1002,6 +1005,7 @@ const LenderDashboard = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => setViewingDocument({ url: document, name: docLabels[docType as keyof typeof docLabels] })}
+                          className="w-full sm:w-auto h-8 text-xs touch-target"
                         >
                           <Eye className="h-3 w-3 mr-1" />
                           View
@@ -1018,15 +1022,15 @@ const LenderDashboard = () => {
 
       {/* Document Viewer Dialog */}
       <Dialog open={viewingDocument !== null} onOpenChange={() => setViewingDocument(null)}>
-        <DialogContent className="max-w-5xl h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>{viewingDocument?.name || 'Document'}</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="w-[95vw] sm:w-[98vw] md:w-full max-w-5xl h-[85vh] sm:h-[90vh] p-3 sm:p-6">
+          <DialogHeader className="pb-2 sm:pb-3">
+            <DialogTitle className="text-sm sm:text-base truncate">{viewingDocument?.name || 'Document'}</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               View and download document
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 h-full overflow-hidden">
+          <div className="flex-1 h-[calc(100%-60px)] sm:h-full overflow-hidden">
             {viewingDocument && (
               <iframe
                 src={viewingDocument.url}
