@@ -139,7 +139,7 @@ const TransporterDashboard = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
-          {stats.map((stat) => {
+          {stats.map((stat, index) => {
             const Icon = stat.icon;
             const getFilterStatus = () => {
               if (stat.title === "Pending Acceptance") return 'pending';
@@ -148,20 +148,21 @@ const TransporterDashboard = () => {
               return null;
             };
             const filterStatus = getFilterStatus();
+            const isLastCard = index === stats.length - 1;
             return (
               <Card
                 key={stat.title}
-                className={filterStatus ? 'cursor-pointer hover:border-primary transition-colors hover:shadow-md' : ''}
+                className={`${filterStatus ? 'cursor-pointer hover:border-primary transition-colors hover:shadow-md' : ''} ${isLastCard ? 'col-span-2 md:col-span-1' : ''}`}
                 onClick={filterStatus ? () => scrollToAvailableTrips(filterStatus) : undefined}
               >
-                <CardContent className="pt-4 pb-4 px-3 md:pt-6 md:pb-6 md:px-6">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-0">
-                    <div className="flex-1">
-                      <p className="text-xs md:text-sm text-muted-foreground">{stat.title}</p>
-                      <p className="text-2xl md:text-3xl font-bold mt-1 md:mt-2">{stat.value}</p>
+                <CardContent className="p-3 md:pt-6 md:pb-6 md:px-6">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] md:text-sm text-muted-foreground truncate">{stat.title}</p>
+                      <p className="text-2xl md:text-3xl font-bold mt-1 md:mt-2 tabular-nums">{stat.value}</p>
                     </div>
-                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full bg-${stat.color}/10 flex items-center justify-center`}>
-                      <Icon className={`h-5 w-5 md:h-6 md:w-6 text-${stat.color}`} />
+                    <div className={`w-9 h-9 md:w-12 md:h-12 rounded-full bg-${stat.color}/10 flex items-center justify-center flex-shrink-0`}>
+                      <Icon className={`h-4 w-4 md:h-6 md:w-6 text-${stat.color}`} />
                     </div>
                   </div>
                 </CardContent>
