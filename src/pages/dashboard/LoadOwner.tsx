@@ -600,9 +600,10 @@ const LoadOwnerDashboard = () => {
                               </div>
 
                               {/* Status Badge */}
-                              <div className="flex flex-col items-stretch lg:items-end gap-2 w-full lg:w-auto">
-                                <Badge className="bg-green-600 text-white text-xs w-full lg:w-auto justify-center">
-                                  ✓ Loan Closed
+                              <div className="flex flex-col items-center lg:items-end gap-2 w-full lg:w-auto">
+                                <Badge className="bg-green-600 text-white text-xs flex items-center gap-1 px-3 py-1">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Loan Closed
                                 </Badge>
                                 {trip.repaidAt && (
                                   <p className="text-xs text-muted-foreground text-center lg:text-right">
