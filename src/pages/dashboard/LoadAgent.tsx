@@ -2600,18 +2600,18 @@ const LoadAgentDashboard = () => {
             </DialogHeader>
 
             <Tabs value={createTripTab} onValueChange={(value) => setCreateTripTab(value as 'form' | 'excel' | 'api')}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="form" className="flex items-center gap-2">
-                  <Package className="h-4 w-4" />
-                  Single Trip
+              <TabsList className="grid w-full grid-cols-3 h-auto">
+                <TabsTrigger value="form" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-2.5 px-2 sm:px-4 text-xs sm:text-sm">
+                  <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="truncate">Single<span className="hidden sm:inline"> Trip</span></span>
                 </TabsTrigger>
-                <TabsTrigger value="excel" className="flex items-center gap-2">
-                  <FileSpreadsheet className="h-4 w-4" />
-                  Bulk Upload
+                <TabsTrigger value="excel" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-2.5 px-2 sm:px-4 text-xs sm:text-sm">
+                  <FileSpreadsheet className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="truncate">Bulk<span className="hidden sm:inline"> Upload</span></span>
                 </TabsTrigger>
-                <TabsTrigger value="api" className="flex items-center gap-2">
-                  <Code className="h-4 w-4" />
-                  API Support
+                <TabsTrigger value="api" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-2.5 px-2 sm:px-4 text-xs sm:text-sm">
+                  <Code className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="truncate">API<span className="hidden sm:inline"> Support</span></span>
                 </TabsTrigger>
               </TabsList>
 
@@ -3010,11 +3010,12 @@ const LoadAgentDashboard = () => {
                   </div>
                 </div>
 
-                <DialogFooter>
+                <DialogFooter className="mt-4">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setCreateDialogOpen(false)}
+                    className="w-full sm:w-auto touch-target"
                   >
                     Close
                   </Button>
@@ -3026,22 +3027,22 @@ const LoadAgentDashboard = () => {
                   {/* Header Section */}
                   <div className="text-center space-y-2">
                     <div className="flex justify-center">
-                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Code className="h-8 w-8 text-primary" />
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Code className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
                       </div>
                     </div>
-                    <h3 className="font-semibold text-lg">API Integration</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-semibold text-base sm:text-lg">API Integration</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground px-2">
                       Integrate our API into your system to automatically create trips
                     </p>
                   </div>
 
                   {/* API Documentation */}
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {/* Endpoint Information */}
-                    <div className="p-4 bg-muted rounded-lg">
-                      <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                        <Link className="h-4 w-4 text-primary" />
+                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-xs sm:text-sm mb-2 sm:mb-3 flex items-center gap-2">
+                        <Link className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                         API Endpoint
                       </h4>
                       <div className="space-y-2">
@@ -3069,12 +3070,12 @@ const LoadAgentDashboard = () => {
                     </div>
 
                     {/* Authentication */}
-                    <div className="p-4 bg-muted rounded-lg">
-                      <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                        <Shield className="h-4 w-4 text-primary" />
+                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-xs sm:text-sm mb-2 sm:mb-3 flex items-center gap-2">
+                        <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                         Authentication
                       </h4>
-                      <p className="text-xs text-muted-foreground mb-2">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground mb-2">
                         Include your API key in the request headers:
                       </p>
                       <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
@@ -3095,15 +3096,15 @@ Content-Type: application/json`}</pre>
                           <Copy className="h-3 w-3" />
                         </Button>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground mt-2">
                         Contact support to get your API key: support@truckfinhub.com
                       </p>
                     </div>
 
                     {/* Request Body */}
-                    <div className="p-4 bg-muted rounded-lg">
-                      <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                        <Code className="h-4 w-4 text-primary" />
+                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-xs sm:text-sm mb-2 sm:mb-3 flex items-center gap-2">
+                        <Code className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                         Request Body (JSON)
                       </h4>
                       <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
@@ -3153,12 +3154,12 @@ Content-Type: application/json`}</pre>
                     </div>
 
                     {/* Field Descriptions */}
-                    <div className="p-4 bg-muted rounded-lg">
-                      <h4 className="font-semibold text-sm mb-3">Field Descriptions</h4>
+                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-xs sm:text-sm mb-2 sm:mb-3">Field Descriptions</h4>
                       <div className="space-y-3">
                         <div>
-                          <p className="text-xs font-semibold mb-2 text-blue-600">Mandatory Fields (Required*)</p>
-                          <div className="space-y-2 text-xs">
+                          <p className="text-[10px] sm:text-xs font-semibold mb-2 text-blue-600">Mandatory Fields (Required*)</p>
+                          <div className="space-y-2 text-[10px] sm:text-xs">
                             {/* Table Header - Hidden on mobile */}
                             <div className="hidden sm:grid sm:grid-cols-3 gap-2 font-semibold pb-2 border-b">
                               <span>Field</span>
@@ -3214,8 +3215,8 @@ Content-Type: application/json`}</pre>
                           </div>
                         </div>
                         <div className="pt-2 border-t">
-                          <p className="text-xs font-semibold mb-2 text-gray-600">Optional Fields</p>
-                          <div className="space-y-2 text-xs">
+                          <p className="text-[10px] sm:text-xs font-semibold mb-2 text-gray-600">Optional Fields</p>
+                          <div className="space-y-2 text-[10px] sm:text-xs">
                             <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
                               <span className="font-mono font-semibold sm:font-normal">distance</span>
                               <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>number</span>
@@ -3237,11 +3238,11 @@ Content-Type: application/json`}</pre>
                     </div>
 
                     {/* Response Examples */}
-                    <div className="p-4 bg-muted rounded-lg">
-                      <h4 className="font-semibold text-sm mb-3">Response Examples</h4>
+                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-xs sm:text-sm mb-2 sm:mb-3">Response Examples</h4>
                       <div className="space-y-3">
                         <div>
-                          <p className="text-xs font-semibold mb-1 text-green-600">Success (200 OK)</p>
+                          <p className="text-[10px] sm:text-xs font-semibold mb-1 text-green-600">Success (200 OK)</p>
                           <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
                             <pre className="max-w-full">{`{
   "success": true,
@@ -3280,7 +3281,7 @@ Content-Type: application/json`}</pre>
                           </div>
                         </div>
                         <div>
-                          <p className="text-xs font-semibold mb-1 text-red-600">Error (400 Bad Request)</p>
+                          <p className="text-[10px] sm:text-xs font-semibold mb-1 text-red-600">Error (400 Bad Request)</p>
                           <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
                             <pre className="max-w-full">{`{
   "success": false,
@@ -3318,11 +3319,11 @@ Content-Type: application/json`}</pre>
                     </div>
 
                     {/* Code Examples */}
-                    <div className="p-4 bg-muted rounded-lg">
-                      <h4 className="font-semibold text-sm mb-3">Code Examples</h4>
+                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-xs sm:text-sm mb-2 sm:mb-3">Code Examples</h4>
                       <div className="space-y-3">
                         <div>
-                          <p className="text-xs font-semibold mb-1">JavaScript (Fetch)</p>
+                          <p className="text-[10px] sm:text-xs font-semibold mb-1">JavaScript (Fetch)</p>
                           <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
                             <pre className="max-w-full">{`fetch('https://api.truckfinhub.com/v1/trips/create', {
   method: 'POST',
@@ -3527,19 +3528,19 @@ print(response.json())`;
                     </div>
 
                     {/* Support Information */}
-                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <h4 className="font-semibold text-sm mb-2 text-blue-900 dark:text-blue-100">Need Help?</h4>
-                      <p className="text-xs text-blue-800 dark:text-blue-200 mb-2">
+                    <div className="p-3 sm:p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <h4 className="font-semibold text-xs sm:text-sm mb-2 text-blue-900 dark:text-blue-100">Need Help?</h4>
+                      <p className="text-[10px] sm:text-xs text-blue-800 dark:text-blue-200 mb-2">
                         Contact our support team for API key generation and integration assistance:
                       </p>
-                      <div className="space-y-1 text-xs">
-                        <p className="text-blue-900 dark:text-blue-100">
+                      <div className="space-y-1 text-[10px] sm:text-xs">
+                        <p className="text-blue-900 dark:text-blue-100 break-all">
                           <strong>Email:</strong> support@truckfinhub.com
                         </p>
                         <p className="text-blue-900 dark:text-blue-100">
                           <strong>Phone:</strong> +91 1800-XXX-XXXX
                         </p>
-                        <p className="text-blue-900 dark:text-blue-100">
+                        <p className="text-blue-900 dark:text-blue-100 break-all">
                           <strong>Documentation:</strong> https://docs.truckfinhub.com
                         </p>
                       </div>
@@ -3547,11 +3548,12 @@ print(response.json())`;
                   </div>
                 </div>
 
-                <DialogFooter>
+                <DialogFooter className="mt-4">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setCreateDialogOpen(false)}
+                    className="w-full sm:w-auto touch-target"
                   >
                     Close
                   </Button>
