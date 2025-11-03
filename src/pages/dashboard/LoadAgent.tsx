@@ -151,7 +151,6 @@ const LoadAgentDashboard = () => {
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, any>>({});
 
   // Pagination state
