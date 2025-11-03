@@ -2590,13 +2590,13 @@ const LoadAgentDashboard = () => {
 
         {/* Create Trip Dialog */}
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogContent className="w-[95vw] sm:w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5 text-primary" />
-                Create New Trip
+          <DialogContent className="w-[92vw] sm:w-[95vw] md:w-full max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
+            <DialogHeader className="space-y-1.5 sm:space-y-2">
+              <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Plus className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
+                <span className="truncate">Create New Trip</span>
               </DialogTitle>
-              <DialogDescription>Add trips individually or in bulk</DialogDescription>
+              <DialogDescription className="text-xs sm:text-sm">Add trips individually or in bulk</DialogDescription>
             </DialogHeader>
 
             <Tabs value={createTripTab} onValueChange={(value) => setCreateTripTab(value as 'form' | 'excel' | 'api')}>
@@ -3022,8 +3022,8 @@ const LoadAgentDashboard = () => {
                 </DialogFooter>
               </TabsContent>
 
-              <TabsContent value="api" className="space-y-4 p-1 sm:p-0">
-                <div className="space-y-6">
+              <TabsContent value="api" className="space-y-4 p-1 sm:p-0 overflow-x-hidden">
+                <div className="space-y-4 sm:space-y-6 max-w-full overflow-x-hidden">
                   {/* Header Section */}
                   <div className="text-center space-y-2">
                     <div className="flex justify-center">
@@ -3390,9 +3390,9 @@ Content-Type: application/json`}</pre>
                           </div>
                         </div>
                         <div>
-                          <p className="text-xs font-semibold mb-1">Python (Requests)</p>
-                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
-                            <pre>{`import requests
+                          <p className="text-[10px] sm:text-xs font-semibold mb-1">Python (Requests)</p>
+                          <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
+                            <pre className="max-w-full">{`import requests
 
 url = "https://api.truckfinhub.com/v1/trips/create"
 headers = {
@@ -3457,9 +3457,9 @@ print(response.json())`;
                           </div>
                         </div>
                         <div>
-                          <p className="text-xs font-semibold mb-1">cURL</p>
-                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
-                            <pre>{`curl -X POST https://api.truckfinhub.com/v1/trips/create \\
+                          <p className="text-[10px] sm:text-xs font-semibold mb-1">cURL</p>
+                          <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
+                            <pre className="max-w-full">{`curl -X POST https://api.truckfinhub.com/v1/trips/create \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -3513,14 +3513,14 @@ print(response.json())`;
                     </div>
 
                     {/* Supported Companies */}
-                    <div className="p-4 bg-muted rounded-lg">
-                      <h4 className="font-semibold text-sm mb-3">Supported Consignee Companies</h4>
-                      <div className="bg-background p-3 rounded border text-xs max-h-40 overflow-y-auto">
-                        <div className="grid grid-cols-2 gap-2">
+                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-xs sm:text-sm mb-2 sm:mb-3">Supported Consignee Companies</h4>
+                      <div className="bg-background p-2 sm:p-3 rounded border text-[10px] sm:text-xs max-h-40 overflow-y-auto">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {clientCompanies.map((company) => (
                             <div key={company.name} className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                              <span>{company.name}</span>
+                              <span className="w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
+                              <span className="truncate">{company.name}</span>
                             </div>
                           ))}
                         </div>
