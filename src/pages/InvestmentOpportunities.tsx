@@ -291,7 +291,7 @@ const InvestmentOpportunities = () => {
         return (
           <Badge className="bg-green-600 text-white">
             <BadgeCheck className="h-3 w-3 mr-1" />
-            REPAID
+            Repaid
           </Badge>
         );
       case 'cancelled':
