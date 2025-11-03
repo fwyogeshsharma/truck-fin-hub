@@ -2590,7 +2590,7 @@ const LoadAgentDashboard = () => {
 
         {/* Create Trip Dialog */}
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] sm:w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Plus className="h-5 w-5 text-primary" />
@@ -3021,7 +3021,7 @@ const LoadAgentDashboard = () => {
                 </DialogFooter>
               </TabsContent>
 
-              <TabsContent value="api" className="space-y-4">
+              <TabsContent value="api" className="space-y-4 p-1 sm:p-0">
                 <div className="space-y-6">
                   {/* Header Section */}
                   <div className="text-center space-y-2">
@@ -3045,14 +3045,15 @@ const LoadAgentDashboard = () => {
                         API Endpoint
                       </h4>
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between p-3 bg-background rounded border font-mono text-sm">
-                          <div>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-background rounded border">
+                          <div className="font-mono text-xs sm:text-sm break-all sm:break-normal flex-1 min-w-0">
                             <span className="text-green-600 font-semibold">POST</span>
                             <span className="ml-2">https://api.truckfinhub.com/v1/trips/create</span>
                           </div>
                           <Button
                             size="sm"
                             variant="ghost"
+                            className="self-end sm:self-auto shrink-0"
                             onClick={() => {
                               navigator.clipboard.writeText('https://api.truckfinhub.com/v1/trips/create');
                               toast({
@@ -3076,8 +3077,8 @@ const LoadAgentDashboard = () => {
                       <p className="text-xs text-muted-foreground mb-2">
                         Include your API key in the request headers:
                       </p>
-                      <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
-                        <pre>{`Authorization: Bearer YOUR_API_KEY
+                      <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
+                        <pre className="whitespace-pre-wrap sm:whitespace-pre">{`Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json`}</pre>
                         <Button
                           size="sm"
@@ -3105,8 +3106,8 @@ Content-Type: application/json`}</pre>
                         <Code className="h-4 w-4 text-primary" />
                         Request Body (JSON)
                       </h4>
-                      <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
-                        <pre>{`{
+                      <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
+                        <pre className="max-w-full">{`{
   "ewayBillNumber": "123456789012",
   "pickup": "Mumbai, Maharashtra",
   "destination": "Delhi, NCR",
@@ -3158,75 +3159,77 @@ Content-Type: application/json`}</pre>
                         <div>
                           <p className="text-xs font-semibold mb-2 text-blue-600">Mandatory Fields (Required*)</p>
                           <div className="space-y-2 text-xs">
-                            <div className="grid grid-cols-3 gap-2 font-semibold pb-2 border-b">
+                            {/* Table Header - Hidden on mobile */}
+                            <div className="hidden sm:grid sm:grid-cols-3 gap-2 font-semibold pb-2 border-b">
                               <span>Field</span>
                               <span>Type</span>
                               <span>Description</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">ewayBillNumber*</span>
-                              <span className="text-muted-foreground">string</span>
-                              <span className="text-muted-foreground">E-way bill number (12-digit unique number)</span>
+                            {/* Mobile: Card layout, Desktop: Table row */}
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono font-semibold sm:font-normal">ewayBillNumber*</span>
+                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>string</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>E-way bill number (12-digit unique number)</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">pickup*</span>
-                              <span className="text-muted-foreground">string</span>
-                              <span className="text-muted-foreground">Pickup/origin location</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono font-semibold sm:font-normal">pickup*</span>
+                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>string</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Pickup/origin location</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">destination*</span>
-                              <span className="text-muted-foreground">string</span>
-                              <span className="text-muted-foreground">Delivery destination location</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono font-semibold sm:font-normal">destination*</span>
+                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>string</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Delivery destination location</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">sender*</span>
-                              <span className="text-muted-foreground">string</span>
-                              <span className="text-muted-foreground">Sender/consignee company name</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono font-semibold sm:font-normal">sender*</span>
+                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>string</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Sender/consignee company name</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">receiver*</span>
-                              <span className="text-muted-foreground">string</span>
-                              <span className="text-muted-foreground">Receiver company name</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono font-semibold sm:font-normal">receiver*</span>
+                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>string</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Receiver company name</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">transporter*</span>
-                              <span className="text-muted-foreground">string</span>
-                              <span className="text-muted-foreground">Transport service provider name</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono font-semibold sm:font-normal">transporter*</span>
+                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>string</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Transport service provider name</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">loanAmount*</span>
-                              <span className="text-muted-foreground">number</span>
-                              <span className="text-muted-foreground">Loan amount in ₹ (20,000 - 80,000)</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono font-semibold sm:font-normal">loanAmount*</span>
+                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>number</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Loan amount in ₹ (20,000 - 80,000)</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">loanInterestRate*</span>
-                              <span className="text-muted-foreground">number</span>
-                              <span className="text-muted-foreground">Interest rate percentage (8% - 18%)</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono font-semibold sm:font-normal">loanInterestRate*</span>
+                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>number</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Interest rate percentage (8% - 18%)</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">maturityDays*</span>
-                              <span className="text-muted-foreground">number</span>
-                              <span className="text-muted-foreground">Payment term in days (1-365)</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono font-semibold sm:font-normal">maturityDays*</span>
+                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>number</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Payment term in days (1-365)</span>
                             </div>
                           </div>
                         </div>
                         <div className="pt-2 border-t">
                           <p className="text-xs font-semibold mb-2 text-gray-600">Optional Fields</p>
                           <div className="space-y-2 text-xs">
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">distance</span>
-                              <span className="text-muted-foreground">number</span>
-                              <span className="text-muted-foreground">Distance in kilometers</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono font-semibold sm:font-normal">distance</span>
+                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>number</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Distance in kilometers</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">loadType</span>
-                              <span className="text-muted-foreground">string</span>
-                              <span className="text-muted-foreground">Type of cargo (e.g., Electronics, FMCG)</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono font-semibold sm:font-normal">loadType</span>
+                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>string</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Type of cargo (e.g., Electronics, FMCG)</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">weight</span>
-                              <span className="text-muted-foreground">number</span>
-                              <span className="text-muted-foreground">Weight in kilograms</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono font-semibold sm:font-normal">weight</span>
+                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>number</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Weight in kilograms</span>
                             </div>
                           </div>
                         </div>
@@ -3239,8 +3242,8 @@ Content-Type: application/json`}</pre>
                       <div className="space-y-3">
                         <div>
                           <p className="text-xs font-semibold mb-1 text-green-600">Success (200 OK)</p>
-                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
-                            <pre>{`{
+                          <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
+                            <pre className="max-w-full">{`{
   "success": true,
   "tripId": "trip_abc123xyz",
   "message": "Trip created successfully",
@@ -3278,8 +3281,8 @@ Content-Type: application/json`}</pre>
                         </div>
                         <div>
                           <p className="text-xs font-semibold mb-1 text-red-600">Error (400 Bad Request)</p>
-                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
-                            <pre>{`{
+                          <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
+                            <pre className="max-w-full">{`{
   "success": false,
   "error": "Validation Error",
   "message": "Trip amount must be between ₹20,000 and ₹80,000",
@@ -3320,8 +3323,8 @@ Content-Type: application/json`}</pre>
                       <div className="space-y-3">
                         <div>
                           <p className="text-xs font-semibold mb-1">JavaScript (Fetch)</p>
-                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
-                            <pre>{`fetch('https://api.truckfinhub.com/v1/trips/create', {
+                          <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
+                            <pre className="max-w-full">{`fetch('https://api.truckfinhub.com/v1/trips/create', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer YOUR_API_KEY',
