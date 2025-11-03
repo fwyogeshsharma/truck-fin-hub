@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { TruckIcon, CheckCircle2, Clock, MapPin, IndianRupee, Wallet as WalletIcon, TrendingUp, DollarSign, AlertCircle } from "lucide-react";
+import { TruckIcon, CheckCircle2, Clock, MapPin, IndianRupee, Wallet as WalletIcon, TrendingUp, DollarSign, AlertCircle, Shield } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data, Trip, Wallet } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -40,9 +41,9 @@ const TransporterDashboard = () => {
           data.getWallet(user?.id || 't1')
         ]);
 
-        // Filter trips for this transporter
+        // Filter trips for this transporter - include escrowed and funded trips
         const filteredTrips = allTrips.filter(t =>
-          t.transporterId === user?.id || t.status === 'funded'
+          t.transporterId === user?.id || t.status === 'funded' || t.status === 'escrowed'
         );
 
         setMyTrips(filteredTrips);
@@ -83,7 +84,7 @@ const TransporterDashboard = () => {
     },
     {
       title: "Pending Acceptance",
-      value: myTrips.filter(t => t.status === 'funded' && !t.transporterId).length,
+      value: myTrips.filter(t => (t.status === 'funded' || t.status === 'escrowed') && !t.transporterId).length,
       icon: Clock,
       color: "accent",
     },
@@ -105,7 +106,7 @@ const TransporterDashboard = () => {
     // Reload data to show updated trip
     const allTrips = await data.getTrips();
     const filteredTrips = allTrips.filter(t =>
-      t.transporterId === user?.id || t.status === 'funded'
+      t.transporterId === user?.id || t.status === 'funded' || t.status === 'escrowed'
     );
     setMyTrips(filteredTrips);
     setConfirmDialogOpen(false);
@@ -120,7 +121,7 @@ const TransporterDashboard = () => {
     // Reload data to show updated trip
     const allTrips = await data.getTrips();
     const filteredTrips = allTrips.filter(t =>
-      t.transporterId === user?.id || t.status === 'funded'
+      t.transporterId === user?.id || t.status === 'funded' || t.status === 'escrowed'
     );
     setMyTrips(filteredTrips);
   };
@@ -275,16 +276,28 @@ const TransporterDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>Available Trips</CardTitle>
-            <CardDescription>Funded trips awaiting assignment</CardDescription>
+            <CardDescription>Escrowed and funded trips awaiting assignment</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {myTrips.filter(t => t.status === 'funded' && !t.transporterId).slice(0, 3).map((trip) => (
+              {myTrips.filter(t => (t.status === 'funded' || t.status === 'escrowed') && !t.transporterId).slice(0, 3).map((trip) => (
                 <div key={trip.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <MapPin className="h-4 w-4 text-primary" />
                       <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
+                      {trip.status === 'escrowed' && (
+                        <Badge variant="outline" className="bg-accent/10 text-accent">
+                          <Shield className="h-3 w-3 mr-1" />
+                          Escrowed
+                        </Badge>
+                      )}
+                      {trip.status === 'funded' && (
+                        <Badge variant="outline" className="bg-secondary/10 text-secondary">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Funded
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg • {trip.distance} km</p>
                   </div>
