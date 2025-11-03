@@ -84,6 +84,8 @@ const LoadAgentDashboard = () => {
   const [repaying, setRepaying] = useState<Record<string, boolean>>({});
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [activeTab, setActiveTab] = useState('all-trips');
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
   // Contract acceptance states
   const [contractDialogOpen, setContractDialogOpen] = useState(false);
@@ -821,7 +823,10 @@ const LoadAgentDashboard = () => {
       trip.loadType.toLowerCase().includes(searchQuery.toLowerCase()) ||
       trip.loadOwnerName.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesBasicStatus = statusFilter === 'all' || trip.status === statusFilter;
+    const matchesBasicStatus = !statusFilter || statusFilter === 'all' ||
+      (statusFilter === 'pending' && trip.status === 'pending') ||
+      (statusFilter === 'active' && (trip.status === 'funded' || trip.status === 'in_transit' || trip.status === 'escrowed')) ||
+      (statusFilter === 'completed' && trip.status === 'completed');
 
     // Advanced filter search
     const matchesAdvancedSearch = !advancedFilters.search ||
@@ -866,7 +871,7 @@ const LoadAgentDashboard = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [advancedFilters]);
+  }, [advancedFilters, statusFilter]);
 
   const handleAllotTrip = async (tripId: string, lenderId: string, lenderName: string) => {
     try {
@@ -1526,8 +1531,16 @@ const LoadAgentDashboard = () => {
     },
   ];
 
-  const scrollToAllTripsTab = () => {
+  const scrollToAllTripsTab = (filter?: string) => {
+    if (filter) {
+      setStatusFilter(filter);
+      setActiveTab('all-trips');
+    }
     allTripsTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const clearFilter = () => {
+    setStatusFilter(null);
   };
 
   const getStatusBadge = (status: string, trip?: Trip) => {
@@ -1618,12 +1631,19 @@ const LoadAgentDashboard = () => {
         <div className="grid md:grid-cols-4 gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
-          const isTotalTrips = stat.title === 'Total Trips';
+          const getFilterStatus = () => {
+            if (stat.title === 'Total Trips') return 'all';
+            if (stat.title === 'Pending') return 'pending';
+            if (stat.title === 'Active') return 'active';
+            if (stat.title === 'Completed') return 'completed';
+            return null;
+          };
+          const filterStatus = getFilterStatus();
           return (
             <Card
               key={stat.title}
-              className={isTotalTrips ? 'cursor-pointer hover:border-primary transition-colors' : ''}
-              onClick={isTotalTrips ? scrollToAllTripsTab : undefined}
+              className={filterStatus ? 'cursor-pointer hover:border-primary transition-colors hover:shadow-md' : ''}
+              onClick={filterStatus ? () => scrollToAllTripsTab(filterStatus) : undefined}
             >
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
@@ -1806,9 +1826,16 @@ const LoadAgentDashboard = () => {
 
         {/* Tabs for All Trips, Loan Closure, and Repaid Loans */}
         <div ref={allTripsTabRef}>
-        <Tabs defaultValue="all-trips" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList>
-            <TabsTrigger value="all-trips">All Trips</TabsTrigger>
+            <TabsTrigger value="all-trips">
+              All Trips
+              {statusFilter && statusFilter !== 'all' && (
+                <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-primary/20">
+                  Filtered
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="loan-closure">
               Pending Repayments {loanClosureTrips.length > 0 && `(${loanClosureTrips.length})`}
             </TabsTrigger>
@@ -1818,8 +1845,57 @@ const LoadAgentDashboard = () => {
           </TabsList>
 
           <TabsContent value="all-trips" className="space-y-6">
+        {/* Filter Status Display */}
+        {statusFilter && statusFilter !== 'all' && (
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    {statusFilter === 'pending' && (
+                      <>
+                        <Clock className="h-5 w-5 text-accent" />
+                        <span className="font-semibold">Showing Pending Trips Only</span>
+                      </>
+                    )}
+                    {statusFilter === 'active' && (
+                      <>
+                        <TruckIcon className="h-5 w-5 text-primary" />
+                        <span className="font-semibold">Showing Active Trips Only</span>
+                      </>
+                    )}
+                    {statusFilter === 'completed' && (
+                      <>
+                        <CheckCircle className="h-5 w-5 text-secondary" />
+                        <span className="font-semibold">Showing Completed Trips Only</span>
+                      </>
+                    )}
+                  </div>
+                  <Badge variant="secondary" className="ml-2">
+                    {allTrips.filter(t => {
+                      if (statusFilter === 'pending') return t.status === 'pending';
+                      if (statusFilter === 'active') return t.status === 'funded' || t.status === 'in_transit' || t.status === 'escrowed';
+                      if (statusFilter === 'completed') return t.status === 'completed';
+                      return true;
+                    }).length} trips
+                  </Badge>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFilter}
+                  className="gap-2"
+                >
+                  <XCircle className="h-4 w-4" />
+                  Clear Filter
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Escrowed Trips - Pending Allotment */}
-        {allTrips.filter((t) => t.status === 'escrowed').length > 0 && (
+        {(!statusFilter || statusFilter === 'all' || statusFilter === 'active') && allTrips.filter((t) => t.status === 'escrowed').length > 0 && (
           <Card className="border-orange-500/50 bg-orange-50/50 dark:bg-orange-950/20">
             <CardHeader>
               <div className="flex items-center justify-between">
