@@ -138,7 +138,7 @@ const TransporterDashboard = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
           {stats.map((stat) => {
             const Icon = stat.icon;
             const getFilterStatus = () => {
@@ -154,14 +154,14 @@ const TransporterDashboard = () => {
                 className={filterStatus ? 'cursor-pointer hover:border-primary transition-colors hover:shadow-md' : ''}
                 onClick={filterStatus ? () => scrollToAvailableTrips(filterStatus) : undefined}
               >
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">{stat.title}</p>
-                      <p className="text-3xl font-bold mt-2">{stat.value}</p>
+                <CardContent className="pt-4 pb-4 px-3 md:pt-6 md:pb-6 md:px-6">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-0">
+                    <div className="flex-1">
+                      <p className="text-xs md:text-sm text-muted-foreground">{stat.title}</p>
+                      <p className="text-2xl md:text-3xl font-bold mt-1 md:mt-2">{stat.value}</p>
                     </div>
-                    <div className={`w-12 h-12 rounded-full bg-${stat.color}/10 flex items-center justify-center`}>
-                      <Icon className={`h-6 w-6 text-${stat.color}`} />
+                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full bg-${stat.color}/10 flex items-center justify-center`}>
+                      <Icon className={`h-5 w-5 md:h-6 md:w-6 text-${stat.color}`} />
                     </div>
                   </div>
                 </CardContent>
@@ -183,59 +183,59 @@ const TransporterDashboard = () => {
             <CardDescription>Your earnings and financial overview</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
               {/* Total Earnings */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="space-y-1.5 md:space-y-2">
+                <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-sm text-muted-foreground">
                   <span>Total Earnings</span>
                 </div>
-                <p className="text-2xl font-bold text-primary">
+                <p className="text-xl md:text-2xl font-bold text-primary">
                   {formatCurrency(totalEarnings)}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  From {completedTrips.length} completed trips
+                <p className="text-[10px] md:text-xs text-muted-foreground">
+                  {completedTrips.length} trips
                 </p>
               </div>
 
               {/* Average Trip Value */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <TruckIcon className="h-4 w-4" />
-                  <span>Avg Trip Value</span>
+              <div className="space-y-1.5 md:space-y-2">
+                <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-sm text-muted-foreground">
+                  <TruckIcon className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  <span>Avg Trip</span>
                 </div>
-                <p className="text-2xl font-bold text-secondary">
+                <p className="text-xl md:text-2xl font-bold text-secondary">
                   {formatCurrency(avgTripValue)}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  Per completed trip
+                <p className="text-[10px] md:text-xs text-muted-foreground">
+                  Per trip
                 </p>
               </div>
 
               {/* Interest Paid */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <DollarSign className="h-4 w-4" />
-                  <span>Interest Paid</span>
+              <div className="space-y-1.5 md:space-y-2">
+                <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-sm text-muted-foreground">
+                  <DollarSign className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  <span>Interest</span>
                 </div>
-                <p className="text-2xl font-bold text-orange-600">
+                <p className="text-xl md:text-2xl font-bold text-orange-600">
                   {formatCurrency(totalInterestPaid)}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  On {repaidTrips.length} financed trips
+                <p className="text-[10px] md:text-xs text-muted-foreground">
+                  {repaidTrips.length} trips
                 </p>
               </div>
 
               {/* Wallet Balance */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <WalletIcon className="h-4 w-4" />
-                  <span>Available Balance</span>
+              <div className="space-y-1.5 md:space-y-2">
+                <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-sm text-muted-foreground">
+                  <WalletIcon className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  <span>Balance</span>
                 </div>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-xl md:text-2xl font-bold text-green-600">
                   {formatCurrency(wallet.balance)}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  Ready to use
+                <p className="text-[10px] md:text-xs text-muted-foreground">
+                  Available
                 </p>
               </div>
             </div>

@@ -1628,7 +1628,7 @@ const LoadAgentDashboard = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           const getFilterStatus = () => {
@@ -1645,13 +1645,13 @@ const LoadAgentDashboard = () => {
               className={filterStatus ? 'cursor-pointer hover:border-primary transition-colors hover:shadow-md' : ''}
               onClick={filterStatus ? () => scrollToAllTripsTab(filterStatus) : undefined}
             >
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{stat.title}</p>
-                    <p className="text-3xl font-bold mt-2">{stat.value}</p>
+              <CardContent className="pt-4 pb-4 px-3 md:pt-6 md:pb-6 md:px-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0">
+                  <div className="w-full">
+                    <p className="text-xs md:text-sm text-muted-foreground">{stat.title}</p>
+                    <p className="text-2xl md:text-3xl font-bold mt-1 md:mt-2">{stat.value}</p>
                   </div>
-                  <Icon className={`h-8 w-8 ${stat.color}`} />
+                  <Icon className={`h-6 w-6 md:h-8 md:w-8 ${stat.color} md:ml-2`} />
                 </div>
               </CardContent>
             </Card>
@@ -1671,41 +1671,41 @@ const LoadAgentDashboard = () => {
           <CardContent>
             <div className="space-y-6">
               {/* Loan Metrics Summary */}
-              <div className="grid md:grid-cols-4 gap-4">
-                <div className="bg-white dark:bg-card p-4 rounded-lg border">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="h-4 w-4 text-blue-600" />
-                    <p className="text-xs font-medium text-muted-foreground">Loan Taken</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <div className="bg-white dark:bg-card p-3 md:p-4 rounded-lg border">
+                  <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
+                    <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4 text-blue-600" />
+                    <p className="text-[10px] md:text-xs font-medium text-muted-foreground">Loan Taken</p>
                   </div>
-                  <p className="text-2xl font-bold text-blue-600">₹{(loanTaken / 1000).toFixed(1)}K</p>
-                  <p className="text-xs text-muted-foreground mt-1">{fundedTrips.length} funded trips</p>
+                  <p className="text-xl md:text-2xl font-bold text-blue-600">₹{(loanTaken / 1000).toFixed(1)}K</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">{fundedTrips.length} trips</p>
                 </div>
 
-                <div className="bg-white dark:bg-card p-4 rounded-lg border">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <p className="text-xs font-medium text-muted-foreground">Loan Repaid</p>
+                <div className="bg-white dark:bg-card p-3 md:p-4 rounded-lg border">
+                  <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
+                    <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-600" />
+                    <p className="text-[10px] md:text-xs font-medium text-muted-foreground">Loan Repaid</p>
                   </div>
-                  <p className="text-2xl font-bold text-green-600">₹{(loanRepaid / 1000).toFixed(1)}K</p>
-                  <p className="text-xs text-muted-foreground mt-1">{completedTrips.length} completed trips</p>
+                  <p className="text-xl md:text-2xl font-bold text-green-600">₹{(loanRepaid / 1000).toFixed(1)}K</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">{completedTrips.length} trips</p>
                 </div>
 
-                <div className="bg-white dark:bg-card p-4 rounded-lg border">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="h-4 w-4 text-orange-600" />
-                    <p className="text-xs font-medium text-muted-foreground">Pending Loans</p>
+                <div className="bg-white dark:bg-card p-3 md:p-4 rounded-lg border">
+                  <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
+                    <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-orange-600" />
+                    <p className="text-[10px] md:text-xs font-medium text-muted-foreground">Pending</p>
                   </div>
-                  <p className="text-2xl font-bold text-orange-600">₹{(loanPending / 1000).toFixed(1)}K</p>
-                  <p className="text-xs text-muted-foreground mt-1">{fundedTrips.length - completedTrips.length} active trips</p>
+                  <p className="text-xl md:text-2xl font-bold text-orange-600">₹{(loanPending / 1000).toFixed(1)}K</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">{fundedTrips.length - completedTrips.length} active</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 p-4 rounded-lg border border-primary/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Star className="h-4 w-4 text-primary" />
-                    <p className="text-xs font-medium text-muted-foreground">Total Interest Paid</p>
+                <div className="bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 p-3 md:p-4 rounded-lg border border-primary/30">
+                  <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2">
+                    <Star className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
+                    <p className="text-[10px] md:text-xs font-medium text-muted-foreground">Interest</p>
                   </div>
-                  <p className="text-2xl font-bold text-primary">₹{(profit / 1000).toFixed(1)}K</p>
-                  <p className="text-xs text-muted-foreground mt-1">Interest paid to lenders</p>
+                  <p className="text-xl md:text-2xl font-bold text-primary">₹{(profit / 1000).toFixed(1)}K</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">Total paid</p>
                 </div>
               </div>
 
