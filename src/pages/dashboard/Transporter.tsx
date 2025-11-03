@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TruckIcon, CheckCircle2, Clock, MapPin, IndianRupee, Wallet as WalletIcon, TrendingUp, DollarSign } from "lucide-react";
+import { TruckIcon, CheckCircle2, Clock, MapPin, IndianRupee, Wallet as WalletIcon, TrendingUp, DollarSign, X } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data, Trip, Wallet } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -11,7 +11,9 @@ import { toTitleCase } from "@/lib/utils";
 
 const TransporterDashboard = () => {
   const user = auth.getCurrentUser();
+  const availableTripsRef = useRef<HTMLDivElement>(null);
   const [myTrips, setMyTrips] = useState<Trip[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [wallet, setWallet] = useState<Wallet>({
     userId: user?.id || 't1',
     balance: 0,
@@ -79,6 +81,17 @@ const TransporterDashboard = () => {
     },
   ];
 
+  const scrollToAvailableTrips = (filter?: string) => {
+    if (filter) {
+      setStatusFilter(filter);
+    }
+    availableTripsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const clearFilter = () => {
+    setStatusFilter(null);
+  };
+
   const handleAcceptTrip = async (tripId: string) => {
     await data.updateTrip(tripId, {
       transporterId: user?.id,
@@ -128,8 +141,13 @@ const TransporterDashboard = () => {
         <div className="grid md:grid-cols-3 gap-6">
           {stats.map((stat) => {
             const Icon = stat.icon;
+            const isPending = stat.title === "Pending Acceptance";
             return (
-              <Card key={stat.title}>
+              <Card
+                key={stat.title}
+                className={isPending ? 'cursor-pointer hover:border-accent transition-colors' : ''}
+                onClick={isPending ? () => scrollToAvailableTrips('pending') : undefined}
+              >
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -253,36 +271,63 @@ const TransporterDashboard = () => {
         </Card>
 
         {/* Available Trips */}
+        <div ref={availableTripsRef}>
         <Card>
           <CardHeader>
-            <CardTitle>Available Trips</CardTitle>
-            <CardDescription>Funded trips awaiting assignment</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  Available Trips
+                  {statusFilter === 'pending' && (
+                    <span className="text-xs px-2 py-1 rounded-full bg-accent/20 text-accent flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      Pending Only
+                    </span>
+                  )}
+                </CardTitle>
+                <CardDescription>Funded trips awaiting assignment</CardDescription>
+              </div>
+              {statusFilter === 'pending' && (
+                <Button variant="ghost" size="sm" onClick={clearFilter} className="gap-1">
+                  <X className="h-4 w-4" />
+                  Clear Filter
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {myTrips.filter(t => t.status === 'funded' && !t.transporterId).slice(0, 3).map((trip) => (
-                <div key={trip.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <MapPin className="h-4 w-4 text-primary" />
-                      <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg • {trip.distance} km</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="font-semibold text-secondary">{formatCurrencyForTransporter(trip.amount)}</p>
-                      <p className="text-xs text-muted-foreground">Payment</p>
-                    </div>
-                    <Button className="bg-gradient-primary" onClick={() => handleAcceptTrip(trip.id)}>
-                      Accept
-                    </Button>
-                  </div>
+              {myTrips.filter(t => t.status === 'funded' && !t.transporterId).length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No pending trips available at the moment</p>
                 </div>
-              ))}
+              ) : (
+                myTrips.filter(t => t.status === 'funded' && !t.transporterId).slice(0, statusFilter === 'pending' ? undefined : 3).map((trip) => (
+                  <div key={trip.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <MapPin className="h-4 w-4 text-primary" />
+                        <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg • {trip.distance} km</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="font-semibold text-secondary">{formatCurrencyForTransporter(trip.amount)}</p>
+                        <p className="text-xs text-muted-foreground">Payment</p>
+                      </div>
+                      <Button className="bg-gradient-primary" onClick={() => handleAcceptTrip(trip.id)}>
+                        Accept
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
+        </div>
 
         {/* Active Trips */}
         <Card>

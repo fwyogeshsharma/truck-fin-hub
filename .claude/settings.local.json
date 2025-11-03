@@ -16,7 +16,8 @@
       "Bash(docker-compose down:*)",
       "Bash(bash:*)",
       "Bash(psql:*)",
-      "Bash(docker exec:*)"
+      "Bash(docker exec:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { auth } from '@/lib/auth';
@@ -76,6 +76,7 @@ const LoadAgentDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const user = auth.getCurrentUser();
+  const allTripsTabRef = useRef<HTMLDivElement>(null);
 
   const [refreshKey, setRefreshKey] = useState(0);
   const [allTrips, setAllTrips] = useState<Trip[]>([]);
@@ -1525,6 +1526,10 @@ const LoadAgentDashboard = () => {
     },
   ];
 
+  const scrollToAllTripsTab = () => {
+    allTripsTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const getStatusBadge = (status: string, trip?: Trip) => {
     // If trip is provided and it's both funded AND completed, show special combined badge
     if (trip && isFundedAndCompleted(trip)) {
@@ -1613,8 +1618,13 @@ const LoadAgentDashboard = () => {
         <div className="grid md:grid-cols-4 gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
+          const isTotalTrips = stat.title === 'Total Trips';
           return (
-            <Card key={stat.title}>
+            <Card
+              key={stat.title}
+              className={isTotalTrips ? 'cursor-pointer hover:border-primary transition-colors' : ''}
+              onClick={isTotalTrips ? scrollToAllTripsTab : undefined}
+            >
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -1795,6 +1805,7 @@ const LoadAgentDashboard = () => {
         </Card>
 
         {/* Tabs for All Trips, Loan Closure, and Repaid Loans */}
+        <div ref={allTripsTabRef}>
         <Tabs defaultValue="all-trips" className="space-y-6">
           <TabsList>
             <TabsTrigger value="all-trips">All Trips</TabsTrigger>
@@ -2498,6 +2509,7 @@ const LoadAgentDashboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
+        </div>
 
         {/* Create Trip Dialog */}
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
