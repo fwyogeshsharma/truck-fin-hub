@@ -397,58 +397,59 @@ const WalletPage = () => {
 
   return (
     <DashboardLayout role={user.role}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Wallet</h1>
-            <p className="text-muted-foreground mt-1">Manage your funds and transactions</p>
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold truncate">Wallet</h1>
+            <p className="text-muted-foreground mt-1 text-sm sm:text-base">Manage your funds and transactions</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 shrink-0">
             {/* Add Money button - now available for all roles including transporter */}
-            <Button onClick={() => setTopUpDialogOpen(true)} className="bg-gradient-primary">
-              <Plus className="h-4 w-4 mr-2" />
+            <Button onClick={() => setTopUpDialogOpen(true)} className="bg-gradient-primary h-9 sm:h-10 text-xs sm:text-sm touch-target flex-1 sm:flex-none">
+              <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
               Add Money
             </Button>
             <Button
               variant="outline"
               onClick={() => setWithdrawDialogOpen(true)}
               disabled={walletData.balance === 0}
+              className="h-9 sm:h-10 text-xs sm:text-sm touch-target flex-1 sm:flex-none"
             >
-              <ArrowDownCircle className="h-4 w-4 mr-2" />
+              <ArrowDownCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
               Withdraw
             </Button>
           </div>
         </div>
 
         {/* Wallet Balance Cards */}
-        <div className="grid md:grid-cols-4 gap-4">
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <Card className="sm:col-span-2">
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">Available Balance</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{formatCurrency(walletData.balance)}</p>
-              <p className="text-xs text-muted-foreground mt-1">
+            <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+              <p className="text-2xl sm:text-3xl font-bold truncate">{formatCurrency(walletData.balance)}</p>
+              <p className="text-xs text-muted-foreground mt-1 truncate">
                 ₹{walletData.balance.toLocaleString('en-IN')}
               </p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">In Escrow</CardTitle>
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">In Escrow</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{formatCurrencyCompact(walletData.escrowedAmount || 0, true)}</p>
+            <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+              <p className="text-xl sm:text-2xl font-bold truncate">{formatCurrencyCompact(walletData.escrowedAmount || 0, true)}</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Total Invested</CardTitle>
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">Total Invested</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{formatCurrencyCompact(walletData.totalInvested, true)}</p>
+            <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+              <p className="text-xl sm:text-2xl font-bold truncate">{formatCurrencyCompact(walletData.totalInvested, true)}</p>
             </CardContent>
           </Card>
         </div>
@@ -461,38 +462,39 @@ const WalletPage = () => {
           </TabsList>
 
           {/* Ledger Tab */}
-          <TabsContent value="ledger" className="space-y-4">
+          <TabsContent value="ledger" className="space-y-3 sm:space-y-4">
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Transaction History</CardTitle>
-                    <CardDescription>All your wallet transactions</CardDescription>
+              <CardHeader className="p-3 sm:p-4 md:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="min-w-0">
+                    <CardTitle className="text-base sm:text-lg md:text-xl truncate">Transaction History</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">All your wallet transactions</CardDescription>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      <Filter className="h-4 w-4 mr-2" />
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm touch-target">
+                      <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                       <select
                         value={filterType}
                         onChange={(e) => setFilterType(e.target.value as any)}
-                        className="bg-transparent border-none outline-none"
+                        className="bg-transparent border-none outline-none text-xs sm:text-sm"
                       >
                         <option value="all">All</option>
                         <option value="credit">Credit</option>
                         <option value="debit">Debit</option>
                       </select>
                     </Button>
-                    <Button variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export
+                    <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm touch-target">
+                      <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">Export</span>
                     </Button>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
+              <CardContent className="p-0 sm:p-4 md:p-6">
+                <div className="overflow-x-auto -mx-3 sm:mx-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
                       <TableHead>Date</TableHead>
                       <TableHead>Description</TableHead>
                       <TableHead>Type</TableHead>
@@ -564,26 +566,27 @@ const WalletPage = () => {
                     )}
                   </TableBody>
                 </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* Bank Accounts Tab */}
-          <TabsContent value="banks" className="space-y-4">
+          <TabsContent value="banks" className="space-y-3 sm:space-y-4">
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Saved Bank Accounts</CardTitle>
+              <CardHeader className="p-3 sm:p-4 md:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="min-w-0">
+                    <CardTitle className="text-base sm:text-lg md:text-xl truncate">Saved Bank Accounts</CardTitle>
                     <CardDescription>Manage your bank accounts for withdrawals</CardDescription>
                   </div>
-                  <Button onClick={() => setAddBankDialogOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
+                  <Button onClick={() => setAddBankDialogOpen(true)} className="h-9 sm:h-10 text-xs sm:text-sm touch-target w-full sm:w-auto">
+                    <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                     Add Bank Account
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6">
                 {bankAccounts.length === 0 ? (
                   <div className="text-center py-12">
                     <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

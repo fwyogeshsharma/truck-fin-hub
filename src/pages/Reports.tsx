@@ -216,31 +216,31 @@ const Reports = () => {
                     {/* Background gradient effect on hover */}
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                    <CardHeader className="relative">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="p-3 bg-gradient-to-br from-primary/20 to-primary/10 dark:from-primary/30 dark:to-primary/10 rounded-xl group-hover:scale-110 transition-transform duration-300 shadow-sm">
-                            <Icon className="h-6 w-6 text-primary" />
+                    <CardHeader className="relative p-3 sm:p-4 md:p-6">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                          <div className="p-2 sm:p-3 bg-gradient-to-br from-primary/20 to-primary/10 dark:from-primary/30 dark:to-primary/10 rounded-xl group-hover:scale-110 transition-transform duration-300 shadow-sm shrink-0">
+                            <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                           </div>
-                          <div>
-                            <CardTitle className="text-base group-hover:text-primary transition-colors">
+                          <div className="min-w-0">
+                            <CardTitle className="text-sm sm:text-base group-hover:text-primary transition-colors truncate">
                               {report.title}
                             </CardTitle>
                           </div>
                         </div>
-                        <Badge variant="outline" className={`${getCategoryColor(report.category)} font-medium`}>
-                          <CategoryIcon className="h-3 w-3 mr-1" />
-                          {report.category}
+                        <Badge variant="outline" className={`${getCategoryColor(report.category)} font-medium text-xs shrink-0 self-start`}>
+                          <CategoryIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
+                          <span className="truncate">{report.category}</span>
                         </Badge>
                       </div>
-                      <CardDescription className="mt-3 text-sm">
+                      <CardDescription className="mt-2 sm:mt-3 text-xs sm:text-sm">
                         {report.description}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="relative flex-1 flex flex-col">
-                      <div className="flex-1 space-y-3">
+                    <CardContent className="relative flex-1 flex flex-col p-3 sm:p-4 md:p-6">
+                      <div className="flex-1 space-y-2 sm:space-y-3">
                         <div>
-                          <p className="text-xs text-muted-foreground mb-2">Key Metrics:</p>
+                          <p className="text-xs text-muted-foreground mb-1.5 sm:mb-2">Key Metrics:</p>
                           <div className="flex flex-wrap gap-1">
                             {report.dataPoints.slice(0, 3).map((point) => (
                               <Badge key={point} variant="secondary" className="text-xs">
@@ -257,19 +257,19 @@ const Reports = () => {
                       </div>
                       <Button
                         onClick={() => handleGenerateReport(report.type)}
-                        className="w-full mt-3"
+                        className="w-full mt-2 sm:mt-3 h-9 sm:h-8 touch-target"
                         size="sm"
                         disabled={isGenerating}
                       >
                         {isGenerating ? (
                           <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Generating...
+                            <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 animate-spin" />
+                            <span className="text-xs sm:text-sm">Generating...</span>
                           </>
                         ) : (
                           <>
-                            <Sparkles className="h-4 w-4 mr-2" />
-                            Generate Report
+                            <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                            <span className="text-xs sm:text-sm">Generate Report</span>
                           </>
                         )}
                       </Button>
@@ -284,55 +284,57 @@ const Reports = () => {
         {/* Generated Report Display */}
         {selectedReport && (
           <Card>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle>{selectedReport.title}</CardTitle>
-                  <CardDescription>
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="text-base sm:text-lg md:text-xl truncate">{selectedReport.title}</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm mt-1">
                     Generated on {new Date(selectedReport.generatedAt).toLocaleString()} •
                     Period: {selectedReport.period}
                   </CardDescription>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleDownloadPDF}>
-                    <Download className="h-4 w-4 mr-2" />
-                    PDF
+                <div className="flex gap-2 shrink-0">
+                  <Button variant="outline" size="sm" onClick={handleDownloadPDF} className="h-8 sm:h-9 text-xs sm:text-sm touch-target">
+                    <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">PDF</span>
+                    <span className="sm:hidden">PDF</span>
                   </Button>
-                  <Button variant="outline" size="sm" onClick={handleDownloadExcel}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Excel
+                  <Button variant="outline" size="sm" onClick={handleDownloadExcel} className="h-8 sm:h-9 text-xs sm:text-sm touch-target">
+                    <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Excel</span>
+                    <span className="sm:hidden">XLS</span>
                   </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6 p-3 sm:p-4 md:p-6">
               {/* Summary Section */}
               <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  <h3 className="text-lg font-semibold">Key Metrics</h3>
+                <div className="flex items-center gap-1.5 sm:gap-2 mb-3 sm:mb-4">
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  <h3 className="text-base sm:text-lg font-semibold">Key Metrics</h3>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   {selectedReport.summary.trends?.map((trend, idx) => (
                     <Card key={idx} className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-l-4 border-l-primary">
-                      <CardContent className="p-5">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                      <CardContent className="p-3 sm:p-4 md:p-5">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 sm:mb-2 truncate">
                           {trend.label}
                         </p>
-                        <p className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                        <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent truncate">
                           {trend.value}
                         </p>
                         {trend.change !== undefined && (
-                          <div className="mt-3 flex items-center gap-1">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          <div className="mt-2 sm:mt-3 flex items-center gap-1 flex-wrap">
+                            <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${
                               trend.change >= 0
                                 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                                 : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                             }`}>
                               {trend.change >= 0 ? (
-                                <ArrowUp className="h-3 w-3 mr-1" />
+                                <ArrowUp className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
                               ) : (
-                                <ArrowDown className="h-3 w-3 mr-1" />
+                                <ArrowDown className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
                               )}
                               {Math.abs(trend.change)}%
                             </span>
@@ -348,10 +350,10 @@ const Reports = () => {
               {/* Details Table */}
               {selectedReport.details.length > 0 && (
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-primary" />
-                      <h3 className="text-lg font-semibold">Detailed Data</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 sm:mb-4">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                      <h3 className="text-base sm:text-lg font-semibold">Detailed Data</h3>
                     </div>
                     <TableAdvancedFilter
                       columns={Object.keys(selectedReport.details[0])}
@@ -361,7 +363,7 @@ const Reports = () => {
                     />
                   </div>
                   <div className="border rounded-lg overflow-hidden shadow-sm">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto -mx-3 sm:mx-0">
                       <table className="w-full">
                         <thead className="bg-gradient-to-r from-muted/50 to-muted">
                           <tr>
@@ -411,10 +413,10 @@ const Reports = () => {
                   </div>
 
                   {/* Pagination Controls */}
-                  <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
                     {/* Results Info */}
-                    <div className="flex items-center gap-4">
-                      <div className="text-sm text-muted-foreground">
+                    <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 w-full sm:w-auto">
+                      <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
                         Showing{' '}
                         <span className="font-medium text-foreground">
                           {filteredDetails.total === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}
@@ -430,12 +432,12 @@ const Reports = () => {
 
                       {/* Items per page selector */}
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">Rows:</span>
+                        <span className="text-xs sm:text-sm text-muted-foreground">Rows:</span>
                         <Select
                           value={itemsPerPage.toString()}
                           onValueChange={(value) => setItemsPerPage(Number(value))}
                         >
-                          <SelectTrigger className="w-[70px] h-8">
+                          <SelectTrigger className="w-[60px] sm:w-[70px] h-8 sm:h-9 text-xs sm:text-sm">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -450,24 +452,24 @@ const Reports = () => {
                     </div>
 
                     {/* Pagination Buttons */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(1)}
                         disabled={currentPage === 1}
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-8 p-0 touch-target"
                       >
-                        <ChevronsLeft className="h-4 w-4" />
+                        <ChevronsLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                         disabled={currentPage === 1}
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-8 p-0 touch-target"
                       >
-                        <ChevronLeft className="h-4 w-4" />
+                        <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </Button>
 
                       {/* Page Numbers */}
@@ -490,7 +492,7 @@ const Reports = () => {
                               variant={currentPage === pageNum ? 'default' : 'outline'}
                               size="sm"
                               onClick={() => setCurrentPage(pageNum)}
-                              className="h-8 w-8 p-0"
+                              className="h-8 w-8 p-0 text-xs sm:text-sm touch-target"
                             >
                               {pageNum}
                             </Button>
@@ -503,18 +505,18 @@ const Reports = () => {
                         size="sm"
                         onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                         disabled={currentPage === totalPages || totalPages === 0}
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-8 p-0 touch-target"
                       >
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(totalPages)}
                         disabled={currentPage === totalPages || totalPages === 0}
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-8 p-0 touch-target"
                       >
-                        <ChevronsRight className="h-4 w-4" />
+                        <ChevronsRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </Button>
                     </div>
                   </div>

@@ -285,44 +285,45 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
   return (
     <>
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <WalletIcon className="h-5 w-5 text-primary" />
-              <CardTitle>Wallet</CardTitle>
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <WalletIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
+              <CardTitle className="text-base sm:text-lg truncate">Wallet</CardTitle>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {!hasBankAccount && (
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => setBankAccountDialogOpen(true)}
-                  className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                  className="border-orange-500 text-orange-600 hover:bg-orange-50 h-8 text-xs sm:text-sm touch-target flex-1 sm:flex-none"
                 >
-                  <Building2 className="h-4 w-4 mr-1" />
-                  Add Bank Account
+                  <Building2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                  <span className="truncate">Add Bank</span>
                 </Button>
               )}
               <Button
                 size="sm"
                 onClick={() => hasBankAccount ? setTopUpDialogOpen(true) : setBankAccountDialogOpen(true)}
-                className="bg-gradient-primary"
+                className="bg-gradient-primary h-8 text-xs sm:text-sm touch-target flex-1 sm:flex-none"
               >
-                <Plus className="h-4 w-4 mr-1" />
-                Add Money
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                <span className="truncate">Add Money</span>
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => setWithdrawDialogOpen(true)}
                 disabled={wallet.balance === 0 || !hasBankAccount}
+                className="h-8 text-xs sm:text-sm touch-target flex-1 sm:flex-none"
               >
-                <ArrowDownCircle className="h-4 w-4 mr-1" />
-                Withdraw
+                <ArrowDownCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                <span className="truncate">Withdraw</span>
               </Button>
             </div>
           </div>
-          <CardDescription>Manage your investment wallet</CardDescription>
+          <CardDescription className="text-xs sm:text-sm mt-2">Manage your investment wallet</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Available Balance */}
