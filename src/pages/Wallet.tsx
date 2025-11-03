@@ -495,11 +495,11 @@ const WalletPage = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead className="text-right">Balance After</TableHead>
+                      <TableHead className="min-w-[100px] sm:min-w-[120px]">Date</TableHead>
+                      <TableHead className="min-w-[150px] sm:min-w-[200px]">Description</TableHead>
+                      <TableHead className="min-w-[90px] sm:min-w-[100px]">Type</TableHead>
+                      <TableHead className="text-right min-w-[90px] sm:min-w-[110px]">Amount</TableHead>
+                      <TableHead className="text-right min-w-[90px] sm:min-w-[120px]">Balance After</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -514,52 +514,55 @@ const WalletPage = () => {
                         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
                         .map((txn) => (
                           <TableRow key={txn.id}>
-                            <TableCell>
-                              {new Date(txn.timestamp).toLocaleDateString('en-IN', {
-                                day: '2-digit',
-                                month: 'short',
-                                year: 'numeric',
-                              })}
-                              <br />
-                              <span className="text-xs text-muted-foreground">
+                            <TableCell className="min-w-[100px] sm:min-w-[120px]">
+                              <div className="whitespace-nowrap text-xs sm:text-sm">
+                                {new Date(txn.timestamp).toLocaleDateString('en-IN', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })}
+                              </div>
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
                                 {new Date(txn.timestamp).toLocaleTimeString('en-IN', {
                                   hour: '2-digit',
                                   minute: '2-digit',
                                 })}
                               </span>
                             </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium">{txn.description}</p>
-                                <Badge variant="outline" className="text-xs mt-1">
-                                  {txn.category}
+                            <TableCell className="min-w-[150px] sm:min-w-[200px] max-w-[200px] sm:max-w-[300px]">
+                              <div className="space-y-1">
+                                <p className="font-medium text-xs sm:text-sm break-words line-clamp-2">{txn.description}</p>
+                                <Badge variant="outline" className="text-xs truncate max-w-full">
+                                  <span className="truncate">{txn.category}</span>
                                 </Badge>
                               </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="min-w-[90px] sm:min-w-[100px]">
                               {txn.type === 'credit' ? (
-                                <Badge className="bg-green-600">
-                                  <ArrowUpCircle className="h-3 w-3 mr-1" />
+                                <Badge className="bg-green-600 text-xs whitespace-nowrap">
+                                  <ArrowUpCircle className="h-3 w-3 mr-1 shrink-0" />
                                   Credit
                                 </Badge>
                               ) : (
-                                <Badge variant="destructive">
-                                  <ArrowDownCircle className="h-3 w-3 mr-1" />
+                                <Badge variant="destructive" className="text-xs whitespace-nowrap">
+                                  <ArrowDownCircle className="h-3 w-3 mr-1 shrink-0" />
                                   Debit
                                 </Badge>
                               )}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right min-w-[90px] sm:min-w-[110px]">
                               <span
-                                className={`font-semibold ${
+                                className={`font-semibold text-xs sm:text-sm whitespace-nowrap ${
                                   txn.type === 'credit' ? 'text-green-600' : 'text-red-600'
                                 }`}
                               >
                                 {txn.type === 'credit' ? '+' : '-'}{formatCurrencyCompact(txn.amount, true)}
                               </span>
                             </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {formatCurrencyCompact(txn.balanceAfter, true)}
+                            <TableCell className="text-right font-medium min-w-[90px] sm:min-w-[120px]">
+                              <span className="text-xs sm:text-sm whitespace-nowrap">
+                                {formatCurrencyCompact(txn.balanceAfter, true)}
+                              </span>
                             </TableCell>
                           </TableRow>
                         ))
@@ -602,51 +605,52 @@ const WalletPage = () => {
                 ) : (
                   bankAccounts.map((bank) => (
                     <Card key={bank.id} className={bank.isPrimary ? 'border-2 border-primary' : ''}>
-                      <CardContent className="pt-6">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                              <Building2 className="h-6 w-6 text-primary" />
+                      <CardContent className="p-3 sm:p-4 md:p-6">
+                        <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+                          <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1 w-full">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                             </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-semibold">{bank.bankName}</h4>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                                <h4 className="font-semibold text-sm sm:text-base truncate">{bank.bankName}</h4>
                                 {bank.isPrimary && (
-                                  <Badge className="bg-green-600">
+                                  <Badge className="bg-green-600 w-fit shrink-0">
                                     <CheckCircle className="h-3 w-3 mr-1" />
                                     Primary
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-sm text-muted-foreground">{bank.branchName}</p>
-                              <div className="grid md:grid-cols-2 gap-x-6 gap-y-1 mt-3 text-sm">
-                                <div>
+                              <p className="text-xs sm:text-sm text-muted-foreground truncate">{bank.branchName}</p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 mt-3 text-xs sm:text-sm">
+                                <div className="min-w-0">
                                   <span className="text-muted-foreground">Account Holder:</span>
-                                  <p className="font-medium">{bank.accountHolderName}</p>
+                                  <p className="font-medium truncate">{bank.accountHolderName}</p>
                                 </div>
-                                <div>
+                                <div className="min-w-0">
                                   <span className="text-muted-foreground">Account Number:</span>
-                                  <p className="font-medium font-mono">
+                                  <p className="font-medium font-mono truncate">
                                     XXXX XXXX {bank.accountNumber.slice(-4)}
                                   </p>
                                 </div>
-                                <div>
+                                <div className="min-w-0">
                                   <span className="text-muted-foreground">IFSC Code:</span>
-                                  <p className="font-medium font-mono">{bank.ifscCode}</p>
+                                  <p className="font-medium font-mono truncate">{bank.ifscCode}</p>
                                 </div>
-                                <div>
+                                <div className="min-w-0">
                                   <span className="text-muted-foreground">Account Type:</span>
-                                  <p className="font-medium capitalize">{bank.accountType}</p>
+                                  <p className="font-medium capitalize truncate">{bank.accountType}</p>
                                 </div>
                               </div>
                             </div>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex sm:flex-col gap-2 w-full sm:w-auto shrink-0">
                             {!bank.isPrimary && (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleSetPrimary(bank.id)}
+                                className="text-xs sm:text-sm h-8 sm:h-9 flex-1 sm:flex-none whitespace-nowrap"
                               >
                                 Set as Primary
                               </Button>
@@ -655,8 +659,9 @@ const WalletPage = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteBank(bank.id)}
+                              className="h-8 sm:h-9 w-auto px-2 sm:px-3"
                             >
-                              <Trash2 className="h-4 w-4 text-red-600" />
+                              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600" />
                             </Button>
                           </div>
                         </div>
