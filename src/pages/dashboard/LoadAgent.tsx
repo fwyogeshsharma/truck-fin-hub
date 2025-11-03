@@ -2201,42 +2201,49 @@ const LoadAgentDashboard = () => {
 
         {/* Pagination Controls */}
         {filteredTrips.length > 0 && totalPages > 1 && (
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="itemsPerPage" className="text-sm">Items per page:</Label>
-                <select
-                  id="itemsPerPage"
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="border rounded px-2 py-1 text-sm"
-                >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                </select>
-                <span className="text-sm text-muted-foreground ml-4">
+          <Card className="p-3 sm:p-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+              {/* Left side - Items per page and info */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="itemsPerPage" className="text-xs sm:text-sm whitespace-nowrap">
+                    <span className="hidden sm:inline">Items per page:</span>
+                    <span className="sm:hidden">Rows:</span>
+                  </Label>
+                  <select
+                    id="itemsPerPage"
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="border rounded px-2 py-1.5 text-xs sm:text-sm min-w-[60px]"
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </div>
+                <span className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left sm:ml-4">
                   Showing {startIndex + 1}-{Math.min(endIndex, filteredTrips.length)} of {filteredTrips.length}
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* Right side - Pagination buttons */}
+              <div className="flex items-center justify-center gap-1 sm:gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
-                  className="gap-1"
+                  className="gap-1 h-8 px-2 sm:px-3"
                 >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
+                  <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Previous</span>
                 </Button>
 
-                <div className="flex gap-1">
+                <div className="flex gap-0.5 sm:gap-1">
                   {Array.from({ length: totalPages }, (_, i) => i + 1)
                     .filter(page => {
                       return page === 1 ||
@@ -2244,15 +2251,15 @@ const LoadAgentDashboard = () => {
                              (page >= currentPage - 1 && page <= currentPage + 1);
                     })
                     .map((page, index, array) => (
-                      <div key={page} className="flex items-center gap-1">
+                      <div key={page} className="flex items-center gap-0.5 sm:gap-1">
                         {index > 0 && array[index - 1] !== page - 1 && (
-                          <span className="px-2 text-muted-foreground">...</span>
+                          <span className="px-1 sm:px-2 text-muted-foreground text-xs sm:text-sm">...</span>
                         )}
                         <Button
                           variant={currentPage === page ? "default" : "outline"}
                           size="sm"
                           onClick={() => setCurrentPage(page)}
-                          className="w-8 h-8 p-0"
+                          className="w-7 h-7 sm:w-8 sm:h-8 p-0 text-xs sm:text-sm"
                         >
                           {page}
                         </Button>
@@ -2265,10 +2272,10 @@ const LoadAgentDashboard = () => {
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
-                  className="gap-1"
+                  className="gap-1 h-8 px-2 sm:px-3"
                 >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
               </div>
             </div>
