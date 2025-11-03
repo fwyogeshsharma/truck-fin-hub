@@ -1,7 +1,15 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TruckIcon, CheckCircle2, Clock, MapPin, IndianRupee, Wallet as WalletIcon, TrendingUp, DollarSign } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { TruckIcon, CheckCircle2, Clock, MapPin, IndianRupee, Wallet as WalletIcon, TrendingUp, DollarSign, AlertCircle } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data, Trip, Wallet } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -21,6 +29,8 @@ const TransporterDashboard = () => {
     totalReturns: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [selectedTripForAcceptance, setSelectedTripForAcceptance] = useState<Trip | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -79,8 +89,15 @@ const TransporterDashboard = () => {
     },
   ];
 
-  const handleAcceptTrip = async (tripId: string) => {
-    await data.updateTrip(tripId, {
+  const handleOpenConfirmDialog = (trip: Trip) => {
+    setSelectedTripForAcceptance(trip);
+    setConfirmDialogOpen(true);
+  };
+
+  const handleAcceptTrip = async () => {
+    if (!selectedTripForAcceptance) return;
+
+    await data.updateTrip(selectedTripForAcceptance.id, {
       transporterId: user?.id,
       transporterName: user?.name || 'Vehicle Provider',
       status: 'in_transit',
@@ -91,6 +108,8 @@ const TransporterDashboard = () => {
       t.transporterId === user?.id || t.status === 'funded'
     );
     setMyTrips(filteredTrips);
+    setConfirmDialogOpen(false);
+    setSelectedTripForAcceptance(null);
   };
 
   const handleCompleteTrip = async (tripId: string) => {
@@ -274,7 +293,7 @@ const TransporterDashboard = () => {
                       <p className="font-semibold text-secondary">{formatCurrencyForTransporter(trip.amount)}</p>
                       <p className="text-xs text-muted-foreground">Payment</p>
                     </div>
-                    <Button className="bg-gradient-primary" onClick={() => handleAcceptTrip(trip.id)}>
+                    <Button className="bg-gradient-primary" onClick={() => handleOpenConfirmDialog(trip)}>
                       Accept
                     </Button>
                   </div>
@@ -311,6 +330,83 @@ const TransporterDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-primary" />
+              Confirm Trip Acceptance
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to accept this trip? Once accepted, you will be responsible for completing the delivery.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedTripForAcceptance && (
+            <div className="space-y-4">
+              <Card className="bg-muted/50">
+                <CardContent className="pt-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Route</p>
+                        <p className="font-semibold">
+                          {selectedTripForAcceptance.origin} → {selectedTripForAcceptance.destination}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Load Type</p>
+                        <p className="font-medium">{selectedTripForAcceptance.loadType}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Weight</p>
+                        <p className="font-medium">{selectedTripForAcceptance.weight} kg</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Distance</p>
+                        <p className="font-medium">{selectedTripForAcceptance.distance} km</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Payment</p>
+                        <p className="font-semibold text-secondary">
+                          {formatCurrencyForTransporter(selectedTripForAcceptance.amount)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-sm text-blue-900 dark:text-blue-200">
+                  By accepting this trip, you confirm that you have the necessary vehicle and will complete the delivery as per the terms.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setConfirmDialogOpen(false);
+                setSelectedTripForAcceptance(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button className="bg-gradient-primary" onClick={handleAcceptTrip}>
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              Confirm & Accept Trip
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
