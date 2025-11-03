@@ -278,53 +278,53 @@ const MyInvestments = () => {
 
     return (
       <Card className="border-2 border-primary/20 bg-primary/5">
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <Lock className="h-4 w-4 text-primary" />
-                <CardTitle className="text-xl">
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                <Lock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary shrink-0 mt-0.5" />
+                <CardTitle className="text-base sm:text-lg md:text-xl truncate">
                   {trip.origin} → {trip.destination}
                 </CardTitle>
               </div>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm truncate">
                 {trip.loadType} • {trip.weight} kg • {trip.distance} km
               </CardDescription>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1 truncate">
                 Borrower: {toTitleCase(trip.loadOwnerName)}
               </p>
             </div>
-            <Badge variant="outline" className="bg-primary/10 text-primary">
-              <Lock className="h-3 w-3 mr-1" />
-              Escrowed
+            <Badge variant="outline" className="bg-primary/10 text-primary shrink-0 self-start">
+              <Lock className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
+              <span className="text-xs">Escrowed</span>
             </Badge>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4">
-          <div className="bg-muted/50 p-4 rounded-lg">
-            <p className="text-sm text-muted-foreground mb-2">
+        <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6">
+          <div className="bg-muted/50 p-3 sm:p-4 rounded-lg">
+            <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
               Your bid has been placed and funds are in escrow. Awaiting confirmation...
             </p>
-            <div className="grid md:grid-cols-3 gap-4 mt-4">
-              <div className="flex items-center gap-2">
-                <div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Escrowed Amount</p>
-                  <p className="font-semibold">₹{(investment.amount / 1000).toFixed(0)}K</p>
+                  <p className="font-semibold text-sm sm:text-base truncate">₹{(investment.amount / 1000).toFixed(0)}K</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                <div>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Interest Rate</p>
-                  <p className="font-semibold">{investment.interestRate}%</p>
+                  <p className="font-semibold text-sm sm:text-base">{investment.interestRate}%</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <div>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Invested At</p>
-                  <p className="font-semibold text-sm">
+                  <p className="font-semibold text-xs sm:text-sm truncate">
                     {new Date(investment.investedAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -334,65 +334,65 @@ const MyInvestments = () => {
 
           {/* Trip Documents */}
           {trip.documents && Object.keys(trip.documents).length > 0 && (
-            <div className="border-t pt-4">
-              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <FileText className="h-4 w-4" />
+            <div className="border-t pt-3 sm:pt-4">
+              <h4 className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3 flex items-center gap-1.5 sm:gap-2">
+                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Trip Documents
               </h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
                 {trip.documents.ewaybill && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm h-9 touch-target w-full justify-start"
                     onClick={() => handleViewDocument('E-Way Bill', trip.documents.ewaybill)}
                   >
-                    <Eye className="h-4 w-4" />
-                    E-Way Bill
+                    <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="truncate">E-Way Bill</span>
                   </Button>
                 )}
                 {trip.documents.bilty && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm h-9 touch-target w-full justify-start"
                     onClick={() => handleViewDocument('Bilty', trip.documents.bilty)}
                   >
-                    <Eye className="h-4 w-4" />
-                    Bilty
+                    <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="truncate">Bilty</span>
                   </Button>
                 )}
                 {((trip.documents as any).advance_invoice || (trip.documents as any).advanceInvoice) && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm h-9 touch-target w-full justify-start"
                     onClick={() => handleViewDocument('Advance Invoice', (trip.documents as any).advance_invoice || (trip.documents as any).advanceInvoice)}
                   >
-                    <Eye className="h-4 w-4" />
-                    Advance Invoice
+                    <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="truncate">Advance Invoice</span>
                   </Button>
                 )}
                 {trip.documents.pod && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm h-9 touch-target w-full justify-start"
                     onClick={() => handleViewDocument('POD', trip.documents.pod)}
                   >
-                    <Eye className="h-4 w-4" />
-                    POD
+                    <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="truncate">POD</span>
                   </Button>
                 )}
                 {((trip.documents as any).final_invoice || (trip.documents as any).finalInvoice) && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm h-9 touch-target w-full justify-start"
                     onClick={() => handleViewDocument('Final Invoice', (trip.documents as any).final_invoice || (trip.documents as any).finalInvoice)}
                   >
-                    <Eye className="h-4 w-4" />
-                    Final Invoice
+                    <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="truncate">Final Invoice</span>
                   </Button>
                 )}
               </div>
@@ -417,71 +417,71 @@ const MyInvestments = () => {
 
     return (
       <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <MapPin className="h-4 w-4 text-primary" />
-                <CardTitle className="text-xl">
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary shrink-0 mt-0.5" />
+                <CardTitle className="text-base sm:text-lg md:text-xl truncate">
                   {trip.origin} → {trip.destination}
                 </CardTitle>
               </div>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm truncate">
                 {trip.loadType} • {trip.weight} kg • {trip.distance} km
               </CardDescription>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1 truncate">
                 Borrower: {toTitleCase(trip.loadOwnerName)}
               </p>
               {trip.transporterName && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
                   Vehicle Provider: {trip.transporterName}
                 </p>
               )}
             </div>
-            <div className="flex flex-col gap-2 items-end">
-              <Badge className={getStatusColor(investment.status)}>
+            <div className="flex flex-row sm:flex-col gap-2 items-start sm:items-end flex-wrap">
+              <Badge className={`${getStatusColor(investment.status)} text-xs`}>
                 <span className="flex items-center gap-1">
                   {getStatusIcon(investment.status)}
                   {investment.status}
                 </span>
               </Badge>
-              <Badge variant="outline">
+              <Badge variant="outline" className="text-xs">
                 Trip: {trip.status}
               </Badge>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6">
           {/* Investment Details */}
-          <div className="grid md:grid-cols-4 gap-4">
-            <div className="flex items-center gap-2">
-              <div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Invested Amount</p>
-                <p className="font-semibold">₹{(investment.amount / 1000).toFixed(0)}K</p>
+                <p className="font-semibold text-sm sm:text-base truncate">₹{(investment.amount / 1000).toFixed(0)}K</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              <div>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+              <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Interest Rate</p>
-                <p className="font-semibold">{investment.interestRate}%</p>
+                <p className="font-semibold text-sm sm:text-base">{investment.interestRate}%</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-accent" />
-              <div>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent shrink-0" />
+              <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Expected Return</p>
-                <p className="font-semibold text-accent">
+                <p className="font-semibold text-sm sm:text-base text-accent truncate">
                   ₹{(investment.expectedReturn / 1000).toFixed(1)}K
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <div>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+              <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Maturity Date</p>
-                <p className="font-semibold text-sm">
+                <p className="font-semibold text-xs sm:text-sm truncate">
                   {new Date(investment.maturityDate).toLocaleDateString()}
                 </p>
               </div>
@@ -490,9 +490,9 @@ const MyInvestments = () => {
 
           {/* Timeline */}
           <div className="space-y-2">
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-xs sm:text-sm gap-2">
               <span className="text-muted-foreground">Investment Progress</span>
-              <span className="font-semibold">
+              <span className="font-semibold text-right">
                 {investment.status === 'completed' ? 'Completed' :
                  investment.status === 'defaulted' ? 'Defaulted' :
                  `${daysToMaturity} days remaining`}
@@ -511,54 +511,54 @@ const MyInvestments = () => {
           </div>
 
           {/* Trip Activity Timeline */}
-          <div className="border-t pt-4">
-            <h4 className="text-sm font-semibold mb-3">Trip Activity</h4>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 bg-primary rounded-full mt-2" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Trip Created</p>
-                  <p className="text-xs text-muted-foreground">
+          <div className="border-t pt-3 sm:pt-4">
+            <h4 className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3">Trip Activity</h4>
+            <div className="space-y-2 sm:space-y-3">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full mt-1.5 sm:mt-2 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-medium">Trip Created</p>
+                  <p className="text-xs text-muted-foreground truncate">
                     {new Date(trip.createdAt).toLocaleString()}
                   </p>
                 </div>
-                <CheckCircle2 className="h-4 w-4 text-primary" />
+                <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary shrink-0" />
               </div>
 
               {trip.fundedAt && (
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-primary rounded-full mt-2" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Investment Funded</p>
-                    <p className="text-xs text-muted-foreground">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full mt-1.5 sm:mt-2 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium">Investment Funded</p>
+                    <p className="text-xs text-muted-foreground truncate">
                       {new Date(trip.fundedAt).toLocaleString()}
                     </p>
                   </div>
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary shrink-0" />
                 </div>
               )}
 
               {trip.status === 'in_transit' && (
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-secondary rounded-full mt-2 animate-pulse" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">In Transit</p>
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-secondary rounded-full mt-1.5 sm:mt-2 animate-pulse shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium">In Transit</p>
                     <p className="text-xs text-muted-foreground">Vehicle on route</p>
                   </div>
-                  <TruckIcon className="h-4 w-4 text-secondary" />
+                  <TruckIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-secondary shrink-0" />
                 </div>
               )}
 
               {trip.completedAt && (
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Trip Completed</p>
-                    <p className="text-xs text-muted-foreground">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mt-1.5 sm:mt-2 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium">Trip Completed</p>
+                    <p className="text-xs text-muted-foreground truncate">
                       {new Date(trip.completedAt).toLocaleString()}
                     </p>
                   </div>
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500 shrink-0" />
                 </div>
               )}
 
@@ -599,55 +599,55 @@ const MyInvestments = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm h-9 touch-target w-full justify-start"
                     onClick={() => handleViewDocument('E-Way Bill', trip.documents.ewaybill)}
                   >
-                    <Eye className="h-4 w-4" />
-                    E-Way Bill
+                    <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="truncate">E-Way Bill</span>
                   </Button>
                 )}
                 {trip.documents.bilty && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm h-9 touch-target w-full justify-start"
                     onClick={() => handleViewDocument('Bilty', trip.documents.bilty)}
                   >
-                    <Eye className="h-4 w-4" />
-                    Bilty
+                    <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="truncate">Bilty</span>
                   </Button>
                 )}
                 {((trip.documents as any).advance_invoice || (trip.documents as any).advanceInvoice) && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm h-9 touch-target w-full justify-start"
                     onClick={() => handleViewDocument('Advance Invoice', (trip.documents as any).advance_invoice || (trip.documents as any).advanceInvoice)}
                   >
-                    <Eye className="h-4 w-4" />
-                    Advance Invoice
+                    <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="truncate">Advance Invoice</span>
                   </Button>
                 )}
                 {trip.documents.pod && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm h-9 touch-target w-full justify-start"
                     onClick={() => handleViewDocument('POD', trip.documents.pod)}
                   >
-                    <Eye className="h-4 w-4" />
-                    POD
+                    <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="truncate">POD</span>
                   </Button>
                 )}
                 {((trip.documents as any).final_invoice || (trip.documents as any).finalInvoice) && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm h-9 touch-target w-full justify-start"
                     onClick={() => handleViewDocument('Final Invoice', (trip.documents as any).final_invoice || (trip.documents as any).finalInvoice)}
                   >
-                    <Eye className="h-4 w-4" />
-                    Final Invoice
+                    <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="truncate">Final Invoice</span>
                   </Button>
                 )}
               </div>
