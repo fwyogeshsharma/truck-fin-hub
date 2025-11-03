@@ -536,21 +536,28 @@ const LoadOwnerDashboard = () => {
                       }) : 'N/A';
 
                       return (
-                        <Card key={trip.id} className="border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-950/20">
+                        <Card key={trip.id} className="border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-950/20 overflow-hidden">
+                          {/* Status Banner - Prominent on mobile */}
+                          <div className="bg-green-600 text-white px-4 py-2 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                              <span className="font-semibold text-sm sm:text-base">Loan Repaid</span>
+                            </div>
+                            {trip.repaidAt && (
+                              <span className="text-xs sm:text-sm opacity-90">
+                                {Math.floor((Date.now() - new Date(trip.repaidAt).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                              </span>
+                            )}
+                          </div>
+
                           <CardContent className="p-4 sm:p-6">
                             <div className="flex flex-col lg:flex-row items-start gap-4">
                               <div className="flex-1 w-full touch-spacing-y">
                                 {/* Trip Info */}
                                 <div>
-                                  <div className="flex items-start sm:items-center gap-2 mb-1 flex-wrap">
-                                    <h4 className="font-semibold text-base sm:text-lg">
-                                      {trip.origin} → {trip.destination}
-                                    </h4>
-                                    <Badge className="bg-green-600 text-xs">
-                                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                                      Repaid
-                                    </Badge>
-                                  </div>
+                                  <h4 className="font-semibold text-base sm:text-lg mb-1">
+                                    {trip.origin} → {trip.destination}
+                                  </h4>
                                   <p className="text-xs sm:text-sm text-muted-foreground">
                                     {trip.loadType} • {trip.weight} kg • {trip.distance} km
                                   </p>
@@ -563,7 +570,7 @@ const LoadOwnerDashboard = () => {
                                 </div>
 
                                 {/* Repayment Details - Mobile optimized grid */}
-                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+                                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                                   <div>
                                     <p className="text-xs text-muted-foreground">Principal</p>
                                     <p className="font-semibold text-sm sm:text-base">₹{((trip.repaymentPrincipal || trip.amount) / 1000).toFixed(0)}K</p>
@@ -577,13 +584,15 @@ const LoadOwnerDashboard = () => {
                                     <p className="font-semibold text-green-600 text-sm sm:text-base">₹{((trip.repaymentAmount || trip.amount) / 1000).toFixed(2)}K</p>
                                   </div>
                                   <div>
-                                    <p className="text-xs text-muted-foreground">Days</p>
+                                    <p className="text-xs text-muted-foreground">Duration</p>
                                     <p className="font-semibold text-sm sm:text-base">{trip.repaymentDays || trip.maturityDays || 0} days</p>
                                   </div>
-                                  <div className="col-span-2 sm:col-span-1">
-                                    <p className="text-xs text-muted-foreground">Repaid On</p>
-                                    <p className="font-semibold text-xs">{formattedDate}</p>
-                                  </div>
+                                </div>
+
+                                {/* Repaid Date - Full width on mobile for better readability */}
+                                <div className="bg-white dark:bg-gray-900/50 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                                  <p className="text-xs text-muted-foreground mb-1">Repaid On</p>
+                                  <p className="font-medium text-sm">{formattedDate}</p>
                                 </div>
 
                                 {/* Calculation Summary */}
@@ -597,19 +606,6 @@ const LoadOwnerDashboard = () => {
                                     </p>
                                   </div>
                                 </div>
-                              </div>
-
-                              {/* Status Badge */}
-                              <div className="flex flex-col items-center lg:items-end gap-2 w-full lg:w-auto">
-                                <Badge className="bg-green-600 text-white text-xs flex items-center gap-1 px-3 py-1">
-                                  <CheckCircle2 className="h-3 w-3" />
-                                  Loan Closed
-                                </Badge>
-                                {trip.repaidAt && (
-                                  <p className="text-xs text-muted-foreground text-center lg:text-right">
-                                    Closed {Math.floor((Date.now() - new Date(trip.repaidAt).getTime()) / (1000 * 60 * 60 * 24))} days ago
-                                  </p>
-                                )}
                               </div>
                             </div>
                           </CardContent>

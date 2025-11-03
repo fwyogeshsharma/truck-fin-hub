@@ -247,16 +247,19 @@ const TransporterDashboard = () => {
                 <h4 className="text-sm font-semibold mb-3">Interest Paid Breakdown</h4>
                 <div className="space-y-2">
                   {repaidTrips.slice(0, 5).map((trip) => (
-                    <div key={trip.id} className="flex flex-col gap-2 p-2.5 bg-muted/50 rounded-lg">
+                    <div key={trip.id} className="flex flex-col gap-2 p-2.5 bg-green-50/50 dark:bg-green-950/20 rounded-lg border border-green-200/50 dark:border-green-800/50">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium text-xs flex-1 min-w-0">
-                          {trip.origin} → {trip.destination}
-                        </p>
+                        <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-600 flex-shrink-0 mt-0.5" />
+                          <p className="font-medium text-xs flex-1 min-w-0">
+                            {trip.origin} → {trip.destination}
+                          </p>
+                        </div>
                         <p className="font-bold text-orange-600 text-sm whitespace-nowrap">
                           {formatCurrency(trip.repaymentInterest || 0)}
                         </p>
                       </div>
-                      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground pl-5">
                         <span className="truncate">{trip.loadType}</span>
                         <span className="whitespace-nowrap ml-2">
                           {trip.interestRate}% • {trip.repaymentDays || trip.maturityDays}d

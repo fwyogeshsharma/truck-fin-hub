@@ -2463,87 +2463,93 @@ const LoadAgentDashboard = () => {
                       const rate = trip.interestRate || trip.interest_rate || 0;
 
                       return (
-                        <Card key={trip.id} className="border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-950/20">
-                          <CardContent className="p-6">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1 space-y-4">
-                                {/* Trip Info */}
-                                <div>
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <h4 className="font-bold text-xl">
-                                      {trip.origin} → {trip.destination}
-                                    </h4>
-                                    <Badge className="bg-green-600 text-white">
-                                      <CheckCircle className="h-3 w-3 mr-1" />
-                                      Repaid
-                                    </Badge>
-                                  </div>
-                                  <p className="text-sm text-muted-foreground">
-                                    {trip.loadType} • {trip.weight} kg • {trip.distance} km
-                                  </p>
-                                </div>
+                        <Card key={trip.id} className="border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-950/20 overflow-hidden">
+                          {/* Status Banner - Prominent on mobile */}
+                          <div className="bg-green-600 text-white px-4 py-2.5 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                              <span className="font-semibold text-sm sm:text-base">Loan Repaid & Closed</span>
+                            </div>
+                            {trip.repaidAt && (
+                              <span className="text-xs sm:text-sm opacity-90">
+                                {Math.floor((Date.now() - new Date(trip.repaidAt).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                              </span>
+                            )}
+                          </div>
 
-                                {/* Lender Info */}
-                                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                                  <p className="text-xs text-muted-foreground mb-1">Lender</p>
-                                  <p className="font-bold text-lg">{lenderName}</p>
-                                </div>
+                          <CardContent className="p-4 sm:p-6">
+                            <div className="space-y-4">
+                              {/* Trip Info */}
+                              <div>
+                                <h4 className="font-bold text-lg sm:text-xl mb-2">
+                                  {trip.origin} → {trip.destination}
+                                </h4>
+                                <p className="text-xs sm:text-sm text-muted-foreground">
+                                  {trip.loadType} • {trip.weight} kg • {trip.distance} km
+                                </p>
+                              </div>
 
-                                {/* Repayment Calculation Details */}
-                                <div className="bg-white dark:bg-gray-900 p-5 rounded-lg border-2 border-green-300 dark:border-green-700 space-y-3">
-                                  <p className="font-bold text-base text-green-700 dark:text-green-400 flex items-center gap-2">
-                                    <IndianRupee className="h-4 w-4" />
-                                    Repayment Calculation
-                                  </p>
+                              {/* Lender Info */}
+                              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 p-3 sm:p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                                <p className="text-xs text-muted-foreground mb-1">Lender</p>
+                                <p className="font-bold text-base sm:text-lg">{lenderName}</p>
+                              </div>
 
-                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                                      <p className="text-xs text-muted-foreground mb-1">Principal</p>
-                                      <p className="font-bold text-lg">₹{(principal / 1000).toFixed(2)}K</p>
-                                      <p className="text-xs text-muted-foreground mt-1">Loan amount</p>
-                                    </div>
+                              {/* Repayment Calculation Details */}
+                              <div className="bg-white dark:bg-gray-900 p-3 sm:p-5 rounded-lg border-2 border-green-300 dark:border-green-700 space-y-3">
+                                <p className="font-bold text-sm sm:text-base text-green-700 dark:text-green-400 flex items-center gap-2">
+                                  <IndianRupee className="h-4 w-4" />
+                                  Repayment Calculation
+                                </p>
 
-                                    <div className="p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                                      <p className="text-xs text-muted-foreground mb-1">Interest</p>
-                                      <p className="font-bold text-lg text-orange-600">₹{(interest / 1000).toFixed(2)}K</p>
-                                      <p className="text-xs text-muted-foreground mt-1">{rate}% for {days} days</p>
-                                    </div>
-
-                                    <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-                                      <p className="text-xs text-muted-foreground mb-1">Total Repaid</p>
-                                      <p className="font-bold text-lg text-green-700">₹{(total / 1000).toFixed(2)}K</p>
-                                      <p className="text-xs text-muted-foreground mt-1">Principal + Interest</p>
-                                    </div>
-
-                                    <div className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                                      <p className="text-xs text-muted-foreground mb-1">Duration</p>
-                                      <p className="font-bold text-lg">{days} days</p>
-                                      <p className="text-xs text-muted-foreground mt-1">Actual period</p>
-                                    </div>
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                                  <div className="p-2.5 sm:p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Principal</p>
+                                    <p className="font-bold text-base sm:text-lg">₹{(principal / 1000).toFixed(2)}K</p>
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Loan amount</p>
                                   </div>
 
-                                  {/* Formula */}
-                                  <div className="p-3 bg-gray-50 dark:bg-gray-950 rounded border">
-                                    <p className="text-xs font-semibold mb-2">Calculation Formula:</p>
-                                    <div className="font-mono text-xs text-muted-foreground space-y-1">
-                                      <p>Interest = Principal × (Rate/365) × Days</p>
-                                      <p>= ₹{(principal / 1000).toFixed(0)}K × ({rate}%/365) × {days} days</p>
+                                  <div className="p-2.5 sm:p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Interest</p>
+                                    <p className="font-bold text-base sm:text-lg text-orange-600">₹{(interest / 1000).toFixed(2)}K</p>
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">{rate}% for {days} days</p>
+                                  </div>
+
+                                  <div className="p-2.5 sm:p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Total Repaid</p>
+                                    <p className="font-bold text-base sm:text-lg text-green-700">₹{(total / 1000).toFixed(2)}K</p>
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Principal + Interest</p>
+                                  </div>
+
+                                  <div className="p-2.5 sm:p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Duration</p>
+                                    <p className="font-bold text-base sm:text-lg">{days} days</p>
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Actual period</p>
+                                  </div>
+                                </div>
+
+                                  {/* Formula - Mobile optimized */}
+                                  <div className="p-2.5 sm:p-3 bg-gray-50 dark:bg-gray-950 rounded border">
+                                    <p className="text-[10px] sm:text-xs font-semibold mb-2">Calculation Formula:</p>
+                                    <div className="font-mono text-[10px] sm:text-xs text-muted-foreground space-y-1">
+                                      <p className="break-words">Interest = Principal × (Rate/365) × Days</p>
+                                      <p className="break-words">= ₹{(principal / 1000).toFixed(0)}K × ({rate}%/365) × {days} days</p>
                                       <p className="text-green-700 dark:text-green-400 font-bold">= ₹{(interest / 1000).toFixed(2)}K</p>
                                     </div>
                                   </div>
 
-                                  {/* Total Summary */}
-                                  <div className="p-4 bg-gradient-to-r from-green-100 to-purple-100 dark:from-green-900/30 dark:to-purple-900/30 rounded-lg border-2 border-green-400 dark:border-green-600">
-                                    <div className="flex items-center justify-between">
+                                  {/* Total Summary - Mobile optimized */}
+                                  <div className="p-3 sm:p-4 bg-gradient-to-r from-green-100 to-purple-100 dark:from-green-900/30 dark:to-purple-900/30 rounded-lg border-2 border-green-400 dark:border-green-600">
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
                                       <div>
-                                        <p className="text-xs text-muted-foreground">Total Amount Repaid</p>
-                                        <p className="text-xs text-muted-foreground mt-1">
+                                        <p className="text-[10px] sm:text-xs text-muted-foreground">Total Amount Repaid</p>
+                                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                                           ₹{(principal / 1000).toFixed(0)}K + ₹{(interest / 1000).toFixed(2)}K
                                         </p>
                                       </div>
                                       <div className="flex items-center gap-2">
-                                        <IndianRupee className="h-6 w-6 text-green-600" />
-                                        <p className="text-3xl font-bold text-green-700 dark:text-green-400">
+                                        <IndianRupee className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+                                        <p className="text-2xl sm:text-3xl font-bold text-green-700 dark:text-green-400">
                                           {(total / 1000).toFixed(2)}K
                                         </p>
                                       </div>
@@ -2551,14 +2557,17 @@ const LoadAgentDashboard = () => {
                                   </div>
                                 </div>
 
-                                {/* Closure Information */}
-                                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900 rounded-lg border">
+                                {/* Closure Information - Mobile optimized */}
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900 rounded-lg border">
                                   <div>
                                     <p className="text-xs text-muted-foreground mb-1">Loan Closed On</p>
                                     <p className="font-bold text-sm">{formattedDate}</p>
+                                    <p className="text-[10px] text-muted-foreground mt-1">
+                                      Trip ID: {trip.id.substring(0, 8)}
+                                    </p>
                                   </div>
                                   {trip.repaidAt && (
-                                    <div className="text-right">
+                                    <div className="sm:text-right">
                                       <p className="text-xs text-muted-foreground mb-1">Time Since Closure</p>
                                       <p className="font-bold text-sm text-green-600">
                                         {Math.floor((Date.now() - new Date(trip.repaidAt).getTime()) / (1000 * 60 * 60 * 24))} days ago
@@ -2567,17 +2576,6 @@ const LoadAgentDashboard = () => {
                                   )}
                                 </div>
                               </div>
-
-                              {/* Status Badge */}
-                              <div className="flex flex-col items-end gap-2">
-                                <Badge className="bg-green-600 text-white text-base px-4 py-2">
-                                  ✓ Loan Closed
-                                </Badge>
-                                <p className="text-xs text-muted-foreground text-right">
-                                  Trip ID: {trip.id.substring(0, 8)}
-                                </p>
-                              </div>
-                            </div>
                           </CardContent>
                         </Card>
                       );
