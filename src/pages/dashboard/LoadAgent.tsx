@@ -100,6 +100,17 @@ const LoadAgentDashboard = () => {
   const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
   const [tripForRating, setTripForRating] = useState<Trip | null>(null);
 
+  // Allotment confirmation dialog states
+  const [allotmentConfirmDialogOpen, setAllotmentConfirmDialogOpen] = useState(false);
+  const [pendingAllotmentConfirm, setPendingAllotmentConfirm] = useState<{
+    tripId: string;
+    lenderId: string;
+    lenderName: string;
+    trip: Trip | null;
+    bidAmount: number;
+    interestRate: number;
+  } | null>(null);
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -866,6 +877,41 @@ const LoadAgentDashboard = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [advancedFilters]);
+
+  const handleOpenAllotmentConfirmDialog = (tripId: string, lenderId: string, lenderName: string) => {
+    const trip = allTrips.find(t => t.id === tripId);
+    const bid = trip?.bids?.find(b => b.lenderId === lenderId);
+
+    if (!trip || !bid) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Trip or bid not found',
+      });
+      return;
+    }
+
+    setPendingAllotmentConfirm({
+      tripId,
+      lenderId,
+      lenderName,
+      trip,
+      bidAmount: bid.amount,
+      interestRate: bid.interestRate,
+    });
+    setAllotmentConfirmDialogOpen(true);
+  };
+
+  const handleConfirmAllotment = () => {
+    if (!pendingAllotmentConfirm) return;
+    handleAllotTrip(
+      pendingAllotmentConfirm.tripId,
+      pendingAllotmentConfirm.lenderId,
+      pendingAllotmentConfirm.lenderName
+    );
+    setAllotmentConfirmDialogOpen(false);
+    setPendingAllotmentConfirm(null);
+  };
 
   const handleAllotTrip = async (tripId: string, lenderId: string, lenderName: string) => {
     try {
@@ -1885,7 +1931,7 @@ const LoadAgentDashboard = () => {
                                         </div>
                                         <Button
                                           size="sm"
-                                          onClick={() => handleAllotTrip(trip.id, bid.lenderId, bid.lenderName)}
+                                          onClick={() => handleOpenAllotmentConfirmDialog(trip.id, bid.lenderId, bid.lenderName)}
                                           className="bg-green-600 hover:bg-green-700"
                                         >
                                           <CheckCircle className="h-4 w-4 mr-1" />
@@ -2097,7 +2143,7 @@ const LoadAgentDashboard = () => {
                                 className="bg-green-600 hover:bg-green-700"
                                 onClick={() => {
                                   const bid = trip.bids[0]; // For now, allot to first bidder
-                                  handleAllotTrip(trip.id, bid.lenderId, bid.lenderName);
+                                  handleOpenAllotmentConfirmDialog(trip.id, bid.lenderId, bid.lenderName);
                                 }}
                               >
                                 <CheckCircle className="h-4 w-4 mr-1" />
@@ -4357,6 +4403,90 @@ print(response.json())`;
             canDismiss={false}
           />
         )}
+
+        {/* Allotment Confirmation Dialog */}
+        <Dialog open={allotmentConfirmDialogOpen} onOpenChange={setAllotmentConfirmDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-primary" />
+                Confirm Trip Allotment
+              </DialogTitle>
+              <DialogDescription>
+                Please review the details before allotting this trip to the lender.
+              </DialogDescription>
+            </DialogHeader>
+
+            {pendingAllotmentConfirm && (
+              <div className="space-y-4">
+                <Card className="bg-muted/50">
+                  <CardContent className="pt-6">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Trip Route</p>
+                        <p className="font-semibold flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-primary" />
+                          {pendingAllotmentConfirm.trip?.origin} → {pendingAllotmentConfirm.trip?.destination}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Load Type</p>
+                          <p className="font-medium">{pendingAllotmentConfirm.trip?.loadType}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Distance</p>
+                          <p className="font-medium">{pendingAllotmentConfirm.trip?.distance} km</p>
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-3 mt-3">
+                        <p className="text-sm text-muted-foreground mb-2">Lender Details</p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Lender Name</p>
+                            <p className="font-semibold text-primary">{toTitleCase(pendingAllotmentConfirm.lenderName)}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Bid Amount</p>
+                            <p className="font-semibold">₹{(pendingAllotmentConfirm.bidAmount / 1000).toFixed(0)}K</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Interest Rate</p>
+                            <p className="font-semibold">{formatPercentage(pendingAllotmentConfirm.interestRate)}%</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-sm text-blue-900 dark:text-blue-200">
+                    By confirming, the trip will be allotted to {toTitleCase(pendingAllotmentConfirm.lenderName)} and the agreed amount will be credited to your wallet.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setAllotmentConfirmDialogOpen(false);
+                  setPendingAllotmentConfirm(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button className="bg-gradient-primary" onClick={handleConfirmAllotment}>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Confirm & Allot Trip
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Edit Trip Dialog */}
         {tripForEdit && (
