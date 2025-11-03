@@ -490,85 +490,87 @@ const WalletPage = () => {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-0 sm:p-4 md:p-6">
-                <div className="overflow-x-auto -mx-3 sm:mx-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                      <TableHead className="min-w-[100px] sm:min-w-[120px]">Date</TableHead>
-                      <TableHead className="min-w-[150px] sm:min-w-[200px]">Description</TableHead>
-                      <TableHead className="min-w-[90px] sm:min-w-[100px]">Type</TableHead>
-                      <TableHead className="text-right min-w-[90px] sm:min-w-[110px]">Amount</TableHead>
-                      <TableHead className="text-right min-w-[90px] sm:min-w-[120px]">Balance After</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredTransactions.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground">
-                          No transactions found
-                        </TableCell>
+              <CardContent className="p-0">
+                <div className="border-t">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                        <TableHead className="min-w-[100px] sm:min-w-[120px] pl-3 sm:pl-4">Date</TableHead>
+                        <TableHead className="min-w-[150px] sm:min-w-[200px]">Description</TableHead>
+                        <TableHead className="min-w-[90px] sm:min-w-[100px]">Type</TableHead>
+                        <TableHead className="text-right min-w-[90px] sm:min-w-[110px]">Amount</TableHead>
+                        <TableHead className="text-right min-w-[90px] sm:min-w-[120px] pr-3 sm:pr-4">Balance After</TableHead>
                       </TableRow>
-                    ) : (
-                      filteredTransactions
-                        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                        .map((txn) => (
-                          <TableRow key={txn.id}>
-                            <TableCell className="min-w-[100px] sm:min-w-[120px]">
-                              <div className="whitespace-nowrap text-xs sm:text-sm">
-                                {new Date(txn.timestamp).toLocaleDateString('en-IN', {
-                                  day: '2-digit',
-                                  month: 'short',
-                                  year: 'numeric',
-                                })}
-                              </div>
-                              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                {new Date(txn.timestamp).toLocaleTimeString('en-IN', {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </span>
-                            </TableCell>
-                            <TableCell className="min-w-[150px] sm:min-w-[200px] max-w-[200px] sm:max-w-[300px]">
-                              <div className="space-y-1">
-                                <p className="font-medium text-xs sm:text-sm break-words line-clamp-2">{txn.description}</p>
-                                <Badge variant="outline" className="text-xs truncate max-w-full">
-                                  <span className="truncate">{txn.category}</span>
-                                </Badge>
-                              </div>
-                            </TableCell>
-                            <TableCell className="min-w-[90px] sm:min-w-[100px]">
-                              {txn.type === 'credit' ? (
-                                <Badge className="bg-green-600 text-xs whitespace-nowrap">
-                                  <ArrowUpCircle className="h-3 w-3 mr-1 shrink-0" />
-                                  Credit
-                                </Badge>
-                              ) : (
-                                <Badge variant="destructive" className="text-xs whitespace-nowrap">
-                                  <ArrowDownCircle className="h-3 w-3 mr-1 shrink-0" />
-                                  Debit
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right min-w-[90px] sm:min-w-[110px]">
-                              <span
-                                className={`font-semibold text-xs sm:text-sm whitespace-nowrap ${
-                                  txn.type === 'credit' ? 'text-green-600' : 'text-red-600'
-                                }`}
-                              >
-                                {txn.type === 'credit' ? '+' : '-'}{formatCurrencyCompact(txn.amount, true)}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-right font-medium min-w-[90px] sm:min-w-[120px]">
-                              <span className="text-xs sm:text-sm whitespace-nowrap">
-                                {formatCurrencyCompact(txn.balanceAfter, true)}
-                              </span>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                    )}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredTransactions.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                            No transactions found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredTransactions
+                          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                          .map((txn) => (
+                            <TableRow key={txn.id}>
+                              <TableCell className="min-w-[100px] sm:min-w-[120px] pl-3 sm:pl-4 py-3">
+                                <div className="whitespace-nowrap text-xs sm:text-sm">
+                                  {new Date(txn.timestamp).toLocaleDateString('en-IN', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                  })}
+                                </div>
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                  {new Date(txn.timestamp).toLocaleTimeString('en-IN', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </span>
+                              </TableCell>
+                              <TableCell className="min-w-[150px] sm:min-w-[200px] max-w-[200px] sm:max-w-[300px] py-3">
+                                <div className="space-y-1">
+                                  <p className="font-medium text-xs sm:text-sm break-words line-clamp-2">{txn.description}</p>
+                                  <Badge variant="outline" className="text-xs truncate max-w-full">
+                                    <span className="truncate">{txn.category}</span>
+                                  </Badge>
+                                </div>
+                              </TableCell>
+                              <TableCell className="min-w-[90px] sm:min-w-[100px] py-3">
+                                {txn.type === 'credit' ? (
+                                  <Badge className="bg-green-600 text-xs whitespace-nowrap">
+                                    <ArrowUpCircle className="h-3 w-3 mr-1 shrink-0" />
+                                    Credit
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="destructive" className="text-xs whitespace-nowrap">
+                                    <ArrowDownCircle className="h-3 w-3 mr-1 shrink-0" />
+                                    Debit
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right min-w-[90px] sm:min-w-[110px] py-3">
+                                <span
+                                  className={`font-semibold text-xs sm:text-sm whitespace-nowrap ${
+                                    txn.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                                  }`}
+                                >
+                                  {txn.type === 'credit' ? '+' : '-'}{formatCurrencyCompact(txn.amount, true)}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right font-medium min-w-[90px] sm:min-w-[120px] pr-3 sm:pr-4 py-3">
+                                <span className="text-xs sm:text-sm whitespace-nowrap">
+                                  {formatCurrencyCompact(txn.balanceAfter, true)}
+                                </span>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                      )}
+                    </TableBody>
+                  </Table>
+                  </div>
                 </div>
               </CardContent>
             </Card>
