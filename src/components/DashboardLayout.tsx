@@ -307,8 +307,10 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
         {children}
       </main>
 
-      {/* Footer */}
-      <Footer />
+      {/* Footer - Hidden on mobile */}
+      <div className="hidden md:block">
+        <Footer />
+      </div>
     </div>
   );
 };
