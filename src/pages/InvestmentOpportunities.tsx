@@ -1246,21 +1246,34 @@ const InvestmentOpportunities = () => {
                             {/* Action Button */}
                             <div className="flex items-center gap-1.5 flex-shrink-0">
                               {trip.riskLevel && (
-                                <Badge
-                                  className={`text-[10px] px-1.5 py-0 ${
-                                    trip.riskLevel === "low"
-                                      ? "bg-green-600"
-                                      : trip.riskLevel === "medium"
-                                        ? "bg-yellow-600"
-                                        : "bg-red-600"
-                                  } text-white`}
-                                >
-                                  {trip.riskLevel === "low"
-                                    ? "L"
-                                    : trip.riskLevel === "medium"
-                                      ? "M"
-                                      : "H"}
-                                </Badge>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge
+                                      className={`text-[10px] px-1.5 py-0 ${
+                                        trip.riskLevel === "low"
+                                          ? "bg-green-600"
+                                          : trip.riskLevel === "medium"
+                                            ? "bg-yellow-600"
+                                            : "bg-red-600"
+                                      } text-white cursor-help`}
+                                    >
+                                      {trip.riskLevel === "low"
+                                        ? "L"
+                                        : trip.riskLevel === "medium"
+                                          ? "M"
+                                          : "H"}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="md:hidden">
+                                    <p>
+                                      {trip.riskLevel === "low"
+                                        ? "Low Risk"
+                                        : trip.riskLevel === "medium"
+                                          ? "Medium Risk"
+                                          : "High Risk"}
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
                               )}
                               <Button
                                 size="sm"
@@ -1926,24 +1939,37 @@ const InvestmentOpportunities = () => {
                               );
                             })()}
                             {trip.riskLevel && (
-                              <Badge
-                                variant={
-                                  trip.riskLevel === "low"
-                                    ? "default"
-                                    : trip.riskLevel === "medium"
-                                      ? "secondary"
-                                      : "destructive"
-                                }
-                                className={`text-xs px-1.5 py-0.5 ${
-                                  trip.riskLevel === "low"
-                                    ? "bg-green-600"
-                                    : trip.riskLevel === "medium"
-                                      ? "bg-yellow-600"
-                                      : "bg-red-600"
-                                } text-white`}
-                              >
-                                <span className="text-[10px]">{trip.riskLevel.toUpperCase()}</span>
-                              </Badge>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge
+                                    variant={
+                                      trip.riskLevel === "low"
+                                        ? "default"
+                                        : trip.riskLevel === "medium"
+                                          ? "secondary"
+                                          : "destructive"
+                                    }
+                                    className={`text-xs px-1.5 py-0.5 ${
+                                      trip.riskLevel === "low"
+                                        ? "bg-green-600"
+                                        : trip.riskLevel === "medium"
+                                          ? "bg-yellow-600"
+                                          : "bg-red-600"
+                                    } text-white cursor-help`}
+                                  >
+                                    <span className="text-[10px]">{trip.riskLevel.toUpperCase()}</span>
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>
+                                    {trip.riskLevel === "low"
+                                      ? "Low Risk"
+                                      : trip.riskLevel === "medium"
+                                        ? "Medium Risk"
+                                        : "High Risk"}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
                             )}
                             {trip.insuranceStatus ? (
                               <Badge className="bg-green-600 text-white flex items-center gap-0.5 px-1.5 py-0.5">
