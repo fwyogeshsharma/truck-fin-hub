@@ -333,7 +333,7 @@ const LenderDashboard = () => {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
-                  <YAxis />
+                  <YAxis tickFormatter={(value) => formatCurrencyCompact(value, true)} />
                   <Tooltip />
                   <Legend />
                   <Area type="monotone" dataKey="invested" stroke={chartColors.primary} fillOpacity={1} fill="url(#colorInvested)" name="Total Invested" />
@@ -368,7 +368,7 @@ const LenderDashboard = () => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, value }) => value > 0 ? `${name}: ${value}%` : ''}
+                    label={false}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
@@ -385,18 +385,18 @@ const LenderDashboard = () => {
                   />
                 </PieChart>
               </ResponsiveContainer>
-              {portfolioData.length > 1 && portfolioData[0].amount > 0 && (
+              {portfolioData.length > 0 && portfolioData[0].amount > 0 && (
                 <div className="mt-4 space-y-2">
-                  {portfolioData.slice(0, 5).map((borrower, index) => (
+                  {portfolioData.map((borrower, index) => (
                     <div key={index} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
                         <div
-                          className="w-3 h-3 rounded-full"
+                          className="w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: borrower.color }}
                         />
-                        <span className="text-muted-foreground">{borrower.name}</span>
+                        <span className="text-muted-foreground truncate">{borrower.name}</span>
                       </div>
-                      <span className="font-medium">{formatCurrency(borrower.amount)} ({borrower.value}%)</span>
+                      <span className="font-medium whitespace-nowrap ml-2">{formatCurrency(borrower.amount)} ({borrower.value}%)</span>
                     </div>
                   ))}
                 </div>
