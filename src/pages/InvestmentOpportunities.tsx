@@ -58,7 +58,6 @@ import {
   ArrowUpCircle,
   FileText,
 } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -878,263 +877,6 @@ const InvestmentOpportunities = () => {
             </div>
           </div>
 
-          {/* Bulk Investment Panel */}
-          {selectedTrips.length > 0 && (
-            <Card className="border-2 border-primary bg-primary/5">
-              <CardContent className="pt-4 sm:pt-6">
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
-                        <h3 className="font-semibold text-base sm:text-lg">
-                          Bulk Investment: {selectedTrips.length} trip
-                          {selectedTrips.length > 1 ? "s" : ""} selected
-                        </h3>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setIsExpanded(!isExpanded)}
-                          className="gap-2 self-start"
-                        >
-                          {isExpanded ? (
-                            <>
-                              <ChevronUp className="h-4 w-4" />
-                              <span className="text-sm">Collapse</span>
-                            </>
-                          ) : (
-                            <>
-                              <ChevronDown className="h-4 w-4" />
-                              <span className="text-sm">Expand Trips</span>
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                        <div>
-                          <Label htmlFor="bulkBidRate" className="text-xs">
-                            Average ARR (%) - Read Only
-                          </Label>
-                          <Input
-                            id="bulkBidRate"
-                            type="text"
-                            value={`${averageARR.toFixed(2)}%`}
-                            disabled
-                            className="mt-1 h-8 sm:h-9 text-sm bg-muted cursor-not-allowed"
-                          />
-                          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-                            Average annualized return rate of selected trips
-                          </p>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-xs sm:text-sm">
-                            <span className="text-muted-foreground">
-                              Total Investment:
-                            </span>
-                            <span className="font-semibold">
-                              {formatCurrencyCompact(
-                                totalInvestmentAmount,
-                                true,
-                              )}
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-xs sm:text-sm">
-                            <span className="text-muted-foreground">
-                              Total ARR:
-                            </span>
-                            <span className="font-semibold text-accent">
-                              {formatCurrencyCompact(totalExpectedReturn, true)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
-                      <Button
-                        className="bg-gradient-primary flex-1 sm:flex-none text-sm h-9 sm:h-10"
-                        onClick={handleBulkInvest}
-                        disabled={wallet.balance < totalInvestmentAmount}
-                      >
-                        Confirm {selectedTrips.length} Bid
-                        {selectedTrips.length > 1 ? "s" : ""}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="flex-1 sm:flex-none text-sm h-9 sm:h-10"
-                        onClick={() => {
-                          setSelectedTrips([]);
-                          setTripInterestRates({});
-                        }}
-                      >
-                        Clear
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Expanded Trip List */}
-                  {isExpanded && (
-                    <div className="border-t pt-4 space-y-3">
-                      <h4 className="font-semibold text-sm text-muted-foreground">
-                        Selected Trips with Individual Interest Rates
-                      </h4>
-                      {selectedTripsData.map((trip) => {
-                        const tripRate =
-                          tripInterestRates[trip.id] || trip.interestRate || 12;
-                        const maturityDays = trip.maturityDays || 30;
-                        // Calculate ARR (annualized rate): (rate / maturityDays) * 365
-                        const tripARR = (tripRate / maturityDays) * 365;
-                        // Calculate return for maturity period
-                        const tripReturn =
-                          (trip.amount * tripRate) / 100;
-
-                        // Handler to update interest rate
-                        const handleYearlyRateChange = (rate: number) => {
-                          updateTripInterestRate(trip.id, rate);
-                        };
-
-                        return (
-                          <div
-                            key={trip.id}
-                            className="p-3 bg-card border rounded-lg"
-                          >
-                            <div className="flex items-center gap-3">
-                              {/* Logo */}
-                              {trip.clientLogo && (
-                                <img
-                                  src={trip.clientLogo}
-                                  alt={trip.clientCompany || "Company"}
-                                  className="h-10 w-10 object-contain flex-shrink-0"
-                                />
-                              )}
-
-                              {/* Trip Details - Fixed width */}
-                              <div className="w-64 flex-shrink-0">
-                                <div className="flex items-center gap-1 mb-1">
-                                  <MapPin className="h-3 w-3 text-primary flex-shrink-0" />
-                                  <p className="font-semibold text-xs truncate">
-                                    {trip.origin} → {trip.destination}
-                                  </p>
-                                </div>
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {trip.loadType} • {trip.weight} kg •{" "}
-                                  {trip.distance} km
-                                </p>
-                              </div>
-
-                              {/* Document Status - Compact */}
-                              <div className="w-32 flex-shrink-0">
-                                <p className="text-xs text-muted-foreground mb-1">
-                                  Documents
-                                </p>
-                                <div className="flex flex-wrap gap-1">
-                                  {(() => {
-                                    const docs = trip.documents as any;
-                                    return (
-                                      <>
-                                        <Badge
-                                          variant="outline"
-                                          className={`text-xs px-1.5 py-0 h-5 ${
-                                            docs?.ewaybill
-                                              ? "bg-green-100 text-green-700 border-green-300"
-                                              : "bg-gray-100 text-gray-400 border-gray-200"
-                                          }`}
-                                        >
-                                          E-Way
-                                        </Badge>
-                                        <Badge
-                                          variant="outline"
-                                          className={`text-xs px-1.5 py-0 h-5 ${
-                                            docs?.bilty
-                                              ? "bg-yellow-100 text-yellow-700 border-yellow-300"
-                                              : "bg-gray-100 text-gray-400 border-gray-200"
-                                          }`}
-                                        >
-                                          Bilty
-                                        </Badge>
-                                        <Badge
-                                          variant="outline"
-                                          className={`text-xs px-1.5 py-0 h-5 ${
-                                            docs?.pod
-                                              ? "bg-blue-100 text-blue-700 border-blue-300"
-                                              : "bg-gray-100 text-gray-400 border-gray-200"
-                                          }`}
-                                        >
-                                          POD
-                                        </Badge>
-                                      </>
-                                    );
-                                  })()}
-                                </div>
-                              </div>
-
-                              {/* Trip Value - Compact */}
-                              <div className="w-24 flex-shrink-0 text-center">
-                                <p className="text-xs text-muted-foreground">
-                                  Value
-                                </p>
-                                <p className="font-semibold text-sm">
-                                  {formatCurrencyCompact(trip.amount, true)}
-                                </p>
-                              </div>
-
-                              {/* Range Slider - Takes remaining space */}
-                              <div className="flex-1 min-w-0 px-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="flex-1">
-                                    <input
-                                      id={`rate-${trip.id}`}
-                                      type="range"
-                                      value={tripRate}
-                                      onChange={(e) =>
-                                        handleYearlyRateChange(
-                                          parseFloat(e.target.value),
-                                        )
-                                      }
-                                      min="0"
-                                      max="100"
-                                      step="1"
-                                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
-                                    />
-                                    <div className="flex justify-between text-xs text-muted-foreground mt-0.5">
-                                      <span>0%</span>
-                                      <span>100%</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* ARR % Display - Compact */}
-                              <div className="w-16 flex-shrink-0 text-center">
-                                <p className="text-xs text-muted-foreground">
-                                  ARR %
-                                </p>
-                                <p className="font-bold text-sm text-primary">
-                                  {tripARR.toFixed(1)}%
-                                </p>
-                              </div>
-
-                              {/* Yearly Return - Compact */}
-                              <div className="w-28 flex-shrink-0 text-center">
-                                <p className="text-xs text-muted-foreground">
-                                  Yearly Return
-                                </p>
-                                <p className="font-semibold text-sm text-green-600">
-                                  {formatCurrencyCompact((trip.amount * tripARR) / 100, true)}
-                                </p>
-                                <p className="text-[9px] text-muted-foreground">
-                                  (365 days)
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Available Trips */}
           <div className="space-y-3 sm:space-y-4">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
@@ -1149,28 +891,6 @@ const InvestmentOpportunities = () => {
                     onFilterChange={setAdvancedFilters}
                     onClearFilters={() => setAdvancedFilters({})}
                   />
-                  {filteredTrips.length > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={toggleSelectAll}
-                      className="flex items-center gap-2 text-xs sm:text-sm"
-                    >
-                      {selectedTrips.length === filteredTrips.length ? (
-                        <>
-                          <CheckSquare className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span className="hidden sm:inline">Deselect All</span>
-                          <span className="sm:hidden">Deselect</span>
-                        </>
-                      ) : (
-                        <>
-                          <Square className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span className="hidden sm:inline">Select All</span>
-                          <span className="sm:hidden">Select</span>
-                        </>
-                      )}
-                    </Button>
-                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-2 border-primary/30 rounded-lg px-3 sm:px-4 py-2">
@@ -1209,15 +929,9 @@ const InvestmentOpportunities = () => {
                 return (
                   <Card
                     key={trip.id}
-                    className={`p-2 sm:p-2.5 ${isMultiSelected ? "ring-2 ring-primary" : ""}`}
+                    className="p-2 sm:p-2.5"
                   >
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <Checkbox
-                        checked={isMultiSelected}
-                        onCheckedChange={() => toggleTripSelection(trip.id)}
-                        id={`select-compact-${trip.id}`}
-                        className="flex-shrink-0"
-                      />
                       <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-3 items-center">
                         {/* Mobile: Single column layout */}
                         <div className="md:hidden w-full">
@@ -1913,22 +1627,13 @@ const InvestmentOpportunities = () => {
                 return (
                   <Card
                     key={trip.id}
-                    className={
-                      isSelected || isMultiSelected ? "ring-2 ring-primary" : ""
-                    }
                   >
                     <CardHeader className="p-3 sm:p-4 md:p-6">
                       <div className="flex flex-col gap-3 sm:gap-4">
-                        {/* Mobile: Checkbox and badges row */}
+                        {/* Mobile: Document Step & Badges row */}
                         <div className="flex items-center justify-between gap-2">
-                          <Checkbox
-                            checked={isMultiSelected}
-                            onCheckedChange={() => toggleTripSelection(trip.id)}
-                            id={`select-${trip.id}`}
-                            className="shrink-0"
-                          />
                           {/* Document Step & Badges on mobile */}
-                          <div className="flex items-center gap-1.5 sm:hidden flex-wrap">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             {(() => {
                               const docStep = getDocumentStep(trip.documents);
                               return (
