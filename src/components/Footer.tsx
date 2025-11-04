@@ -215,6 +215,12 @@ const Footer = () => {
               >
                 Privacy
               </Link>
+              <Link
+                to="/cookie-policy"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Cookies
+              </Link>
               <button
                 onClick={resetCookieConsent}
                 className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
