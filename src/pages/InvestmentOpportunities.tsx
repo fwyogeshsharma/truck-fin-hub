@@ -871,7 +871,7 @@ const InvestmentOpportunities = () => {
                 ) : (
                   <Minimize2 className="h-4 w-4" />
                 )}
-                <span className="hidden sm:inline">
+                <span>
                   {isCompactView ? "Expand" : "Compact"}
                 </span>
               </Button>
