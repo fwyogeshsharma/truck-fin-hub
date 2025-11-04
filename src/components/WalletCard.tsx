@@ -439,18 +439,6 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
-                    // Validate file type - only allow images
-                    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-                    if (!validImageTypes.includes(file.type)) {
-                      toast({
-                        title: 'Invalid File Type',
-                        description: 'Please upload an image file only (JPG, PNG, GIF, or WebP)',
-                        variant: 'destructive',
-                      });
-                      e.target.value = ''; // Reset the input
-                      return;
-                    }
-
                     setTransactionImageFile(file);
                     const reader = new FileReader();
                     reader.onloadend = () => {
@@ -462,7 +450,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
                 className="mt-1"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Upload a screenshot of your bank transaction as proof (Images only: JPG, PNG, GIF, WebP)
+                Upload a screenshot of your bank transaction as proof
               </p>
               {transactionImage && (
                 <div className="mt-3">
