@@ -208,20 +208,12 @@ export const updateTrip = (id: string, updates: Partial<Trip>): Trip | null => {
   const trip = getTrip(id);
   if (!trip) return null;
 
-  // Map field names from API to database column names
-  const fieldMapping: Record<string, string> = {
-    'pickup': 'origin',  // Map pickup to origin
-    // Add any other field mappings here if needed
-  };
-
   const fields: string[] = [];
   const values: any[] = [];
 
   Object.entries(updates).forEach(([key, value]) => {
     if (value !== undefined && key !== 'id') {
-      // Use mapped field name if it exists, otherwise use the original key
-      const dbFieldName = fieldMapping[key] || key;
-      fields.push(`${dbFieldName} = ?`);
+      fields.push(`${key} = ?`);
       values.push(value);
     }
   });
