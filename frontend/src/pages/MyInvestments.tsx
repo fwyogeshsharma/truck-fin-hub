@@ -510,13 +510,13 @@ const MyInvestments = () => {
 
         {/* Investments Tabs */}
         <Tabs defaultValue="all" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="all">All ({myInvestments.length})</TabsTrigger>
-            <TabsTrigger value="escrowed">Escrowed ({escrowedInvestments.length})</TabsTrigger>
-            <TabsTrigger value="active">Active ({activeInvestments.length})</TabsTrigger>
-            <TabsTrigger value="completed">Completed ({completedInvestments.length})</TabsTrigger>
+          <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:w-auto h-auto gap-2 p-2">
+            <TabsTrigger value="all" className="text-xs sm:text-sm">All ({myInvestments.length})</TabsTrigger>
+            <TabsTrigger value="escrowed" className="text-xs sm:text-sm">Escrowed ({escrowedInvestments.length})</TabsTrigger>
+            <TabsTrigger value="active" className="text-xs sm:text-sm">Active ({activeInvestments.length})</TabsTrigger>
+            <TabsTrigger value="completed" className="text-xs sm:text-sm">Completed ({completedInvestments.length})</TabsTrigger>
             {defaultedInvestments.length > 0 && (
-              <TabsTrigger value="defaulted">Defaulted ({defaultedInvestments.length})</TabsTrigger>
+              <TabsTrigger value="defaulted" className="text-xs sm:text-sm">Defaulted ({defaultedInvestments.length})</TabsTrigger>
             )}
           </TabsList>
 
