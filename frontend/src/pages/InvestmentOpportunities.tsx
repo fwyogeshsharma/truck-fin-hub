@@ -627,6 +627,21 @@ const InvestmentOpportunities = () => {
                               <p className="font-semibold text-xs truncate">{trip.origin} → {trip.destination}</p>
                             </div>
                             <p className="text-[10px] text-muted-foreground truncate">{trip.loadType} • {trip.weight}kg</p>
+                            {trip.loadOwnerName && (
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <span className="text-[10px] font-medium text-foreground truncate">
+                                  {trip.loadOwnerName}
+                                </span>
+                                {trip.rating && (
+                                  <div className="flex items-center gap-0.5">
+                                    <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
+                                    <span className="text-[10px] font-medium text-yellow-600">
+                                      {trip.rating.toFixed(1)}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                         {/* Action Button */}
@@ -810,6 +825,21 @@ const InvestmentOpportunities = () => {
                           <p className="font-semibold text-sm truncate">{trip.origin} → {trip.destination}</p>
                         </div>
                         <p className="text-xs text-muted-foreground truncate">{trip.loadType} • {trip.weight}kg • {trip.distance}km</p>
+                        {trip.loadOwnerName && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="text-xs font-medium text-foreground truncate">
+                              {trip.loadOwnerName}
+                            </span>
+                            {trip.rating && (
+                              <div className="flex items-center gap-0.5">
+                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                <span className="text-xs font-medium text-yellow-600">
+                                  {trip.rating.toFixed(1)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Load Owner (Borrower) Logo with Rating - 2 columns */}
@@ -1170,6 +1200,26 @@ const InvestmentOpportunities = () => {
                           <CardDescription>
                             {trip.loadType} • {trip.weight}kg • {trip.distance}km
                           </CardDescription>
+                          {trip.loadOwnerName && !trip.loadOwnerLogo && (
+                            <div className="flex items-center gap-2 mt-3">
+                              <span className="text-xs text-muted-foreground">
+                                Borrower:
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm font-medium text-foreground">
+                                  {trip.loadOwnerName}
+                                </span>
+                                {trip.rating && (
+                                  <div className="flex items-center gap-0.5">
+                                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                    <span className="text-xs font-medium text-yellow-600">
+                                      {trip.rating.toFixed(1)}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                           {trip.loadOwnerLogo && (
                             <div className="flex items-center gap-2 mt-3">
                               <Tooltip>
@@ -1188,9 +1238,12 @@ const InvestmentOpportunities = () => {
                                       alt={trip.loadOwnerName}
                                       className="h-6 object-contain"
                                     />
+                                    <span className="text-sm font-medium text-foreground">
+                                      {trip.loadOwnerName}
+                                    </span>
                                     {(() => {
                                       const companyInfo = getCompanyInfo(trip.loadOwnerName);
-                                      const rating = companyInfo?.rating || trip.loadOwnerRating;
+                                      const rating = companyInfo?.rating || trip.loadOwnerRating || trip.rating;
                                       return rating && (
                                         <div className="flex items-center gap-0.5 pl-2 border-l border-border">
                                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
