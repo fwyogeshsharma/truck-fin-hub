@@ -46,6 +46,7 @@ interface UploadedContract {
   file: File;
   previewUrl: string;
   loanPercentage: string;
+  ltv: string; // Loan to Value ratio
   contractType: '2-party' | '3-party' | '';
   party1Name: string;
   party2Name: string;
@@ -313,6 +314,7 @@ const Settings = () => {
         file,
         previewUrl,
         loanPercentage: '',
+        ltv: '',
         contractType: '',
         party1Name: '',
         party2Name: '',
@@ -352,7 +354,7 @@ const Settings = () => {
   const handleSaveContracts = async () => {
     // Validate contracts
     const invalidContracts = contracts.filter(
-      (c) => !c.loanPercentage || !c.contractType || !c.party1Name || !c.party2Name || !c.validityDate ||
+      (c) => !c.loanPercentage || !c.ltv || !c.contractType || !c.party1Name || !c.party2Name || !c.validityDate ||
       (c.contractType === '3-party' && !c.party3Name)
     );
 
@@ -376,6 +378,7 @@ const Settings = () => {
         fileSize: contract.file.size,
         fileType: contract.file.type,
         loanPercentage: contract.loanPercentage,
+        ltv: contract.ltv,
         contractType: contract.contractType,
         party1Name: contract.party1Name,
         party2Name: contract.party2Name,
@@ -830,6 +833,35 @@ For questions, contact: support@logifin.com
                           %
                         </span>
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        Percentage of loan as per agreement terms
+                      </p>
+                    </div>
+
+                    {/* LTV (Loan to Value) */}
+                    <div className="space-y-2">
+                      <Label htmlFor={`ltv-${contract.id}`}>
+                        LTV (Loan to Value) <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id={`ltv-${contract.id}`}
+                          type="number"
+                          min="0"
+                          max="100"
+                          placeholder="0"
+                          value={contract.ltv}
+                          onChange={(e) =>
+                            handleContractUpdate(contract.id, 'ltv', e.target.value)
+                          }
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          %
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Loan to Value ratio as specified in contract
+                      </p>
                     </div>
 
                     {/* Contract Type */}
