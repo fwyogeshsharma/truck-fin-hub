@@ -1,28 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/DashboardLayout';
 import { auth } from '@/lib/auth';
 import {
-  Palette,
   Sun,
   Moon,
   Monitor,
   Sparkles,
   RotateCcw,
-  Save
+  Save,
+  Palette,
+  FileText,
+  Upload
 } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiClient } from '@/api/client';
 
 interface ThemeSettings {
@@ -251,215 +244,170 @@ const Settings = () => {
 
   return (
     <DashboardLayout role={user?.role || 'lender'}>
-      <div className="space-y-6 max-w-4xl">
+      <div className="space-y-6 max-w-5xl">
         <div>
           <h1 className="text-3xl font-bold">Settings</h1>
           <p className="text-muted-foreground mt-1">
-            Customize the appearance of your application
+            Manage your application preferences and configurations
           </p>
         </div>
 
-        {/* Theme Mode */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Monitor className="h-5 w-5" />
-              Display Mode
-            </CardTitle>
-            <CardDescription>
-              Choose how the application should appear
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <button
-                onClick={() => handleThemeChange({ mode: 'light' })}
-                className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg transition-all hover:border-primary ${
-                  theme.mode === 'light' ? 'border-primary bg-primary/5' : 'border-border'
-                }`}
-              >
-                <Sun className="h-6 w-6" />
-                <span className="font-medium">Light</span>
-              </button>
+        <Tabs defaultValue="appearance" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 lg:w-[500px]">
+            <TabsTrigger value="appearance" className="gap-2">
+              <Palette className="h-4 w-4" />
+              <span className="hidden sm:inline">Appearance</span>
+            </TabsTrigger>
+            <TabsTrigger value="agreements" className="gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Agreements</span>
+            </TabsTrigger>
+            <TabsTrigger value="other" className="gap-2">
+              <Monitor className="h-4 w-4" />
+              <span className="hidden sm:inline">Other</span>
+            </TabsTrigger>
+          </TabsList>
 
-              <button
-                onClick={() => handleThemeChange({ mode: 'dark' })}
-                className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg transition-all hover:border-primary ${
-                  theme.mode === 'dark' ? 'border-primary bg-primary/5' : 'border-border'
-                }`}
-              >
-                <Moon className="h-6 w-6" />
-                <span className="font-medium">Dark</span>
-              </button>
+          {/* Appearance Tab */}
+          <TabsContent value="appearance" className="space-y-6 mt-6">
+            {/* Theme Mode */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Monitor className="h-5 w-5" />
+                  Display Mode
+                </CardTitle>
+                <CardDescription>
+                  Choose how the application should appear
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <button
+                    onClick={() => handleThemeChange({ mode: 'light' })}
+                    className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg transition-all hover:border-primary ${
+                      theme.mode === 'light' ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
+                  >
+                    <Sun className="h-6 w-6" />
+                    <span className="font-medium">Light</span>
+                  </button>
 
-              <button
-                onClick={() => handleThemeChange({ mode: 'system' })}
-                className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg transition-all hover:border-primary ${
-                  theme.mode === 'system' ? 'border-primary bg-primary/5' : 'border-border'
-                }`}
-              >
-                <Monitor className="h-6 w-6" />
-                <span className="font-medium">System</span>
-              </button>
+                  <button
+                    onClick={() => handleThemeChange({ mode: 'dark' })}
+                    className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg transition-all hover:border-primary ${
+                      theme.mode === 'dark' ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
+                  >
+                    <Moon className="h-6 w-6" />
+                    <span className="font-medium">Dark</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleThemeChange({ mode: 'system' })}
+                    className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg transition-all hover:border-primary ${
+                      theme.mode === 'system' ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
+                  >
+                    <Monitor className="h-6 w-6" />
+                    <span className="font-medium">System</span>
+                  </button>
+                </div>
+
+                {theme.mode === 'system' && (
+                  <p className="text-sm text-muted-foreground">
+                    The theme will automatically switch based on your device settings
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Theme Presets */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5" />
+                  Theme Presets
+                </CardTitle>
+                <CardDescription>
+                  Quick theme presets to get started
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {presetThemes.map((preset) => (
+                    <button
+                      key={preset.name}
+                      onClick={() => handlePresetSelect(preset)}
+                      className="flex items-center gap-3 p-3 border rounded-lg hover:border-primary transition-all text-left"
+                    >
+                      <div className="flex gap-1">
+                        <div
+                          className="w-6 h-6 rounded-full border"
+                          style={{ backgroundColor: preset.primaryColor }}
+                        />
+                        <div
+                          className="w-6 h-6 rounded-full border"
+                          style={{ backgroundColor: preset.secondaryColor }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium">{preset.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+                <Save className="h-4 w-4" />
+                {isSaving ? 'Saving...' : 'Save Theme'}
+              </Button>
+              <Button onClick={handleReset} variant="outline" className="gap-2">
+                <RotateCcw className="h-4 w-4" />
+                Reset to Default
+              </Button>
             </div>
+          </TabsContent>
 
-            {theme.mode === 'system' && (
-              <p className="text-sm text-muted-foreground">
-                The theme will automatically switch based on your device settings
-              </p>
-            )}
-          </CardContent>
-        </Card>
+          {/* Upload Agreement Tab */}
+          <TabsContent value="agreements" className="space-y-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="h-5 w-5" />
+                  Upload Agreement
+                </CardTitle>
+                <CardDescription>
+                  Upload and manage agreement documents
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12 text-muted-foreground">
+                  Upload agreement functionality will be implemented here
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Theme Presets */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5" />
-              Theme Presets
-            </CardTitle>
-            <CardDescription>
-              Quick theme presets to get started
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {presetThemes.map((preset) => (
-                <button
-                  key={preset.name}
-                  onClick={() => handlePresetSelect(preset)}
-                  className="flex items-center gap-3 p-3 border rounded-lg hover:border-primary transition-all text-left"
-                >
-                  <div className="flex gap-1">
-                    <div
-                      className="w-6 h-6 rounded-full border"
-                      style={{ backgroundColor: preset.primaryColor }}
-                    />
-                    <div
-                      className="w-6 h-6 rounded-full border"
-                      style={{ backgroundColor: preset.secondaryColor }}
-                    />
-                  </div>
-                  <span className="text-sm font-medium">{preset.name}</span>
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Custom Colors */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Palette className="h-5 w-5" />
-              Custom Colors
-            </CardTitle>
-            <CardDescription>
-              Customize individual color values
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Primary Color */}
-            <div className="space-y-2">
-              <Label htmlFor="primaryColor">Primary Color</Label>
-              <div className="flex gap-3">
-                <Input
-                  id="primaryColor"
-                  type="color"
-                  value={theme.primaryColor}
-                  onChange={(e) => handleThemeChange({ primaryColor: e.target.value })}
-                  className="w-20 h-10 cursor-pointer"
-                />
-                <Input
-                  type="text"
-                  value={theme.primaryColor}
-                  onChange={(e) => handleThemeChange({ primaryColor: e.target.value })}
-                  placeholder="#084570"
-                  className="flex-1"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Main brand color used for buttons, links, and highlights
-              </p>
-            </div>
-
-            {/* Secondary Color */}
-            <div className="space-y-2">
-              <Label htmlFor="secondaryColor">Secondary Color</Label>
-              <div className="flex gap-3">
-                <Input
-                  id="secondaryColor"
-                  type="color"
-                  value={theme.secondaryColor}
-                  onChange={(e) => handleThemeChange({ secondaryColor: e.target.value })}
-                  className="w-20 h-10 cursor-pointer"
-                />
-                <Input
-                  type="text"
-                  value={theme.secondaryColor}
-                  onChange={(e) => handleThemeChange({ secondaryColor: e.target.value })}
-                  placeholder="#1D923C"
-                  className="flex-1"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Supporting color for accents and secondary elements
-              </p>
-            </div>
-
-            {/* Accent Color */}
-            <div className="space-y-2">
-              <Label htmlFor="accentColor">Accent Color</Label>
-              <div className="flex gap-3">
-                <Input
-                  id="accentColor"
-                  type="color"
-                  value={theme.accentColor}
-                  onChange={(e) => handleThemeChange({ accentColor: e.target.value })}
-                  className="w-20 h-10 cursor-pointer"
-                />
-                <Input
-                  type="text"
-                  value={theme.accentColor}
-                  onChange={(e) => handleThemeChange({ accentColor: e.target.value })}
-                  placeholder="#1D923C"
-                  className="flex-1"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Accent color for special elements and hover states
-              </p>
-            </div>
-
-            {/* Preview */}
-            <div className="p-4 border rounded-lg space-y-3">
-              <p className="text-sm font-medium mb-2">Preview</p>
-              <div className="flex gap-2">
-                <Button size="sm">Primary Button</Button>
-                <Button size="sm" variant="secondary">Secondary</Button>
-                <Button size="sm" variant="outline">Outline</Button>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-full h-2 bg-primary rounded-full" />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                This is how your theme colors will appear throughout the application
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Action Buttons */}
-        <div className="flex gap-3">
-          <Button onClick={handleSave} disabled={isSaving} className="gap-2">
-            <Save className="h-4 w-4" />
-            {isSaving ? 'Saving...' : 'Save Theme'}
-          </Button>
-          <Button onClick={handleReset} variant="outline" className="gap-2">
-            <RotateCcw className="h-4 w-4" />
-            Reset to Default
-          </Button>
-        </div>
+          {/* Other Settings Tab */}
+          <TabsContent value="other" className="space-y-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Other Settings</CardTitle>
+                <CardDescription>
+                  Additional application settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12 text-muted-foreground">
+                  Additional settings will be added here
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
