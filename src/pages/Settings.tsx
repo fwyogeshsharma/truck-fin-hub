@@ -51,7 +51,7 @@ interface UploadedContract {
 }
 
 const tripStages = [
-  { value: '', label: 'None (Optional)' },
+  { value: 'none', label: 'None (Optional)' },
   { value: 'pending', label: 'Pending' },
   { value: 'bilty', label: 'Bilty Uploaded' },
   { value: 'advance_invoice', label: 'Advance Invoice' },
@@ -314,7 +314,7 @@ const Settings = () => {
         party2Name: '',
         party3Name: '',
         validityDate: '',
-        tripStage: '',
+        tripStage: 'none',
       });
     });
 
