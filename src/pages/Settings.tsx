@@ -16,7 +16,10 @@ import {
   Upload,
   Trash2,
   Eye,
-  X
+  X,
+  AlertTriangle,
+  Download,
+  Info
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -28,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { apiClient } from '@/api/client';
 
 interface ThemeSettings {
@@ -399,6 +403,179 @@ const Settings = () => {
     }
   };
 
+  const downloadSampleAgreement = () => {
+    const sampleAgreement = `
+TRIPARTITE LOAN AGREEMENT
+
+This Tripartite Loan Agreement ("Agreement") is entered into on this ____ day of ________, 20__ at ____________.
+
+BETWEEN:
+
+PARTY 1 (BORROWER):
+Name: [Borrower/Transporter Name]
+Address: _______________________________________
+PAN: ___________________
+Contact: _______________
+
+AND
+
+PARTY 2 (LENDER):
+Name: [Lender Name]
+Address: _______________________________________
+PAN: ___________________
+Contact: _______________
+
+AND
+
+PARTY 3 (FACILITATOR):
+LogiFin Hub Private Limited
+Registered Office: [LogiFin Address]
+CIN: [Company Identification Number]
+Email: support@logifin.com
+Contact: [LogiFin Contact Number]
+
+(Hereinafter collectively referred to as "Parties" and individually as "Party")
+
+WHEREAS:
+A. The Borrower requires financial assistance for completing transportation/logistics services.
+B. The Lender agrees to provide a loan to the Borrower on the terms and conditions set forth in this Agreement.
+C. LogiFin Hub facilitates this transaction through its digital platform and acts as an intermediary to ensure smooth execution and compliance.
+
+NOW, THEREFORE, in consideration of the mutual covenants and agreements contained herein, the Parties agree as follows:
+
+1. LOAN DETAILS
+   1.1 Principal Amount: Rs. _____________ (Rupees _________________ only)
+   1.2 Interest Rate: ___% per annum
+   1.3 Loan Tenure: ___ days from the date of disbursement
+   1.4 Loan Purpose: Working capital for trip/transportation services
+   1.5 Disbursement Stage: [Specify trip stage: Bilty/POD/Final Invoice/etc.]
+
+2. DISBURSEMENT
+   2.1 The Lender shall disburse the loan amount to the Borrower through LogiFin's platform wallet system.
+   2.2 LogiFin shall facilitate the transfer and maintain records of all transactions.
+   2.3 The loan shall be disbursed upon reaching the agreed trip stage/milestone as specified in clause 1.5.
+   2.4 Loan Percentage: The loan amount represents ___% of the total trip value.
+
+3. REPAYMENT
+   3.1 The Borrower shall repay the Principal Amount plus Interest within ___ days.
+   3.2 Repayment shall be made through LogiFin's platform.
+   3.3 Early repayment is permitted without penalty.
+   3.4 In case of default, penal interest of ___% per month shall apply on overdue amounts.
+
+4. ROLE OF LOGIFIN (PARTY 3)
+   4.1 LogiFin acts as a facilitating platform for loan transactions between Party 1 and Party 2.
+   4.2 LogiFin shall:
+       a) Maintain digital records of all transactions
+       b) Provide a secure platform for fund transfers
+       c) Generate necessary documentation and reports
+       d) Facilitate communication between parties
+       e) Monitor trip progress and milestone completion
+   4.3 LogiFin charges a platform fee of ___% which shall be borne by [Borrower/Lender/Split].
+   4.4 LogiFin does not guarantee loan repayment and acts solely as a facilitator.
+
+5. SECURITY AND COLLATERAL
+   5.1 [Specify if any collateral/security is provided]
+   5.2 Documents related to the trip (Bilty, POD, Invoices) shall serve as supporting evidence.
+   5.3 LogiFin shall maintain custody of relevant trip documents on its platform.
+
+6. REPRESENTATIONS AND WARRANTIES
+   6.1 Each Party represents and warrants that:
+       a) They have full authority to enter into this Agreement
+       b) All information provided is true and accurate
+       c) They shall comply with all applicable laws and regulations
+   6.2 The Borrower specifically warrants the authenticity of trip documents uploaded.
+
+7. DEFAULT AND REMEDIES
+   7.1 Events of Default include:
+       a) Non-payment of dues on maturity date
+       b) Breach of any material term of this Agreement
+       c) Insolvency or bankruptcy proceedings
+   7.2 Upon default, the Lender may:
+       a) Demand immediate repayment of outstanding dues
+       b) Report to credit bureaus
+       c) Initiate legal proceedings
+   7.3 LogiFin may suspend/terminate platform access in case of defaults.
+
+8. CONFIDENTIALITY
+   8.1 All Parties agree to maintain confidentiality of transaction details.
+   8.2 LogiFin shall handle data as per its Privacy Policy and applicable data protection laws.
+
+9. DISPUTE RESOLUTION
+   9.1 Any disputes shall first be resolved through mutual discussion.
+   9.2 If unresolved, disputes shall be referred to arbitration under the Arbitration and Conciliation Act, 1996.
+   9.3 The seat of arbitration shall be [City].
+   9.4 This Agreement shall be governed by the laws of India.
+
+10. PLATFORM FEES AND CHARGES
+    10.1 LogiFin's platform fee: ___% of loan amount or Rs. ______
+    10.2 Payment processing charges: As applicable
+    10.3 Late payment charges: ___% per month on overdue amount
+
+11. TERMINATION
+    11.1 This Agreement shall terminate upon full repayment of loan and settlement of all dues.
+    11.2 Early termination requires written consent of all Parties.
+
+12. MISCELLANEOUS
+    12.1 Amendments to this Agreement must be in writing and signed by all Parties.
+    12.2 This Agreement may be executed in counterparts, including electronic signatures.
+    12.3 Notices shall be sent to registered addresses or through LogiFin's platform.
+    12.4 If any provision is invalid, the remaining provisions shall continue in force.
+
+13. ACCEPTANCE AND CONSENT
+    13.1 All Parties confirm having read and understood this Agreement.
+    13.2 Electronic acceptance through LogiFin's platform shall be deemed valid.
+    13.3 This Agreement supersedes all prior discussions and agreements.
+
+IN WITNESS WHEREOF, the Parties have executed this Agreement on the date first written above.
+
+
+PARTY 1 (BORROWER)                    PARTY 2 (LENDER)                    PARTY 3 (LOGIFIN)
+
+_____________________                 _____________________                _____________________
+Signature                             Signature                            Authorized Signatory
+Name: _______________                 Name: _______________                Name: _______________
+Date: _______________                 Date: _______________                Date: _______________
+
+
+WITNESSES:
+
+1. _____________________              2. _____________________
+   Name: _______________                  Name: _______________
+   Address: ____________                  Address: ____________
+   Signature: __________                  Signature: __________
+
+
+---
+NOTES FOR USER:
+1. This is a SAMPLE template. Please consult with a legal advisor before using.
+2. Fill in all blank fields with appropriate information.
+3. Customize clauses based on your specific requirements.
+4. Ensure all parties sign in presence of witnesses.
+5. Keep original copies with all parties.
+6. LogiFin's role as Party 3 ensures transparency and proper record-keeping.
+7. Platform fees and terms should be agreed upon before signing.
+
+For questions, contact: support@logifin.com
+---
+`;
+
+    // Create a blob and download
+    const blob = new Blob([sampleAgreement], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'LogiFin_3Party_Agreement_Sample.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: 'Sample downloaded!',
+      description: 'The 3-party agreement template has been downloaded successfully.',
+    });
+  };
+
   return (
     <DashboardLayout role={user?.role || 'lender'}>
       <div className="space-y-6 max-w-5xl">
@@ -675,7 +852,47 @@ const Settings = () => {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
 
+                  {/* 2-Party Warning Alert */}
+                  {contract.contractType === '2-party' && (
+                    <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
+                      <AlertTriangle className="h-4 w-4 text-orange-600" />
+                      <AlertTitle className="text-orange-800 dark:text-orange-200">
+                        3-Party Agreement Recommended
+                      </AlertTitle>
+                      <AlertDescription className="text-orange-700 dark:text-orange-300 space-y-3">
+                        <p>
+                          For better transparency and legal compliance, we recommend creating a <strong>3-Party Agreement</strong> that includes LogiFin as the third party.
+                        </p>
+                        <div className="space-y-2">
+                          <p className="font-medium">Why 3-Party Agreement?</p>
+                          <ul className="list-disc list-inside space-y-1 text-sm">
+                            <li>LogiFin acts as a facilitator and maintains transaction records</li>
+                            <li>Provides additional security and transparency</li>
+                            <li>Ensures proper documentation and compliance</li>
+                            <li>Protects all parties through platform oversight</li>
+                          </ul>
+                        </div>
+                        <div className="pt-2">
+                          <Button
+                            onClick={downloadSampleAgreement}
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 border-orange-600 text-orange-700 hover:bg-orange-100 dark:border-orange-400 dark:text-orange-300"
+                          >
+                            <Download className="h-4 w-4" />
+                            Download Sample 3-Party Agreement
+                          </Button>
+                          <p className="text-xs mt-2 text-muted-foreground">
+                            Download our template to see how LogiFin should be included in your agreement
+                          </p>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Party 1 Name */}
                     <div className="space-y-2">
                       <Label htmlFor={`party1-${contract.id}`}>
