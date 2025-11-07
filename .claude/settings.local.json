@@ -9,8 +9,7 @@
       "Bash(curl:*)",
       "Bash(npx tsx:*)",
       "Bash(find:*)",
-      "Bash(npm install:*)",
-      "Bash(docker-compose logs:*)"
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

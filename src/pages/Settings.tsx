@@ -220,7 +220,8 @@ const Settings = () => {
       if (!user) return;
 
       try {
-        const settings = await apiClient.get(`/user-theme-settings/${user.id}`);
+        const response = await apiClient.get(`/user-theme-settings/${user.id}`);
+        const settings = response.data;
 
         const loadedTheme: ThemeSettings = {
           mode: settings.mode || 'light',
@@ -250,8 +251,8 @@ const Settings = () => {
       if (!user) return;
 
       try {
-        const contracts = await apiClient.get(`/uploaded-contracts/metadata/${user.id}`);
-        const loadedContracts = contracts.map((contract: any) => ({
+        const response = await apiClient.get(`/uploaded-contracts/metadata/${user.id}`);
+        const loadedContracts = response.data.map((contract: any) => ({
           id: contract.id,
           file_name: contract.file_name,
           file_size: contract.file_size,
@@ -501,7 +502,11 @@ const Settings = () => {
           formData.append('trip_stage', contract.tripStage);
         }
 
-        const response = await apiClient.post('/uploaded-contracts', formData);
+        const response = await apiClient.post('/uploaded-contracts', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
 
         uploadedContractIds.push(contract.id);
 
@@ -515,8 +520,8 @@ const Settings = () => {
       setContracts(contracts.filter(c => !uploadedContractIds.includes(c.id)));
 
       // Reload all contracts from API
-      const reloadedContracts = await apiClient.get(`/uploaded-contracts/metadata/${user.id}`);
-      const loadedContracts = reloadedContracts.map((contract: any) => ({
+      const reloadResponse = await apiClient.get(`/uploaded-contracts/metadata/${user.id}`);
+      const loadedContracts = reloadResponse.data.map((contract: any) => ({
         id: contract.id,
         file_name: contract.file_name,
         file_size: contract.file_size,
