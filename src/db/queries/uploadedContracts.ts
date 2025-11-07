@@ -1,4 +1,4 @@
-import pool from '../index.ts';
+import { getDatabase } from '../database.js';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface UploadedContract {
@@ -54,7 +54,8 @@ export interface UpdateUploadedContractInput {
  * Get all uploaded contracts for a user
  */
 export async function getUploadedContractsByUser(userId: string): Promise<UploadedContract[]> {
-  const result = await pool.query(
+  const db = getDatabase();
+  const result = await db.query(
     `SELECT * FROM uploaded_contracts WHERE user_id = $1 ORDER BY uploaded_at DESC`,
     [userId]
   );
@@ -65,7 +66,8 @@ export async function getUploadedContractsByUser(userId: string): Promise<Upload
  * Get a specific uploaded contract by ID
  */
 export async function getUploadedContractById(id: string): Promise<UploadedContract | null> {
-  const result = await pool.query(
+  const db = getDatabase();
+  const result = await db.query(
     `SELECT * FROM uploaded_contracts WHERE id = $1`,
     [id]
   );
@@ -76,7 +78,8 @@ export async function getUploadedContractById(id: string): Promise<UploadedContr
  * Get uploaded contracts without file data (for listing)
  */
 export async function getUploadedContractsMetadataByUser(userId: string): Promise<Omit<UploadedContract, 'file_data'>[]> {
-  const result = await pool.query(
+  const db = getDatabase();
+  const result = await db.query(
     `SELECT id, user_id, file_name, file_size, file_type, loan_percentage, ltv,
      penalty_after_due_date, contract_type, party1_name, party2_name, party3_name,
      validity_date, trip_stage, uploaded_at, updated_at
@@ -90,10 +93,11 @@ export async function getUploadedContractsMetadataByUser(userId: string): Promis
  * Create a new uploaded contract
  */
 export async function createUploadedContract(input: CreateUploadedContractInput): Promise<UploadedContract> {
+  const db = getDatabase();
   const id = uuidv4();
   const now = new Date();
 
-  const result = await pool.query(
+  const result = await db.query(
     `INSERT INTO uploaded_contracts (
       id, user_id, file_name, file_size, file_type, file_data,
       loan_percentage, ltv, penalty_after_due_date, contract_type,
@@ -132,6 +136,7 @@ export async function updateUploadedContract(
   id: string,
   input: UpdateUploadedContractInput
 ): Promise<UploadedContract | null> {
+  const db = getDatabase();
   const updates: string[] = [];
   const values: any[] = [];
   let paramIndex = 1;
@@ -181,7 +186,7 @@ export async function updateUploadedContract(
   values.push(new Date());
   values.push(id);
 
-  const result = await pool.query(
+  const result = await db.query(
     `UPDATE uploaded_contracts SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
     values
   );
@@ -193,7 +198,8 @@ export async function updateUploadedContract(
  * Delete an uploaded contract
  */
 export async function deleteUploadedContract(id: string): Promise<boolean> {
-  const result = await pool.query(
+  const db = getDatabase();
+  const result = await db.query(
     `DELETE FROM uploaded_contracts WHERE id = $1`,
     [id]
   );
@@ -204,7 +210,8 @@ export async function deleteUploadedContract(id: string): Promise<boolean> {
  * Delete all uploaded contracts for a user
  */
 export async function deleteUploadedContractsByUser(userId: string): Promise<number> {
-  const result = await pool.query(
+  const db = getDatabase();
+  const result = await db.query(
     `DELETE FROM uploaded_contracts WHERE user_id = $1`,
     [userId]
   );
