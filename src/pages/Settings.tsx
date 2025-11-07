@@ -45,8 +45,11 @@ interface ThemeSettings {
 
 interface UploadedContract {
   id: string;
-  file: File;
-  previewUrl: string;
+  file?: File; // Optional - only for new uploads
+  file_name: string;
+  file_size: number;
+  file_type: string;
+  previewUrl?: string; // Optional - only for new uploads
   loanPercentage: string;
   ltv: string; // Loan to Value ratio
   contractType: '2-party' | '3-party' | '';
@@ -56,6 +59,8 @@ interface UploadedContract {
   validityDate: string;
   tripStage: string; // Optional
   penaltyAfterDueDate: string; // Penalty percentage after due date
+  uploaded_at?: Date;
+  isNew?: boolean; // Flag to indicate if this is a new upload not yet saved to DB
 }
 
 const tripStages = [
@@ -209,20 +214,70 @@ const Settings = () => {
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
   const [viewingContract, setViewingContract] = useState<UploadedContract | null>(null);
 
-  // Load saved theme from localStorage
+  // Load saved theme from API
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme-settings');
-    if (savedTheme) {
+    const loadThemeSettings = async () => {
+      if (!user) return;
+
       try {
-        const parsed = JSON.parse(savedTheme);
-        setTheme(parsed);
-        applyThemeColors(parsed);
-        applyThemeMode(parsed.mode);
+        const response = await apiClient.get(`/user-theme-settings/${user.id}`);
+        const settings = response.data;
+
+        const loadedTheme: ThemeSettings = {
+          mode: settings.mode || 'light',
+          primaryColor: settings.primary_color || defaultTheme.primaryColor,
+          secondaryColor: settings.secondary_color || defaultTheme.secondaryColor,
+          accentColor: settings.accent_color || defaultTheme.accentColor,
+        };
+
+        setTheme(loadedTheme);
+        applyThemeColors(loadedTheme);
+        applyThemeMode(loadedTheme.mode);
       } catch (error) {
-        console.error('Failed to load saved theme:', error);
+        console.error('Failed to load theme settings:', error);
+        // Use default theme if loading fails
+        setTheme(defaultTheme);
+        applyThemeColors(defaultTheme);
+        applyThemeMode(defaultTheme.mode);
       }
-    }
-  }, []);
+    };
+
+    loadThemeSettings();
+  }, [user]);
+
+  // Load uploaded contracts from API
+  useEffect(() => {
+    const loadContracts = async () => {
+      if (!user) return;
+
+      try {
+        const response = await apiClient.get(`/uploaded-contracts/metadata/${user.id}`);
+        const loadedContracts = response.data.map((contract: any) => ({
+          id: contract.id,
+          file_name: contract.file_name,
+          file_size: contract.file_size,
+          file_type: contract.file_type,
+          loanPercentage: contract.loan_percentage?.toString() || '',
+          ltv: contract.ltv?.toString() || '',
+          penaltyAfterDueDate: contract.penalty_after_due_date?.toString() || '',
+          contractType: contract.contract_type,
+          party1Name: contract.party1_name,
+          party2Name: contract.party2_name,
+          party3Name: contract.party3_name || '',
+          validityDate: contract.validity_date ? new Date(contract.validity_date).toISOString().split('T')[0] : '',
+          tripStage: contract.trip_stage || 'none',
+          uploaded_at: new Date(contract.uploaded_at),
+          isNew: false,
+        }));
+
+        setContracts(loadedContracts);
+      } catch (error) {
+        console.error('Failed to load contracts:', error);
+      }
+    };
+
+    loadContracts();
+  }, [user]);
 
   const handleThemeChange = (updates: Partial<ThemeSettings>) => {
     const newTheme = { ...theme, ...updates };
@@ -244,36 +299,45 @@ const Settings = () => {
     });
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
+    if (!user) return;
+
     setTheme(defaultTheme);
     applyThemeColors(defaultTheme);
     applyThemeMode(defaultTheme.mode);
-    localStorage.removeItem('theme-settings');
 
-    toast({
-      title: 'Theme reset',
-      description: 'Theme has been reset to default settings.',
-    });
+    try {
+      // Reset theme in database
+      await apiClient.post(`/user-theme-settings/${user.id}/reset`);
+
+      toast({
+        title: 'Theme reset',
+        description: 'Theme has been reset to default settings.',
+      });
+    } catch (error) {
+      console.error('Error resetting theme:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to reset theme settings.',
+      });
+    }
   };
 
   const handleSave = async () => {
+    if (!user) return;
+
     setIsSaving(true);
 
     try {
-      // Save to localStorage
-      localStorage.setItem('theme-settings', JSON.stringify(theme));
-
-      // Save to database (if API exists)
-      try {
-        await apiClient.post('/theme', {
-          primary_color: theme.primaryColor,
-          secondary_color: theme.secondaryColor,
-          accent_color: theme.accentColor,
-          mode: theme.mode,
-        });
-      } catch (apiError) {
-        console.log('API save failed, using localStorage only:', apiError);
-      }
+      // Save to database
+      await apiClient.post('/user-theme-settings', {
+        user_id: user.id,
+        mode: theme.mode,
+        primary_color: theme.primaryColor,
+        secondary_color: theme.secondaryColor,
+        accent_color: theme.accentColor,
+      });
 
       toast({
         title: 'Theme saved!',
@@ -310,12 +374,15 @@ const Settings = () => {
         return;
       }
 
-      const id = `contract-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const id = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const previewUrl = URL.createObjectURL(file);
 
       newContracts.push({
         id,
         file,
+        file_name: file.name,
+        file_size: file.size,
+        file_type: file.type,
         previewUrl,
         loanPercentage: '',
         ltv: '',
@@ -326,14 +393,15 @@ const Settings = () => {
         validityDate: '',
         tripStage: 'none',
         penaltyAfterDueDate: '',
+        isNew: true,
       });
     });
 
     setContracts([...contracts, ...newContracts]);
 
     toast({
-      title: 'Contracts uploaded',
-      description: `${newContracts.length} contract(s) added successfully.`,
+      title: 'Contracts selected',
+      description: `${newContracts.length} contract(s) added. Fill in the details and click "Save All Contracts" to upload.`,
     });
   };
 
@@ -343,24 +411,62 @@ const Settings = () => {
     ));
   };
 
-  const handleDeleteContract = (id: string) => {
+  const handleDeleteContract = async (id: string) => {
     const contract = contracts.find((c) => c.id === id);
-    if (contract) {
-      URL.revokeObjectURL(contract.previewUrl);
-    }
-    setContracts(contracts.filter((c) => c.id !== id));
+    if (!contract) return;
 
-    toast({
-      title: 'Contract deleted',
-      description: 'Contract has been removed.',
-    });
+    // If it's a new contract not yet saved to DB, just remove from state
+    if (contract.isNew) {
+      if (contract.previewUrl) {
+        URL.revokeObjectURL(contract.previewUrl);
+      }
+      setContracts(contracts.filter((c) => c.id !== id));
+
+      toast({
+        title: 'Contract removed',
+        description: 'Contract has been removed.',
+      });
+      return;
+    }
+
+    // If it's an existing contract in DB, delete via API
+    try {
+      await apiClient.delete(`/uploaded-contracts/${id}`);
+
+      setContracts(contracts.filter((c) => c.id !== id));
+
+      toast({
+        title: 'Contract deleted',
+        description: 'Contract has been deleted from the database.',
+      });
+    } catch (error) {
+      console.error('Error deleting contract:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete contract.',
+      });
+    }
   };
 
   const handleSaveContracts = async () => {
+    if (!user) return;
+
+    // Filter only new contracts that need to be uploaded
+    const newContracts = contracts.filter(c => c.isNew);
+
+    if (newContracts.length === 0) {
+      toast({
+        title: 'No new contracts',
+        description: 'All contracts are already saved.',
+      });
+      return;
+    }
+
     // Validate contracts
-    const invalidContracts = contracts.filter(
+    const invalidContracts = newContracts.filter(
       (c) => !c.loanPercentage || !c.ltv || !c.contractType || !c.party1Name || !c.party2Name || !c.validityDate ||
-      !c.penaltyAfterDueDate || (c.contractType === '3-party' && !c.party3Name)
+      !c.penaltyAfterDueDate || (c.contractType === '3-party' && !c.party3Name) || !c.file
     );
 
     if (invalidContracts.length > 0) {
@@ -375,30 +481,69 @@ const Settings = () => {
     setIsSaving(true);
 
     try {
-      // Here you would upload to your API
-      // For now, we'll save to localStorage
-      const contractsData = contracts.map((contract) => ({
+      const uploadedContractIds: string[] = [];
+
+      // Upload each contract
+      for (const contract of newContracts) {
+        const formData = new FormData();
+        formData.append('file', contract.file!);
+        formData.append('user_id', user.id);
+        formData.append('loan_percentage', contract.loanPercentage);
+        formData.append('ltv', contract.ltv);
+        formData.append('penalty_after_due_date', contract.penaltyAfterDueDate);
+        formData.append('contract_type', contract.contractType);
+        formData.append('party1_name', contract.party1Name);
+        formData.append('party2_name', contract.party2Name);
+        if (contract.party3Name) {
+          formData.append('party3_name', contract.party3Name);
+        }
+        formData.append('validity_date', contract.validityDate);
+        if (contract.tripStage && contract.tripStage !== 'none') {
+          formData.append('trip_stage', contract.tripStage);
+        }
+
+        const response = await apiClient.post('/uploaded-contracts', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        uploadedContractIds.push(contract.id);
+
+        // Revoke blob URL
+        if (contract.previewUrl) {
+          URL.revokeObjectURL(contract.previewUrl);
+        }
+      }
+
+      // Remove uploaded contracts from state and reload from API
+      setContracts(contracts.filter(c => !uploadedContractIds.includes(c.id)));
+
+      // Reload all contracts from API
+      const reloadResponse = await apiClient.get(`/uploaded-contracts/metadata/${user.id}`);
+      const loadedContracts = reloadResponse.data.map((contract: any) => ({
         id: contract.id,
-        fileName: contract.file.name,
-        fileSize: contract.file.size,
-        fileType: contract.file.type,
-        loanPercentage: contract.loanPercentage,
-        ltv: contract.ltv,
-        contractType: contract.contractType,
-        party1Name: contract.party1Name,
-        party2Name: contract.party2Name,
-        party3Name: contract.party3Name,
-        validityDate: contract.validityDate,
-        tripStage: contract.tripStage,
-        penaltyAfterDueDate: contract.penaltyAfterDueDate,
-        uploadedAt: new Date().toISOString(),
+        file_name: contract.file_name,
+        file_size: contract.file_size,
+        file_type: contract.file_type,
+        loanPercentage: contract.loan_percentage?.toString() || '',
+        ltv: contract.ltv?.toString() || '',
+        penaltyAfterDueDate: contract.penalty_after_due_date?.toString() || '',
+        contractType: contract.contract_type,
+        party1Name: contract.party1_name,
+        party2Name: contract.party2_name,
+        party3Name: contract.party3_name || '',
+        validityDate: contract.validity_date ? new Date(contract.validity_date).toISOString().split('T')[0] : '',
+        tripStage: contract.trip_stage || 'none',
+        uploaded_at: new Date(contract.uploaded_at),
+        isNew: false,
       }));
 
-      localStorage.setItem('uploaded-contracts', JSON.stringify(contractsData));
+      setContracts(loadedContracts);
 
       toast({
         title: 'Contracts saved!',
-        description: `${contracts.length} contract(s) saved successfully.`,
+        description: `${newContracts.length} contract(s) uploaded successfully.`,
       });
     } catch (error) {
       console.error('Error saving contracts:', error);
@@ -790,10 +935,10 @@ For questions, contact: support@logifin.com
                     <div className="space-y-1">
                       <CardTitle className="text-lg flex items-center gap-2">
                         <FileText className="h-5 w-5" />
-                        Contract {index + 1}: {contract.file.name}
+                        Contract {index + 1}: {contract.file_name}
                       </CardTitle>
                       <CardDescription>
-                        {(contract.file.size / 1024).toFixed(2)} KB • {contract.file.type}
+                        {(contract.file_size / 1024).toFixed(2)} KB • {contract.file_type}
                       </CardDescription>
                     </div>
                     <div className="flex gap-2">
@@ -1091,27 +1236,51 @@ For questions, contact: support@logifin.com
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              {viewingContract?.file.name}
+              {viewingContract?.file_name}
             </DialogTitle>
             <DialogDescription>
-              {viewingContract && `${(viewingContract.file.size / 1024).toFixed(2)} KB • ${viewingContract.file.type}`}
+              {viewingContract && `${(viewingContract.file_size / 1024).toFixed(2)} KB • ${viewingContract.file_type}`}
             </DialogDescription>
           </DialogHeader>
           <div className="overflow-auto max-h-[70vh]">
             {viewingContract && (
               <>
-                {viewingContract.file.type === 'application/pdf' ? (
-                  <iframe
-                    src={viewingContract.previewUrl}
-                    className="w-full h-[70vh] border rounded"
-                    title="Document Preview"
-                  />
-                ) : (
-                  <img
-                    src={viewingContract.previewUrl}
-                    alt={viewingContract.file.name}
-                    className="w-full h-auto border rounded"
-                  />
+                {/* For new contracts with blob URLs */}
+                {viewingContract.isNew && viewingContract.previewUrl && (
+                  <>
+                    {viewingContract.file_type === 'application/pdf' ? (
+                      <iframe
+                        src={viewingContract.previewUrl}
+                        className="w-full h-[70vh] border rounded"
+                        title="Document Preview"
+                      />
+                    ) : (
+                      <img
+                        src={viewingContract.previewUrl}
+                        alt={viewingContract.file_name}
+                        className="w-full h-auto border rounded"
+                      />
+                    )}
+                  </>
+                )}
+
+                {/* For existing contracts from API */}
+                {!viewingContract.isNew && (
+                  <>
+                    {viewingContract.file_type === 'application/pdf' ? (
+                      <iframe
+                        src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/uploaded-contracts/${viewingContract.id}/view`}
+                        className="w-full h-[70vh] border rounded"
+                        title="Document Preview"
+                      />
+                    ) : (
+                      <img
+                        src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/uploaded-contracts/${viewingContract.id}/view`}
+                        alt={viewingContract.file_name}
+                        className="w-full h-auto border rounded"
+                      />
+                    )}
+                  </>
                 )}
               </>
             )}
@@ -1121,12 +1290,23 @@ For questions, contact: support@logifin.com
               variant="outline"
               onClick={() => {
                 if (viewingContract) {
-                  const link = document.createElement('a');
-                  link.href = viewingContract.previewUrl;
-                  link.download = viewingContract.file.name;
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
+                  if (viewingContract.isNew && viewingContract.previewUrl) {
+                    // For new contracts with blob URLs
+                    const link = document.createElement('a');
+                    link.href = viewingContract.previewUrl;
+                    link.download = viewingContract.file_name;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  } else {
+                    // For existing contracts from API
+                    const link = document.createElement('a');
+                    link.href = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/uploaded-contracts/${viewingContract.id}/download`;
+                    link.download = viewingContract.file_name;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }
                 }
               }}
               className="gap-2"
