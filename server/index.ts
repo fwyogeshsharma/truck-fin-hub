@@ -20,8 +20,6 @@ import loanAgreementRoutes from './routes/loanAgreements.ts';
 import loanContractTemplateRoutes from './routes/loanContractTemplates.ts';
 import platformFeesRoutes from './routes/platformFees.ts';
 import ratingsRoutes from './routes/ratings.ts';
-import uploadedContractsRoutes from './routes/uploadedContracts.ts';
-import userThemeSettingsRoutes from './routes/userThemeSettings.ts';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -99,8 +97,6 @@ app.use('/api/loan-agreements', loanAgreementRoutes);
 app.use('/api/loan-contract-templates', loanContractTemplateRoutes);
 app.use('/api/platform-fees', platformFeesRoutes);
 app.use('/api/ratings', ratingsRoutes);
-app.use('/api/uploaded-contracts', uploadedContractsRoutes);
-app.use('/api/user-theme-settings', userThemeSettingsRoutes);
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
