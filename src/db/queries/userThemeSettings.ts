@@ -1,4 +1,4 @@
-import { getDatabase } from '../database.js';
+import pool from '../index.ts';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface UserThemeSettings {
@@ -31,8 +31,7 @@ export interface UpdateUserThemeSettingsInput {
  * Get theme settings for a user
  */
 export async function getUserThemeSettings(userId: string): Promise<UserThemeSettings | null> {
-  const db = getDatabase();
-  const result = await db.query(
+  const result = await pool.query(
     `SELECT * FROM user_theme_settings WHERE user_id = $1`,
     [userId]
   );
@@ -43,11 +42,10 @@ export async function getUserThemeSettings(userId: string): Promise<UserThemeSet
  * Create theme settings for a user
  */
 export async function createUserThemeSettings(input: CreateUserThemeSettingsInput): Promise<UserThemeSettings> {
-  const db = getDatabase();
   const id = uuidv4();
   const now = new Date();
 
-  const result = await db.query(
+  const result = await pool.query(
     `INSERT INTO user_theme_settings (
       id, user_id, mode, primary_color, secondary_color, accent_color,
       created_at, updated_at
@@ -75,7 +73,6 @@ export async function updateUserThemeSettings(
   userId: string,
   input: UpdateUserThemeSettingsInput
 ): Promise<UserThemeSettings | null> {
-  const db = getDatabase();
   const updates: string[] = [];
   const values: any[] = [];
   let paramIndex = 1;
@@ -105,7 +102,7 @@ export async function updateUserThemeSettings(
   values.push(new Date());
   values.push(userId);
 
-  const result = await db.query(
+  const result = await pool.query(
     `UPDATE user_theme_settings SET ${updates.join(', ')} WHERE user_id = $${paramIndex} RETURNING *`,
     values
   );
@@ -136,8 +133,7 @@ export async function upsertUserThemeSettings(
  * Delete theme settings for a user
  */
 export async function deleteUserThemeSettings(userId: string): Promise<boolean> {
-  const db = getDatabase();
-  const result = await db.query(
+  const result = await pool.query(
     `DELETE FROM user_theme_settings WHERE user_id = $1`,
     [userId]
   );

@@ -350,6 +350,69 @@ SET
   rated_user_id = borrower_id
 WHERE rated_by_id IS NULL;
 
+-- Migration 027: Add User Theme Settings Table
+-- Stores user-specific theme/appearance preferences
+CREATE TABLE IF NOT EXISTS user_theme_settings (
+  id VARCHAR(255) PRIMARY KEY,
+  user_id VARCHAR(255) NOT NULL,
+  mode VARCHAR(20) CHECK(mode IN ('light', 'dark', 'system')) DEFAULT 'light',
+  primary_color VARCHAR(20) NOT NULL DEFAULT '#084570',
+  secondary_color VARCHAR(20) NOT NULL DEFAULT '#1D923C',
+  accent_color VARCHAR(20) NOT NULL DEFAULT '#1D923C',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE(user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_theme_settings_user ON user_theme_settings(user_id);
+
+COMMENT ON TABLE user_theme_settings IS 'Stores user-specific theme and appearance preferences';
+COMMENT ON COLUMN user_theme_settings.mode IS 'Theme mode: light, dark, or system';
+COMMENT ON COLUMN user_theme_settings.primary_color IS 'Primary brand color in hex format';
+COMMENT ON COLUMN user_theme_settings.secondary_color IS 'Secondary brand color in hex format';
+COMMENT ON COLUMN user_theme_settings.accent_color IS 'Accent color in hex format';
+
+-- Migration 028: Add Uploaded Contracts Table
+-- Stores contract documents uploaded by users in Settings
+CREATE TABLE IF NOT EXISTS uploaded_contracts (
+  id VARCHAR(255) PRIMARY KEY,
+  user_id VARCHAR(255) NOT NULL,
+  file_name VARCHAR(500) NOT NULL,
+  file_size BIGINT NOT NULL,
+  file_type VARCHAR(100) NOT NULL,
+  file_data BYTEA NOT NULL,
+  loan_percentage NUMERIC(5,2) NOT NULL,
+  ltv NUMERIC(5,2) NOT NULL,
+  penalty_after_due_date NUMERIC(5,2) NOT NULL,
+  contract_type VARCHAR(20) CHECK(contract_type IN ('2-party', '3-party')) NOT NULL,
+  party1_name VARCHAR(255) NOT NULL,
+  party2_name VARCHAR(255) NOT NULL,
+  party3_name VARCHAR(255),
+  validity_date DATE NOT NULL,
+  trip_stage VARCHAR(50),
+  uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_uploaded_contracts_user ON uploaded_contracts(user_id);
+CREATE INDEX IF NOT EXISTS idx_uploaded_contracts_uploaded_at ON uploaded_contracts(uploaded_at DESC);
+CREATE INDEX IF NOT EXISTS idx_uploaded_contracts_contract_type ON uploaded_contracts(contract_type);
+CREATE INDEX IF NOT EXISTS idx_uploaded_contracts_validity_date ON uploaded_contracts(validity_date);
+
+COMMENT ON TABLE uploaded_contracts IS 'Stores contract documents uploaded by users in Settings page';
+COMMENT ON COLUMN uploaded_contracts.file_data IS 'Binary data of the uploaded contract file (PDF or image)';
+COMMENT ON COLUMN uploaded_contracts.loan_percentage IS 'Percentage of loan as per agreement terms';
+COMMENT ON COLUMN uploaded_contracts.ltv IS 'Loan to Value ratio';
+COMMENT ON COLUMN uploaded_contracts.penalty_after_due_date IS 'Penalty percentage per month/week after due date';
+COMMENT ON COLUMN uploaded_contracts.contract_type IS '2-party or 3-party contract';
+COMMENT ON COLUMN uploaded_contracts.party1_name IS 'First party name in contract';
+COMMENT ON COLUMN uploaded_contracts.party2_name IS 'Second party name in contract';
+COMMENT ON COLUMN uploaded_contracts.party3_name IS 'Third party name (LogiFin) for 3-party contracts';
+COMMENT ON COLUMN uploaded_contracts.validity_date IS 'Contract validity/expiry date';
+COMMENT ON COLUMN uploaded_contracts.trip_stage IS 'Optional preferred loan stage for disbursement';
+
 SELECT 'Migrations completed!' as status;
 EOFMIGRATION
 
