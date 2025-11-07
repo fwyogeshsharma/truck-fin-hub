@@ -10,12 +10,7 @@
       "Bash(npx tsx:*)",
       "Bash(find:*)",
       "Bash(npm install:*)",
-      "Bash(docker-compose logs:*)",
-      "Bash(bash:*)",
-      "Bash(docker --version:*)",
-      "Bash(docker compose:*)",
-      "Bash(netstat:*)",
-      "Bash(findstr:*)"
+      "Bash(docker-compose logs:*)"
     ],
     "deny": [],
     "ask": []
