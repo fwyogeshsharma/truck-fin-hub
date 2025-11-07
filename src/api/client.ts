@@ -54,14 +54,25 @@ export const apiClient = {
 
   async post<T = any>(endpoint: string, data?: any, options?: RequestOptions): Promise<T> {
     const token = getAuthToken();
+
+    // Check if data is FormData
+    const isFormData = data instanceof FormData;
+
+    const headers: Record<string, string> = {
+      'Authorization': token ? `Bearer ${token}` : '',
+      ...options?.headers,
+    };
+
+    // Only set Content-Type for non-FormData requests
+    // FormData will set its own Content-Type with boundary
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
-      headers: {
-        'Authorization': token ? `Bearer ${token}` : '',
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      body: data ? JSON.stringify(data) : undefined,
+      headers,
+      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
     });
 
     if (!response.ok) {
@@ -74,14 +85,24 @@ export const apiClient = {
 
   async put<T = any>(endpoint: string, data?: any, options?: RequestOptions): Promise<T> {
     const token = getAuthToken();
+
+    // Check if data is FormData
+    const isFormData = data instanceof FormData;
+
+    const headers: Record<string, string> = {
+      'Authorization': token ? `Bearer ${token}` : '',
+      ...options?.headers,
+    };
+
+    // Only set Content-Type for non-FormData requests
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PUT',
-      headers: {
-        'Authorization': token ? `Bearer ${token}` : '',
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      body: data ? JSON.stringify(data) : undefined,
+      headers,
+      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
     });
 
     if (!response.ok) {
