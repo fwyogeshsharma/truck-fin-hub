@@ -15,7 +15,8 @@
       "Bash(docker --version:*)",
       "Bash(docker compose:*)",
       "Bash(netstat:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "WebFetch(domain:34.93.247.3)"
     ],
     "deny": [],
     "ask": []
