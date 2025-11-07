@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/DashboardLayout';
 import { auth } from '@/lib/auth';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Sun,
   Moon,
@@ -19,7 +20,8 @@ import {
   X,
   AlertTriangle,
   Download,
-  Info
+  Info,
+  ExternalLink
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -53,6 +55,7 @@ interface UploadedContract {
   party3Name: string;
   validityDate: string;
   tripStage: string; // Optional
+  penaltyAfterDueDate: string; // Penalty percentage after due date
 }
 
 const tripStages = [
@@ -204,6 +207,7 @@ const Settings = () => {
   // Contract management state
   const [contracts, setContracts] = useState<UploadedContract[]>([]);
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
+  const [viewingContract, setViewingContract] = useState<UploadedContract | null>(null);
 
   // Load saved theme from localStorage
   useEffect(() => {
@@ -321,6 +325,7 @@ const Settings = () => {
         party3Name: '',
         validityDate: '',
         tripStage: 'none',
+        penaltyAfterDueDate: '',
       });
     });
 
@@ -355,7 +360,7 @@ const Settings = () => {
     // Validate contracts
     const invalidContracts = contracts.filter(
       (c) => !c.loanPercentage || !c.ltv || !c.contractType || !c.party1Name || !c.party2Name || !c.validityDate ||
-      (c.contractType === '3-party' && !c.party3Name)
+      !c.penaltyAfterDueDate || (c.contractType === '3-party' && !c.party3Name)
     );
 
     if (invalidContracts.length > 0) {
@@ -385,6 +390,7 @@ const Settings = () => {
         party3Name: contract.party3Name,
         validityDate: contract.validityDate,
         tripStage: contract.tripStage,
+        penaltyAfterDueDate: contract.penaltyAfterDueDate,
         uploadedAt: new Date().toISOString(),
       }));
 
@@ -794,8 +800,8 @@ For questions, contact: support@logifin.com
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => window.open(contract.previewUrl, '_blank')}
-                        title="Preview"
+                        onClick={() => setViewingContract(contract)}
+                        title="View Document"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -861,6 +867,33 @@ For questions, contact: support@logifin.com
                       </div>
                       <p className="text-xs text-muted-foreground">
                         Loan to Value ratio as specified in contract
+                      </p>
+                    </div>
+
+                    {/* Penalty After Due Date */}
+                    <div className="space-y-2">
+                      <Label htmlFor={`penalty-${contract.id}`}>
+                        Penalty After Due Date <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id={`penalty-${contract.id}`}
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          placeholder="0"
+                          value={contract.penaltyAfterDueDate}
+                          onChange={(e) =>
+                            handleContractUpdate(contract.id, 'penaltyAfterDueDate', e.target.value)
+                          }
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          %
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Penalty percentage per month/week after due date
                       </p>
                     </div>
 
@@ -1051,6 +1084,60 @@ For questions, contact: support@logifin.com
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Document Viewer Dialog */}
+      <Dialog open={!!viewingContract} onOpenChange={() => setViewingContract(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              {viewingContract?.file.name}
+            </DialogTitle>
+            <DialogDescription>
+              {viewingContract && `${(viewingContract.file.size / 1024).toFixed(2)} KB • ${viewingContract.file.type}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-auto max-h-[70vh]">
+            {viewingContract && (
+              <>
+                {viewingContract.file.type === 'application/pdf' ? (
+                  <iframe
+                    src={viewingContract.previewUrl}
+                    className="w-full h-[70vh] border rounded"
+                    title="Document Preview"
+                  />
+                ) : (
+                  <img
+                    src={viewingContract.previewUrl}
+                    alt={viewingContract.file.name}
+                    className="w-full h-auto border rounded"
+                  />
+                )}
+              </>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (viewingContract) {
+                  const link = document.createElement('a');
+                  link.href = viewingContract.previewUrl;
+                  link.download = viewingContract.file.name;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }
+              }}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download
+            </Button>
+            <Button onClick={() => setViewingContract(null)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
