@@ -260,7 +260,7 @@ const TransporterDashboard = () => {
                         </p>
                       </div>
                       <div className="flex items-center justify-between text-[10px] text-muted-foreground pl-5">
-                        <span className="truncate">{trip.loadType}</span>
+                        <span className="truncate">{trip.loadType || trip.load_type || 'General Cargo'} • {trip.weight} kg</span>
                         <span className="whitespace-nowrap ml-2">
                           {trip.interestRate}% • {trip.repaymentDays || trip.maturityDays}d
                         </span>
