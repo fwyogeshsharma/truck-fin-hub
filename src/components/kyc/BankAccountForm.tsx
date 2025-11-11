@@ -162,8 +162,10 @@ const BankAccountForm = ({ kycData, onComplete, onBack }: BankAccountFormProps) 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="accountType">Account Type</Label>
-              <Select value={formData.accountType} onValueChange={(value) => handleChange('accountType', value)}>
+              <Label htmlFor="accountType">
+                Account Type <span className="text-red-500">*</span>
+              </Label>
+              <Select value={formData.accountType} onValueChange={(value) => handleChange('accountType', value)} required>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
