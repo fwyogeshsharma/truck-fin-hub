@@ -365,8 +365,8 @@ const LoadAgentDashboard = () => {
     receiver: '',
     transporter: '',
     loanAmount: '',
-    loanInterestRate: '12',
-    maturityDays: '30',
+    loanInterestRate: '',
+    maturityDays: '',
     // Optional fields
     clientCompany: '',
     clientLogo: '',
@@ -375,7 +375,7 @@ const LoadAgentDashboard = () => {
     loadType: '',
     weight: '',
     amount: '',
-    interestRate: '12',
+    interestRate: '',
     date: new Date().toISOString().split('T')[0], // Today's date
   });
 
@@ -421,6 +421,26 @@ const LoadAgentDashboard = () => {
         variant: 'destructive',
         title: 'Invalid Loan Amount',
         description: 'Loan amount must be between ₹20,000 and ₹80,000',
+      });
+      return;
+    }
+
+    // Validate interest rate
+    if (!formData.loanInterestRate || formData.loanInterestRate.trim() === '') {
+      toast({
+        variant: 'destructive',
+        title: 'Interest Rate Required',
+        description: 'Please enter the loan interest rate',
+      });
+      return;
+    }
+
+    // Validate maturity days
+    if (!formData.maturityDays || formData.maturityDays.trim() === '') {
+      toast({
+        variant: 'destructive',
+        title: 'Maturity Days Required',
+        description: 'Please enter the maturity days',
       });
       return;
     }
@@ -472,8 +492,8 @@ const LoadAgentDashboard = () => {
         receiver: '',
         transporter: '',
         loanAmount: '',
-        loanInterestRate: '12',
-        maturityDays: '30',
+        loanInterestRate: '',
+        maturityDays: '',
         // Optional fields
         clientCompany: '',
         clientLogo: '',
@@ -482,7 +502,7 @@ const LoadAgentDashboard = () => {
         loadType: '',
         weight: '',
         amount: '',
-        interestRate: '12',
+        interestRate: '',
         date: new Date().toISOString().split('T')[0],
       });
 
@@ -2774,7 +2794,7 @@ const LoadAgentDashboard = () => {
                         id="loanInterestRate"
                         name="loanInterestRate"
                         type="number"
-                        placeholder="12"
+                        placeholder="Enter rate (e.g., 12)"
                         value={formData.loanInterestRate}
                         onChange={handleChange}
                         step="0.5"
@@ -2795,7 +2815,7 @@ const LoadAgentDashboard = () => {
                       id="maturityDays"
                       name="maturityDays"
                       type="number"
-                      placeholder="30"
+                      placeholder="Enter days (e.g., 30)"
                       value={formData.maturityDays}
                       onChange={handleChange}
                       min="1"

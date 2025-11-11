@@ -345,7 +345,7 @@ const TransporterDashboard = () => {
                             <h4 className="font-semibold text-sm md:text-base truncate">{trip.origin} → {trip.destination}</h4>
                             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/20 text-accent whitespace-nowrap">Pending</span>
                           </div>
-                          <p className="text-xs md:text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg • {trip.distance} km</p>
+                          <p className="text-xs md:text-sm text-muted-foreground">{trip.loadType || trip.load_type || 'General Cargo'} • {trip.weight} kg • {trip.distance} km</p>
                         </div>
                         <div className="flex items-center justify-between md:justify-end gap-3 md:gap-4">
                           <div className="text-left md:text-right">
@@ -382,7 +382,7 @@ const TransporterDashboard = () => {
                             <h4 className="font-semibold text-sm md:text-base truncate">{trip.origin} → {trip.destination}</h4>
                             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary whitespace-nowrap">In Transit</span>
                           </div>
-                          <p className="text-xs md:text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg</p>
+                          <p className="text-xs md:text-sm text-muted-foreground">{trip.loadType || trip.load_type || 'General Cargo'} • {trip.weight} kg</p>
                         </div>
                         <Button variant="outline" className="h-8 px-3 text-sm md:h-10 md:px-4 md:text-base w-full md:w-auto" onClick={() => handleCompleteTrip(trip.id)}>
                           Mark Complete
@@ -413,7 +413,7 @@ const TransporterDashboard = () => {
                             <h4 className="font-semibold text-sm md:text-base truncate">{trip.origin} → {trip.destination}</h4>
                             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary/20 text-secondary whitespace-nowrap">Completed</span>
                           </div>
-                          <p className="text-xs md:text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg</p>
+                          <p className="text-xs md:text-sm text-muted-foreground">{trip.loadType || trip.load_type || 'General Cargo'} • {trip.weight} kg</p>
                         </div>
                         <div className="text-left md:text-right">
                           <p className="font-semibold text-sm md:text-base text-secondary">{formatCurrencyForTransporter(trip.amount)}</p>
