@@ -2091,7 +2091,7 @@ const LoadAgentDashboard = () => {
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{trip.loadType}</p>
+                            <p className="font-medium">{trip.loadType || trip.load_type || 'General Cargo'}</p>
                             <p className="text-xs text-muted-foreground">{trip.weight} kg</p>
                           </div>
                         </TableCell>
