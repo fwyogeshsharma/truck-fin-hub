@@ -571,10 +571,10 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
                     <p className="text-sm font-medium mb-2">Bank Account</p>
                     <div className="space-y-1 text-xs">
                       <p className="text-muted-foreground">
-                        {primaryBankAccount.bankName} - {primaryBankAccount.accountNumber.slice(-4)}
+                        {primaryBankAccount.bankName} - {primaryBankAccount.accountNumber ? primaryBankAccount.accountNumber.slice(-4) : 'N/A'}
                       </p>
                       <p className="text-muted-foreground">
-                        IFSC: {primaryBankAccount.ifscCode}
+                        IFSC: {primaryBankAccount.ifscCode || 'N/A'}
                       </p>
                     </div>
                   </div>

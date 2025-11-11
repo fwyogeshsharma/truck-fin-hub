@@ -359,7 +359,6 @@ const LoadAgentDashboard = () => {
   const [formData, setFormData] = useState({
     // Mandatory fields
     ewayBillNumber: '',
-    ewayBillImage: null as File | null,
     pickup: '',
     destination: '',
     sender: '',
@@ -394,14 +393,10 @@ const LoadAgentDashboard = () => {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, files } = e.target;
+    const { name, value } = e.target;
 
-    // Handle file upload for eway bill image
-    if (name === 'ewayBillImage' && files && files[0]) {
-      setFormData({ ...formData, ewayBillImage: files[0] });
-    }
     // Capitalize city names for origin, destination, and pickup
-    else if (name === 'origin' || name === 'destination' || name === 'pickup') {
+    if (name === 'origin' || name === 'destination' || name === 'pickup') {
       setFormData({ ...formData, [name]: capitalizeCity(value) });
     } else {
       setFormData({ ...formData, [name]: value });
@@ -433,16 +428,6 @@ const LoadAgentDashboard = () => {
     try {
       const loanInterestRate = parseFloat(formData.loanInterestRate);
 
-      // Convert eway bill image to base64 if provided
-      let ewayBillImageBase64 = '';
-      if (formData.ewayBillImage) {
-        const reader = new FileReader();
-        ewayBillImageBase64 = await new Promise((resolve) => {
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(formData.ewayBillImage!);
-        });
-      }
-
       const trip = await data.createTrip({
         loadOwnerId: user?.id || user?.userId || '',
         loadOwnerName: user?.company || user?.name || 'Transporter',
@@ -450,7 +435,7 @@ const LoadAgentDashboard = () => {
         loadOwnerRating: null,
         // Mandatory fields
         ewayBillNumber: formData.ewayBillNumber,
-        ewayBillImage: ewayBillImageBase64,
+        ewayBillImage: '',
         pickup: formData.pickup,
         destination: formData.destination,
         sender: formData.sender,
@@ -481,7 +466,6 @@ const LoadAgentDashboard = () => {
       setFormData({
         // Mandatory fields
         ewayBillNumber: '',
-        ewayBillImage: null,
         pickup: '',
         destination: '',
         sender: '',
@@ -522,7 +506,16 @@ const LoadAgentDashboard = () => {
   };
 
   const handleEditTrip = (trip: any) => {
-    setTripForEdit(trip);
+    // Normalize trip data to ensure both camelCase and snake_case fields are available
+    const normalizedTrip = {
+      ...trip,
+      // Ensure camelCase versions exist for the form
+      loadType: trip.loadType || trip.load_type || '',
+      interestRate: trip.interestRate || trip.interest_rate || trip.loanInterestRate || trip.loan_interest_rate || 0,
+      maturityDays: trip.maturityDays || trip.maturity_days || 30,
+      loanInterestRate: trip.loanInterestRate || trip.loan_interest_rate || trip.interestRate || trip.interest_rate || 0,
+    };
+    setTripForEdit(normalizedTrip);
     setEditDialogOpen(true);
   };
 
@@ -2649,21 +2642,6 @@ const LoadAgentDashboard = () => {
                         onChange={handleChange}
                         required
                         className="h-11 border-2 focus:border-blue-500"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="ewayBillImage" className="text-sm font-semibold flex items-center gap-1.5">
-                        <Upload className="h-3.5 w-3.5 text-gray-600" />
-                        E-way Bill Image (Optional)
-                      </Label>
-                      <Input
-                        id="ewayBillImage"
-                        name="ewayBillImage"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleChange}
-                        className="cursor-pointer h-11 border-2"
                       />
                     </div>
                   </div>
