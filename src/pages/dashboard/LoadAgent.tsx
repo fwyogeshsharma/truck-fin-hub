@@ -4348,7 +4348,7 @@ print(response.json())`;
                     <Label htmlFor="edit-pickup">Pickup Location</Label>
                     <Input
                       id="edit-pickup"
-                      defaultValue={tripForEdit.pickup || tripForEdit.origin}
+                      value={tripForEdit.pickup || tripForEdit.origin || ''}
                       onChange={(e) => setTripForEdit({ ...tripForEdit, pickup: e.target.value, origin: e.target.value })}
                     />
                   </div>
@@ -4356,7 +4356,7 @@ print(response.json())`;
                     <Label htmlFor="edit-destination">Destination</Label>
                     <Input
                       id="edit-destination"
-                      defaultValue={tripForEdit.destination}
+                      value={tripForEdit.destination || ''}
                       onChange={(e) => setTripForEdit({ ...tripForEdit, destination: e.target.value })}
                     />
                   </div>
@@ -4367,7 +4367,7 @@ print(response.json())`;
                     <Input
                       id="edit-distance"
                       type="number"
-                      defaultValue={tripForEdit.distance}
+                      value={tripForEdit.distance || ''}
                       onChange={(e) => setTripForEdit({ ...tripForEdit, distance: parseFloat(e.target.value) })}
                     />
                   </div>
@@ -4376,7 +4376,7 @@ print(response.json())`;
                     <Input
                       id="edit-weight"
                       type="number"
-                      defaultValue={tripForEdit.weight}
+                      value={tripForEdit.weight || ''}
                       onChange={(e) => setTripForEdit({ ...tripForEdit, weight: parseFloat(e.target.value) })}
                     />
                   </div>
@@ -4386,7 +4386,7 @@ print(response.json())`;
                     <Label htmlFor="edit-loadType">Load Type</Label>
                     <Input
                       id="edit-loadType"
-                      defaultValue={tripForEdit.loadType}
+                      value={tripForEdit.loadType || ''}
                       onChange={(e) => setTripForEdit({ ...tripForEdit, loadType: e.target.value })}
                     />
                   </div>
@@ -4395,7 +4395,7 @@ print(response.json())`;
                     <Input
                       id="edit-amount"
                       type="number"
-                      defaultValue={tripForEdit.amount || tripForEdit.loanAmount}
+                      value={tripForEdit.amount || tripForEdit.loanAmount || ''}
                       onChange={(e) => setTripForEdit({ ...tripForEdit, amount: parseFloat(e.target.value), loanAmount: parseFloat(e.target.value) })}
                     />
                   </div>
@@ -4407,7 +4407,7 @@ print(response.json())`;
                       id="edit-interestRate"
                       type="number"
                       step="0.1"
-                      defaultValue={tripForEdit.interestRate || tripForEdit.loanInterestRate}
+                      value={tripForEdit.interestRate || tripForEdit.loanInterestRate || ''}
                       onChange={(e) => setTripForEdit({ ...tripForEdit, interestRate: parseFloat(e.target.value), loanInterestRate: parseFloat(e.target.value) })}
                     />
                   </div>
@@ -4416,7 +4416,7 @@ print(response.json())`;
                     <Input
                       id="edit-maturityDays"
                       type="number"
-                      defaultValue={tripForEdit.maturityDays}
+                      value={tripForEdit.maturityDays || ''}
                       onChange={(e) => setTripForEdit({ ...tripForEdit, maturityDays: parseInt(e.target.value) })}
                     />
                   </div>

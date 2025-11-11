@@ -912,63 +912,81 @@ const WalletPage = () => {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <Label htmlFor="accountHolderName">Account Holder Name</Label>
+                <Label htmlFor="accountHolderName">
+                  Account Holder Name <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="accountHolderName"
                   value={bankForm.accountHolderName}
                   onChange={(e) => setBankForm({ ...bankForm, accountHolderName: e.target.value })}
                   placeholder="As per bank records"
+                  required
                 />
               </div>
 
               <div>
-                <Label htmlFor="accountNumber">Account Number</Label>
+                <Label htmlFor="accountNumber">
+                  Account Number <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="accountNumber"
                   value={bankForm.accountNumber}
                   onChange={(e) => setBankForm({ ...bankForm, accountNumber: e.target.value })}
                   placeholder="Enter account number"
+                  required
                 />
               </div>
 
               <div>
-                <Label htmlFor="ifscCode">IFSC Code</Label>
+                <Label htmlFor="ifscCode">
+                  IFSC Code <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="ifscCode"
                   value={bankForm.ifscCode}
                   onChange={(e) => setBankForm({ ...bankForm, ifscCode: e.target.value.toUpperCase() })}
                   placeholder="e.g., SBIN0001234"
                   maxLength={11}
+                  required
                 />
               </div>
 
               <div>
-                <Label htmlFor="bankName">Bank Name</Label>
+                <Label htmlFor="bankName">
+                  Bank Name <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="bankName"
                   value={bankForm.bankName}
                   onChange={(e) => setBankForm({ ...bankForm, bankName: e.target.value })}
                   placeholder="e.g., State Bank of India"
+                  required
                 />
               </div>
 
               <div>
-                <Label htmlFor="branchName">Branch Name</Label>
+                <Label htmlFor="branchName">
+                  Branch Name <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="branchName"
                   value={bankForm.branchName}
                   onChange={(e) => setBankForm({ ...bankForm, branchName: e.target.value })}
                   placeholder="e.g., Connaught Place, New Delhi"
+                  required
                 />
               </div>
 
               <div className="md:col-span-2">
-                <Label htmlFor="accountType">Account Type</Label>
+                <Label htmlFor="accountType">
+                  Account Type <span className="text-red-500">*</span>
+                </Label>
                 <select
                   id="accountType"
                   value={bankForm.accountType}
                   onChange={(e) => setBankForm({ ...bankForm, accountType: e.target.value as 'savings' | 'current' })}
                   className="w-full mt-1 px-3 py-2 border rounded-md"
+                  required
                 >
                   <option value="savings">Savings Account</option>
                   <option value="current">Current Account</option>
