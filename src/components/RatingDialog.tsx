@@ -66,6 +66,7 @@ const RatingDialog = ({
         review_text: reviewText.trim() || null,
         loan_amount: loanAmount,
         interest_rate: interestRate,
+        mode, // Pass the mode to track who is rating whom
       });
 
       const ratedPersonName = mode === 'lender-rates-borrower' ? borrowerName : lenderName;

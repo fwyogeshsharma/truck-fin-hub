@@ -8,13 +8,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { FileText, Upload, Save, Eye, Info, CheckCircle2 } from 'lucide-react';
+import { FileText, Upload, Save, Eye, Info, CheckCircle2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface LoanContractEditorProps {
   open: boolean;
   onClose: () => void;
-  onSave: (contract: LoanContract) => void;
+  onSave: (contract: LoanContract) => Promise<void>;
   tripAmount: number;
   interestRate: number;
   maturityDays: number;
@@ -49,6 +49,7 @@ const LoanContractEditor = ({
   const [signaturePreview, setSignaturePreview] = useState<string>('');
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const [templateName, setTemplateName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [customTerms, setCustomTerms] = useState<string>('');
 
@@ -171,7 +172,7 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!contract.lenderSignature) {
       toast({
         variant: 'destructive',
@@ -197,35 +198,45 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
       templateName: saveAsTemplate ? templateName : undefined,
     };
 
-    onSave(finalContract);
+    setIsSubmitting(true);
+    try {
+      await onSave(finalContract);
+    } catch (error) {
+      console.error('Error saving contract:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to save contract. Please try again.',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] sm:w-[90vw] max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-        <DialogHeader className="pb-3 sm:pb-4">
-          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
             Loan Contract Agreement
           </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm">
+          <DialogDescription>
             Review and customize the loan terms. Your signature is required to proceed with the bid.
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-4 sm:space-y-6">
-          <div className="border-b pb-1">
-            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 gap-1 h-auto p-1 bg-muted/50">
-              <TabsTrigger value="terms" className="text-xs sm:text-sm h-8 sm:h-9">Terms</TabsTrigger>
-              <TabsTrigger value="interest" className="text-xs sm:text-sm h-8 sm:h-9">Interest</TabsTrigger>
-              <TabsTrigger value="repayment" className="text-xs sm:text-sm h-8 sm:h-9">Repayment</TabsTrigger>
-              <TabsTrigger value="penalties" className="text-xs sm:text-sm h-8 sm:h-9">Penalties</TabsTrigger>
-              <TabsTrigger value="custom" className="text-xs sm:text-sm h-8 sm:h-9">Custom</TabsTrigger>
-              <TabsTrigger value="signature" className="text-xs sm:text-sm h-8 sm:h-9">Signature</TabsTrigger>
-            </TabsList>
-          </div>
+        <Tabs value={currentTab} onValueChange={setCurrentTab}>
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="terms">Terms</TabsTrigger>
+            <TabsTrigger value="interest">Interest</TabsTrigger>
+            <TabsTrigger value="repayment">Repayment</TabsTrigger>
+            <TabsTrigger value="penalties">Penalties</TabsTrigger>
+            <TabsTrigger value="custom">Custom</TabsTrigger>
+            <TabsTrigger value="signature">Signature</TabsTrigger>
+          </TabsList>
 
-          <TabsContent value="terms" className="space-y-4 mt-0">
+          <TabsContent value="terms" className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label>General Terms and Conditions</Label>
@@ -243,7 +254,7 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
             </div>
           </TabsContent>
 
-          <TabsContent value="interest" className="space-y-4 mt-0">
+          <TabsContent value="interest" className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label>Interest Rate Clause</Label>
@@ -261,7 +272,7 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
             </div>
           </TabsContent>
 
-          <TabsContent value="repayment" className="space-y-4 mt-0">
+          <TabsContent value="repayment" className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label>Repayment Terms</Label>
@@ -305,7 +316,7 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
             </div>
           </TabsContent>
 
-          <TabsContent value="penalties" className="space-y-4 mt-0">
+          <TabsContent value="penalties" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Summary of Penalties</CardTitle>
@@ -328,7 +339,7 @@ The Lender and Borrower acknowledge that they enter into this agreement at their
             </Card>
           </TabsContent>
 
-          <TabsContent value="custom" className="space-y-4 mt-0">
+          <TabsContent value="custom" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -516,7 +527,7 @@ Examples:
             </Card>
           </TabsContent>
 
-          <TabsContent value="signature" className="space-y-4 mt-0">
+          <TabsContent value="signature" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Lender Signature</CardTitle>
@@ -627,20 +638,22 @@ Examples:
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-3">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="w-full sm:w-auto h-9 sm:h-10 text-xs sm:text-sm touch-target"
-          >
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button
-            onClick={handleSave}
-            className="bg-gradient-primary w-full sm:w-auto h-9 sm:h-10 text-xs sm:text-sm touch-target"
-          >
-            <Save className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-            Save & Proceed with Bid
+          <Button onClick={handleSave} className="bg-gradient-primary" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save & Proceed with Bid
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

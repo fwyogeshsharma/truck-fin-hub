@@ -57,6 +57,10 @@ import {
   Upload,
   ArrowUpCircle,
   FileText,
+  BadgeCheck,
+  XCircle,
+  Clock,
+  CheckCircle2,
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
@@ -244,6 +248,62 @@ const InvestmentOpportunities = () => {
     interestRate: number;
     maturityDays: number;
   } | null>(null);
+
+  const getTripStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return (
+          <Badge variant="secondary">
+            <Clock className="h-3 w-3 mr-1" />
+            Pending
+          </Badge>
+        );
+      case 'escrowed':
+        return (
+          <Badge className="bg-accent text-white">
+            <Shield className="h-3 w-3 mr-1" />
+            Escrowed
+          </Badge>
+        );
+      case 'funded':
+        return (
+          <Badge className="bg-secondary text-white">
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            Funded
+          </Badge>
+        );
+      case 'in_transit':
+        return (
+          <Badge className="bg-primary text-white">
+            <TruckIcon className="h-3 w-3 mr-1" />
+            In Transit
+          </Badge>
+        );
+      case 'completed':
+        return (
+          <Badge className="bg-primary-dark text-white">
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            Completed
+          </Badge>
+        );
+      case 'repaid':
+        return (
+          <Badge className="bg-green-600 text-white">
+            <BadgeCheck className="h-3 w-3 mr-1" />
+            Repaid
+          </Badge>
+        );
+      case 'cancelled':
+        return (
+          <Badge variant="destructive">
+            <XCircle className="h-3 w-3 mr-1" />
+            Cancelled
+          </Badge>
+        );
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
 
   const refreshWallet = async () => {
     if (!user?.id) return;
@@ -2274,7 +2334,7 @@ const InvestmentOpportunities = () => {
                               </Badge>
                             )}
                             {/* Status */}
-                            <Badge variant="secondary">{trip.status}</Badge>
+                            {getTripStatusBadge(trip.status)}
                           </div>
                         </div>
                       </div>

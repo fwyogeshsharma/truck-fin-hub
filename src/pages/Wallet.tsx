@@ -397,59 +397,58 @@ const WalletPage = () => {
 
   return (
     <DashboardLayout role={user.role}>
-      <div className="space-y-4 sm:space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-          <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold truncate">Wallet</h1>
-            <p className="text-muted-foreground mt-1 text-sm sm:text-base">Manage your funds and transactions</p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Wallet</h1>
+            <p className="text-muted-foreground mt-1">Manage your funds and transactions</p>
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex gap-2">
             {/* Add Money button - now available for all roles including transporter */}
-            <Button onClick={() => setTopUpDialogOpen(true)} className="bg-gradient-primary h-9 sm:h-10 text-xs sm:text-sm touch-target flex-1 sm:flex-none">
-              <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+            <Button onClick={() => setTopUpDialogOpen(true)} className="bg-gradient-primary">
+              <Plus className="h-4 w-4 mr-2" />
               Add Money
             </Button>
             <Button
               variant="outline"
               onClick={() => setWithdrawDialogOpen(true)}
               disabled={walletData.balance === 0}
-              className="h-9 sm:h-10 text-xs sm:text-sm touch-target flex-1 sm:flex-none"
             >
-              <ArrowDownCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+              <ArrowDownCircle className="h-4 w-4 mr-2" />
               Withdraw
             </Button>
           </div>
         </div>
 
         {/* Wallet Balance Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <Card className="sm:col-span-2">
-            <CardHeader className="p-3 sm:p-4 md:p-6">
-              <CardTitle className="text-xs sm:text-sm font-medium">Available Balance</CardTitle>
+        <div className="grid md:grid-cols-4 gap-4">
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
             </CardHeader>
-            <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
-              <p className="text-2xl sm:text-3xl font-bold truncate">{formatCurrency(walletData.balance)}</p>
-              <p className="text-xs text-muted-foreground mt-1 truncate">
+            <CardContent>
+              <p className="text-3xl font-bold">{formatCurrency(walletData.balance)}</p>
+              <p className="text-xs text-muted-foreground mt-1">
                 ₹{walletData.balance.toLocaleString('en-IN')}
               </p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="p-3 sm:p-4 md:p-6">
-              <CardTitle className="text-xs sm:text-sm font-medium">In Escrow</CardTitle>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">In Escrow</CardTitle>
             </CardHeader>
-            <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
-              <p className="text-xl sm:text-2xl font-bold truncate">{formatCurrencyCompact(walletData.escrowedAmount || 0, true)}</p>
+            <CardContent>
+              <p className="text-2xl font-bold">{formatCurrencyCompact(walletData.escrowedAmount || 0, true)}</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="p-3 sm:p-4 md:p-6">
-              <CardTitle className="text-xs sm:text-sm font-medium">Total Invested</CardTitle>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Total Invested</CardTitle>
             </CardHeader>
-            <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
-              <p className="text-xl sm:text-2xl font-bold truncate">{formatCurrencyCompact(walletData.totalInvested, true)}</p>
+            <CardContent>
+              <p className="text-2xl font-bold">{formatCurrencyCompact(walletData.totalInvested, true)}</p>
             </CardContent>
           </Card>
         </div>
@@ -462,136 +461,129 @@ const WalletPage = () => {
           </TabsList>
 
           {/* Ledger Tab */}
-          <TabsContent value="ledger" className="space-y-3 sm:space-y-4">
+          <TabsContent value="ledger" className="space-y-4">
             <Card>
-              <CardHeader className="p-3 sm:p-4 md:p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="min-w-0">
-                    <CardTitle className="text-base sm:text-lg md:text-xl truncate">Transaction History</CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">All your wallet transactions</CardDescription>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Transaction History</CardTitle>
+                    <CardDescription>All your wallet transactions</CardDescription>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm touch-target">
-                      <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm">
+                      <Filter className="h-4 w-4 mr-2" />
                       <select
                         value={filterType}
                         onChange={(e) => setFilterType(e.target.value as any)}
-                        className="bg-transparent border-none outline-none text-xs sm:text-sm"
+                        className="bg-transparent border-none outline-none text-foreground cursor-pointer"
                       >
-                        <option value="all">All</option>
-                        <option value="credit">Credit</option>
-                        <option value="debit">Debit</option>
+                        <option value="all" className="text-foreground bg-background">All</option>
+                        <option value="credit" className="text-foreground bg-background">Credit</option>
+                        <option value="debit" className="text-foreground bg-background">Debit</option>
                       </select>
                     </Button>
-                    <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm touch-target">
-                      <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                      <span className="hidden sm:inline">Export</span>
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
                     </Button>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-0">
-                <div className="border-t">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                        <TableHead className="min-w-[100px] sm:min-w-[120px] pl-3 sm:pl-4">Date</TableHead>
-                        <TableHead className="min-w-[150px] sm:min-w-[200px]">Description</TableHead>
-                        <TableHead className="min-w-[90px] sm:min-w-[100px]">Type</TableHead>
-                        <TableHead className="text-right min-w-[90px] sm:min-w-[110px]">Amount</TableHead>
-                        <TableHead className="text-right min-w-[90px] sm:min-w-[120px] pr-3 sm:pr-4">Balance After</TableHead>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="text-right">Balance After</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTransactions.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                          No transactions found
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredTransactions.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                            No transactions found
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        filteredTransactions
-                          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                          .map((txn) => (
-                            <TableRow key={txn.id}>
-                              <TableCell className="min-w-[100px] sm:min-w-[120px] pl-3 sm:pl-4 py-3">
-                                <div className="whitespace-nowrap text-xs sm:text-sm">
-                                  {new Date(txn.timestamp).toLocaleDateString('en-IN', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    year: 'numeric',
-                                  })}
-                                </div>
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                  {new Date(txn.timestamp).toLocaleTimeString('en-IN', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })}
-                                </span>
-                              </TableCell>
-                              <TableCell className="min-w-[150px] sm:min-w-[200px] max-w-[200px] sm:max-w-[300px] py-3">
-                                <div className="space-y-1">
-                                  <p className="font-medium text-xs sm:text-sm break-words line-clamp-2">{txn.description}</p>
-                                  <Badge variant="outline" className="text-xs truncate max-w-full">
-                                    <span className="truncate">{txn.category}</span>
-                                  </Badge>
-                                </div>
-                              </TableCell>
-                              <TableCell className="min-w-[90px] sm:min-w-[100px] py-3">
-                                {txn.type === 'credit' ? (
-                                  <Badge className="bg-green-600 text-xs whitespace-nowrap">
-                                    <ArrowUpCircle className="h-3 w-3 mr-1 shrink-0" />
-                                    Credit
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="destructive" className="text-xs whitespace-nowrap">
-                                    <ArrowDownCircle className="h-3 w-3 mr-1 shrink-0" />
-                                    Debit
-                                  </Badge>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right min-w-[90px] sm:min-w-[110px] py-3">
-                                <span
-                                  className={`font-semibold text-xs sm:text-sm whitespace-nowrap ${
-                                    txn.type === 'credit' ? 'text-green-600' : 'text-red-600'
-                                  }`}
-                                >
-                                  {txn.type === 'credit' ? '+' : '-'}{formatCurrencyCompact(txn.amount, true)}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-right font-medium min-w-[90px] sm:min-w-[120px] pr-3 sm:pr-4 py-3">
-                                <span className="text-xs sm:text-sm whitespace-nowrap">
-                                  {formatCurrencyCompact(txn.balanceAfter, true)}
-                                </span>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                      )}
-                    </TableBody>
-                  </Table>
-                  </div>
-                </div>
+                    ) : (
+                      filteredTransactions
+                        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                        .map((txn) => (
+                          <TableRow key={txn.id}>
+                            <TableCell>
+                              {new Date(txn.timestamp).toLocaleDateString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                              <br />
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(txn.timestamp).toLocaleTimeString('en-IN', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{txn.description}</p>
+                                <Badge variant="outline" className="text-xs mt-1">
+                                  {txn.category}
+                                </Badge>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {txn.type === 'credit' ? (
+                                <Badge className="bg-green-600">
+                                  <ArrowUpCircle className="h-3 w-3 mr-1" />
+                                  Credit
+                                </Badge>
+                              ) : (
+                                <Badge variant="destructive">
+                                  <ArrowDownCircle className="h-3 w-3 mr-1" />
+                                  Debit
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <span
+                                className={`font-semibold ${
+                                  txn.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                                }`}
+                              >
+                                {txn.type === 'credit' ? '+' : '-'}{formatCurrencyCompact(txn.amount, true)}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatCurrencyCompact(txn.balanceAfter, true)}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                    )}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* Bank Accounts Tab */}
-          <TabsContent value="banks" className="space-y-3 sm:space-y-4">
+          <TabsContent value="banks" className="space-y-4">
             <Card>
-              <CardHeader className="p-3 sm:p-4 md:p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="min-w-0">
-                    <CardTitle className="text-base sm:text-lg md:text-xl truncate">Saved Bank Accounts</CardTitle>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Saved Bank Accounts</CardTitle>
                     <CardDescription>Manage your bank accounts for withdrawals</CardDescription>
                   </div>
-                  <Button onClick={() => setAddBankDialogOpen(true)} className="h-9 sm:h-10 text-xs sm:text-sm touch-target w-full sm:w-auto">
-                    <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                  <Button onClick={() => setAddBankDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
                     Add Bank Account
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6">
+              <CardContent className="space-y-4">
                 {bankAccounts.length === 0 ? (
                   <div className="text-center py-12">
                     <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -607,52 +599,51 @@ const WalletPage = () => {
                 ) : (
                   bankAccounts.map((bank) => (
                     <Card key={bank.id} className={bank.isPrimary ? 'border-2 border-primary' : ''}>
-                      <CardContent className="p-3 sm:p-4 md:p-6">
-                        <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
-                          <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1 w-full">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                              <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                              <Building2 className="h-6 w-6 text-primary" />
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
-                                <h4 className="font-semibold text-sm sm:text-base truncate">{bank.bankName}</h4>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-semibold">{bank.bankName}</h4>
                                 {bank.isPrimary && (
-                                  <Badge className="bg-green-600 w-fit shrink-0">
+                                  <Badge className="bg-green-600">
                                     <CheckCircle className="h-3 w-3 mr-1" />
                                     Primary
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-xs sm:text-sm text-muted-foreground truncate">{bank.branchName}</p>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 mt-3 text-xs sm:text-sm">
-                                <div className="min-w-0">
+                              <p className="text-sm text-muted-foreground">{bank.branchName}</p>
+                              <div className="grid md:grid-cols-2 gap-x-6 gap-y-1 mt-3 text-sm">
+                                <div>
                                   <span className="text-muted-foreground">Account Holder:</span>
-                                  <p className="font-medium truncate">{bank.accountHolderName}</p>
+                                  <p className="font-medium">{bank.accountHolderName}</p>
                                 </div>
-                                <div className="min-w-0">
+                                <div>
                                   <span className="text-muted-foreground">Account Number:</span>
-                                  <p className="font-medium font-mono truncate">
+                                  <p className="font-medium font-mono">
                                     XXXX XXXX {bank.accountNumber.slice(-4)}
                                   </p>
                                 </div>
-                                <div className="min-w-0">
+                                <div>
                                   <span className="text-muted-foreground">IFSC Code:</span>
-                                  <p className="font-medium font-mono truncate">{bank.ifscCode}</p>
+                                  <p className="font-medium font-mono">{bank.ifscCode}</p>
                                 </div>
-                                <div className="min-w-0">
+                                <div>
                                   <span className="text-muted-foreground">Account Type:</span>
-                                  <p className="font-medium capitalize truncate">{bank.accountType}</p>
+                                  <p className="font-medium capitalize">{bank.accountType}</p>
                                 </div>
                               </div>
                             </div>
                           </div>
-                          <div className="flex sm:flex-col gap-2 w-full sm:w-auto shrink-0">
+                          <div className="flex gap-2">
                             {!bank.isPrimary && (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleSetPrimary(bank.id)}
-                                className="text-xs sm:text-sm h-8 sm:h-9 flex-1 sm:flex-none whitespace-nowrap"
                               >
                                 Set as Primary
                               </Button>
@@ -661,9 +652,8 @@ const WalletPage = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteBank(bank.id)}
-                              className="h-8 sm:h-9 w-auto px-2 sm:px-3"
                             >
-                              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600" />
+                              <Trash2 className="h-4 w-4 text-red-600" />
                             </Button>
                           </div>
                         </div>
@@ -743,10 +733,30 @@ const WalletPage = () => {
                 <Input
                   id="transactionImage"
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
+                      // Validate file type - only allow images (check both MIME type and extension)
+                      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                      const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+
+                      const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+                      const isValidType = validImageTypes.includes(file.type.toLowerCase());
+                      const isValidExtension = validExtensions.includes(fileExtension);
+
+                      if (!isValidType || !isValidExtension) {
+                        toast({
+                          title: 'Invalid File Type',
+                          description: 'Please upload an image file only (JPG, PNG, GIF, or WebP)',
+                          variant: 'destructive',
+                        });
+                        e.target.value = ''; // Reset the input
+                        setTransactionImage('');
+                        setTransactionImageFile(null);
+                        return;
+                      }
+
                       setTransactionImageFile(file);
                       const reader = new FileReader();
                       reader.onloadend = () => {
@@ -758,7 +768,7 @@ const WalletPage = () => {
                   className="mt-1"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Upload a screenshot of your bank transaction as proof
+                  Upload a screenshot of your bank transaction as proof (Images only: JPG, PNG, GIF, WebP)
                 </p>
                 {transactionImage && (
                   <div className="mt-3">
@@ -839,11 +849,11 @@ const WalletPage = () => {
                       id="bankSelect"
                       value={selectedBankId}
                       onChange={(e) => setSelectedBankId(e.target.value)}
-                      className="w-full mt-1 px-3 py-2 border rounded-md"
+                      className="w-full mt-1 px-3 py-2 border rounded-md text-foreground bg-background"
                     >
-                      <option value="">-- Select Bank --</option>
+                      <option value="" className="text-foreground bg-background">-- Select Bank --</option>
                       {bankAccounts.map((bank) => (
-                        <option key={bank.id} value={bank.id}>
+                        <option key={bank.id} value={bank.id} className="text-foreground bg-background">
                           {bank.bankName} - {bank.accountNumber.slice(-4)} {bank.isPrimary ? '(Primary)' : ''}
                         </option>
                       ))}
@@ -912,84 +922,66 @@ const WalletPage = () => {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <Label htmlFor="accountHolderName">
-                  Account Holder Name <span className="text-red-500">*</span>
-                </Label>
+                <Label htmlFor="accountHolderName">Account Holder Name</Label>
                 <Input
                   id="accountHolderName"
                   value={bankForm.accountHolderName}
                   onChange={(e) => setBankForm({ ...bankForm, accountHolderName: e.target.value })}
                   placeholder="As per bank records"
-                  required
                 />
               </div>
 
               <div>
-                <Label htmlFor="accountNumber">
-                  Account Number <span className="text-red-500">*</span>
-                </Label>
+                <Label htmlFor="accountNumber">Account Number</Label>
                 <Input
                   id="accountNumber"
                   value={bankForm.accountNumber}
                   onChange={(e) => setBankForm({ ...bankForm, accountNumber: e.target.value })}
                   placeholder="Enter account number"
-                  required
                 />
               </div>
 
               <div>
-                <Label htmlFor="ifscCode">
-                  IFSC Code <span className="text-red-500">*</span>
-                </Label>
+                <Label htmlFor="ifscCode">IFSC Code</Label>
                 <Input
                   id="ifscCode"
                   value={bankForm.ifscCode}
                   onChange={(e) => setBankForm({ ...bankForm, ifscCode: e.target.value.toUpperCase() })}
                   placeholder="e.g., SBIN0001234"
                   maxLength={11}
-                  required
                 />
               </div>
 
               <div>
-                <Label htmlFor="bankName">
-                  Bank Name <span className="text-red-500">*</span>
-                </Label>
+                <Label htmlFor="bankName">Bank Name</Label>
                 <Input
                   id="bankName"
                   value={bankForm.bankName}
                   onChange={(e) => setBankForm({ ...bankForm, bankName: e.target.value })}
                   placeholder="e.g., State Bank of India"
-                  required
                 />
               </div>
 
               <div>
-                <Label htmlFor="branchName">
-                  Branch Name <span className="text-red-500">*</span>
-                </Label>
+                <Label htmlFor="branchName">Branch Name</Label>
                 <Input
                   id="branchName"
                   value={bankForm.branchName}
                   onChange={(e) => setBankForm({ ...bankForm, branchName: e.target.value })}
                   placeholder="e.g., Connaught Place, New Delhi"
-                  required
                 />
               </div>
 
               <div className="md:col-span-2">
-                <Label htmlFor="accountType">
-                  Account Type <span className="text-red-500">*</span>
-                </Label>
+                <Label htmlFor="accountType">Account Type</Label>
                 <select
                   id="accountType"
                   value={bankForm.accountType}
                   onChange={(e) => setBankForm({ ...bankForm, accountType: e.target.value as 'savings' | 'current' })}
-                  className="w-full mt-1 px-3 py-2 border rounded-md"
-                  required
+                  className="w-full mt-1 px-3 py-2 border rounded-md text-foreground bg-background"
                 >
-                  <option value="savings">Savings Account</option>
-                  <option value="current">Current Account</option>
+                  <option value="savings" className="text-foreground bg-background">Savings Account</option>
+                  <option value="current" className="text-foreground bg-background">Current Account</option>
                 </select>
               </div>
             </div>

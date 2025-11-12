@@ -26,6 +26,7 @@ import ShipperKYC from "./pages/ShipperKYC";
 import KYCAdmin from "./pages/KYCAdmin";
 import PlatformConfiguration from "./pages/PlatformConfig";
 import NotificationSettings from "./pages/NotificationSettings";
+import Settings from "./pages/Settings";
 import Reports from "./pages/Reports";
 import PlatformFeeReport from "./pages/PlatformFeeReport";
 import Users from "./pages/Users";
@@ -83,6 +84,7 @@ const App = () => {
           <Route path="/shipper-kyc" element={<ShipperKYC />} />
           <Route path="/admin/kyc" element={<KYCAdmin />} />
           <Route path="/platform-config" element={<PlatformConfiguration />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/settings/notifications" element={<NotificationSettings />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/platform-fee-report" element={<PlatformFeeReport />} />

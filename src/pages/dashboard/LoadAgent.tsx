@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { auth } from '@/lib/auth';
@@ -64,6 +64,7 @@ import {
   UserX,
   Loader2,
   TrendingUp,
+  BadgeCheck,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import DocumentProgress from '@/components/DocumentProgress';
@@ -76,7 +77,6 @@ const LoadAgentDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const user = auth.getCurrentUser();
-  const allTripsTabRef = useRef<HTMLDivElement>(null);
 
   const [refreshKey, setRefreshKey] = useState(0);
   const [allTrips, setAllTrips] = useState<Trip[]>([]);
@@ -84,8 +84,6 @@ const LoadAgentDashboard = () => {
   const [repaying, setRepaying] = useState<Record<string, boolean>>({});
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [activeTab, setActiveTab] = useState('all-trips');
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
   // Contract acceptance states
   const [contractDialogOpen, setContractDialogOpen] = useState(false);
@@ -102,18 +100,28 @@ const LoadAgentDashboard = () => {
   const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
   const [tripForRating, setTripForRating] = useState<Trip | null>(null);
 
+  // Allotment confirmation dialog states
+  const [allotmentConfirmDialogOpen, setAllotmentConfirmDialogOpen] = useState(false);
+  const [pendingAllotmentConfirm, setPendingAllotmentConfirm] = useState<{
+    tripId: string;
+    lenderId: string;
+    lenderName: string;
+    trip: Trip | null;
+    bidAmount: number;
+    interestRate: number;
+  } | null>(null);
+
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load trips for this load owner/transporter by user ID
-        let trips;
-        if (user?.id) {
-          // Use API to get trips by load_owner_id
-          trips = await apiClient.get<Trip[]>(`/trips?loadOwnerId=${user.id}`);
-        } else {
-          trips = await data.getTrips();
-        }
-        setAllTrips(trips);
+        // Load trips
+        const trips = await data.getTrips();
+        // Filter trips by company
+        const filteredTrips = trips.filter(trip => {
+          if (!user?.company) return true;
+          return trip.loadOwnerName === user.company;
+        });
+        setAllTrips(filteredTrips);
 
         // Load wallet and transactions
         if (user?.id) {
@@ -132,7 +140,7 @@ const LoadAgentDashboard = () => {
     };
 
     loadData();
-  }, [refreshKey, user?.id]);
+  }, [refreshKey, user?.company, user?.id]);
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createTripTab, setCreateTripTab] = useState<'form' | 'excel' | 'api'>('form');
@@ -151,6 +159,7 @@ const LoadAgentDashboard = () => {
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, any>>({});
 
   // Pagination state
@@ -359,14 +368,15 @@ const LoadAgentDashboard = () => {
   const [formData, setFormData] = useState({
     // Mandatory fields
     ewayBillNumber: '',
+    ewayBillImage: null as File | null,
     pickup: '',
     destination: '',
     sender: '',
     receiver: '',
     transporter: '',
     loanAmount: '',
-    loanInterestRate: '',
-    maturityDays: '',
+    loanInterestRate: '12',
+    maturityDays: '30',
     // Optional fields
     clientCompany: '',
     clientLogo: '',
@@ -375,7 +385,7 @@ const LoadAgentDashboard = () => {
     loadType: '',
     weight: '',
     amount: '',
-    interestRate: '',
+    interestRate: '12',
     date: new Date().toISOString().split('T')[0], // Today's date
   });
 
@@ -393,10 +403,14 @@ const LoadAgentDashboard = () => {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    const { name, value, files } = e.target;
 
+    // Handle file upload for eway bill image
+    if (name === 'ewayBillImage' && files && files[0]) {
+      setFormData({ ...formData, ewayBillImage: files[0] });
+    }
     // Capitalize city names for origin, destination, and pickup
-    if (name === 'origin' || name === 'destination' || name === 'pickup') {
+    else if (name === 'origin' || name === 'destination' || name === 'pickup') {
       setFormData({ ...formData, [name]: capitalizeCity(value) });
     } else {
       setFormData({ ...formData, [name]: value });
@@ -425,28 +439,18 @@ const LoadAgentDashboard = () => {
       return;
     }
 
-    // Validate interest rate
-    if (!formData.loanInterestRate || formData.loanInterestRate.trim() === '') {
-      toast({
-        variant: 'destructive',
-        title: 'Interest Rate Required',
-        description: 'Please enter the loan interest rate',
-      });
-      return;
-    }
-
-    // Validate maturity days
-    if (!formData.maturityDays || formData.maturityDays.trim() === '') {
-      toast({
-        variant: 'destructive',
-        title: 'Maturity Days Required',
-        description: 'Please enter the maturity days',
-      });
-      return;
-    }
-
     try {
       const loanInterestRate = parseFloat(formData.loanInterestRate);
+
+      // Convert eway bill image to base64 if provided
+      let ewayBillImageBase64 = '';
+      if (formData.ewayBillImage) {
+        const reader = new FileReader();
+        ewayBillImageBase64 = await new Promise((resolve) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(formData.ewayBillImage!);
+        });
+      }
 
       const trip = await data.createTrip({
         loadOwnerId: user?.id || user?.userId || '',
@@ -455,7 +459,7 @@ const LoadAgentDashboard = () => {
         loadOwnerRating: null,
         // Mandatory fields
         ewayBillNumber: formData.ewayBillNumber,
-        ewayBillImage: '',
+        ewayBillImage: ewayBillImageBase64,
         pickup: formData.pickup,
         destination: formData.destination,
         sender: formData.sender,
@@ -486,14 +490,15 @@ const LoadAgentDashboard = () => {
       setFormData({
         // Mandatory fields
         ewayBillNumber: '',
+        ewayBillImage: null,
         pickup: '',
         destination: '',
         sender: '',
         receiver: '',
         transporter: '',
         loanAmount: '',
-        loanInterestRate: '',
-        maturityDays: '',
+        loanInterestRate: '12',
+        maturityDays: '30',
         // Optional fields
         clientCompany: '',
         clientLogo: '',
@@ -502,7 +507,7 @@ const LoadAgentDashboard = () => {
         loadType: '',
         weight: '',
         amount: '',
-        interestRate: '',
+        interestRate: '12',
         date: new Date().toISOString().split('T')[0],
       });
 
@@ -526,16 +531,7 @@ const LoadAgentDashboard = () => {
   };
 
   const handleEditTrip = (trip: any) => {
-    // Normalize trip data to ensure both camelCase and snake_case fields are available
-    const normalizedTrip = {
-      ...trip,
-      // Ensure camelCase versions exist for the form
-      loadType: trip.loadType || trip.load_type || '',
-      interestRate: trip.interestRate || trip.interest_rate || trip.loanInterestRate || trip.loan_interest_rate || 0,
-      maturityDays: trip.maturityDays || trip.maturity_days || 30,
-      loanInterestRate: trip.loanInterestRate || trip.loan_interest_rate || trip.interestRate || trip.interest_rate || 0,
-    };
-    setTripForEdit(normalizedTrip);
+    setTripForEdit(trip);
     setEditDialogOpen(true);
   };
 
@@ -835,10 +831,7 @@ const LoadAgentDashboard = () => {
       trip.loadType.toLowerCase().includes(searchQuery.toLowerCase()) ||
       trip.loadOwnerName.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesBasicStatus = !statusFilter || statusFilter === 'all' ||
-      (statusFilter === 'pending' && trip.status === 'pending') ||
-      (statusFilter === 'active' && (trip.status === 'funded' || trip.status === 'in_transit' || trip.status === 'escrowed')) ||
-      (statusFilter === 'completed' && trip.status === 'completed');
+    const matchesBasicStatus = statusFilter === 'all' || trip.status === statusFilter;
 
     // Advanced filter search
     const matchesAdvancedSearch = !advancedFilters.search ||
@@ -883,7 +876,42 @@ const LoadAgentDashboard = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [advancedFilters, statusFilter]);
+  }, [advancedFilters]);
+
+  const handleOpenAllotmentConfirmDialog = (tripId: string, lenderId: string, lenderName: string) => {
+    const trip = allTrips.find(t => t.id === tripId);
+    const bid = trip?.bids?.find(b => b.lenderId === lenderId);
+
+    if (!trip || !bid) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Trip or bid not found',
+      });
+      return;
+    }
+
+    setPendingAllotmentConfirm({
+      tripId,
+      lenderId,
+      lenderName,
+      trip,
+      bidAmount: bid.amount,
+      interestRate: bid.interestRate,
+    });
+    setAllotmentConfirmDialogOpen(true);
+  };
+
+  const handleConfirmAllotment = () => {
+    if (!pendingAllotmentConfirm) return;
+    handleAllotTrip(
+      pendingAllotmentConfirm.tripId,
+      pendingAllotmentConfirm.lenderId,
+      pendingAllotmentConfirm.lenderName
+    );
+    setAllotmentConfirmDialogOpen(false);
+    setPendingAllotmentConfirm(null);
+  };
 
   const handleAllotTrip = async (tripId: string, lenderId: string, lenderName: string) => {
     try {
@@ -1443,14 +1471,14 @@ const LoadAgentDashboard = () => {
   };
 
   // Loan Analytics Calculations
-  const fundedTrips = allTrips.filter(t => (t.lenderId || (t as any).lender_id) && (t.status === 'funded' || t.status === 'in_transit' || t.status === 'completed'));
-  const completedTrips = allTrips.filter(t => t.status === 'completed' && (t.lenderId || (t as any).lender_id));
+  const fundedTrips = allTrips.filter(t => t.lenderId && (t.status === 'funded' || t.status === 'in_transit' || t.status === 'completed'));
+  const completedTrips = allTrips.filter(t => t.status === 'completed' && t.lenderId);
 
   const loanTaken = fundedTrips.reduce((sum, t) => sum + (t.amount || t.loanAmount || 0), 0);
   const loanRepaid = completedTrips.reduce((sum, t) => {
     const principal = t.amount || t.loanAmount || 0;
-    const interestRate = (t as any).interest_rate || t.interestRate || t.loanInterestRate || 0;
-    const maturityDays = (t as any).maturity_days || t.maturityDays || 30;
+    const interestRate = t.interestRate || t.loanInterestRate || 0;
+    const maturityDays = t.maturityDays || 30;
     const interest = (principal * (interestRate / 365) * maturityDays) / 100;
     return sum + principal + interest;
   }, 0);
@@ -1459,8 +1487,8 @@ const LoadAgentDashboard = () => {
   // Calculate interest paid (interest paid to lenders on completed trips)
   const profit = completedTrips.reduce((sum, t) => {
     const principal = t.amount || t.loanAmount || 0;
-    const interestRate = (t as any).interest_rate || t.interestRate || t.loanInterestRate || 0;
-    const maturityDays = (t as any).maturity_days || t.maturityDays || 30;
+    const interestRate = t.interestRate || t.loanInterestRate || 0;
+    const maturityDays = t.maturityDays || 30;
     const interest = (principal * (interestRate / 365) * maturityDays) / 100;
     return sum + interest;
   }, 0);
@@ -1478,16 +1506,15 @@ const LoadAgentDashboard = () => {
       // Calculate profit for this month
       const monthProfit = completedTrips
         .filter(t => {
-          const completedAt = t.completedAt || (t as any).completed_at;
-          if (!completedAt) return false;
-          const completedDate = new Date(completedAt);
+          if (!t.completedAt) return false;
+          const completedDate = new Date(t.completedAt);
           return completedDate.getMonth() === date.getMonth() &&
                  completedDate.getFullYear() === date.getFullYear();
         })
         .reduce((sum, t) => {
           const principal = t.amount || t.loanAmount || 0;
-          const interestRate = (t as any).interest_rate || t.interestRate || t.loanInterestRate || 0;
-          const maturityDays = (t as any).maturity_days || t.maturityDays || 30;
+          const interestRate = t.interestRate || t.loanInterestRate || 0;
+          const maturityDays = t.maturityDays || 30;
           const interest = (principal * (interestRate / 365) * maturityDays) / 100;
           return sum + interest;
         }, 0);
@@ -1495,9 +1522,8 @@ const LoadAgentDashboard = () => {
       // Calculate loans taken for this month
       const monthLoansTaken = fundedTrips
         .filter(t => {
-          const fundedAt = t.fundedAt || (t as any).funded_at;
-          if (!fundedAt) return false;
-          const fundedDate = new Date(fundedAt);
+          if (!t.fundedAt) return false;
+          const fundedDate = new Date(t.fundedAt);
           return fundedDate.getMonth() === date.getMonth() &&
                  fundedDate.getFullYear() === date.getFullYear();
         })
@@ -1542,18 +1568,6 @@ const LoadAgentDashboard = () => {
       color: 'text-secondary',
     },
   ];
-
-  const scrollToAllTripsTab = (filter?: string) => {
-    if (filter) {
-      setStatusFilter(filter);
-      setActiveTab('all-trips');
-    }
-    allTripsTabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const clearFilter = () => {
-    setStatusFilter(null);
-  };
 
   const getStatusBadge = (status: string, trip?: Trip) => {
     // If trip is provided and it's both funded AND completed, show special combined badge
@@ -1603,6 +1617,13 @@ const LoadAgentDashboard = () => {
             Completed
           </Badge>
         );
+      case 'repaid':
+        return (
+          <Badge className="bg-green-600 text-white">
+            <BadgeCheck className="h-3 w-3 mr-1" />
+            Repaid
+          </Badge>
+        );
       case 'cancelled':
         return (
           <Badge variant="destructive">
@@ -1627,45 +1648,31 @@ const LoadAgentDashboard = () => {
 
   return (
     <DashboardLayout role="load_agent">
-      <div className="space-y-4 md:space-y-6">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0">
-          <div className="px-1">
-            <h1 className="text-lg md:text-2xl lg:text-3xl font-bold">Transporter Dashboard</h1>
-            <p className="text-[10px] md:text-sm text-muted-foreground mt-0.5 md:mt-1">Create and manage trips across the portal</p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Transporter Dashboard</h1>
+            <p className="text-muted-foreground mt-1">Create and manage trips across the portal</p>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)} className="bg-gradient-primary w-full md:w-auto h-9 md:h-10 text-sm md:text-base">
+          <Button onClick={() => setCreateDialogOpen(true)} className="bg-gradient-primary">
             <Plus className="h-4 w-4 mr-2" />
             Create Trip
           </Button>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid md:grid-cols-4 gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
-          const getFilterStatus = () => {
-            if (stat.title === 'Total Trips') return 'all';
-            if (stat.title === 'Pending') return 'pending';
-            if (stat.title === 'Active') return 'active';
-            if (stat.title === 'Completed') return 'completed';
-            return null;
-          };
-          const filterStatus = getFilterStatus();
           return (
-            <Card
-              key={stat.title}
-              className={filterStatus ? 'cursor-pointer hover:border-primary transition-colors hover:shadow-md' : ''}
-              onClick={filterStatus ? () => scrollToAllTripsTab(filterStatus) : undefined}
-            >
-              <CardContent className="p-3 md:pt-6 md:pb-6 md:px-6">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] md:text-sm text-muted-foreground truncate">{stat.title}</p>
-                    <p className="text-xl md:text-2xl lg:text-3xl font-bold mt-1 md:mt-2 tabular-nums">{stat.value}</p>
+            <Card key={stat.title}>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{stat.title}</p>
+                    <p className="text-3xl font-bold mt-2">{stat.value}</p>
                   </div>
-                  <div className="flex-shrink-0">
-                    <Icon className={`h-5 w-5 md:h-6 md:w-6 lg:h-8 lg:w-8 ${stat.color}`} />
-                  </div>
+                  <Icon className={`h-8 w-8 ${stat.color}`} />
                 </div>
               </CardContent>
             </Card>
@@ -1675,70 +1682,70 @@ const LoadAgentDashboard = () => {
 
         {/* Loan Analytics Card */}
         <Card className="bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 border-primary/20">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-              <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-primary" />
               Financial Analytics
             </CardTitle>
-            <CardDescription className="text-xs md:text-sm">Comprehensive view of loans, repayments, and profit</CardDescription>
+            <CardDescription>Comprehensive view of loans, repayments, and profit</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4 md:space-y-6">
+            <div className="space-y-6">
               {/* Loan Metrics Summary */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3 lg:gap-4">
-                <div className="bg-white dark:bg-card p-2.5 md:p-3 lg:p-4 rounded-lg border">
-                  <div className="flex items-center gap-1 md:gap-1.5 mb-1 md:mb-1.5">
-                    <TrendingUp className="h-3 w-3 md:h-3.5 md:w-3.5 lg:h-4 lg:w-4 text-blue-600 flex-shrink-0" />
-                    <p className="text-[9px] md:text-[10px] lg:text-xs font-medium text-muted-foreground truncate">Loan Taken</p>
+              <div className="grid md:grid-cols-4 gap-4">
+                <div className="bg-white dark:bg-card p-4 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="h-4 w-4 text-blue-600" />
+                    <p className="text-xs font-medium text-muted-foreground">Loan Taken</p>
                   </div>
-                  <p className="text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-blue-600">₹{(loanTaken / 1000).toFixed(1)}K</p>
-                  <p className="text-[9px] md:text-[10px] lg:text-xs text-muted-foreground mt-0.5">{fundedTrips.length} trips</p>
+                  <p className="text-2xl font-bold text-blue-600">₹{(loanTaken / 1000).toFixed(1)}K</p>
+                  <p className="text-xs text-muted-foreground mt-1">{fundedTrips.length} funded trips</p>
                 </div>
 
-                <div className="bg-white dark:bg-card p-2.5 md:p-3 lg:p-4 rounded-lg border">
-                  <div className="flex items-center gap-1 md:gap-1.5 mb-1 md:mb-1.5">
-                    <CheckCircle className="h-3 w-3 md:h-3.5 md:w-3.5 lg:h-4 lg:w-4 text-green-600 flex-shrink-0" />
-                    <p className="text-[9px] md:text-[10px] lg:text-xs font-medium text-muted-foreground truncate">Loan Repaid</p>
+                <div className="bg-white dark:bg-card p-4 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <p className="text-xs font-medium text-muted-foreground">Loan Repaid</p>
                   </div>
-                  <p className="text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-green-600">₹{(loanRepaid / 1000).toFixed(1)}K</p>
-                  <p className="text-[9px] md:text-[10px] lg:text-xs text-muted-foreground mt-0.5">{completedTrips.length} trips</p>
+                  <p className="text-2xl font-bold text-green-600">₹{(loanRepaid / 1000).toFixed(1)}K</p>
+                  <p className="text-xs text-muted-foreground mt-1">{completedTrips.length} completed trips</p>
                 </div>
 
-                <div className="bg-white dark:bg-card p-2.5 md:p-3 lg:p-4 rounded-lg border">
-                  <div className="flex items-center gap-1 md:gap-1.5 mb-1 md:mb-1.5">
-                    <Clock className="h-3 w-3 md:h-3.5 md:w-3.5 lg:h-4 lg:w-4 text-orange-600 flex-shrink-0" />
-                    <p className="text-[9px] md:text-[10px] lg:text-xs font-medium text-muted-foreground truncate">Pending</p>
+                <div className="bg-white dark:bg-card p-4 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-4 w-4 text-orange-600" />
+                    <p className="text-xs font-medium text-muted-foreground">Pending Loans</p>
                   </div>
-                  <p className="text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-orange-600">₹{(loanPending / 1000).toFixed(1)}K</p>
-                  <p className="text-[9px] md:text-[10px] lg:text-xs text-muted-foreground mt-0.5">{fundedTrips.length - completedTrips.length} active</p>
+                  <p className="text-2xl font-bold text-orange-600">₹{(loanPending / 1000).toFixed(1)}K</p>
+                  <p className="text-xs text-muted-foreground mt-1">{fundedTrips.length - completedTrips.length} active trips</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 p-2.5 md:p-3 lg:p-4 rounded-lg border border-primary/30">
-                  <div className="flex items-center gap-1 md:gap-1.5 mb-1 md:mb-1.5">
-                    <Star className="h-3 w-3 md:h-3.5 md:w-3.5 lg:h-4 lg:w-4 text-primary flex-shrink-0" />
-                    <p className="text-[9px] md:text-[10px] lg:text-xs font-medium text-muted-foreground truncate">Interest</p>
+                <div className="bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 p-4 rounded-lg border border-primary/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Star className="h-4 w-4 text-primary" />
+                    <p className="text-xs font-medium text-muted-foreground">Total Interest Paid</p>
                   </div>
-                  <p className="text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-primary">₹{(profit / 1000).toFixed(1)}K</p>
-                  <p className="text-[9px] md:text-[10px] lg:text-xs text-muted-foreground mt-0.5">Total paid</p>
+                  <p className="text-2xl font-bold text-primary">₹{(profit / 1000).toFixed(1)}K</p>
+                  <p className="text-xs text-muted-foreground mt-1">Interest paid to lenders</p>
                 </div>
               </div>
 
               {/* Charts Section */}
-              <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+              <div className="grid md:grid-cols-2 gap-6">
                 {/* Monthly Interest Paid Trend */}
-                <div className="bg-white dark:bg-card p-3 md:p-4 rounded-lg border">
-                  <h4 className="text-xs md:text-sm font-semibold mb-3 md:mb-4 flex items-center gap-1.5 md:gap-2">
-                    <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                    <span className="truncate">Monthly Interest (6 Months)</span>
+                <div className="bg-white dark:bg-card p-4 rounded-lg border">
+                  <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    Monthly Interest Paid Trend (Last 6 Months)
                   </h4>
-                  <ResponsiveContainer width="100%" height={180} className="md:h-[200px]">
+                  <ResponsiveContainer width="100%" height={200}>
                     <AreaChart data={monthlyData}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" tick={{ fontSize: 8 }} className="md:text-[10px]" />
-                      <YAxis tick={{ fontSize: 8 }} className="md:text-[10px]" />
+                      <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} />
                       <Tooltip
                         formatter={(value: any) => `₹${value.toLocaleString()}`}
-                        contentStyle={{ fontSize: '10px' }}
+                        contentStyle={{ fontSize: '12px' }}
                       />
                       <Area
                         type="monotone"
@@ -1753,21 +1760,21 @@ const LoadAgentDashboard = () => {
                 </div>
 
                 {/* Monthly Loans vs Interest Paid */}
-                <div className="bg-white dark:bg-card p-3 md:p-4 rounded-lg border">
-                  <h4 className="text-xs md:text-sm font-semibold mb-3 md:mb-4 flex items-center gap-1.5 md:gap-2">
-                    <DollarSign className="h-3.5 w-3.5 md:h-4 md:w-4 text-secondary flex-shrink-0" />
-                    <span className="truncate">Loans vs Interest</span>
+                <div className="bg-white dark:bg-card p-4 rounded-lg border">
+                  <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-secondary" />
+                    Loans Taken vs Interest Paid
                   </h4>
-                  <ResponsiveContainer width="100%" height={180} className="md:h-[200px]">
+                  <ResponsiveContainer width="100%" height={200}>
                     <RechartsBarChart data={monthlyData}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" tick={{ fontSize: 8 }} className="md:text-[10px]" />
-                      <YAxis tick={{ fontSize: 8 }} className="md:text-[10px]" />
+                      <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} />
                       <Tooltip
                         formatter={(value: any) => `₹${value.toLocaleString()}`}
-                        contentStyle={{ fontSize: '10px' }}
+                        contentStyle={{ fontSize: '12px' }}
                       />
-                      <Legend wrapperStyle={{ fontSize: '10px' }} />
+                      <Legend wrapperStyle={{ fontSize: '12px' }} />
                       <Bar dataKey="loansTaken" fill="#3b82f6" name="Loans Taken" />
                       <Bar dataKey="profit" fill="#10b981" name="Interest Paid" />
                     </RechartsBarChart>
@@ -1776,14 +1783,14 @@ const LoadAgentDashboard = () => {
               </div>
 
               {/* Loan Status Breakdown */}
-              <div className="bg-white dark:bg-card p-3 md:p-4 rounded-lg border">
-                <h4 className="text-xs md:text-sm font-semibold mb-3 md:mb-4 flex items-center gap-1.5 md:gap-2">
-                  <Percent className="h-3.5 w-3.5 md:h-4 md:w-4 text-accent flex-shrink-0" />
-                  <span>Loan Status Breakdown</span>
+              <div className="bg-white dark:bg-card p-4 rounded-lg border">
+                <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                  <Percent className="h-4 w-4 text-accent" />
+                  Loan Status Breakdown
                 </h4>
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
-                  <div className="flex-1 w-full">
-                    <ResponsiveContainer width="100%" height={160} className="md:h-[200px]">
+                <div className="flex items-center justify-between gap-6">
+                  <div className="flex-1">
+                    <ResponsiveContainer width="100%" height={200}>
                       <PieChart>
                         <Pie
                           data={[
@@ -1794,7 +1801,7 @@ const LoadAgentDashboard = () => {
                           cy="50%"
                           labelLine={false}
                           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          outerRadius={60}
+                          outerRadius={80}
                           fill="#8884d8"
                           dataKey="value"
                         >
@@ -1805,31 +1812,31 @@ const LoadAgentDashboard = () => {
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip contentStyle={{ fontSize: '10px' }} />
+                        <Tooltip contentStyle={{ fontSize: '12px' }} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="flex-1 w-full space-y-2 md:space-y-3">
-                    <div className="flex items-center justify-between p-2 md:p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-600 flex-shrink-0"></div>
-                        <span className="text-xs md:text-sm font-medium">Repaid Loans</span>
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-green-600"></div>
+                        <span className="text-sm font-medium">Repaid Loans</span>
                       </div>
-                      <span className="text-xs md:text-sm font-bold">{completedTrips.length}</span>
+                      <span className="text-sm font-bold">{completedTrips.length}</span>
                     </div>
-                    <div className="flex items-center justify-between p-2 md:p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-orange-600 flex-shrink-0"></div>
-                        <span className="text-xs md:text-sm font-medium">Pending Loans</span>
+                    <div className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-orange-600"></div>
+                        <span className="text-sm font-medium">Pending Loans</span>
                       </div>
-                      <span className="text-xs md:text-sm font-bold">{fundedTrips.length - completedTrips.length}</span>
+                      <span className="text-sm font-bold">{fundedTrips.length - completedTrips.length}</span>
                     </div>
-                    <div className="flex items-center justify-between p-2 md:p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                      <div className="flex items-center gap-1.5 md:gap-2">
-                        <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-blue-600 flex-shrink-0"></div>
-                        <span className="text-xs md:text-sm font-medium">Total Funded</span>
+                    <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-blue-600"></div>
+                        <span className="text-sm font-medium">Total Funded</span>
                       </div>
-                      <span className="text-xs md:text-sm font-bold">{fundedTrips.length}</span>
+                      <span className="text-sm font-bold">{fundedTrips.length}</span>
                     </div>
                   </div>
                 </div>
@@ -1839,137 +1846,74 @@ const LoadAgentDashboard = () => {
         </Card>
 
         {/* Tabs for All Trips, Loan Closure, and Repaid Loans */}
-        <div ref={allTripsTabRef}>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full grid-cols-3 h-auto">
-            <TabsTrigger value="all-trips" className="text-[10px] md:text-sm py-2 md:py-2.5 flex-col md:flex-row gap-1 md:gap-2">
-              <span>All Trips</span>
-              {statusFilter && statusFilter !== 'all' && (
-                <span className="text-[8px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full bg-primary/20">
-                  Filtered
-                </span>
-              )}
+        <Tabs defaultValue="all-trips" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="all-trips">All Trips</TabsTrigger>
+            <TabsTrigger value="loan-closure">
+              Pending Repayments {loanClosureTrips.length > 0 && `(${loanClosureTrips.length})`}
             </TabsTrigger>
-            <TabsTrigger value="loan-closure" className="text-[10px] md:text-sm py-2 md:py-2.5 flex-col md:flex-row gap-1 md:gap-2">
-              <span className="truncate">Pending</span>
-              {loanClosureTrips.length > 0 && <span className="text-[8px] md:text-xs">({loanClosureTrips.length})</span>}
-            </TabsTrigger>
-            <TabsTrigger value="repaid-loans" className="text-[10px] md:text-sm py-2 md:py-2.5 flex-col md:flex-row gap-1 md:gap-2">
-              <span className="truncate">Repaid</span>
-              {repaidTrips.length > 0 && <span className="text-[8px] md:text-xs">({repaidTrips.length})</span>}
+            <TabsTrigger value="repaid-loans">
+              Repaid Loans {repaidTrips.length > 0 && `(${repaidTrips.length})`}
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="all-trips" className="space-y-4 md:space-y-6">
-        {/* Filter Status Display */}
-        {statusFilter && statusFilter !== 'all' && (
-          <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="py-3 md:py-4">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0">
-                <div className="flex items-center gap-2 md:gap-3 flex-wrap">
-                  <div className="flex items-center gap-1.5 md:gap-2">
-                    {statusFilter === 'pending' && (
-                      <>
-                        <Clock className="h-4 w-4 md:h-5 md:w-5 text-accent flex-shrink-0" />
-                        <span className="font-semibold text-xs md:text-sm">Showing Pending Trips Only</span>
-                      </>
-                    )}
-                    {statusFilter === 'active' && (
-                      <>
-                        <TruckIcon className="h-4 w-4 md:h-5 md:w-5 text-primary flex-shrink-0" />
-                        <span className="font-semibold text-xs md:text-sm">Showing Active Trips Only</span>
-                      </>
-                    )}
-                    {statusFilter === 'completed' && (
-                      <>
-                        <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-secondary flex-shrink-0" />
-                        <span className="font-semibold text-xs md:text-sm">Showing Completed Trips Only</span>
-                      </>
-                    )}
-                  </div>
-                  <Badge variant="secondary" className="text-[10px] md:text-xs">
-                    {allTrips.filter(t => {
-                      if (statusFilter === 'pending') return t.status === 'pending';
-                      if (statusFilter === 'active') return t.status === 'funded' || t.status === 'in_transit' || t.status === 'escrowed';
-                      if (statusFilter === 'completed') return t.status === 'completed';
-                      return true;
-                    }).length} trips
-                  </Badge>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearFilter}
-                  className="gap-1.5 md:gap-2 h-8 md:h-9 text-xs md:text-sm w-full md:w-auto"
-                >
-                  <XCircle className="h-3 w-3 md:h-4 md:w-4" />
-                  Clear Filter
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
+          <TabsContent value="all-trips" className="space-y-6">
         {/* Escrowed Trips - Pending Allotment */}
-        {(!statusFilter || statusFilter === 'all' || statusFilter === 'active') && allTrips.filter((t) => t.status === 'escrowed').length > 0 && (
+        {allTrips.filter((t) => t.status === 'escrowed').length > 0 && (
           <Card className="border-orange-500/50 bg-orange-50/50 dark:bg-orange-950/20">
-            <CardHeader className="pb-3">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0">
+            <CardHeader>
+              <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-1.5 md:gap-2 text-sm md:text-base lg:text-lg">
-                    <Shield className="h-4 w-4 md:h-5 md:w-5 text-orange-600 flex-shrink-0" />
-                    <span className="truncate">Escrowed Trips - Awaiting Allotment</span>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-orange-600" />
+                    Escrowed Trips - Awaiting Allotment
                   </CardTitle>
-                  <CardDescription className="text-[10px] md:text-xs lg:text-sm mt-1">Trips with lender bids pending your approval</CardDescription>
+                  <CardDescription>Trips with lender bids pending your approval</CardDescription>
                 </div>
                 <Button
                   onClick={handleAllotAllTrips}
-                  className="bg-green-600 hover:bg-green-700 w-full md:w-auto h-8 md:h-9 lg:h-10 text-xs md:text-sm"
+                  className="bg-green-600 hover:bg-green-700"
                 >
-                  <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 mr-1.5 md:mr-2" />
-                  Allot All
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Allot All Trips
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3 md:space-y-4">
+              <div className="space-y-4">
                 {allTrips
                   .filter((t) => t.status === 'escrowed')
                   .map((trip) => (
                     <Card key={trip.id} className="border-orange-300 bg-white dark:bg-card">
-                      <CardContent className="p-3 md:pt-6 md:pb-6 md:px-6">
-                        <div className="flex flex-col md:flex-row items-start justify-between gap-3 md:gap-0">
-                          <div className="flex-1 w-full">
-                            <div className="flex items-start gap-2 md:gap-4 mb-3">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-4 mb-3">
                               {trip.loadOwnerLogo ? (
                                 <img
                                   src={trip.loadOwnerLogo}
                                   alt={trip.loadOwnerName}
-                                  className="h-8 w-8 md:h-10 md:w-10 object-contain rounded border p-1 flex-shrink-0"
+                                  className="h-10 w-10 object-contain rounded border p-1"
                                 />
                               ) : (
-                                <div className="flex items-center justify-center h-8 w-8 md:h-10 md:w-10 rounded border p-1 bg-muted flex-shrink-0">
-                                  <Building2 className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
+                                <div className="flex items-center justify-center gap-2 h-10 w-10 rounded border p-1 bg-muted">
+                                  <Building2 className="h-5 w-5 text-muted-foreground" />
                                 </div>
                               )}
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-sm md:text-base lg:text-lg truncate">
+                              <div>
+                                <h3 className="font-semibold text-lg">
                                   {trip.origin} → {trip.destination}
                                 </h3>
-                                <p className="text-[10px] md:text-xs lg:text-sm text-muted-foreground">
+                                <p className="text-sm text-muted-foreground">
                                   {trip.loadType} • {trip.distance} km • ₹{(trip.amount / 1000).toFixed(0)}K
                                 </p>
                               </div>
-                              <Badge className="bg-orange-600 flex-shrink-0 text-[10px] md:text-xs">
-                                <Shield className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
-                                Escrowed
-                              </Badge>
                             </div>
 
                             {/* Bids Section */}
                             {trip.bids && trip.bids.length > 0 && (
-                              <div className="mt-3 md:mt-4 p-2.5 md:p-4 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                                <h4 className="font-semibold text-xs md:text-sm mb-2 md:mb-3 text-orange-900 dark:text-orange-100">
+                              <div className="mt-4 p-4 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                                <h4 className="font-semibold text-sm mb-3 text-orange-900 dark:text-orange-100">
                                   Lender Bids ({trip.bids.length})
                                 </h4>
                                 <div className="space-y-2">
@@ -1977,20 +1921,20 @@ const LoadAgentDashboard = () => {
                                     return (
                                       <div
                                         key={index}
-                                        className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0 p-2.5 md:p-3 bg-white dark:bg-card rounded border"
+                                        className="flex items-center justify-between p-3 bg-white dark:bg-card rounded border"
                                       >
-                                        <div className="flex-1 min-w-0">
-                                          <p className="font-medium text-xs md:text-sm truncate">{toTitleCase(bid.lenderName)}</p>
-                                          <p className="text-[10px] md:text-xs text-muted-foreground">
+                                        <div>
+                                          <p className="font-medium">{toTitleCase(bid.lenderName)}</p>
+                                          <p className="text-sm text-muted-foreground">
                                             Amount: ₹{(bid.amount / 1000).toFixed(0)}K • Rate: {formatPercentage(bid.interestRate)}%
                                           </p>
                                         </div>
                                         <Button
                                           size="sm"
-                                          onClick={() => handleAllotTrip(trip.id, bid.lenderId, bid.lenderName)}
-                                          className="bg-green-600 hover:bg-green-700 h-7 md:h-8 px-2.5 md:px-3 text-xs md:text-sm w-full md:w-auto"
+                                          onClick={() => handleOpenAllotmentConfirmDialog(trip.id, bid.lenderId, bid.lenderName)}
+                                          className="bg-green-600 hover:bg-green-700"
                                         >
-                                          <CheckCircle className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                                          <CheckCircle className="h-4 w-4 mr-1" />
                                           Allot
                                         </Button>
                                       </div>
@@ -2000,6 +1944,10 @@ const LoadAgentDashboard = () => {
                               </div>
                             )}
                           </div>
+                          <Badge className="bg-orange-600 ml-4">
+                            <Shield className="h-3 w-3 mr-1" />
+                            Escrowed
+                          </Badge>
                         </div>
                       </CardContent>
                     </Card>
@@ -2011,13 +1959,13 @@ const LoadAgentDashboard = () => {
 
         {/* All Trips */}
         <Card>
-          <CardHeader className="pb-3">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0">
+          <CardHeader>
+            <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-base md:text-lg">All Trips in Portal</CardTitle>
-                <CardDescription className="text-[10px] md:text-xs lg:text-sm mt-0.5 md:mt-1">View and search all trips across the platform</CardDescription>
+                <CardTitle>All Trips in Portal</CardTitle>
+                <CardDescription>View and search all trips across the platform</CardDescription>
               </div>
-              <div className="flex gap-2 w-full md:w-auto">
+              <div className="flex gap-2">
                 <AdvancedFilter
                   filters={filterConfig}
                   currentFilters={advancedFilters}
@@ -2028,10 +1976,10 @@ const LoadAgentDashboard = () => {
                   variant="outline"
                   size="sm"
                   onClick={handleRefresh}
-                  className="gap-1.5 md:gap-2 h-8 md:h-9 text-xs md:text-sm"
+                  className="gap-2"
                 >
-                  <RefreshCw className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                  <span className="hidden md:inline">Refresh</span>
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh
                 </Button>
               </div>
             </div>
@@ -2091,7 +2039,7 @@ const LoadAgentDashboard = () => {
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{trip.loadType || trip.load_type || 'General Cargo'}</p>
+                            <p className="font-medium">{trip.loadType}</p>
                             <p className="text-xs text-muted-foreground">{trip.weight} kg</p>
                           </div>
                         </TableCell>
@@ -2195,7 +2143,7 @@ const LoadAgentDashboard = () => {
                                 className="bg-green-600 hover:bg-green-700"
                                 onClick={() => {
                                   const bid = trip.bids[0]; // For now, allot to first bidder
-                                  handleAllotTrip(trip.id, bid.lenderId, bid.lenderName);
+                                  handleOpenAllotmentConfirmDialog(trip.id, bid.lenderId, bid.lenderName);
                                 }}
                               >
                                 <CheckCircle className="h-4 w-4 mr-1" />
@@ -2214,49 +2162,42 @@ const LoadAgentDashboard = () => {
 
         {/* Pagination Controls */}
         {filteredTrips.length > 0 && totalPages > 1 && (
-          <Card className="p-3 sm:p-4">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
-              {/* Left side - Items per page and info */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="itemsPerPage" className="text-xs sm:text-sm whitespace-nowrap">
-                    <span className="hidden sm:inline">Items per page:</span>
-                    <span className="sm:hidden">Rows:</span>
-                  </Label>
-                  <select
-                    id="itemsPerPage"
-                    value={itemsPerPage}
-                    onChange={(e) => {
-                      setItemsPerPage(Number(e.target.value));
-                      setCurrentPage(1);
-                    }}
-                    className="border rounded px-2 py-1.5 text-xs sm:text-sm min-w-[60px]"
-                  >
-                    <option value={10}>10</option>
-                    <option value={25}>25</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
-                </div>
-                <span className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left sm:ml-4">
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="itemsPerPage" className="text-sm">Items per page:</Label>
+                <select
+                  id="itemsPerPage"
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="border rounded px-2 py-1 text-sm"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+                <span className="text-sm text-muted-foreground ml-4">
                   Showing {startIndex + 1}-{Math.min(endIndex, filteredTrips.length)} of {filteredTrips.length}
                 </span>
               </div>
 
-              {/* Right side - Pagination buttons */}
-              <div className="flex items-center justify-center gap-1 sm:gap-2">
+              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
-                  className="gap-1 h-8 px-2 sm:px-3"
+                  className="gap-1"
                 >
-                  <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">Previous</span>
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
                 </Button>
 
-                <div className="flex gap-0.5 sm:gap-1">
+                <div className="flex gap-1">
                   {Array.from({ length: totalPages }, (_, i) => i + 1)
                     .filter(page => {
                       return page === 1 ||
@@ -2264,15 +2205,15 @@ const LoadAgentDashboard = () => {
                              (page >= currentPage - 1 && page <= currentPage + 1);
                     })
                     .map((page, index, array) => (
-                      <div key={page} className="flex items-center gap-0.5 sm:gap-1">
+                      <div key={page} className="flex items-center gap-1">
                         {index > 0 && array[index - 1] !== page - 1 && (
-                          <span className="px-1 sm:px-2 text-muted-foreground text-xs sm:text-sm">...</span>
+                          <span className="px-2 text-muted-foreground">...</span>
                         )}
                         <Button
                           variant={currentPage === page ? "default" : "outline"}
                           size="sm"
                           onClick={() => setCurrentPage(page)}
-                          className="w-7 h-7 sm:w-8 sm:h-8 p-0 text-xs sm:text-sm"
+                          className="w-8 h-8 p-0"
                         >
                           {page}
                         </Button>
@@ -2285,10 +2226,10 @@ const LoadAgentDashboard = () => {
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
-                  className="gap-1 h-8 px-2 sm:px-3"
+                  className="gap-1"
                 >
-                  <span className="hidden sm:inline">Next</span>
-                  <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  Next
+                  <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -2483,93 +2424,87 @@ const LoadAgentDashboard = () => {
                       const rate = trip.interestRate || trip.interest_rate || 0;
 
                       return (
-                        <Card key={trip.id} className="border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-950/20 overflow-hidden">
-                          {/* Status Banner - Prominent on mobile */}
-                          <div className="bg-green-600 text-white px-4 py-2.5 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                              <span className="font-semibold text-sm sm:text-base">Loan Repaid & Closed</span>
-                            </div>
-                            {trip.repaidAt && (
-                              <span className="text-xs sm:text-sm opacity-90">
-                                {Math.floor((Date.now() - new Date(trip.repaidAt).getTime()) / (1000 * 60 * 60 * 24))} days ago
-                              </span>
-                            )}
-                          </div>
-
-                          <CardContent className="p-4 sm:p-6">
-                            <div className="space-y-4">
-                              {/* Trip Info */}
-                              <div>
-                                <h4 className="font-bold text-lg sm:text-xl mb-2">
-                                  {trip.origin} → {trip.destination}
-                                </h4>
-                                <p className="text-xs sm:text-sm text-muted-foreground">
-                                  {trip.loadType} • {trip.weight} kg • {trip.distance} km
-                                </p>
-                              </div>
-
-                              {/* Lender Info */}
-                              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 p-3 sm:p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                                <p className="text-xs text-muted-foreground mb-1">Lender</p>
-                                <p className="font-bold text-base sm:text-lg">{lenderName}</p>
-                              </div>
-
-                              {/* Repayment Calculation Details */}
-                              <div className="bg-white dark:bg-gray-900 p-3 sm:p-5 rounded-lg border-2 border-green-300 dark:border-green-700 space-y-3">
-                                <p className="font-bold text-sm sm:text-base text-green-700 dark:text-green-400 flex items-center gap-2">
-                                  <IndianRupee className="h-4 w-4" />
-                                  Repayment Calculation
-                                </p>
-
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                                  <div className="p-2.5 sm:p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Principal</p>
-                                    <p className="font-bold text-base sm:text-lg">₹{(principal / 1000).toFixed(2)}K</p>
-                                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Loan amount</p>
+                        <Card key={trip.id} className="border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-950/20">
+                          <CardContent className="p-6">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 space-y-4">
+                                {/* Trip Info */}
+                                <div>
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h4 className="font-bold text-xl">
+                                      {trip.origin} → {trip.destination}
+                                    </h4>
+                                    <Badge className="bg-green-600 text-white">
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                      Repaid
+                                    </Badge>
                                   </div>
-
-                                  <div className="p-2.5 sm:p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Interest</p>
-                                    <p className="font-bold text-base sm:text-lg text-orange-600">₹{(interest / 1000).toFixed(2)}K</p>
-                                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">{rate}% for {days} days</p>
-                                  </div>
-
-                                  <div className="p-2.5 sm:p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-                                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Total Repaid</p>
-                                    <p className="font-bold text-base sm:text-lg text-green-700">₹{(total / 1000).toFixed(2)}K</p>
-                                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Principal + Interest</p>
-                                  </div>
-
-                                  <div className="p-2.5 sm:p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Duration</p>
-                                    <p className="font-bold text-base sm:text-lg">{days} days</p>
-                                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Actual period</p>
-                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    {trip.loadType} • {trip.weight} kg • {trip.distance} km
+                                  </p>
                                 </div>
 
-                                  {/* Formula - Mobile optimized */}
-                                  <div className="p-2.5 sm:p-3 bg-gray-50 dark:bg-gray-950 rounded border">
-                                    <p className="text-[10px] sm:text-xs font-semibold mb-2">Calculation Formula:</p>
-                                    <div className="font-mono text-[10px] sm:text-xs text-muted-foreground space-y-1">
-                                      <p className="break-words">Interest = Principal × (Rate/365) × Days</p>
-                                      <p className="break-words">= ₹{(principal / 1000).toFixed(0)}K × ({rate}%/365) × {days} days</p>
+                                {/* Lender Info */}
+                                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                                  <p className="text-xs text-muted-foreground mb-1">Lender</p>
+                                  <p className="font-bold text-lg">{lenderName}</p>
+                                </div>
+
+                                {/* Repayment Calculation Details */}
+                                <div className="bg-white dark:bg-gray-900 p-5 rounded-lg border-2 border-green-300 dark:border-green-700 space-y-3">
+                                  <p className="font-bold text-base text-green-700 dark:text-green-400 flex items-center gap-2">
+                                    <IndianRupee className="h-4 w-4" />
+                                    Repayment Calculation
+                                  </p>
+
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                      <p className="text-xs text-muted-foreground mb-1">Principal</p>
+                                      <p className="font-bold text-lg">₹{(principal / 1000).toFixed(2)}K</p>
+                                      <p className="text-xs text-muted-foreground mt-1">Loan amount</p>
+                                    </div>
+
+                                    <div className="p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                                      <p className="text-xs text-muted-foreground mb-1">Interest</p>
+                                      <p className="font-bold text-lg text-orange-600">₹{(interest / 1000).toFixed(2)}K</p>
+                                      <p className="text-xs text-muted-foreground mt-1">{rate}% for {days} days</p>
+                                    </div>
+
+                                    <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                                      <p className="text-xs text-muted-foreground mb-1">Total Repaid</p>
+                                      <p className="font-bold text-lg text-green-700">₹{(total / 1000).toFixed(2)}K</p>
+                                      <p className="text-xs text-muted-foreground mt-1">Principal + Interest</p>
+                                    </div>
+
+                                    <div className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                                      <p className="text-xs text-muted-foreground mb-1">Duration</p>
+                                      <p className="font-bold text-lg">{days} days</p>
+                                      <p className="text-xs text-muted-foreground mt-1">Actual period</p>
+                                    </div>
+                                  </div>
+
+                                  {/* Formula */}
+                                  <div className="p-3 bg-gray-50 dark:bg-gray-950 rounded border">
+                                    <p className="text-xs font-semibold mb-2">Calculation Formula:</p>
+                                    <div className="font-mono text-xs text-muted-foreground space-y-1">
+                                      <p>Interest = Principal × (Rate/365) × Days</p>
+                                      <p>= ₹{(principal / 1000).toFixed(0)}K × ({rate}%/365) × {days} days</p>
                                       <p className="text-green-700 dark:text-green-400 font-bold">= ₹{(interest / 1000).toFixed(2)}K</p>
                                     </div>
                                   </div>
 
-                                  {/* Total Summary - Mobile optimized */}
-                                  <div className="p-3 sm:p-4 bg-gradient-to-r from-green-100 to-purple-100 dark:from-green-900/30 dark:to-purple-900/30 rounded-lg border-2 border-green-400 dark:border-green-600">
-                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                                  {/* Total Summary */}
+                                  <div className="p-4 bg-gradient-to-r from-green-100 to-purple-100 dark:from-green-900/30 dark:to-purple-900/30 rounded-lg border-2 border-green-400 dark:border-green-600">
+                                    <div className="flex items-center justify-between">
                                       <div>
-                                        <p className="text-[10px] sm:text-xs text-muted-foreground">Total Amount Repaid</p>
-                                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
+                                        <p className="text-xs text-muted-foreground">Total Amount Repaid</p>
+                                        <p className="text-xs text-muted-foreground mt-1">
                                           ₹{(principal / 1000).toFixed(0)}K + ₹{(interest / 1000).toFixed(2)}K
                                         </p>
                                       </div>
                                       <div className="flex items-center gap-2">
-                                        <IndianRupee className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
-                                        <p className="text-2xl sm:text-3xl font-bold text-green-700 dark:text-green-400">
+                                        <IndianRupee className="h-6 w-6 text-green-600" />
+                                        <p className="text-3xl font-bold text-green-700 dark:text-green-400">
                                           {(total / 1000).toFixed(2)}K
                                         </p>
                                       </div>
@@ -2577,17 +2512,14 @@ const LoadAgentDashboard = () => {
                                   </div>
                                 </div>
 
-                                {/* Closure Information - Mobile optimized */}
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900 rounded-lg border">
+                                {/* Closure Information */}
+                                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900 rounded-lg border">
                                   <div>
                                     <p className="text-xs text-muted-foreground mb-1">Loan Closed On</p>
                                     <p className="font-bold text-sm">{formattedDate}</p>
-                                    <p className="text-[10px] text-muted-foreground mt-1">
-                                      Trip ID: {trip.id.substring(0, 8)}
-                                    </p>
                                   </div>
                                   {trip.repaidAt && (
-                                    <div className="sm:text-right">
+                                    <div className="text-right">
                                       <p className="text-xs text-muted-foreground mb-1">Time Since Closure</p>
                                       <p className="font-bold text-sm text-green-600">
                                         {Math.floor((Date.now() - new Date(trip.repaidAt).getTime()) / (1000 * 60 * 60 * 24))} days ago
@@ -2596,6 +2528,17 @@ const LoadAgentDashboard = () => {
                                   )}
                                 </div>
                               </div>
+
+                              {/* Status Badge */}
+                              <div className="flex flex-col items-end gap-2">
+                                <Badge className="bg-green-600 text-white text-base px-4 py-2">
+                                  ✓ Loan Closed
+                                </Badge>
+                                <p className="text-xs text-muted-foreground text-right">
+                                  Trip ID: {trip.id.substring(0, 8)}
+                                </p>
+                              </div>
+                            </div>
                           </CardContent>
                         </Card>
                       );
@@ -2606,32 +2549,31 @@ const LoadAgentDashboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
-        </div>
 
         {/* Create Trip Dialog */}
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogContent className="w-[92vw] sm:w-[95vw] md:w-full max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
-            <DialogHeader className="space-y-1.5 sm:space-y-2">
-              <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <Plus className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
-                <span className="truncate">Create New Trip</span>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5 text-primary" />
+                Create New Trip
               </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm">Add trips individually or in bulk</DialogDescription>
+              <DialogDescription>Add trips individually or in bulk</DialogDescription>
             </DialogHeader>
 
             <Tabs value={createTripTab} onValueChange={(value) => setCreateTripTab(value as 'form' | 'excel' | 'api')}>
-              <TabsList className="grid w-full grid-cols-3 h-auto">
-                <TabsTrigger value="form" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-2.5 px-2 sm:px-4 text-xs sm:text-sm">
-                  <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span className="truncate">Single<span className="hidden sm:inline"> Trip</span></span>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="form" className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Single Trip
                 </TabsTrigger>
-                <TabsTrigger value="excel" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-2.5 px-2 sm:px-4 text-xs sm:text-sm">
-                  <FileSpreadsheet className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span className="truncate">Bulk<span className="hidden sm:inline"> Upload</span></span>
+                <TabsTrigger value="excel" className="flex items-center gap-2">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Bulk Upload
                 </TabsTrigger>
-                <TabsTrigger value="api" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-2.5 px-2 sm:px-4 text-xs sm:text-sm">
-                  <Code className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span className="truncate">API<span className="hidden sm:inline"> Support</span></span>
+                <TabsTrigger value="api" className="flex items-center gap-2">
+                  <Code className="h-4 w-4" />
+                  API Support
                 </TabsTrigger>
               </TabsList>
 
@@ -2662,6 +2604,21 @@ const LoadAgentDashboard = () => {
                         onChange={handleChange}
                         required
                         className="h-11 border-2 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="ewayBillImage" className="text-sm font-semibold flex items-center gap-1.5">
+                        <Upload className="h-3.5 w-3.5 text-gray-600" />
+                        E-way Bill Image (Optional)
+                      </Label>
+                      <Input
+                        id="ewayBillImage"
+                        name="ewayBillImage"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleChange}
+                        className="cursor-pointer h-11 border-2"
                       />
                     </div>
                   </div>
@@ -2794,7 +2751,7 @@ const LoadAgentDashboard = () => {
                         id="loanInterestRate"
                         name="loanInterestRate"
                         type="number"
-                        placeholder="Enter rate (e.g., 12)"
+                        placeholder="12"
                         value={formData.loanInterestRate}
                         onChange={handleChange}
                         step="0.5"
@@ -2815,7 +2772,7 @@ const LoadAgentDashboard = () => {
                       id="maturityDays"
                       name="maturityDays"
                       type="number"
-                      placeholder="Enter days (e.g., 30)"
+                      placeholder="30"
                       value={formData.maturityDays}
                       onChange={handleChange}
                       min="1"
@@ -3015,53 +2972,49 @@ const LoadAgentDashboard = () => {
                   </div>
                 </div>
 
-                <DialogFooter className="mt-4">
+                <DialogFooter>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setCreateDialogOpen(false)}
-                    className="w-full sm:w-auto touch-target"
                   >
                     Close
                   </Button>
                 </DialogFooter>
               </TabsContent>
 
-              <TabsContent value="api" className="space-y-4 p-1 sm:p-0 overflow-x-hidden">
-                <div className="space-y-4 sm:space-y-6 max-w-full overflow-x-hidden">
+              <TabsContent value="api" className="space-y-4">
+                <div className="space-y-6">
                   {/* Header Section */}
                   <div className="text-center space-y-2">
                     <div className="flex justify-center">
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Code className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Code className="h-8 w-8 text-primary" />
                       </div>
                     </div>
-                    <h3 className="font-semibold text-base sm:text-lg">API Integration</h3>
-                    <p className="text-xs sm:text-sm text-muted-foreground px-2">
+                    <h3 className="font-semibold text-lg">API Integration</h3>
+                    <p className="text-sm text-muted-foreground">
                       Integrate our API into your system to automatically create trips
                     </p>
                   </div>
 
                   {/* API Documentation */}
-                  <div className="space-y-3 sm:space-y-4">
+                  <div className="space-y-4">
                     {/* Endpoint Information */}
-                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
-                      <h4 className="font-semibold text-xs sm:text-sm mb-2 sm:mb-3 flex items-center gap-2">
-                        <Link className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+                    <div className="p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                        <Link className="h-4 w-4 text-primary" />
                         API Endpoint
                       </h4>
                       <div className="space-y-2">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-2 sm:p-3 bg-background rounded border">
-                          <div className="font-mono text-[10px] sm:text-xs flex-1 min-w-0">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                              <span className="text-green-600 font-semibold shrink-0">POST</span>
-                              <span className="break-words" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>https://api.truckfinhub.com/v1/trips/create</span>
-                            </div>
+                        <div className="flex items-center justify-between p-3 bg-background rounded border font-mono text-sm">
+                          <div>
+                            <span className="text-green-600 font-semibold">POST</span>
+                            <span className="ml-2">https://api.truckfinhub.com/v1/trips/create</span>
                           </div>
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="self-start sm:self-auto shrink-0"
                             onClick={() => {
                               navigator.clipboard.writeText('https://api.truckfinhub.com/v1/trips/create');
                               toast({
@@ -3070,23 +3023,23 @@ const LoadAgentDashboard = () => {
                               });
                             }}
                           >
-                            <Copy className="h-3 w-3 sm:h-4 sm:w-4" />
+                            <Copy className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
                     </div>
 
                     {/* Authentication */}
-                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
-                      <h4 className="font-semibold text-xs sm:text-sm mb-2 sm:mb-3 flex items-center gap-2">
-                        <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+                    <div className="p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-primary" />
                         Authentication
                       </h4>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground mb-2">
+                      <p className="text-xs text-muted-foreground mb-2">
                         Include your API key in the request headers:
                       </p>
-                      <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
-                        <pre className="whitespace-pre-wrap sm:whitespace-pre max-w-full" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>{`Authorization: Bearer YOUR_API_KEY
+                      <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                        <pre>{`Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json`}</pre>
                         <Button
                           size="sm"
@@ -3103,20 +3056,19 @@ Content-Type: application/json`}</pre>
                           <Copy className="h-3 w-3" />
                         </Button>
                       </div>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground mt-2">
-                        Contact support to get your API key:{' '}
-                        <span className="break-words" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>support@truckfinhub.com</span>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Contact support to get your API key: support@truckfinhub.com
                       </p>
                     </div>
 
                     {/* Request Body */}
-                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
-                      <h4 className="font-semibold text-xs sm:text-sm mb-2 sm:mb-3 flex items-center gap-2">
-                        <Code className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+                    <div className="p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                        <Code className="h-4 w-4 text-primary" />
                         Request Body (JSON)
                       </h4>
-                      <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
-                        <pre className="max-w-full whitespace-pre-wrap sm:whitespace-pre" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>{`{
+                      <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                        <pre>{`{
   "ewayBillNumber": "123456789012",
   "pickup": "Mumbai, Maharashtra",
   "destination": "Delhi, NCR",
@@ -3162,83 +3114,81 @@ Content-Type: application/json`}</pre>
                     </div>
 
                     {/* Field Descriptions */}
-                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
-                      <h4 className="font-semibold text-xs sm:text-sm mb-2 sm:mb-3">Field Descriptions</h4>
+                    <div className="p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-sm mb-3">Field Descriptions</h4>
                       <div className="space-y-3">
                         <div>
-                          <p className="text-[10px] sm:text-xs font-semibold mb-2 text-blue-600">Mandatory Fields (Required*)</p>
-                          <div className="space-y-2 text-[10px] sm:text-xs">
-                            {/* Table Header - Hidden on mobile */}
-                            <div className="hidden sm:grid sm:grid-cols-3 gap-2 font-semibold pb-2 border-b">
+                          <p className="text-xs font-semibold mb-2 text-blue-600">Mandatory Fields (Required*)</p>
+                          <div className="space-y-2 text-xs">
+                            <div className="grid grid-cols-3 gap-2 font-semibold pb-2 border-b">
                               <span>Field</span>
                               <span>Type</span>
                               <span>Description</span>
                             </div>
-                            {/* Mobile: Card layout, Desktop: Table row */}
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
-                              <span className="font-mono font-semibold sm:font-normal">ewayBillNumber*</span>
-                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>string</span>
-                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>E-way bill number (12-digit unique number)</span>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">ewayBillNumber*</span>
+                              <span className="text-muted-foreground">string</span>
+                              <span className="text-muted-foreground">E-way bill number (12-digit unique number)</span>
                             </div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
-                              <span className="font-mono font-semibold sm:font-normal">pickup*</span>
-                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>string</span>
-                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Pickup/origin location</span>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">pickup*</span>
+                              <span className="text-muted-foreground">string</span>
+                              <span className="text-muted-foreground">Pickup/origin location</span>
                             </div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
-                              <span className="font-mono font-semibold sm:font-normal">destination*</span>
-                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>string</span>
-                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Delivery destination location</span>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">destination*</span>
+                              <span className="text-muted-foreground">string</span>
+                              <span className="text-muted-foreground">Delivery destination location</span>
                             </div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
-                              <span className="font-mono font-semibold sm:font-normal">sender*</span>
-                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>string</span>
-                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Sender/consignee company name</span>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">sender*</span>
+                              <span className="text-muted-foreground">string</span>
+                              <span className="text-muted-foreground">Sender/consignee company name</span>
                             </div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
-                              <span className="font-mono font-semibold sm:font-normal">receiver*</span>
-                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>string</span>
-                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Receiver company name</span>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">receiver*</span>
+                              <span className="text-muted-foreground">string</span>
+                              <span className="text-muted-foreground">Receiver company name</span>
                             </div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
-                              <span className="font-mono font-semibold sm:font-normal">transporter*</span>
-                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>string</span>
-                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Transport service provider name</span>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">transporter*</span>
+                              <span className="text-muted-foreground">string</span>
+                              <span className="text-muted-foreground">Transport service provider name</span>
                             </div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
-                              <span className="font-mono font-semibold sm:font-normal">loanAmount*</span>
-                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>number</span>
-                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Loan amount in ₹ (20,000 - 80,000)</span>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">loanAmount*</span>
+                              <span className="text-muted-foreground">number</span>
+                              <span className="text-muted-foreground">Loan amount in ₹ (20,000 - 80,000)</span>
                             </div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
-                              <span className="font-mono font-semibold sm:font-normal">loanInterestRate*</span>
-                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>number</span>
-                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Interest rate percentage (8% - 18%)</span>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">loanInterestRate*</span>
+                              <span className="text-muted-foreground">number</span>
+                              <span className="text-muted-foreground">Interest rate percentage (8% - 18%)</span>
                             </div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
-                              <span className="font-mono font-semibold sm:font-normal">maturityDays*</span>
-                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>number</span>
-                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Payment term in days (1-365)</span>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">maturityDays*</span>
+                              <span className="text-muted-foreground">number</span>
+                              <span className="text-muted-foreground">Payment term in days (1-365)</span>
                             </div>
                           </div>
                         </div>
                         <div className="pt-2 border-t">
-                          <p className="text-[10px] sm:text-xs font-semibold mb-2 text-gray-600">Optional Fields</p>
-                          <div className="space-y-2 text-[10px] sm:text-xs">
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
-                              <span className="font-mono font-semibold sm:font-normal">distance</span>
-                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>number</span>
-                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Distance in kilometers</span>
+                          <p className="text-xs font-semibold mb-2 text-gray-600">Optional Fields</p>
+                          <div className="space-y-2 text-xs">
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">distance</span>
+                              <span className="text-muted-foreground">number</span>
+                              <span className="text-muted-foreground">Distance in kilometers</span>
                             </div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
-                              <span className="font-mono font-semibold sm:font-normal">loadType</span>
-                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>string</span>
-                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Type of cargo (e.g., Electronics, FMCG)</span>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">loadType</span>
+                              <span className="text-muted-foreground">string</span>
+                              <span className="text-muted-foreground">Type of cargo (e.g., Electronics, FMCG)</span>
                             </div>
-                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-muted/50 sm:bg-transparent rounded sm:rounded-none">
-                              <span className="font-mono font-semibold sm:font-normal">weight</span>
-                              <span className="text-muted-foreground text-[10px] sm:text-xs"><span className="sm:hidden">Type: </span>number</span>
-                              <span className="text-muted-foreground"><span className="sm:hidden font-medium">Description: </span>Weight in kilograms</span>
+                            <div className="grid grid-cols-3 gap-2">
+                              <span className="font-mono">weight</span>
+                              <span className="text-muted-foreground">number</span>
+                              <span className="text-muted-foreground">Weight in kilograms</span>
                             </div>
                           </div>
                         </div>
@@ -3246,13 +3196,13 @@ Content-Type: application/json`}</pre>
                     </div>
 
                     {/* Response Examples */}
-                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
-                      <h4 className="font-semibold text-xs sm:text-sm mb-2 sm:mb-3">Response Examples</h4>
+                    <div className="p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-sm mb-3">Response Examples</h4>
                       <div className="space-y-3">
                         <div>
-                          <p className="text-[10px] sm:text-xs font-semibold mb-1 text-green-600">Success (200 OK)</p>
-                          <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
-                            <pre className="max-w-full whitespace-pre-wrap sm:whitespace-pre" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>{`{
+                          <p className="text-xs font-semibold mb-1 text-green-600">Success (200 OK)</p>
+                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                            <pre>{`{
   "success": true,
   "tripId": "trip_abc123xyz",
   "message": "Trip created successfully",
@@ -3289,9 +3239,9 @@ Content-Type: application/json`}</pre>
                           </div>
                         </div>
                         <div>
-                          <p className="text-[10px] sm:text-xs font-semibold mb-1 text-red-600">Error (400 Bad Request)</p>
-                          <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
-                            <pre className="max-w-full whitespace-pre-wrap sm:whitespace-pre" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>{`{
+                          <p className="text-xs font-semibold mb-1 text-red-600">Error (400 Bad Request)</p>
+                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                            <pre>{`{
   "success": false,
   "error": "Validation Error",
   "message": "Trip amount must be between ₹20,000 and ₹80,000",
@@ -3327,13 +3277,13 @@ Content-Type: application/json`}</pre>
                     </div>
 
                     {/* Code Examples */}
-                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
-                      <h4 className="font-semibold text-xs sm:text-sm mb-2 sm:mb-3">Code Examples</h4>
+                    <div className="p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-sm mb-3">Code Examples</h4>
                       <div className="space-y-3">
                         <div>
-                          <p className="text-[10px] sm:text-xs font-semibold mb-1">JavaScript (Fetch)</p>
-                          <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
-                            <pre className="max-w-full whitespace-pre-wrap sm:whitespace-pre" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>{`fetch('https://api.truckfinhub.com/v1/trips/create', {
+                          <p className="text-xs font-semibold mb-1">JavaScript (Fetch)</p>
+                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                            <pre>{`fetch('https://api.truckfinhub.com/v1/trips/create', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer YOUR_API_KEY',
@@ -3398,9 +3348,9 @@ Content-Type: application/json`}</pre>
                           </div>
                         </div>
                         <div>
-                          <p className="text-[10px] sm:text-xs font-semibold mb-1">Python (Requests)</p>
-                          <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
-                            <pre className="max-w-full whitespace-pre-wrap sm:whitespace-pre" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>{`import requests
+                          <p className="text-xs font-semibold mb-1">Python (Requests)</p>
+                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                            <pre>{`import requests
 
 url = "https://api.truckfinhub.com/v1/trips/create"
 headers = {
@@ -3465,9 +3415,9 @@ print(response.json())`;
                           </div>
                         </div>
                         <div>
-                          <p className="text-[10px] sm:text-xs font-semibold mb-1">cURL</p>
-                          <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
-                            <pre className="max-w-full whitespace-pre-wrap sm:whitespace-pre" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>{`curl -X POST https://api.truckfinhub.com/v1/trips/create \\
+                          <p className="text-xs font-semibold mb-1">cURL</p>
+                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                            <pre>{`curl -X POST https://api.truckfinhub.com/v1/trips/create \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -3521,14 +3471,14 @@ print(response.json())`;
                     </div>
 
                     {/* Supported Companies */}
-                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
-                      <h4 className="font-semibold text-xs sm:text-sm mb-2 sm:mb-3">Supported Consignee Companies</h4>
-                      <div className="bg-background p-2 sm:p-3 rounded border text-[10px] sm:text-xs max-h-40 overflow-y-auto">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold text-sm mb-3">Supported Consignee Companies</h4>
+                      <div className="bg-background p-3 rounded border text-xs max-h-40 overflow-y-auto">
+                        <div className="grid grid-cols-2 gap-2">
                           {clientCompanies.map((company) => (
                             <div key={company.name} className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
-                              <span className="truncate">{company.name}</span>
+                              <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                              <span>{company.name}</span>
                             </div>
                           ))}
                         </div>
@@ -3536,34 +3486,31 @@ print(response.json())`;
                     </div>
 
                     {/* Support Information */}
-                    <div className="p-3 sm:p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <h4 className="font-semibold text-xs sm:text-sm mb-2 text-blue-900 dark:text-blue-100">Need Help?</h4>
-                      <p className="text-[10px] sm:text-xs text-blue-800 dark:text-blue-200 mb-2">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <h4 className="font-semibold text-sm mb-2 text-blue-900 dark:text-blue-100">Need Help?</h4>
+                      <p className="text-xs text-blue-800 dark:text-blue-200 mb-2">
                         Contact our support team for API key generation and integration assistance:
                       </p>
-                      <div className="space-y-1 text-[10px] sm:text-xs">
+                      <div className="space-y-1 text-xs">
                         <p className="text-blue-900 dark:text-blue-100">
-                          <strong>Email:</strong>{' '}
-                          <span className="break-words" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>support@truckfinhub.com</span>
+                          <strong>Email:</strong> support@truckfinhub.com
                         </p>
                         <p className="text-blue-900 dark:text-blue-100">
                           <strong>Phone:</strong> +91 1800-XXX-XXXX
                         </p>
                         <p className="text-blue-900 dark:text-blue-100">
-                          <strong>Documentation:</strong>{' '}
-                          <span className="break-words" style={{wordBreak: 'break-word', overflowWrap: 'anywhere'}}>https://docs.truckfinhub.com</span>
+                          <strong>Documentation:</strong> https://docs.truckfinhub.com
                         </p>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <DialogFooter className="mt-4">
+                <DialogFooter>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setCreateDialogOpen(false)}
-                    className="w-full sm:w-auto touch-target"
                   >
                     Close
                   </Button>
@@ -3771,9 +3718,34 @@ print(response.json())`;
                                 link.click();
                               }}
                             >
+                              <Download className="h-3 w-3 mr-1" />
                               Download
                             </Button>
                           </div>
+                          <Input
+                            id={`replace-ewaybill-${selectedTrip.id}`}
+                            type="file"
+                            accept=".jpg,.jpeg,.png"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleDocumentUpload(selectedTrip.id, 'ewaybill', file);
+                                e.target.value = '';
+                              }
+                            }}
+                            className="hidden"
+                            disabled={uploadingDocuments[`${selectedTrip.id}-ewaybill`]}
+                          />
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="text-xs h-8 w-full"
+                            onClick={() => document.getElementById(`replace-ewaybill-${selectedTrip.id}`)?.click()}
+                            disabled={uploadingDocuments[`${selectedTrip.id}-ewaybill`]}
+                          >
+                            <Upload className="h-3 w-3 mr-1" />
+                            Edit Document
+                          </Button>
                         </div>
                       ) : (
                         <Input
@@ -3827,9 +3799,34 @@ print(response.json())`;
                                 link.click();
                               }}
                             >
+                              <Download className="h-3 w-3 mr-1" />
                               Download
                             </Button>
                           </div>
+                          <Input
+                            id={`replace-bilty-${selectedTrip.id}`}
+                            type="file"
+                            accept=".jpg,.jpeg,.png"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleDocumentUpload(selectedTrip.id, 'bilty', file);
+                                e.target.value = '';
+                              }
+                            }}
+                            className="hidden"
+                            disabled={uploadingDocuments[`${selectedTrip.id}-bilty`]}
+                          />
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="text-xs h-8 w-full"
+                            onClick={() => document.getElementById(`replace-bilty-${selectedTrip.id}`)?.click()}
+                            disabled={uploadingDocuments[`${selectedTrip.id}-bilty`]}
+                          >
+                            <Upload className="h-3 w-3 mr-1" />
+                            Edit Document
+                          </Button>
                         </div>
                       ) : (
                         <Input
@@ -3883,9 +3880,34 @@ print(response.json())`;
                                 link.click();
                               }}
                             >
+                              <Download className="h-3 w-3 mr-1" />
                               Download
                             </Button>
                           </div>
+                          <Input
+                            id={`replace-advance_invoice-${selectedTrip.id}`}
+                            type="file"
+                            accept=".jpg,.jpeg,.png"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleDocumentUpload(selectedTrip.id, 'advance_invoice', file);
+                                e.target.value = '';
+                              }
+                            }}
+                            className="hidden"
+                            disabled={uploadingDocuments[`${selectedTrip.id}-advance_invoice`]}
+                          />
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="text-xs h-8 w-full"
+                            onClick={() => document.getElementById(`replace-advance_invoice-${selectedTrip.id}`)?.click()}
+                            disabled={uploadingDocuments[`${selectedTrip.id}-advance_invoice`]}
+                          >
+                            <Upload className="h-3 w-3 mr-1" />
+                            Edit Document
+                          </Button>
                         </div>
                       ) : (
                         <Input
@@ -3939,9 +3961,34 @@ print(response.json())`;
                                 link.click();
                               }}
                             >
+                              <Download className="h-3 w-3 mr-1" />
                               Download
                             </Button>
                           </div>
+                          <Input
+                            id={`replace-pod-${selectedTrip.id}`}
+                            type="file"
+                            accept=".jpg,.jpeg,.png"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleDocumentUpload(selectedTrip.id, 'pod', file);
+                                e.target.value = '';
+                              }
+                            }}
+                            className="hidden"
+                            disabled={uploadingDocuments[`${selectedTrip.id}-pod`]}
+                          />
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="text-xs h-8 w-full"
+                            onClick={() => document.getElementById(`replace-pod-${selectedTrip.id}`)?.click()}
+                            disabled={uploadingDocuments[`${selectedTrip.id}-pod`]}
+                          >
+                            <Upload className="h-3 w-3 mr-1" />
+                            Edit Document
+                          </Button>
                         </div>
                       ) : (
                         <Input
@@ -3995,9 +4042,34 @@ print(response.json())`;
                                 link.click();
                               }}
                             >
+                              <Download className="h-3 w-3 mr-1" />
                               Download
                             </Button>
                           </div>
+                          <Input
+                            id={`replace-final_invoice-${selectedTrip.id}`}
+                            type="file"
+                            accept=".jpg,.jpeg,.png"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleDocumentUpload(selectedTrip.id, 'final_invoice', file);
+                                e.target.value = '';
+                              }
+                            }}
+                            className="hidden"
+                            disabled={uploadingDocuments[`${selectedTrip.id}-final_invoice`]}
+                          />
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="text-xs h-8 w-full"
+                            onClick={() => document.getElementById(`replace-final_invoice-${selectedTrip.id}`)?.click()}
+                            disabled={uploadingDocuments[`${selectedTrip.id}-final_invoice`]}
+                          >
+                            <Upload className="h-3 w-3 mr-1" />
+                            Edit Document
+                          </Button>
                         </div>
                       ) : (
                         <Input
@@ -4327,8 +4399,94 @@ print(response.json())`;
             borrowerName={user?.name || ''}
             loanAmount={tripForRating.amount || 0}
             interestRate={tripForRating.interestRate || (tripForRating as any).interest_rate || 0}
+            mode="borrower-rates-lender"
+            canDismiss={false}
           />
         )}
+
+        {/* Allotment Confirmation Dialog */}
+        <Dialog open={allotmentConfirmDialogOpen} onOpenChange={setAllotmentConfirmDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-primary" />
+                Confirm Trip Allotment
+              </DialogTitle>
+              <DialogDescription>
+                Please review the details before allotting this trip to the lender.
+              </DialogDescription>
+            </DialogHeader>
+
+            {pendingAllotmentConfirm && (
+              <div className="space-y-4">
+                <Card className="bg-muted/50">
+                  <CardContent className="pt-6">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Trip Route</p>
+                        <p className="font-semibold flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-primary" />
+                          {pendingAllotmentConfirm.trip?.origin} → {pendingAllotmentConfirm.trip?.destination}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Load Type</p>
+                          <p className="font-medium">{pendingAllotmentConfirm.trip?.loadType}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Distance</p>
+                          <p className="font-medium">{pendingAllotmentConfirm.trip?.distance} km</p>
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-3 mt-3">
+                        <p className="text-sm text-muted-foreground mb-2">Lender Details</p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Lender Name</p>
+                            <p className="font-semibold text-primary">{toTitleCase(pendingAllotmentConfirm.lenderName)}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Bid Amount</p>
+                            <p className="font-semibold">₹{(pendingAllotmentConfirm.bidAmount / 1000).toFixed(0)}K</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Interest Rate</p>
+                            <p className="font-semibold">{formatPercentage(pendingAllotmentConfirm.interestRate)}%</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-sm text-blue-900 dark:text-blue-200">
+                    By confirming, the trip will be allotted to {toTitleCase(pendingAllotmentConfirm.lenderName)} and the agreed amount will be credited to your wallet.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setAllotmentConfirmDialogOpen(false);
+                  setPendingAllotmentConfirm(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button className="bg-gradient-primary" onClick={handleConfirmAllotment}>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Confirm & Allot Trip
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Edit Trip Dialog */}
         {tripForEdit && (
@@ -4346,7 +4504,7 @@ print(response.json())`;
                     <Label htmlFor="edit-pickup">Pickup Location</Label>
                     <Input
                       id="edit-pickup"
-                      value={tripForEdit.pickup || tripForEdit.origin || ''}
+                      defaultValue={tripForEdit.pickup || tripForEdit.origin}
                       onChange={(e) => setTripForEdit({ ...tripForEdit, pickup: e.target.value, origin: e.target.value })}
                     />
                   </div>
@@ -4354,7 +4512,7 @@ print(response.json())`;
                     <Label htmlFor="edit-destination">Destination</Label>
                     <Input
                       id="edit-destination"
-                      value={tripForEdit.destination || ''}
+                      defaultValue={tripForEdit.destination}
                       onChange={(e) => setTripForEdit({ ...tripForEdit, destination: e.target.value })}
                     />
                   </div>
@@ -4365,7 +4523,7 @@ print(response.json())`;
                     <Input
                       id="edit-distance"
                       type="number"
-                      value={tripForEdit.distance || ''}
+                      defaultValue={tripForEdit.distance}
                       onChange={(e) => setTripForEdit({ ...tripForEdit, distance: parseFloat(e.target.value) })}
                     />
                   </div>
@@ -4374,7 +4532,7 @@ print(response.json())`;
                     <Input
                       id="edit-weight"
                       type="number"
-                      value={tripForEdit.weight || ''}
+                      defaultValue={tripForEdit.weight}
                       onChange={(e) => setTripForEdit({ ...tripForEdit, weight: parseFloat(e.target.value) })}
                     />
                   </div>
@@ -4384,7 +4542,7 @@ print(response.json())`;
                     <Label htmlFor="edit-loadType">Load Type</Label>
                     <Input
                       id="edit-loadType"
-                      value={tripForEdit.loadType || ''}
+                      defaultValue={tripForEdit.loadType}
                       onChange={(e) => setTripForEdit({ ...tripForEdit, loadType: e.target.value })}
                     />
                   </div>
@@ -4393,7 +4551,7 @@ print(response.json())`;
                     <Input
                       id="edit-amount"
                       type="number"
-                      value={tripForEdit.amount || tripForEdit.loanAmount || ''}
+                      defaultValue={tripForEdit.amount || tripForEdit.loanAmount}
                       onChange={(e) => setTripForEdit({ ...tripForEdit, amount: parseFloat(e.target.value), loanAmount: parseFloat(e.target.value) })}
                     />
                   </div>
@@ -4405,7 +4563,7 @@ print(response.json())`;
                       id="edit-interestRate"
                       type="number"
                       step="0.1"
-                      value={tripForEdit.interestRate || tripForEdit.loanInterestRate || ''}
+                      defaultValue={tripForEdit.interestRate || tripForEdit.loanInterestRate}
                       onChange={(e) => setTripForEdit({ ...tripForEdit, interestRate: parseFloat(e.target.value), loanInterestRate: parseFloat(e.target.value) })}
                     />
                   </div>
@@ -4414,7 +4572,7 @@ print(response.json())`;
                     <Input
                       id="edit-maturityDays"
                       type="number"
-                      value={tripForEdit.maturityDays || ''}
+                      defaultValue={tripForEdit.maturityDays}
                       onChange={(e) => setTripForEdit({ ...tripForEdit, maturityDays: parseInt(e.target.value) })}
                     />
                   </div>
