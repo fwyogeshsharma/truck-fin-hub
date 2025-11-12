@@ -36,15 +36,19 @@ const TransporterDashboard = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [allTrips, walletData] = await Promise.all([
-          data.getTrips(),
+        // Get trips for this transporter and also fetch available trips (funded/escrowed)
+        const [transporterTrips, availableTrips, walletData] = await Promise.all([
+          data.getTrips({ transporterId: user?.id || 't1' }),
+          data.getTrips({ status: 'funded' }),
           data.getWallet(user?.id || 't1')
         ]);
 
-        // Filter trips for this transporter - include escrowed and funded trips
-        const filteredTrips = allTrips.filter(t =>
-          t.transporterId === user?.id || t.status === 'funded' || t.status === 'escrowed'
-        );
+        // Combine transporter trips with available trips (remove duplicates)
+        const tripMap = new Map();
+        [...transporterTrips, ...availableTrips].forEach(trip => {
+          tripMap.set(trip.id, trip);
+        });
+        const filteredTrips = Array.from(tripMap.values());
 
         setMyTrips(filteredTrips);
         setWallet(walletData);
@@ -104,10 +108,15 @@ const TransporterDashboard = () => {
       status: 'in_transit',
     });
     // Reload data to show updated trip
-    const allTrips = await data.getTrips();
-    const filteredTrips = allTrips.filter(t =>
-      t.transporterId === user?.id || t.status === 'funded' || t.status === 'escrowed'
-    );
+    const [transporterTrips, availableTrips] = await Promise.all([
+      data.getTrips({ transporterId: user?.id || 't1' }),
+      data.getTrips({ status: 'funded' }),
+    ]);
+    const tripMap = new Map();
+    [...transporterTrips, ...availableTrips].forEach(trip => {
+      tripMap.set(trip.id, trip);
+    });
+    const filteredTrips = Array.from(tripMap.values());
     setMyTrips(filteredTrips);
     setConfirmDialogOpen(false);
     setSelectedTripForAcceptance(null);
@@ -119,10 +128,15 @@ const TransporterDashboard = () => {
       completedAt: new Date().toISOString(),
     });
     // Reload data to show updated trip
-    const allTrips = await data.getTrips();
-    const filteredTrips = allTrips.filter(t =>
-      t.transporterId === user?.id || t.status === 'funded' || t.status === 'escrowed'
-    );
+    const [transporterTrips, availableTrips] = await Promise.all([
+      data.getTrips({ transporterId: user?.id || 't1' }),
+      data.getTrips({ status: 'funded' }),
+    ]);
+    const tripMap = new Map();
+    [...transporterTrips, ...availableTrips].forEach(trip => {
+      tripMap.set(trip.id, trip);
+    });
+    const filteredTrips = Array.from(tripMap.values());
     setMyTrips(filteredTrips);
   };
 
