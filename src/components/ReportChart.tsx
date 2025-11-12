@@ -24,6 +24,7 @@ interface ReportChartProps {
 
 const ReportChart: React.FC<ReportChartProps> = ({ chart }) => {
   const [isDark, setIsDark] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     // Check if dark mode is active
@@ -31,8 +32,14 @@ const ReportChart: React.FC<ReportChartProps> = ({ chart }) => {
       setIsDark(document.documentElement.classList.contains('dark'));
     };
 
-    // Initial check
+    // Check if mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640); // sm breakpoint
+    };
+
+    // Initial checks
     checkDarkMode();
+    checkMobile();
 
     // Watch for changes
     const observer = new MutationObserver(checkDarkMode);
@@ -41,7 +48,13 @@ const ReportChart: React.FC<ReportChartProps> = ({ chart }) => {
       attributeFilter: ['class'],
     });
 
-    return () => observer.disconnect();
+    // Watch for resize
+    window.addEventListener('resize', checkMobile);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', checkMobile);
+    };
   }, []);
 
   // Theme-aware colors
@@ -80,22 +93,31 @@ const ReportChart: React.FC<ReportChartProps> = ({ chart }) => {
 
   const rechartsData = transformData();
 
+  // Responsive chart configuration
+  const chartConfig = {
+    margin: isMobile ? { top: 5, right: 5, left: -20, bottom: 0 } : { top: 10, right: 30, left: 0, bottom: 0 },
+    fontSize: isMobile ? '10px' : '12px',
+    pieRadius: isMobile ? 70 : 100,
+    strokeWidth: isMobile ? 2 : 3,
+    dotRadius: isMobile ? 3 : 5,
+  };
+
   // Custom tooltip with theme support
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
         <div
-          className="rounded-lg border p-3 shadow-lg"
+          className={`rounded-lg border shadow-lg ${isMobile ? 'p-2' : 'p-3'}`}
           style={{
             backgroundColor: colors.background,
             borderColor: colors.grid,
           }}
         >
-          <p className="font-semibold mb-2" style={{ color: colors.text }}>
+          <p className={`font-semibold ${isMobile ? 'mb-1 text-xs' : 'mb-2 text-sm'}`} style={{ color: colors.text }}>
             {label}
           </p>
           {payload.map((entry: any, index: number) => (
-            <p key={index} style={{ color: entry.color }} className="text-sm">
+            <p key={index} style={{ color: entry.color }} className={isMobile ? 'text-xs' : 'text-sm'}>
               {entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
             </p>
           ))}
@@ -111,18 +133,28 @@ const ReportChart: React.FC<ReportChartProps> = ({ chart }) => {
       case 'bar':
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={rechartsData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <BarChart data={rechartsData} margin={chartConfig.margin}>
               <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} opacity={0.3} />
-              <XAxis dataKey="name" stroke={colors.text} style={{ fontSize: '12px' }} />
-              <YAxis stroke={colors.text} style={{ fontSize: '12px' }} />
+              <XAxis
+                dataKey="name"
+                stroke={colors.text}
+                style={{ fontSize: chartConfig.fontSize }}
+                angle={isMobile ? -45 : 0}
+                textAnchor={isMobile ? 'end' : 'middle'}
+                height={isMobile ? 60 : 30}
+              />
+              <YAxis stroke={colors.text} style={{ fontSize: chartConfig.fontSize }} />
               <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ color: colors.text }} />
+              <Legend
+                wrapperStyle={{ color: colors.text, fontSize: chartConfig.fontSize }}
+                iconSize={isMobile ? 8 : 14}
+              />
               {chart.data.datasets.map((dataset, index) => (
                 <Bar
                   key={index}
                   dataKey={dataset.label || `value${index}`}
                   fill={colorPalette[index % colorPalette.length]}
-                  radius={[8, 8, 0, 0]}
+                  radius={isMobile ? [4, 4, 0, 0] : [8, 8, 0, 0]}
                   animationDuration={800}
                 />
               ))}
@@ -133,21 +165,31 @@ const ReportChart: React.FC<ReportChartProps> = ({ chart }) => {
       case 'line':
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={rechartsData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <LineChart data={rechartsData} margin={chartConfig.margin}>
               <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} opacity={0.3} />
-              <XAxis dataKey="name" stroke={colors.text} style={{ fontSize: '12px' }} />
-              <YAxis stroke={colors.text} style={{ fontSize: '12px' }} />
+              <XAxis
+                dataKey="name"
+                stroke={colors.text}
+                style={{ fontSize: chartConfig.fontSize }}
+                angle={isMobile ? -45 : 0}
+                textAnchor={isMobile ? 'end' : 'middle'}
+                height={isMobile ? 60 : 30}
+              />
+              <YAxis stroke={colors.text} style={{ fontSize: chartConfig.fontSize }} />
               <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ color: colors.text }} />
+              <Legend
+                wrapperStyle={{ color: colors.text, fontSize: chartConfig.fontSize }}
+                iconSize={isMobile ? 8 : 14}
+              />
               {chart.data.datasets.map((dataset, index) => (
                 <Line
                   key={index}
                   type="monotone"
                   dataKey={dataset.label || `value${index}`}
                   stroke={colorPalette[index % colorPalette.length]}
-                  strokeWidth={3}
-                  dot={{ r: 5, fill: colorPalette[index % colorPalette.length] }}
-                  activeDot={{ r: 7 }}
+                  strokeWidth={chartConfig.strokeWidth}
+                  dot={{ r: chartConfig.dotRadius, fill: colorPalette[index % colorPalette.length] }}
+                  activeDot={{ r: chartConfig.dotRadius + 2 }}
                   animationDuration={800}
                 />
               ))}
@@ -158,7 +200,7 @@ const ReportChart: React.FC<ReportChartProps> = ({ chart }) => {
       case 'area':
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={rechartsData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <AreaChart data={rechartsData} margin={chartConfig.margin}>
               <defs>
                 {chart.data.datasets.map((dataset, index) => (
                   <linearGradient key={index} id={`colorGradient${index}`} x1="0" y1="0" x2="0" y2="1">
@@ -168,17 +210,27 @@ const ReportChart: React.FC<ReportChartProps> = ({ chart }) => {
                 ))}
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} opacity={0.3} />
-              <XAxis dataKey="name" stroke={colors.text} style={{ fontSize: '12px' }} />
-              <YAxis stroke={colors.text} style={{ fontSize: '12px' }} />
+              <XAxis
+                dataKey="name"
+                stroke={colors.text}
+                style={{ fontSize: chartConfig.fontSize }}
+                angle={isMobile ? -45 : 0}
+                textAnchor={isMobile ? 'end' : 'middle'}
+                height={isMobile ? 60 : 30}
+              />
+              <YAxis stroke={colors.text} style={{ fontSize: chartConfig.fontSize }} />
               <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ color: colors.text }} />
+              <Legend
+                wrapperStyle={{ color: colors.text, fontSize: chartConfig.fontSize }}
+                iconSize={isMobile ? 8 : 14}
+              />
               {chart.data.datasets.map((dataset, index) => (
                 <Area
                   key={index}
                   type="monotone"
                   dataKey={dataset.label || `value${index}`}
                   stroke={colorPalette[index % colorPalette.length]}
-                  strokeWidth={2}
+                  strokeWidth={chartConfig.strokeWidth}
                   fillOpacity={1}
                   fill={`url(#colorGradient${index})`}
                   animationDuration={800}
@@ -206,9 +258,13 @@ const ReportChart: React.FC<ReportChartProps> = ({ chart }) => {
                 data={pieData}
                 cx="50%"
                 cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={100}
+                labelLine={!isMobile}
+                label={
+                  isMobile
+                    ? false
+                    : ({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`
+                }
+                outerRadius={chartConfig.pieRadius}
                 fill="#8884d8"
                 dataKey="value"
                 animationDuration={800}
@@ -218,7 +274,10 @@ const ReportChart: React.FC<ReportChartProps> = ({ chart }) => {
                 ))}
               </Pie>
               <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ color: colors.text }} />
+              <Legend
+                wrapperStyle={{ color: colors.text, fontSize: chartConfig.fontSize }}
+                iconSize={isMobile ? 8 : 14}
+              />
             </PieChart>
           </ResponsiveContainer>
         );

@@ -138,26 +138,26 @@ const TransporterDashboard = () => {
 
   return (
     <DashboardLayout role="transporter">
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6 px-3 sm:px-4">
         <div>
-          <h1 className="text-3xl font-bold">{toTitleCase(user?.name) || "User"}'s Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Manage your trips and deliveries</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">{toTitleCase(user?.name) || "User"}'s Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage your trips and deliveries</p>
         </div>
 
         {/* Stats */}
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (
               <Card key={stat.title}>
-                <CardContent className="pt-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">{stat.title}</p>
-                      <p className="text-3xl font-bold mt-2">{stat.value}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">{stat.title}</p>
+                      <p className="text-2xl sm:text-3xl font-bold mt-1 sm:mt-2">{stat.value}</p>
                     </div>
-                    <div className={`w-12 h-12 rounded-full bg-${stat.color}/10 flex items-center justify-center`}>
-                      <Icon className={`h-6 w-6 text-${stat.color}`} />
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-${stat.color}/10 flex items-center justify-center`}>
+                      <Icon className={`h-5 w-5 sm:h-6 sm:w-6 text-${stat.color}`} />
                     </div>
                   </div>
                 </CardContent>
@@ -171,21 +171,21 @@ const TransporterDashboard = () => {
 
         {/* Financial Analytics */}
         <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Financial Analytics
             </CardTitle>
-            <CardDescription>Your earnings and financial overview</CardDescription>
+            <CardDescription className="text-xs sm:text-sm">Your earnings and financial overview</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-4 gap-6">
+          <CardContent className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               {/* Total Earnings */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 bg-background rounded-lg border">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                   <span>Total Earnings</span>
                 </div>
-                <p className="text-2xl font-bold text-primary">
+                <p className="text-xl sm:text-2xl font-bold text-primary">
                   {formatCurrency(totalEarnings)}
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -194,12 +194,12 @@ const TransporterDashboard = () => {
               </div>
 
               {/* Average Trip Value */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <TruckIcon className="h-4 w-4" />
+              <div className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 bg-background rounded-lg border">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                  <TruckIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span>Avg Trip Value</span>
                 </div>
-                <p className="text-2xl font-bold text-secondary">
+                <p className="text-xl sm:text-2xl font-bold text-secondary">
                   {formatCurrency(avgTripValue)}
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -208,12 +208,12 @@ const TransporterDashboard = () => {
               </div>
 
               {/* Interest Paid */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <DollarSign className="h-4 w-4" />
+              <div className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 bg-background rounded-lg border">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                  <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span>Interest Paid</span>
                 </div>
-                <p className="text-2xl font-bold text-orange-600">
+                <p className="text-xl sm:text-2xl font-bold text-orange-600">
                   {formatCurrency(totalInterestPaid)}
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -222,12 +222,12 @@ const TransporterDashboard = () => {
               </div>
 
               {/* Wallet Balance */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <WalletIcon className="h-4 w-4" />
+              <div className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 bg-background rounded-lg border">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                  <WalletIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span>Available Balance</span>
                 </div>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-xl sm:text-2xl font-bold text-green-600">
                   {formatCurrency(wallet.balance)}
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -238,21 +238,21 @@ const TransporterDashboard = () => {
 
             {/* Detailed Interest Breakdown */}
             {repaidTrips.length > 0 && (
-              <div className="mt-6 pt-6 border-t">
-                <h4 className="font-semibold mb-4 flex items-center gap-2">
+              <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t">
+                <h4 className="font-semibold text-sm sm:text-base mb-3 sm:mb-4 flex items-center gap-2">
                   Interest Paid Breakdown
                 </h4>
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {repaidTrips.slice(0, 5).map((trip) => (
-                    <div key={trip.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{trip.origin} → {trip.destination}</p>
+                    <div key={trip.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 p-3 bg-muted/50 rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-xs sm:text-sm truncate">{trip.origin} → {trip.destination}</p>
                         <p className="text-xs text-muted-foreground">
                           {trip.loadType} • Principal: {formatCurrency(trip.repaymentPrincipal || trip.amount)}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-orange-600">
+                      <div className="text-left sm:text-right flex-shrink-0">
+                        <p className="font-semibold text-sm sm:text-base text-orange-600">
                           {formatCurrency(trip.repaymentInterest || 0)}
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -262,7 +262,7 @@ const TransporterDashboard = () => {
                     </div>
                   ))}
                   {repaidTrips.length > 5 && (
-                    <p className="text-xs text-center text-muted-foreground">
+                    <p className="text-xs text-center text-muted-foreground pt-2">
                       And {repaidTrips.length - 5} more trips...
                     </p>
                   )}
@@ -274,40 +274,43 @@ const TransporterDashboard = () => {
 
         {/* Available Trips */}
         <Card>
-          <CardHeader>
-            <CardTitle>Available Trips</CardTitle>
-            <CardDescription>Escrowed and funded trips awaiting assignment</CardDescription>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-lg">Available Trips</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Escrowed and funded trips awaiting assignment</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="p-4 sm:p-6">
+            <div className="space-y-3 sm:space-y-4">
               {myTrips.filter(t => (t.status === 'funded' || t.status === 'escrowed') && !t.transporterId).slice(0, 3).map((trip) => (
-                <div key={trip.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div key={trip.id} className="flex flex-col gap-3 p-3 sm:p-4 border rounded-lg">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <MapPin className="h-4 w-4 text-primary" />
-                      <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
+                    <div className="flex items-start gap-2 mb-2 flex-wrap">
+                      <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                      <h4 className="font-semibold text-sm sm:text-base flex-1 min-w-0">{trip.origin} → {trip.destination}</h4>
                       {trip.status === 'escrowed' && (
-                        <Badge variant="outline" className="bg-accent/10 text-accent">
+                        <Badge variant="outline" className="bg-accent/10 text-accent text-xs">
                           <Shield className="h-3 w-3 mr-1" />
                           Escrowed
                         </Badge>
                       )}
                       {trip.status === 'funded' && (
-                        <Badge variant="outline" className="bg-secondary/10 text-secondary">
+                        <Badge variant="outline" className="bg-secondary/10 text-secondary text-xs">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
                           Funded
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg • {trip.distance} km</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg • {trip.distance} km</p>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="font-semibold text-secondary">{formatCurrencyForTransporter(trip.amount)}</p>
+                  <div className="flex items-center justify-between gap-3 pt-2 border-t">
+                    <div className="flex-1">
+                      <p className="font-semibold text-base sm:text-lg text-secondary">{formatCurrencyForTransporter(trip.amount)}</p>
                       <p className="text-xs text-muted-foreground">Payment</p>
                     </div>
-                    <Button className="bg-gradient-primary" onClick={() => handleOpenConfirmDialog(trip)}>
-                      Accept
+                    <Button
+                      className="bg-gradient-primary min-h-[44px] px-4 sm:px-6"
+                      onClick={() => handleOpenConfirmDialog(trip)}
+                    >
+                      Accept Trip
                     </Button>
                   </div>
                 </div>
@@ -318,23 +321,27 @@ const TransporterDashboard = () => {
 
         {/* Active Trips */}
         <Card>
-          <CardHeader>
-            <CardTitle>Your Active Trips</CardTitle>
-            <CardDescription>Trips in transit</CardDescription>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-lg">Your Active Trips</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Trips in transit</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="p-4 sm:p-6">
+            <div className="space-y-3 sm:space-y-4">
               {myTrips.filter(t => t.status === 'in_transit').map((trip) => (
-                <div key={trip.id} className="flex items-center justify-between p-4 border rounded-lg bg-secondary/5">
+                <div key={trip.id} className="flex flex-col gap-3 p-3 sm:p-4 border rounded-lg bg-secondary/5">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <TruckIcon className="h-4 w-4 text-secondary" />
-                      <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
+                    <div className="flex items-start gap-2 mb-2 flex-wrap">
+                      <TruckIcon className="h-4 w-4 text-secondary mt-0.5 flex-shrink-0" />
+                      <h4 className="font-semibold text-sm sm:text-base flex-1 min-w-0">{trip.origin} → {trip.destination}</h4>
                       <span className="text-xs px-2 py-1 rounded-full bg-secondary/20 text-secondary">In Transit</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{trip.loadType} • {trip.weight} kg</p>
                   </div>
-                  <Button variant="outline" onClick={() => handleCompleteTrip(trip.id)}>
+                  <Button
+                    variant="outline"
+                    className="w-full min-h-[44px]"
+                    onClick={() => handleCompleteTrip(trip.id)}
+                  >
                     Mark Complete
                   </Button>
                 </div>
@@ -346,47 +353,47 @@ const TransporterDashboard = () => {
 
       {/* Confirmation Dialog */}
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-primary" />
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
               Confirm Trip Acceptance
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Are you sure you want to accept this trip? Once accepted, you will be responsible for completing the delivery.
             </DialogDescription>
           </DialogHeader>
 
           {selectedTripForAcceptance && (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <Card className="bg-muted/50">
-                <CardContent className="pt-6">
+                <CardContent className="p-4 sm:pt-6">
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-primary" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Route</p>
-                        <p className="font-semibold">
+                    <div className="flex items-start gap-2">
+                      <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm text-muted-foreground">Route</p>
+                        <p className="font-semibold text-sm sm:text-base break-words">
                           {selectedTripForAcceptance.origin} → {selectedTripForAcceptance.destination}
                         </p>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <p className="text-sm text-muted-foreground">Load Type</p>
-                        <p className="font-medium">{selectedTripForAcceptance.loadType}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Load Type</p>
+                        <p className="font-medium text-xs sm:text-sm truncate">{selectedTripForAcceptance.loadType}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Weight</p>
-                        <p className="font-medium">{selectedTripForAcceptance.weight} kg</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Weight</p>
+                        <p className="font-medium text-xs sm:text-sm">{selectedTripForAcceptance.weight} kg</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Distance</p>
-                        <p className="font-medium">{selectedTripForAcceptance.distance} km</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Distance</p>
+                        <p className="font-medium text-xs sm:text-sm">{selectedTripForAcceptance.distance} km</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Payment</p>
-                        <p className="font-semibold text-secondary">
+                        <p className="text-xs sm:text-sm text-muted-foreground">Payment</p>
+                        <p className="font-semibold text-sm sm:text-base text-secondary">
                           {formatCurrencyForTransporter(selectedTripForAcceptance.amount)}
                         </p>
                       </div>
@@ -395,17 +402,18 @@ const TransporterDashboard = () => {
                 </CardContent>
               </Card>
 
-              <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <p className="text-sm text-blue-900 dark:text-blue-200">
+              <div className="p-3 sm:p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-xs sm:text-sm text-blue-900 dark:text-blue-200">
                   By accepting this trip, you confirm that you have the necessary vehicle and will complete the delivery as per the terms.
                 </p>
               </div>
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
+              className="w-full sm:w-auto min-h-[44px]"
               onClick={() => {
                 setConfirmDialogOpen(false);
                 setSelectedTripForAcceptance(null);
@@ -413,7 +421,10 @@ const TransporterDashboard = () => {
             >
               Cancel
             </Button>
-            <Button className="bg-gradient-primary" onClick={handleAcceptTrip}>
+            <Button
+              className="bg-gradient-primary w-full sm:w-auto min-h-[44px]"
+              onClick={handleAcceptTrip}
+            >
               <CheckCircle2 className="h-4 w-4 mr-2" />
               Confirm & Accept Trip
             </Button>

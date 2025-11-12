@@ -146,11 +146,11 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   return (
     <div className="min-h-screen bg-background prevent-horizontal-scroll">
       {/* Header - Mobile optimized sticky header */}
-      <header className="mobile-sticky-header">
-        <div className="container mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3 md:gap-6">
+      <header className="mobile-sticky-header border-b">
+        <div className="container mx-auto px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-6">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-              <img src="/logiFin.png" alt="LogiFin" className="h-8 w-auto md:h-10 object-contain" />
+              <img src="/logiFin.png" alt="LogiFin" className="h-7 sm:h-8 md:h-10 w-auto object-contain" />
             </div>
 
             {/* Desktop Navigation */}
@@ -161,7 +161,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                   <Button
                     key={item.path}
                     variant="ghost"
-                    className="gap-2"
+                    className="gap-2 min-h-[44px]"
                     onClick={() => navigate(item.path)}
                   >
                     <NavIcon className="h-4 w-4" />
@@ -321,14 +321,17 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
       </header>
 
       {/* Main Content - Mobile optimized spacing */}
-      <main className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 prevent-horizontal-scroll">
+      <main className="container mx-auto px-0 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6 lg:py-8 prevent-horizontal-scroll">
         {children}
       </main>
 
-      {/* Footer - Hidden on mobile */}
-      <div className="hidden md:block">
+      {/* Footer - Hidden on mobile, shown on tablet and above */}
+      <div className="hidden sm:block">
         <Footer />
       </div>
+
+      {/* Mobile Safe Area - Prevents content being hidden by gesture bars */}
+      <div className="h-safe-area-inset-bottom sm:hidden" />
     </div>
   );
 };

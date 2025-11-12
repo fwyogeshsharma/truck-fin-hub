@@ -324,37 +324,37 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
           </div>
           <CardDescription className="text-xs sm:text-sm mt-2">Manage your investment wallet</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6">
           {/* Available Balance */}
-          <div className="bg-gradient-primary p-6 rounded-lg text-primary-foreground">
-            <p className="text-sm opacity-90 mb-1">Available Balance</p>
-            <p className="text-4xl font-bold">{formatCurrency(availableBalance)}</p>
+          <div className="bg-gradient-primary p-4 sm:p-5 md:p-6 rounded-lg text-primary-foreground">
+            <p className="text-xs sm:text-sm opacity-90 mb-1">Available Balance</p>
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold break-all">{formatCurrency(availableBalance)}</p>
           </div>
 
           {showDetails && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
               {/* Locked in Escrow */}
-              <div className="p-4 bg-muted rounded-lg">
+              <div className="p-3 sm:p-4 bg-muted rounded-lg">
                 <p className="text-xs text-muted-foreground mb-1">In Escrow</p>
-                <p className="text-lg font-semibold">{formatCurrencyCompact(lockedAmount, true)}</p>
+                <p className="text-base sm:text-lg font-semibold break-all">{formatCurrencyCompact(lockedAmount, true)}</p>
               </div>
 
               {/* Total Invested */}
-              <div className="p-4 bg-muted rounded-lg">
+              <div className="p-3 sm:p-4 bg-muted rounded-lg">
                 <p className="text-xs text-muted-foreground mb-1">Total Invested</p>
-                <p className="text-lg font-semibold">{formatCurrencyCompact(totalInvested, true)}</p>
+                <p className="text-base sm:text-lg font-semibold break-all">{formatCurrencyCompact(totalInvested, true)}</p>
               </div>
 
               {/* Total Returns */}
-              <div className="p-4 bg-muted rounded-lg">
+              <div className="p-3 sm:p-4 bg-muted rounded-lg">
                 <p className="text-xs text-muted-foreground mb-1">Total Returns</p>
-                <p className="text-lg font-semibold text-green-600">{formatCurrencyCompact(totalReturns, true)}</p>
+                <p className="text-base sm:text-lg font-semibold text-green-600 break-all">{formatCurrencyCompact(totalReturns, true)}</p>
               </div>
 
               {/* Net Worth */}
-              <div className="p-4 bg-muted rounded-lg">
+              <div className="p-3 sm:p-4 bg-muted rounded-lg">
                 <p className="text-xs text-muted-foreground mb-1">Net Worth</p>
-                <p className="text-lg font-semibold">
+                <p className="text-base sm:text-lg font-semibold break-all">
                   {formatCurrencyCompact(availableBalance + lockedAmount + totalInvested, true)}
                 </p>
               </div>
@@ -365,47 +365,47 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
 
       {/* Top-Up Dialog */}
       <Dialog open={topUpDialogOpen} onOpenChange={setTopUpDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ArrowUpCircle className="h-5 w-5 text-primary" />
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <ArrowUpCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
               Add Money to Wallet
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Transfer money to LogiFin bank account and submit proof
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* LogiFin Bank Details */}
             <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-blue-600" />
+              <CardHeader className="p-3 sm:p-4 md:p-6">
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
                   LogiFin Bank Account Details
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
+              <CardContent className="space-y-3 p-3 sm:p-4 md:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <p className="text-xs text-muted-foreground">Account Holder Name</p>
-                    <p className="font-semibold">LogiFin Private Limited</p>
+                    <p className="font-semibold text-xs sm:text-sm break-words">LogiFin Private Limited</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Account Number</p>
-                    <p className="font-semibold font-mono">1234567890123456</p>
+                    <p className="font-semibold font-mono text-xs sm:text-sm break-all">1234567890123456</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">IFSC Code</p>
-                    <p className="font-semibold font-mono">SBIN0001234</p>
+                    <p className="font-semibold font-mono text-xs sm:text-sm">SBIN0001234</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Bank Name</p>
-                    <p className="font-semibold">State Bank of India</p>
+                    <p className="font-semibold text-xs sm:text-sm">State Bank of India</p>
                   </div>
                 </div>
-                <div className="p-3 bg-white dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-200">⏰ Processing Time: 24-48 hours</p>
+                <div className="p-2 sm:p-3 bg-white dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-xs sm:text-sm font-medium text-blue-900 dark:text-blue-200">⏰ Processing Time: 24-48 hours</p>
                   <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">Your request will be verified by our team within 24-48 hours</p>
                 </div>
               </CardContent>
@@ -413,7 +413,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
 
             {/* Deposited Amount */}
             <div>
-              <Label htmlFor="topUpAmount">Deposited Amount (₹)</Label>
+              <Label htmlFor="topUpAmount" className="text-xs sm:text-sm">Deposited Amount (₹)</Label>
               <Input
                 id="topUpAmount"
                 type="number"
@@ -422,7 +422,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
                 onChange={(e) => setTopUpAmount(e.target.value)}
                 min="1000"
                 max="10000000"
-                className="mt-1"
+                className="mt-1 min-h-[44px] text-sm sm:text-base"
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Min: ₹1,000 | Max: ₹1,00,00,000
@@ -431,7 +431,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
 
             {/* Transaction Image Upload */}
             <div>
-              <Label htmlFor="transactionImage">Upload Transaction Screenshot *</Label>
+              <Label htmlFor="transactionImage" className="text-xs sm:text-sm">Upload Transaction Screenshot *</Label>
               <Input
                 id="transactionImage"
                 type="file"
@@ -467,7 +467,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
                     reader.readAsDataURL(file);
                   }
                 }}
-                className="mt-1"
+                className="mt-1 min-h-[44px]"
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Upload a screenshot of your bank transaction as proof (Images only: JPG, PNG, GIF, WebP)
@@ -480,15 +480,24 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setTopUpDialogOpen(false);
-              setTransactionImage('');
-              setTransactionImageFile(null);
-            }} disabled={isProcessing}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setTopUpDialogOpen(false);
+                setTransactionImage('');
+                setTransactionImageFile(null);
+              }}
+              disabled={isProcessing}
+              className="w-full sm:w-auto min-h-[44px]"
+            >
               Cancel
             </Button>
-            <Button onClick={handleTopUp} disabled={isProcessing} className="bg-gradient-primary">
+            <Button
+              onClick={handleTopUp}
+              disabled={isProcessing}
+              className="bg-gradient-primary w-full sm:w-auto min-h-[44px]"
+            >
               {isProcessing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -507,18 +516,18 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
 
       {/* Withdrawal Dialog */}
       <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ArrowDownCircle className="h-5 w-5 text-primary" />
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <ArrowDownCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
               Request Withdrawal
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Submit a withdrawal request. Funds will be transferred to your bank account within 24-48 hours after verification.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* Available Balance */}
             <div className="p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center justify-between">
@@ -552,14 +561,15 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
               <>
                 {/* Quick Amount Selection */}
                 <div>
-                  <Label className="text-sm mb-2 block">Quick Select</Label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <Label className="text-xs sm:text-sm mb-2 block">Quick Select</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {quickAmounts.filter(amt => amt <= wallet.balance).map((amount) => (
                       <Button
                         key={amount}
                         variant="outline"
+                        size="sm"
                         onClick={() => setWithdrawAmount(amount.toString())}
-                        className={withdrawAmount === amount.toString() ? 'border-primary bg-primary/10' : ''}
+                        className={`min-h-[44px] text-xs sm:text-sm ${withdrawAmount === amount.toString() ? 'border-primary bg-primary/10' : ''}`}
                       >
                         {formatCurrencyCompact(amount, true)}
                       </Button>
@@ -569,7 +579,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
 
                 {/* Custom Amount */}
                 <div>
-                  <Label htmlFor="withdrawAmount">Withdrawal Amount (₹)</Label>
+                  <Label htmlFor="withdrawAmount" className="text-xs sm:text-sm">Withdrawal Amount (₹)</Label>
                   <Input
                     id="withdrawAmount"
                     type="number"
@@ -578,7 +588,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
                     onChange={(e) => setWithdrawAmount(e.target.value)}
                     min="100"
                     max={wallet.balance}
-                    className="mt-1"
+                    className="mt-1 min-h-[44px] text-sm sm:text-base"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Min: ₹100 | Max: {formatCurrencyCompact(wallet.balance, true)}
@@ -587,10 +597,10 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
 
                 {/* Bank Account Info */}
                 {primaryBankAccount && (
-                  <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-sm font-medium mb-2">Bank Account</p>
+                  <div className="p-3 sm:p-4 bg-muted rounded-lg">
+                    <p className="text-xs sm:text-sm font-medium mb-2">Bank Account</p>
                     <div className="space-y-1 text-xs">
-                      <p className="text-muted-foreground">
+                      <p className="text-muted-foreground break-words">
                         {primaryBankAccount.bankName} - {primaryBankAccount.accountNumber ? primaryBankAccount.accountNumber.slice(-4) : 'N/A'}
                       </p>
                       <p className="text-muted-foreground">
@@ -603,14 +613,19 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
             )}
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setWithdrawDialogOpen(false)} disabled={isProcessing}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setWithdrawDialogOpen(false)}
+              disabled={isProcessing}
+              className="w-full sm:w-auto min-h-[44px]"
+            >
               Cancel
             </Button>
             <Button
               onClick={handleWithdraw}
               disabled={isProcessing || !hasBankAccount}
-              className="bg-gradient-primary"
+              className="bg-gradient-primary w-full sm:w-auto min-h-[44px]"
             >
               {isProcessing ? (
                 <>
@@ -630,18 +645,18 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
 
       {/* Bank Account Dialog */}
       <Dialog open={bankAccountDialogOpen} onOpenChange={setBankAccountDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-primary" />
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
               Add Bank Account
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Link your bank account to add or withdraw money
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* Alert message */}
             <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5" />
@@ -652,7 +667,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
 
             {/* Account Holder Name */}
             <div>
-              <Label htmlFor="accountHolderName">
+              <Label htmlFor="accountHolderName" className="text-xs sm:text-sm">
                 Account Holder Name <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -660,14 +675,14 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
                 placeholder="As per bank records"
                 value={bankAccountForm.accountHolderName}
                 onChange={(e) => setBankAccountForm({ ...bankAccountForm, accountHolderName: e.target.value })}
-                className="mt-1"
+                className="mt-1 min-h-[44px] text-sm sm:text-base"
                 required
               />
             </div>
 
             {/* Account Number */}
             <div>
-              <Label htmlFor="accountNumber">
+              <Label htmlFor="accountNumber" className="text-xs sm:text-sm">
                 Account Number <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -676,14 +691,14 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
                 placeholder="Enter account number"
                 value={bankAccountForm.accountNumber}
                 onChange={(e) => setBankAccountForm({ ...bankAccountForm, accountNumber: e.target.value })}
-                className="mt-1"
+                className="mt-1 min-h-[44px] text-sm sm:text-base"
                 required
               />
             </div>
 
             {/* IFSC Code */}
             <div>
-              <Label htmlFor="ifscCode">
+              <Label htmlFor="ifscCode" className="text-xs sm:text-sm">
                 IFSC Code <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -691,7 +706,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
                 placeholder="e.g., SBIN0001234"
                 value={bankAccountForm.ifscCode}
                 onChange={(e) => setBankAccountForm({ ...bankAccountForm, ifscCode: e.target.value.toUpperCase() })}
-                className="mt-1"
+                className="mt-1 min-h-[44px] text-sm sm:text-base"
                 maxLength={11}
                 required
               />
@@ -699,7 +714,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
 
             {/* Bank Name */}
             <div>
-              <Label htmlFor="bankName">
+              <Label htmlFor="bankName" className="text-xs sm:text-sm">
                 Bank Name <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -707,21 +722,21 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
                 placeholder="e.g., State Bank of India"
                 value={bankAccountForm.bankName}
                 onChange={(e) => setBankAccountForm({ ...bankAccountForm, bankName: e.target.value })}
-                className="mt-1"
+                className="mt-1 min-h-[44px] text-sm sm:text-base"
                 required
               />
             </div>
 
             {/* Account Type */}
             <div>
-              <Label htmlFor="accountType">
+              <Label htmlFor="accountType" className="text-xs sm:text-sm">
                 Account Type <span className="text-red-500">*</span>
               </Label>
               <select
                 id="accountType"
                 value={bankAccountForm.accountType}
                 onChange={(e) => setBankAccountForm({ ...bankAccountForm, accountType: e.target.value as 'savings' | 'current' })}
-                className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background"
+                className="mt-1 w-full min-h-[44px] px-3 rounded-md border border-input bg-background text-sm sm:text-base"
                 required
               >
                 <option value="savings">Savings Account</option>
@@ -730,18 +745,25 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
             </div>
 
             {/* Note */}
-            <div className="p-3 bg-muted rounded-lg">
+            <div className="p-2 sm:p-3 bg-muted rounded-lg">
               <p className="text-xs text-muted-foreground">
                 <strong>Note:</strong> This is a simulated system. In production, bank account verification would be done through penny drop or other secure methods.
               </p>
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setBankAccountDialogOpen(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setBankAccountDialogOpen(false)}
+              className="w-full sm:w-auto min-h-[44px]"
+            >
               Cancel
             </Button>
-            <Button onClick={handleAddBankAccount} className="bg-gradient-primary">
+            <Button
+              onClick={handleAddBankAccount}
+              className="bg-gradient-primary w-full sm:w-auto min-h-[44px]"
+            >
               <Building2 className="h-4 w-4 mr-2" />
               Add Account
             </Button>
