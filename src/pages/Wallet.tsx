@@ -475,11 +475,11 @@ const WalletPage = () => {
                       <select
                         value={filterType}
                         onChange={(e) => setFilterType(e.target.value as any)}
-                        className="bg-transparent border-none outline-none"
+                        className="bg-transparent border-none outline-none text-foreground cursor-pointer"
                       >
-                        <option value="all">All</option>
-                        <option value="credit">Credit</option>
-                        <option value="debit">Debit</option>
+                        <option value="all" className="text-foreground bg-background">All</option>
+                        <option value="credit" className="text-foreground bg-background">Credit</option>
+                        <option value="debit" className="text-foreground bg-background">Debit</option>
                       </select>
                     </Button>
                     <Button variant="outline" size="sm">
@@ -733,10 +733,30 @@ const WalletPage = () => {
                 <Input
                   id="transactionImage"
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
+                      // Validate file type - only allow images (check both MIME type and extension)
+                      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                      const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+
+                      const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+                      const isValidType = validImageTypes.includes(file.type.toLowerCase());
+                      const isValidExtension = validExtensions.includes(fileExtension);
+
+                      if (!isValidType || !isValidExtension) {
+                        toast({
+                          title: 'Invalid File Type',
+                          description: 'Please upload an image file only (JPG, PNG, GIF, or WebP)',
+                          variant: 'destructive',
+                        });
+                        e.target.value = ''; // Reset the input
+                        setTransactionImage('');
+                        setTransactionImageFile(null);
+                        return;
+                      }
+
                       setTransactionImageFile(file);
                       const reader = new FileReader();
                       reader.onloadend = () => {
@@ -748,7 +768,7 @@ const WalletPage = () => {
                   className="mt-1"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Upload a screenshot of your bank transaction as proof
+                  Upload a screenshot of your bank transaction as proof (Images only: JPG, PNG, GIF, WebP)
                 </p>
                 {transactionImage && (
                   <div className="mt-3">
@@ -829,11 +849,11 @@ const WalletPage = () => {
                       id="bankSelect"
                       value={selectedBankId}
                       onChange={(e) => setSelectedBankId(e.target.value)}
-                      className="w-full mt-1 px-3 py-2 border rounded-md"
+                      className="w-full mt-1 px-3 py-2 border rounded-md text-foreground bg-background"
                     >
-                      <option value="">-- Select Bank --</option>
+                      <option value="" className="text-foreground bg-background">-- Select Bank --</option>
                       {bankAccounts.map((bank) => (
-                        <option key={bank.id} value={bank.id}>
+                        <option key={bank.id} value={bank.id} className="text-foreground bg-background">
                           {bank.bankName} - {bank.accountNumber.slice(-4)} {bank.isPrimary ? '(Primary)' : ''}
                         </option>
                       ))}
@@ -958,10 +978,10 @@ const WalletPage = () => {
                   id="accountType"
                   value={bankForm.accountType}
                   onChange={(e) => setBankForm({ ...bankForm, accountType: e.target.value as 'savings' | 'current' })}
-                  className="w-full mt-1 px-3 py-2 border rounded-md"
+                  className="w-full mt-1 px-3 py-2 border rounded-md text-foreground bg-background"
                 >
-                  <option value="savings">Savings Account</option>
-                  <option value="current">Current Account</option>
+                  <option value="savings" className="text-foreground bg-background">Savings Account</option>
+                  <option value="current" className="text-foreground bg-background">Current Account</option>
                 </select>
               </div>
             </div>

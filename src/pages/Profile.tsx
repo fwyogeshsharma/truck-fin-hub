@@ -27,12 +27,40 @@ const Profile = () => {
     location: user?.location || '',
     company: user?.company || '',
   });
+  const [validationErrors, setValidationErrors] = useState({
+    email: '',
+    phone: '',
+  });
 
   useEffect(() => {
     if (!user) {
       navigate('/auth');
     }
   }, [user, navigate]);
+
+  const validateEmail = (email: string) => {
+    if (!email) {
+      return 'Email is required';
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return 'Please enter a valid email address';
+    }
+    return '';
+  };
+
+  const validatePhone = (phone: string) => {
+    if (!phone) {
+      return 'Phone number is required';
+    }
+    // Indian phone number: 10 digits, optionally starting with +91 or 0
+    const phoneRegex = /^(\+91|0)?[6-9]\d{9}$/;
+    const cleanPhone = phone.replace(/[\s-]/g, ''); // Remove spaces and dashes
+    if (!phoneRegex.test(cleanPhone)) {
+      return 'Please enter a valid 10-digit Indian phone number';
+    }
+    return '';
+  };
 
   const handleEditProfile = () => {
     setFormData({
@@ -42,11 +70,31 @@ const Profile = () => {
       location: user?.location || '',
       company: user?.company || '',
     });
+    setValidationErrors({ email: '', phone: '' });
     setEditDialogOpen(true);
   };
 
   const handleSaveProfile = async () => {
     if (!user?.id) return;
+
+    // Validate fields before saving
+    const emailError = validateEmail(formData.email);
+    const phoneError = validatePhone(formData.phone);
+
+    setValidationErrors({
+      email: emailError,
+      phone: phoneError,
+    });
+
+    // Stop if there are validation errors
+    if (emailError || phoneError) {
+      toast({
+        variant: 'destructive',
+        title: 'Validation Error',
+        description: 'Please fix the errors before saving.',
+      });
+      return;
+    }
 
     setSaving(true);
     try {
@@ -238,18 +286,34 @@ const Profile = () => {
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) => {
+                    const newEmail = e.target.value;
+                    setFormData({ ...formData, email: newEmail });
+                    setValidationErrors({ ...validationErrors, email: validateEmail(newEmail) });
+                  }}
                   placeholder="Enter your email"
+                  className={validationErrors.email ? 'border-red-500' : ''}
                 />
+                {validationErrors.email && (
+                  <p className="text-sm text-red-500">{validationErrors.email}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="Enter your phone number"
+                  onChange={(e) => {
+                    const newPhone = e.target.value;
+                    setFormData({ ...formData, phone: newPhone });
+                    setValidationErrors({ ...validationErrors, phone: validatePhone(newPhone) });
+                  }}
+                  placeholder="Enter your phone number (e.g., 9876543210)"
+                  className={validationErrors.phone ? 'border-red-500' : ''}
                 />
+                {validationErrors.phone && (
+                  <p className="text-sm text-red-500">{validationErrors.phone}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="location">Location</Label>
@@ -274,7 +338,10 @@ const Profile = () => {
               <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={saving}>
                 Cancel
               </Button>
-              <Button onClick={handleSaveProfile} disabled={saving}>
+              <Button
+                onClick={handleSaveProfile}
+                disabled={saving || !!validationErrors.email || !!validationErrors.phone}
+              >
                 {saving ? 'Saving...' : 'Save Changes'}
               </Button>
             </DialogFooter>

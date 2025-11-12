@@ -14,6 +14,7 @@ import {
   FileText,
   BarChart3,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,6 +28,7 @@ const AdminPanel = () => {
   const { toast } = useToast();
   const user = auth.getCurrentUser();
   const [companyData, setCompanyData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalTrips: 0,
@@ -49,14 +51,18 @@ const AdminPanel = () => {
   useEffect(() => {
     const fetchCompanyData = async () => {
       if (!user?.company_id) {
+        setIsLoading(false);
         return;
       }
 
+      setIsLoading(true);
       try {
         const data = await apiClient.get(`/companies/${user.company_id}`);
         setCompanyData(data);
       } catch (error) {
         console.error('Error fetching company data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -157,8 +163,20 @@ const AdminPanel = () => {
           </div>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-center gap-3 py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <p className="text-muted-foreground">Loading company information...</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Company Info Card */}
-        {companyData && (
+        {!isLoading && companyData && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -207,7 +225,7 @@ const AdminPanel = () => {
         )}
 
         {/* Alert if no company assigned */}
-        {!companyData && user?.is_admin && (
+        {!isLoading && !companyData && user?.is_admin && (
           <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-800">
             <CardContent className="pt-6">
               <div className="flex items-start gap-3">

@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { auth } from "@/lib/auth";
 import { data } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -25,6 +24,8 @@ const CreateTrip = () => {
     amount: "",
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -34,26 +35,38 @@ const CreateTrip = () => {
     setFormData({ ...formData, [field]: value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    const trip = data.createTrip({
-      loadOwnerId: user?.id || 'lo1',
-      loadOwnerName: user?.name || 'Load Provider',
-      origin: formData.origin,
-      destination: formData.destination,
-      distance: parseFloat(formData.distance),
-      loadType: formData.loadType,
-      weight: parseFloat(formData.weight),
-      amount: parseFloat(formData.amount),
-    });
+    try {
+      await data.createTrip({
+        loadOwnerId: user?.id || 'lo1',
+        loadOwnerName: user?.name || 'Load Provider',
+        origin: formData.origin,
+        destination: formData.destination,
+        distance: parseFloat(formData.distance),
+        loadType: formData.loadType,
+        weight: parseFloat(formData.weight),
+        amount: parseFloat(formData.amount),
+      });
 
-    toast({
-      title: "Trip created successfully!",
-      description: "Your financing request is now live for lenders",
-    });
+      toast({
+        title: "Trip created successfully!",
+        description: "Your financing request is now live for lenders",
+      });
 
-    navigate('/dashboard/load_owner');
+      navigate('/dashboard/load_owner');
+    } catch (error) {
+      console.error('Error creating trip:', error);
+      toast({
+        title: "Error creating trip",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -157,10 +170,10 @@ const CreateTrip = () => {
               </div>
 
               <div className="flex gap-4">
-                <Button type="submit" className="bg-gradient-primary flex-1">
-                  Submit Financing Request
+                <Button type="submit" className="bg-gradient-primary flex-1" disabled={isSubmitting}>
+                  {isSubmitting ? 'Creating Trip...' : 'Submit Financing Request'}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => navigate('/dashboard/load_owner')}>
+                <Button type="button" variant="outline" onClick={() => navigate('/dashboard/load_owner')} disabled={isSubmitting}>
                   Cancel
                 </Button>
               </div>

@@ -203,6 +203,24 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {/* Role Section with Settings */}
+                <div className="px-2 py-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <RoleIcon className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">{config.title}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => navigate('/settings')}
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate('/profile')}>
                   <UserIcon className="mr-2 h-4 w-4" />
                   <span>Profile</span>
