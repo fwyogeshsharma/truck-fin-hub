@@ -105,14 +105,12 @@ const LoadAgentDashboard = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load trips for this load owner/transporter by user ID
-        let trips;
-        if (user?.id) {
-          // Use API to get trips by load_owner_id
-          trips = await apiClient.get<Trip[]>(`/trips?loadOwnerId=${user.id}`);
-        } else {
-          trips = await data.getTrips();
-        }
+        const userId = user?.id || '';
+        console.log('🔍 Load Agent Dashboard - Loading trips for loadOwnerId:', userId);
+
+        // Load trips filtered by loadOwnerId on server side
+        const trips = await data.getTrips({ loadOwnerId: userId });
+        console.log('✅ Load Agent Dashboard - Received trips:', trips.length);
         setAllTrips(trips);
 
         // Load wallet and transactions
@@ -125,7 +123,7 @@ const LoadAgentDashboard = () => {
           setTransactions(transactionsData);
         }
       } catch (error) {
-        console.error('Failed to load data:', error);
+        console.error('❌ Failed to load data:', error);
       } finally {
         setLoading(false);
       }

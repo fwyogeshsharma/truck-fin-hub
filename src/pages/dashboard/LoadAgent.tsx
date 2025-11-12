@@ -114,14 +114,13 @@ const LoadAgentDashboard = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load trips
-        const trips = await data.getTrips();
-        // Filter trips by company
-        const filteredTrips = trips.filter(trip => {
-          if (!user?.company) return true;
-          return trip.loadOwnerName === user.company;
-        });
-        setAllTrips(filteredTrips);
+        const userId = user?.id || '';
+        console.log('🔍 Load Agent Dashboard - Loading trips for loadOwnerId:', userId);
+
+        // Load trips filtered by loadOwnerId on server side
+        const trips = await data.getTrips({ loadOwnerId: userId });
+        console.log('✅ Load Agent Dashboard - Received trips:', trips.length);
+        setAllTrips(trips);
 
         // Load wallet and transactions
         if (user?.id) {
@@ -133,14 +132,14 @@ const LoadAgentDashboard = () => {
           setTransactions(transactionsData);
         }
       } catch (error) {
-        console.error('Failed to load data:', error);
+        console.error('❌ Failed to load data:', error);
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [refreshKey, user?.company, user?.id]);
+  }, [refreshKey, user?.id]);
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createTripTab, setCreateTripTab] = useState<'form' | 'excel' | 'api'>('form');
