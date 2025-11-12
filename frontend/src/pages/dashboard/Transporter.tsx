@@ -23,17 +23,13 @@ const TransporterDashboard = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [allTrips, walletData] = await Promise.all([
-          data.getTrips(),
+        // Get trips filtered by loadOwnerId (transporter acts as load owner)
+        const [trips, walletData] = await Promise.all([
+          data.getTrips({ loadOwnerId: user?.id || 't1' }),
           data.getWallet(user?.id || 't1')
         ]);
 
-        // Filter trips for this transporter
-        const filteredTrips = allTrips.filter(t =>
-          t.transporterId === user?.id || t.status === 'funded'
-        );
-
-        setMyTrips(filteredTrips);
+        setMyTrips(trips);
         setWallet(walletData);
       } catch (error) {
         console.error('Failed to load data:', error);
@@ -73,11 +69,8 @@ const TransporterDashboard = () => {
       status: 'in_transit',
     });
     // Reload data to show updated trip
-    const allTrips = await data.getTrips();
-    const filteredTrips = allTrips.filter(t =>
-      t.transporterId === user?.id || t.status === 'funded'
-    );
-    setMyTrips(filteredTrips);
+    const trips = await data.getTrips({ loadOwnerId: user?.id || 't1' });
+    setMyTrips(trips);
   };
 
   const handleCompleteTrip = async (tripId: string) => {
@@ -86,11 +79,8 @@ const TransporterDashboard = () => {
       completedAt: new Date().toISOString(),
     });
     // Reload data to show updated trip
-    const allTrips = await data.getTrips();
-    const filteredTrips = allTrips.filter(t =>
-      t.transporterId === user?.id || t.status === 'funded'
-    );
-    setMyTrips(filteredTrips);
+    const trips = await data.getTrips({ loadOwnerId: user?.id || 't1' });
+    setMyTrips(trips);
   };
 
   if (loading) {
