@@ -23,16 +23,20 @@ const TransporterDashboard = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
+        const userId = user?.id || 't1';
+        console.log('🔍 Transporter Dashboard - Loading trips for loadOwnerId:', userId);
+
         // Get trips filtered by loadOwnerId (transporter acts as load owner)
         const [trips, walletData] = await Promise.all([
-          data.getTrips({ loadOwnerId: user?.id || 't1' }),
-          data.getWallet(user?.id || 't1')
+          data.getTrips({ loadOwnerId: userId }),
+          data.getWallet(userId)
         ]);
 
+        console.log('✅ Transporter Dashboard - Received trips:', trips.length);
         setMyTrips(trips);
         setWallet(walletData);
       } catch (error) {
-        console.error('Failed to load data:', error);
+        console.error('❌ Failed to load data:', error);
       } finally {
         setLoading(false);
       }
