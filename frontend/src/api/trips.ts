@@ -34,8 +34,19 @@ export interface UploadDocumentData {
 
 export const tripsAPI = {
   async getAll(filters?: { status?: string; loadOwnerId?: string; lenderId?: string; transporterId?: string }): Promise<Trip[]> {
-    const params = new URLSearchParams(filters as any).toString();
-    return apiClient.get(`/trips${params ? `?${params}` : ''}`);
+    // Filter out undefined values before creating URLSearchParams
+    const cleanFilters: Record<string, string> = {};
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          cleanFilters[key] = value;
+        }
+      });
+    }
+    const params = new URLSearchParams(cleanFilters).toString();
+    const endpoint = `/trips${params ? `?${params}` : ''}`;
+    console.log('🌐 API Call - GET', endpoint);
+    return apiClient.get(endpoint);
   },
 
   async getById(id: string): Promise<Trip> {
