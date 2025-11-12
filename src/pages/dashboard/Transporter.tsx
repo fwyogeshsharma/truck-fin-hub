@@ -173,7 +173,7 @@ const TransporterDashboard = () => {
             <CardDescription className="text-xs sm:text-sm">Your earnings and financial overview</CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
               {/* Total Earnings */}
               <div className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 bg-background rounded-lg border">
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
