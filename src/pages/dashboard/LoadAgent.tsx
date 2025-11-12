@@ -3014,14 +3014,14 @@ const LoadAgentDashboard = () => {
                   {/* API Documentation */}
                   <div className="space-y-4">
                     {/* Endpoint Information */}
-                    <div className="p-4 bg-muted rounded-lg">
+                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
                       <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
                         <Link className="h-4 w-4 text-primary" />
                         API Endpoint
                       </h4>
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between p-3 bg-background rounded border font-mono text-sm">
-                          <div>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-background rounded border">
+                          <div className="font-mono text-xs sm:text-sm break-all">
                             <span className="text-green-600 font-semibold">POST</span>
                             <span className="ml-2">https://api.truckfinhub.com/v1/trips/create</span>
                           </div>
@@ -3035,6 +3035,7 @@ const LoadAgentDashboard = () => {
                                 description: 'API endpoint copied to clipboard',
                               });
                             }}
+                            className="self-end sm:self-auto"
                           >
                             <Copy className="h-4 w-4" />
                           </Button>
@@ -3043,7 +3044,7 @@ const LoadAgentDashboard = () => {
                     </div>
 
                     {/* Authentication */}
-                    <div className="p-4 bg-muted rounded-lg">
+                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
                       <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
                         <Shield className="h-4 w-4 text-primary" />
                         Authentication
@@ -3051,13 +3052,13 @@ const LoadAgentDashboard = () => {
                       <p className="text-xs text-muted-foreground mb-2">
                         Include your API key in the request headers:
                       </p>
-                      <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
-                        <pre>{`Authorization: Bearer YOUR_API_KEY
+                      <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
+                        <pre className="whitespace-pre-wrap break-all">{`Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json`}</pre>
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                           onClick={() => {
                             navigator.clipboard.writeText('Authorization: Bearer YOUR_API_KEY\nContent-Type: application/json');
                             toast({
@@ -3069,18 +3070,18 @@ Content-Type: application/json`}</pre>
                           <Copy className="h-3 w-3" />
                         </Button>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2">
+                      <p className="text-xs text-muted-foreground mt-2 break-all">
                         Contact support to get your API key: support@truckfinhub.com
                       </p>
                     </div>
 
                     {/* Request Body */}
-                    <div className="p-4 bg-muted rounded-lg">
+                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
                       <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
                         <Code className="h-4 w-4 text-primary" />
                         Request Body (JSON)
                       </h4>
-                      <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                      <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
                         <pre>{`{
   "ewayBillNumber": "123456789012",
   "pickup": "Mumbai, Maharashtra",
@@ -3098,7 +3099,7 @@ Content-Type: application/json`}</pre>
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                           onClick={() => {
                             const payload = {
                               ewayBillNumber: "123456789012",
@@ -3127,81 +3128,83 @@ Content-Type: application/json`}</pre>
                     </div>
 
                     {/* Field Descriptions */}
-                    <div className="p-4 bg-muted rounded-lg">
+                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
                       <h4 className="font-semibold text-sm mb-3">Field Descriptions</h4>
                       <div className="space-y-3">
                         <div>
                           <p className="text-xs font-semibold mb-2 text-blue-600">Mandatory Fields (Required*)</p>
-                          <div className="space-y-2 text-xs">
-                            <div className="grid grid-cols-3 gap-2 font-semibold pb-2 border-b">
+                          <div className="space-y-3 text-xs">
+                            {/* Header - Hidden on mobile */}
+                            <div className="hidden sm:grid grid-cols-3 gap-2 font-semibold pb-2 border-b">
                               <span>Field</span>
                               <span>Type</span>
                               <span>Description</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">ewayBillNumber*</span>
-                              <span className="text-muted-foreground">string</span>
-                              <span className="text-muted-foreground">E-way bill number (12-digit unique number)</span>
+                            {/* Mobile: Stack vertically, Desktop: 3 columns */}
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-background sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono text-blue-600 font-semibold">ewayBillNumber*</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Type: </span>string</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Description: </span>E-way bill number (12-digit unique number)</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">pickup*</span>
-                              <span className="text-muted-foreground">string</span>
-                              <span className="text-muted-foreground">Pickup/origin location</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-background sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono text-blue-600 font-semibold">pickup*</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Type: </span>string</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Description: </span>Pickup/origin location</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">destination*</span>
-                              <span className="text-muted-foreground">string</span>
-                              <span className="text-muted-foreground">Delivery destination location</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-background sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono text-blue-600 font-semibold">destination*</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Type: </span>string</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Description: </span>Delivery destination location</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">sender*</span>
-                              <span className="text-muted-foreground">string</span>
-                              <span className="text-muted-foreground">Sender/consignee company name</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-background sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono text-blue-600 font-semibold">sender*</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Type: </span>string</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Description: </span>Sender/consignee company name</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">receiver*</span>
-                              <span className="text-muted-foreground">string</span>
-                              <span className="text-muted-foreground">Receiver company name</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-background sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono text-blue-600 font-semibold">receiver*</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Type: </span>string</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Description: </span>Receiver company name</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">transporter*</span>
-                              <span className="text-muted-foreground">string</span>
-                              <span className="text-muted-foreground">Transport service provider name</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-background sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono text-blue-600 font-semibold">transporter*</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Type: </span>string</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Description: </span>Transport service provider name</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">loanAmount*</span>
-                              <span className="text-muted-foreground">number</span>
-                              <span className="text-muted-foreground">Loan amount in ₹ (20,000 - 80,000)</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-background sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono text-blue-600 font-semibold">loanAmount*</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Type: </span>number</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Description: </span>Loan amount in ₹ (20,000 - 80,000)</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">loanInterestRate*</span>
-                              <span className="text-muted-foreground">number</span>
-                              <span className="text-muted-foreground">Interest rate percentage (8% - 18%)</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-background sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono text-blue-600 font-semibold">loanInterestRate*</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Type: </span>number</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Description: </span>Interest rate percentage (8% - 18%)</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">maturityDays*</span>
-                              <span className="text-muted-foreground">number</span>
-                              <span className="text-muted-foreground">Payment term in days (1-365)</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-background sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono text-blue-600 font-semibold">maturityDays*</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Type: </span>number</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Description: </span>Payment term in days (1-365)</span>
                             </div>
                           </div>
                         </div>
                         <div className="pt-2 border-t">
                           <p className="text-xs font-semibold mb-2 text-gray-600">Optional Fields</p>
-                          <div className="space-y-2 text-xs">
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">distance</span>
-                              <span className="text-muted-foreground">number</span>
-                              <span className="text-muted-foreground">Distance in kilometers</span>
+                          <div className="space-y-3 text-xs">
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-background sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono text-gray-600 font-semibold">distance</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Type: </span>number</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Description: </span>Distance in kilometers</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">loadType</span>
-                              <span className="text-muted-foreground">string</span>
-                              <span className="text-muted-foreground">Type of cargo (e.g., Electronics, FMCG)</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-background sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono text-gray-600 font-semibold">loadType</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Type: </span>string</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Description: </span>Type of cargo (e.g., Electronics, FMCG)</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <span className="font-mono">weight</span>
-                              <span className="text-muted-foreground">number</span>
-                              <span className="text-muted-foreground">Weight in kilograms</span>
+                            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-1 sm:gap-2 p-2 sm:p-0 bg-background sm:bg-transparent rounded sm:rounded-none">
+                              <span className="font-mono text-gray-600 font-semibold">weight</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Type: </span>number</span>
+                              <span className="text-muted-foreground"><span className="sm:hidden font-semibold">Description: </span>Weight in kilograms</span>
                             </div>
                           </div>
                         </div>
@@ -3209,12 +3212,12 @@ Content-Type: application/json`}</pre>
                     </div>
 
                     {/* Response Examples */}
-                    <div className="p-4 bg-muted rounded-lg">
+                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
                       <h4 className="font-semibold text-sm mb-3">Response Examples</h4>
                       <div className="space-y-3">
                         <div>
                           <p className="text-xs font-semibold mb-1 text-green-600">Success (200 OK)</p>
-                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                          <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
                             <pre>{`{
   "success": true,
   "tripId": "trip_abc123xyz",
@@ -3228,7 +3231,7 @@ Content-Type: application/json`}</pre>
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                               onClick={() => {
                                 const response = {
                                   success: true,
@@ -3253,7 +3256,7 @@ Content-Type: application/json`}</pre>
                         </div>
                         <div>
                           <p className="text-xs font-semibold mb-1 text-red-600">Error (400 Bad Request)</p>
-                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                          <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
                             <pre>{`{
   "success": false,
   "error": "Validation Error",
@@ -3265,7 +3268,7 @@ Content-Type: application/json`}</pre>
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                               onClick={() => {
                                 const response = {
                                   success: false,
@@ -3290,12 +3293,12 @@ Content-Type: application/json`}</pre>
                     </div>
 
                     {/* Code Examples */}
-                    <div className="p-4 bg-muted rounded-lg">
+                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
                       <h4 className="font-semibold text-sm mb-3">Code Examples</h4>
                       <div className="space-y-3">
                         <div>
                           <p className="text-xs font-semibold mb-1">JavaScript (Fetch)</p>
-                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                          <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
                             <pre>{`fetch('https://api.truckfinhub.com/v1/trips/create', {
   method: 'POST',
   headers: {
@@ -3323,7 +3326,7 @@ Content-Type: application/json`}</pre>
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                               onClick={() => {
                                 const code = `fetch('https://api.truckfinhub.com/v1/trips/create', {
   method: 'POST',
@@ -3362,7 +3365,7 @@ Content-Type: application/json`}</pre>
                         </div>
                         <div>
                           <p className="text-xs font-semibold mb-1">Python (Requests)</p>
-                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                          <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
                             <pre>{`import requests
 
 url = "https://api.truckfinhub.com/v1/trips/create"
@@ -3390,7 +3393,7 @@ print(response.json())`}</pre>
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                               onClick={() => {
                                 const code = `import requests
 
@@ -3429,7 +3432,7 @@ print(response.json())`;
                         </div>
                         <div>
                           <p className="text-xs font-semibold mb-1">cURL</p>
-                          <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto relative group">
+                          <div className="bg-background p-2 sm:p-3 rounded border font-mono text-[10px] sm:text-xs overflow-x-auto relative group">
                             <pre>{`curl -X POST https://api.truckfinhub.com/v1/trips/create \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
@@ -3450,7 +3453,7 @@ print(response.json())`;
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                               onClick={() => {
                                 const code = `curl -X POST https://api.truckfinhub.com/v1/trips/create \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -3484,9 +3487,9 @@ print(response.json())`;
                     </div>
 
                     {/* Supported Companies */}
-                    <div className="p-4 bg-muted rounded-lg">
+                    <div className="p-3 sm:p-4 bg-muted rounded-lg">
                       <h4 className="font-semibold text-sm mb-3">Supported Consignee Companies</h4>
-                      <div className="bg-background p-3 rounded border text-xs max-h-40 overflow-y-auto">
+                      <div className="bg-background p-2 sm:p-3 rounded border text-[10px] sm:text-xs max-h-40 overflow-y-auto">
                         <div className="grid grid-cols-2 gap-2">
                           {clientCompanies.map((company) => (
                             <div key={company.name} className="flex items-center gap-2">
@@ -3499,12 +3502,12 @@ print(response.json())`;
                     </div>
 
                     {/* Support Information */}
-                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="p-3 sm:p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                       <h4 className="font-semibold text-sm mb-2 text-blue-900 dark:text-blue-100">Need Help?</h4>
-                      <p className="text-xs text-blue-800 dark:text-blue-200 mb-2">
+                      <p className="text-[10px] sm:text-xs text-blue-800 dark:text-blue-200 mb-2">
                         Contact our support team for API key generation and integration assistance:
                       </p>
-                      <div className="space-y-1 text-xs">
+                      <div className="space-y-1 text-[10px] sm:text-xs">
                         <p className="text-blue-900 dark:text-blue-100">
                           <strong>Email:</strong> support@truckfinhub.com
                         </p>
