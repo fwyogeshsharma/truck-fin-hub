@@ -144,9 +144,9 @@ const toSnakeCase = (obj: any): any => {
 
 export const data = {
   // Trips
-  getTrips: async (): Promise<Trip[]> => {
+  getTrips: async (filters?: { status?: string; loadOwnerId?: string; lenderId?: string; transporterId?: string }): Promise<Trip[]> => {
     try {
-      const trips = await tripsAPI.getAll();
+      const trips = await tripsAPI.getAll(filters);
       return toCamelCase(trips);
     } catch (error) {
       console.error('Failed to get trips:', error);
