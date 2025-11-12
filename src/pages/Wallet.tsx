@@ -397,15 +397,15 @@ const WalletPage = () => {
 
   return (
     <DashboardLayout role={user.role}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 sm:space-y-6 px-3 sm:px-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Wallet</h1>
-            <p className="text-muted-foreground mt-1">Manage your funds and transactions</p>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Wallet</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Manage your funds and transactions</p>
           </div>
           <div className="flex gap-2">
             {/* Add Money button - now available for all roles including transporter */}
-            <Button onClick={() => setTopUpDialogOpen(true)} className="bg-gradient-primary">
+            <Button onClick={() => setTopUpDialogOpen(true)} className="bg-gradient-primary flex-1 sm:flex-none min-h-[44px]">
               <Plus className="h-4 w-4 mr-2" />
               Add Money
             </Button>
@@ -413,6 +413,7 @@ const WalletPage = () => {
               variant="outline"
               onClick={() => setWithdrawDialogOpen(true)}
               disabled={walletData.balance === 0}
+              className="flex-1 sm:flex-none min-h-[44px]"
             >
               <ArrowDownCircle className="h-4 w-4 mr-2" />
               Withdraw
@@ -421,70 +422,70 @@ const WalletPage = () => {
         </div>
 
         {/* Wallet Balance Cards */}
-        <div className="grid md:grid-cols-4 gap-4">
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <Card className="col-span-2">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">Available Balance</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{formatCurrency(walletData.balance)}</p>
-              <p className="text-xs text-muted-foreground mt-1">
+            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+              <p className="text-2xl sm:text-3xl font-bold">{formatCurrency(walletData.balance)}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                 ₹{walletData.balance.toLocaleString('en-IN')}
               </p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">In Escrow</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">In Escrow</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{formatCurrencyCompact(walletData.escrowedAmount || 0, true)}</p>
+            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+              <p className="text-lg sm:text-xl md:text-2xl font-bold">{formatCurrencyCompact(walletData.escrowedAmount || 0, true)}</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Total Invested</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">Total Invested</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{formatCurrencyCompact(walletData.totalInvested, true)}</p>
+            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+              <p className="text-lg sm:text-xl md:text-2xl font-bold">{formatCurrencyCompact(walletData.totalInvested, true)}</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Tabs for Ledger and Bank Accounts */}
         <Tabs defaultValue="ledger" className="w-full">
-          <TabsList className="grid w-full md:w-[400px] grid-cols-2">
-            <TabsTrigger value="ledger">Transaction Ledger</TabsTrigger>
-            <TabsTrigger value="banks">Bank Accounts</TabsTrigger>
+          <TabsList className="grid w-full md:w-[400px] grid-cols-2 h-auto">
+            <TabsTrigger value="ledger" className="text-xs sm:text-sm py-2 sm:py-2.5">Transaction Ledger</TabsTrigger>
+            <TabsTrigger value="banks" className="text-xs sm:text-sm py-2 sm:py-2.5">Bank Accounts</TabsTrigger>
           </TabsList>
 
           {/* Ledger Tab */}
           <TabsContent value="ledger" className="space-y-4">
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
+              <CardHeader className="p-4 sm:p-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <CardTitle>Transaction History</CardTitle>
-                    <CardDescription>All your wallet transactions</CardDescription>
+                    <CardTitle className="text-base sm:text-lg">Transaction History</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm mt-1">All your wallet transactions</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      <Filter className="h-4 w-4 mr-2" />
+                    <Button variant="outline" size="sm" className="min-h-[36px] text-xs sm:text-sm">
+                      <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                       <select
                         value={filterType}
                         onChange={(e) => setFilterType(e.target.value as any)}
-                        className="bg-transparent border-none outline-none text-foreground cursor-pointer"
+                        className="bg-transparent border-none outline-none text-foreground cursor-pointer text-xs sm:text-sm"
                       >
                         <option value="all" className="text-foreground bg-background">All</option>
                         <option value="credit" className="text-foreground bg-background">Credit</option>
                         <option value="debit" className="text-foreground bg-background">Debit</option>
                       </select>
                     </Button>
-                    <Button variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export
+                    <Button variant="outline" size="sm" className="min-h-[36px]">
+                      <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-2" />
+                      <span className="hidden sm:inline">Export</span>
                     </Button>
                   </div>
                 </div>
@@ -571,19 +572,19 @@ const WalletPage = () => {
           {/* Bank Accounts Tab */}
           <TabsContent value="banks" className="space-y-4">
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
+              <CardHeader className="p-4 sm:p-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <CardTitle>Saved Bank Accounts</CardTitle>
-                    <CardDescription>Manage your bank accounts for withdrawals</CardDescription>
+                    <CardTitle className="text-base sm:text-lg">Saved Bank Accounts</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm mt-1">Manage your bank accounts for withdrawals</CardDescription>
                   </div>
-                  <Button onClick={() => setAddBankDialogOpen(true)}>
+                  <Button onClick={() => setAddBankDialogOpen(true)} className="w-full sm:w-auto min-h-[44px]">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Bank Account
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
                 {bankAccounts.length === 0 ? (
                   <div className="text-center py-12">
                     <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -599,51 +600,54 @@ const WalletPage = () => {
                 ) : (
                   bankAccounts.map((bank) => (
                     <Card key={bank.id} className={bank.isPrimary ? 'border-2 border-primary' : ''}>
-                      <CardContent className="pt-6">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                              <Building2 className="h-6 w-6 text-primary" />
+                      <CardContent className="p-4 sm:p-6">
+                        <div className="flex flex-col gap-4">
+                          <div className="flex items-start gap-3 sm:gap-4">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                             </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-semibold">{bank.bankName}</h4>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <h4 className="font-semibold text-sm sm:text-base">{bank.bankName}</h4>
                                 {bank.isPrimary && (
-                                  <Badge className="bg-green-600">
+                                  <Badge className="bg-green-600 text-xs">
                                     <CheckCircle className="h-3 w-3 mr-1" />
                                     Primary
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-sm text-muted-foreground">{bank.branchName}</p>
-                              <div className="grid md:grid-cols-2 gap-x-6 gap-y-1 mt-3 text-sm">
-                                <div>
-                                  <span className="text-muted-foreground">Account Holder:</span>
-                                  <p className="font-medium">{bank.accountHolderName}</p>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Account Number:</span>
-                                  <p className="font-medium font-mono">
-                                    XXXX XXXX {bank.accountNumber.slice(-4)}
-                                  </p>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">IFSC Code:</span>
-                                  <p className="font-medium font-mono">{bank.ifscCode}</p>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Account Type:</span>
-                                  <p className="font-medium capitalize">{bank.accountType}</p>
-                                </div>
-                              </div>
+                              <p className="text-xs sm:text-sm text-muted-foreground">{bank.branchName}</p>
                             </div>
                           </div>
-                          <div className="flex gap-2">
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-6 gap-y-2 sm:gap-y-1 text-xs sm:text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Account Holder:</span>
+                              <p className="font-medium">{bank.accountHolderName}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Account Number:</span>
+                              <p className="font-medium font-mono text-xs sm:text-sm">
+                                XXXX XXXX {bank.accountNumber.slice(-4)}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">IFSC Code:</span>
+                              <p className="font-medium font-mono text-xs sm:text-sm">{bank.ifscCode}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Account Type:</span>
+                              <p className="font-medium capitalize">{bank.accountType}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 pt-2 border-t">
                             {!bank.isPrimary && (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleSetPrimary(bank.id)}
+                                className="flex-1 min-h-[36px] text-xs sm:text-sm"
                               >
                                 Set as Primary
                               </Button>
@@ -652,6 +656,7 @@ const WalletPage = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteBank(bank.id)}
+                              className="min-h-[36px] px-3"
                             >
                               <Trash2 className="h-4 w-4 text-red-600" />
                             </Button>
