@@ -15,7 +15,7 @@ import { Wallet as WalletIcon, Plus, ArrowUpCircle, ArrowDownCircle, Loader2, Bu
 import { useToast } from '@/hooks/use-toast';
 import { data, type Wallet, type BankAccount } from '@/lib/data';
 import { formatCurrency, formatCurrencyCompact } from '@/lib/currency';
-import { walletsAPI } from '@/api/wallets';
+import { apiClient } from '@/api/client';
 
 interface WalletCardProps {
   userId: string;
@@ -163,8 +163,13 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
     setIsProcessing(true);
 
     try {
-      // Create transaction request using wallets API
-      await walletsAPI.requestAddMoney(userId, amount, transactionImage);
+      // Create transaction request
+      await apiClient.post('/transaction-requests', {
+        user_id: userId,
+        request_type: 'add_money',
+        amount,
+        transaction_image_url: transactionImage,
+      });
 
       toast({
         title: 'Request Submitted!',
@@ -234,12 +239,15 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
     setIsProcessing(true);
 
     try {
-      // Create withdrawal request using wallets API
-      await walletsAPI.requestWithdraw(userId, amount, {
-        id: primaryBankAccount?.id,
-        accountNumber: primaryBankAccount?.accountNumber || '',
-        ifscCode: primaryBankAccount?.ifscCode || '',
-        bankName: primaryBankAccount?.bankName || '',
+      // Create withdrawal request
+      await apiClient.post('/transaction-requests', {
+        user_id: userId,
+        request_type: 'withdrawal',
+        amount,
+        bank_account_id: primaryBankAccount?.id,
+        bank_account_number: primaryBankAccount?.accountNumber,
+        bank_ifsc_code: primaryBankAccount?.ifscCode,
+        bank_name: primaryBankAccount?.bankName,
       });
 
       toast({
