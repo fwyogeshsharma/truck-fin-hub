@@ -145,7 +145,7 @@ const InvestmentOpportunities = () => {
         setTrips(pendingTrips);
         setWalletData(wallet);
 
-        // Get company members' investments for pending trips (including own bids)
+        // Get company members' investments for pending trips
         if (user.company) {
           const allUsers = auth.getAllUsers();
           const companyUserIds = allUsers
@@ -153,7 +153,7 @@ const InvestmentOpportunities = () => {
             .map(u => u.id);
 
           const companyBids = allInvestments.filter(i =>
-            companyUserIds.includes(i.lenderId)
+            companyUserIds.includes(i.lenderId) && i.lenderId !== user.id
           );
           setCompanyInvestments(companyBids);
         }
@@ -190,7 +190,7 @@ const InvestmentOpportunities = () => {
             .map(u => u.id);
 
           const companyBids = allInvestments.filter(i =>
-            companyUserIds.includes(i.lenderId)
+            companyUserIds.includes(i.lenderId) && i.lenderId !== user.id
           );
           setCompanyInvestments(companyBids);
         }
@@ -208,26 +208,18 @@ const InvestmentOpportunities = () => {
   const [selectedTrips, setSelectedTrips] = useState<string[]>([]);
   const [isCompactView, setIsCompactView] = useState(true); // Default to compact view
 
-  // Helper function to check if there are bids on a trip (including own bid)
-  const getBidsForTrip = (tripId: string) => {
+  // Helper function to check if company members have bid on a trip
+  const getCompanyBidsForTrip = (tripId: string) => {
     const tripBids = companyInvestments.filter(inv => inv.tripId === tripId);
     if (tripBids.length === 0) return null;
 
     const allUsers = auth.getAllUsers();
-    const userHasBid = tripBids.some(bid => bid.lenderId === user?.id);
-    const otherBids = tripBids.filter(bid => bid.lenderId !== user?.id);
-
-    const lenders = otherBids.slice(0, 2).map(bid => {
-      const lender = allUsers.find(u => u.id === bid.lenderId);
-      return toTitleCase(lender?.name || 'Unknown');
+    const lenders = tripBids.map(bid => {
+      const user = allUsers.find(u => u.id === bid.lenderId);
+      return user?.name || 'Unknown';
     });
 
-    return {
-      totalCount: tripBids.length,
-      otherCount: otherBids.length,
-      userHasBid,
-      lenders,
-    };
+    return { count: lenders.length, lenders: lenders.slice(0, 2) }; // Show max 2 names
   };
   const [tripInterestRates, setTripInterestRates] = useState<
     Record<string, number>
@@ -673,8 +665,11 @@ const InvestmentOpportunities = () => {
         interestRate,
       );
 
-      // Don't update trip status - keep it as "pending" so other lenders can also bid
-      // Trip status will be updated only when load owner/agent confirms/allots the trip
+      // Update trip status to escrowed and set the accepted bid's interest rate
+      await data.updateTrip(tripId, {
+        status: "escrowed",
+        interestRate: interestRate,
+      });
 
       // Refresh trips list
       const allTrips = await data.getTrips();
@@ -846,8 +841,11 @@ const InvestmentOpportunities = () => {
         });
       }
 
-      // 6. Don't update trip status - keep it as "pending" so other lenders can also bid
-      // Trip status will be updated only when load owner/agent confirms/allots the trip
+      // 6. Update trip status to escrowed
+      await data.updateTrip(pendingBidData.tripId, {
+        status: "escrowed",
+        interestRate: interestRate,
+      });
 
       // 7. Refresh trips list
       const allTrips = await data.getTrips();
@@ -935,8 +933,11 @@ const InvestmentOpportunities = () => {
           adjustedTripRate,
         );
 
-        // Don't update trip status - keep it as "pending" so other lenders can also bid
-        // Trip status will be updated only when load owner/agent confirms/allots the trip
+        // Update trip status to escrowed and set the accepted bid's interest rate
+        await data.updateTrip(tripId, {
+          status: "escrowed",
+          interestRate: adjustedTripRate,
+        });
       }
 
       // Refresh trips list
@@ -1331,7 +1332,7 @@ const InvestmentOpportunities = () => {
                 // tripRate is ARR, calculate return for maturity period
                 const expectedReturn =
                   (trip.amount * (tripRate / 365) * maturityDays) / 100;
-                const bidsInfo = getBidsForTrip(trip.id);
+                const companyBids = getCompanyBidsForTrip(trip.id);
 
                 return (
                   <Card
@@ -1372,25 +1373,19 @@ const InvestmentOpportunities = () => {
                             </div>
                             {/* Action Button */}
                             <div className="flex items-center gap-1.5 flex-shrink-0">
-                              {bidsInfo && bidsInfo.userHasBid && (
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-200">
-                                  <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />
-                                  Your Bid
-                                </Badge>
-                              )}
-                              {bidsInfo && bidsInfo.otherCount > 0 && (
+                              {companyBids && (
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200">
                                         <Users className="h-2.5 w-2.5 mr-0.5" />
-                                        {bidsInfo.otherCount}
+                                        {companyBids.count}
                                       </Badge>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p className="text-xs">Other bids on this trip:</p>
-                                      <p className="text-xs font-semibold">{bidsInfo.lenders.join(', ')}</p>
-                                      {bidsInfo.otherCount > 2 && <p className="text-xs">+{bidsInfo.otherCount - 2} more</p>}
+                                      <p className="text-xs">Company colleagues have bid:</p>
+                                      <p className="text-xs font-semibold">{companyBids.lenders.map(toTitleCase).join(', ')}</p>
+                                      {companyBids.count > 2 && <p className="text-xs">+{companyBids.count - 2} more</p>}
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
