@@ -192,17 +192,6 @@ const AdminDashboard = () => {
   return (
     <DashboardLayout role="admin">
       <div className="space-y-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">{user?.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : "User"}'s Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
-              {user?.is_admin && user?.company ?
-                `${user.company} Admin - Manage company users and access` :
-                'System overview and management'}
-            </p>
-          </div>
-        </div>
-
         {/* Stats */}
         <div className="grid md:grid-cols-4 gap-6">
           {stats.map((stat) => {

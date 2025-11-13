@@ -139,11 +139,6 @@ const TransporterDashboard = () => {
   return (
     <DashboardLayout role="transporter">
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">{toTitleCase(user?.name) || "User"}'s Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Manage your trips and deliveries</p>
-        </div>
-
         {/* Stats */}
         <div className="grid md:grid-cols-3 gap-6">
           {stats.map((stat) => {

@@ -449,16 +449,12 @@ const LenderDashboard = () => {
   return (
     <DashboardLayout role="lender">
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">{toTitleCase(user?.name) || "User"}'s Dashboard</h1>
-            <p className="text-sm sm:text-base text-muted-foreground mt-1">Invest in trips and earn returns</p>
-          </div>
+        <div className="flex justify-end">
           <Button
             variant="outline"
             size="sm"
             onClick={handleRefresh}
-            className="gap-2 self-start sm:self-auto"
+            className="gap-2"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh

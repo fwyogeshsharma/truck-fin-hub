@@ -109,12 +109,8 @@ const LoadOwnerDashboard = () => {
   return (
     <DashboardLayout role="load_owner">
       <div className="space-y-6">
-        {/* Header section with user name and Create Trip button */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">{user?.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : "User"}'s Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Manage your trips and financing requests</p>
-          </div>
+        {/* Header section with Create Trip button */}
+        <div className="flex justify-end">
           <Button className="bg-gradient-primary gap-2" onClick={() => navigate('/create-trip')}>
             <Plus className="h-4 w-4" />
             Create Trip

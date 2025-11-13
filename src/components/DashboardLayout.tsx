@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TruckIcon, LogOut, Home, Package, Wallet, Shield, Users, User as UserIcon, Settings, FileCheck, Bell as BellIcon, FileText, Menu, X, ArrowLeftRight, AlertTriangle } from "lucide-react";
 import { auth, User } from "@/lib/auth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { authAPI } from "@/api/auth";
 import {
@@ -85,6 +85,7 @@ const roleConfig = {
 
 const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(auth.getCurrentUser());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -157,11 +158,12 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
             <div className="hidden lg:flex items-center gap-1">
               {navigationItems.map((item) => {
                 const NavIcon = item.icon;
+                const isActive = location.pathname === item.path;
                 return (
                   <Button
                     key={item.path}
-                    variant="ghost"
-                    className="gap-2"
+                    variant={isActive ? "default" : "ghost"}
+                    className={isActive ? "gap-2 bg-primary text-primary-foreground" : "gap-2"}
                     onClick={() => navigate(item.path)}
                   >
                     <NavIcon className="h-4 w-4" />
@@ -262,11 +264,12 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                 <div className="mt-6 flex flex-col gap-2">
                   {navigationItems.map((item) => {
                     const NavIcon = item.icon;
+                    const isActive = location.pathname === item.path;
                     return (
                       <Button
                         key={item.path}
-                        variant="ghost"
-                        className="justify-start gap-3 h-12"
+                        variant={isActive ? "default" : "ghost"}
+                        className={isActive ? "justify-start gap-3 h-12 bg-primary text-primary-foreground" : "justify-start gap-3 h-12"}
                         onClick={() => {
                           navigate(item.path);
                           setMobileMenuOpen(false);
