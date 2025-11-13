@@ -11,12 +11,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Wallet as WalletIcon, Plus, ArrowUpCircle, ArrowDownCircle, Loader2, Building2, AlertTriangle, AlertCircle } from 'lucide-react';
+import { Wallet as WalletIcon, Plus, ArrowUpCircle, ArrowDownCircle, Loader2, Building2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { data, type Wallet, type BankAccount } from '@/lib/data';
 import { formatCurrency, formatCurrencyCompact } from '@/lib/currency';
 import { apiClient } from '@/api/client';
-import { auth } from '@/lib/auth';
 
 interface WalletCardProps {
   userId: string;
@@ -24,11 +23,8 @@ interface WalletCardProps {
   onBalanceUpdate?: () => void;
 }
 
-const BANK_ACCOUNTS_KEY = 'logistics_bank_accounts';
-
 const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardProps) => {
   const { toast } = useToast();
-  const user = auth.getCurrentUser();
   const [wallet, setWallet] = useState<Wallet>({
     userId,
     balance: 0,
@@ -38,14 +34,12 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
     totalReturns: 0,
   });
   const [primaryBankAccount, setPrimaryBankAccount] = useState<BankAccount | null>(null);
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [bankAccountDialogOpen, setBankAccountDialogOpen] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [selectedBankId, setSelectedBankId] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [transactionImage, setTransactionImage] = useState<string>('');
   const [transactionImageFile, setTransactionImageFile] = useState<File | null>(null);
@@ -69,12 +63,6 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
         ]);
         setWallet(walletData);
         setPrimaryBankAccount(bankAccountData);
-
-        // Load bank accounts from localStorage
-        const stored = localStorage.getItem(`${BANK_ACCOUNTS_KEY}_${userId}`);
-        if (stored) {
-          setBankAccounts(JSON.parse(stored));
-        }
       } catch (error) {
         console.error('Failed to load wallet data:', error);
       } finally {
@@ -223,74 +211,70 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
       return;
     }
 
+    if (amount < 1000) {
+      toast({
+        variant: 'destructive',
+        title: 'Minimum Amount Required',
+        description: 'Minimum withdrawal amount is ₹1,000',
+      });
+      return;
+    }
+
     if (amount > wallet.balance) {
       toast({
         variant: 'destructive',
         title: 'Insufficient Balance',
-        description: 'Withdrawal amount exceeds available balance',
+        description: 'You cannot withdraw more than your available balance',
       });
       return;
     }
 
-    if (amount < 100) {
-      toast({
-        variant: 'destructive',
-        title: 'Minimum Amount Required',
-        description: 'Minimum withdrawal amount is ₹100',
-      });
-      return;
-    }
-
-    if (!selectedBankId) {
-      toast({
-        variant: 'destructive',
-        title: 'Select Bank Account',
-        description: 'Please select a bank account for withdrawal',
-      });
-      return;
-    }
-
-    if (!user?.id) return;
-
-    const selectedBank = bankAccounts.find((b) => b.id === selectedBankId);
-
+    // Simulate withdrawal processing
     setIsProcessing(true);
 
-    try {
-      // Create withdrawal request
-      await apiClient.post('/transaction-requests', {
-        user_id: user.id,
-        request_type: 'withdrawal',
-        amount,
-        bank_account_id: selectedBank?.id,
-        bank_account_number: selectedBank?.accountNumber,
-        bank_ifsc_code: selectedBank?.ifscCode,
-        bank_name: selectedBank?.bankName,
-      });
+    setTimeout(async () => {
+      try {
+        const newBalance = wallet.balance - amount;
 
-      toast({
-        title: 'Request Submitted!',
-        description: 'Your withdrawal request has been submitted. Funds will be transferred to your bank account within 24-48 hours.',
-      });
+        // Update wallet balance
+        const updatedWallet = await data.updateWallet(userId, {
+          balance: newBalance,
+        });
 
-      setIsProcessing(false);
-      setWithdrawDialogOpen(false);
-      setWithdrawAmount('');
-      setSelectedBankId('');
+        // Create transaction record
+        await data.createTransaction({
+          userId,
+          type: 'debit',
+          amount,
+          category: 'withdrawal',
+          description: 'Wallet withdrawal to bank account',
+          balanceAfter: newBalance,
+        });
 
-      // Notify parent component of balance update
-      if (onBalanceUpdate) {
-        onBalanceUpdate();
+        setWallet(updatedWallet);
+
+        toast({
+          title: 'Withdrawal Successful!',
+          description: `${formatCurrency(amount)} withdrawn from your wallet`,
+        });
+
+        setWithdrawDialogOpen(false);
+        setWithdrawAmount('');
+
+        // Notify parent component of balance update
+        if (onBalanceUpdate) {
+          onBalanceUpdate();
+        }
+      } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: error.message || 'Failed to withdraw money',
+        });
+      } finally {
+        setIsProcessing(false);
       }
-    } catch (error) {
-      console.error('Failed to submit request:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Request Failed',
-        description: 'Failed to submit withdrawal request. Please try again.',
-      });
-      setIsProcessing(false);
-    }
+    }, 2000); // 2 second simulated withdrawal processing
   };
 
   const availableBalance = wallet.balance;
@@ -331,7 +315,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
                 size="sm"
                 variant="outline"
                 onClick={() => setWithdrawDialogOpen(true)}
-                disabled={wallet.balance === 0 || bankAccounts.length === 0}
+                disabled={wallet.balance === 0 || !hasBankAccount}
               >
                 <ArrowDownCircle className="h-4 w-4 mr-1" />
                 Withdraw
@@ -526,100 +510,81 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ArrowDownCircle className="h-5 w-5 text-primary" />
-              Request Withdrawal
+              <ArrowDownCircle className="h-5 w-5 text-orange-600" />
+              Withdraw Money from Wallet
             </DialogTitle>
-            <DialogDescription>Submit a withdrawal request. Funds will be transferred to your bank account within 24-48 hours after verification.</DialogDescription>
+            <DialogDescription>
+              Withdraw funds to your linked bank account
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Available Balance */}
             <div className="p-4 bg-muted/50 rounded-lg">
-              <p className="text-sm text-muted-foreground">Available Balance</p>
-              <p className="text-2xl font-bold">{formatCurrencyCompact(wallet.balance, true)}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Available Balance</span>
+                <span className="text-lg font-semibold text-primary">{formatCurrencyCompact(wallet.balance, true)}</span>
+              </div>
             </div>
 
-            {bankAccounts.length === 0 ? (
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
-                <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-yellow-900">No Bank Account Added</p>
-                  <p className="text-xs text-yellow-800 mt-1">
-                    Please add a bank account first to withdraw funds
-                  </p>
+            {/* Quick Amount Selection */}
+            <div>
+              <Label className="text-sm mb-2 block">Quick Select</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {quickAmounts.filter(amt => amt <= wallet.balance).map((amount) => (
                   <Button
-                    size="sm"
+                    key={amount}
                     variant="outline"
-                    className="mt-2"
-                    onClick={() => {
-                      setWithdrawDialogOpen(false);
-                      setBankAccountDialogOpen(true);
-                    }}
+                    onClick={() => setWithdrawAmount(amount.toString())}
+                    className={withdrawAmount === amount.toString() ? 'border-primary bg-primary/10' : ''}
                   >
-                    Add Bank Account
+                    {formatCurrencyCompact(amount, true)}
                   </Button>
-                </div>
+                ))}
               </div>
-            ) : (
-              <>
-                <div>
-                  <Label htmlFor="bankSelect">Select Bank Account</Label>
-                  <select
-                    id="bankSelect"
-                    value={selectedBankId}
-                    onChange={(e) => setSelectedBankId(e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border rounded-md text-foreground bg-background"
-                  >
-                    <option value="" className="text-foreground bg-background">-- Select Bank --</option>
-                    {bankAccounts.map((bank) => (
-                      <option key={bank.id} value={bank.id} className="text-foreground bg-background">
-                        {bank.bankName} - {bank.accountNumber.slice(-4)} {bank.isPrimary ? '(Primary)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            </div>
 
-                <div>
-                  <Label htmlFor="withdrawAmount">Withdrawal Amount (₹)</Label>
-                  <Input
-                    id="withdrawAmount"
-                    type="number"
-                    placeholder="Enter amount (min ₹100)"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    min="100"
-                    max={wallet.balance}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Min: ₹100 | Max: {formatCurrencyCompact(wallet.balance, true)}
-                  </p>
-                </div>
-              </>
-            )}
+            {/* Custom Amount */}
+            <div>
+              <Label htmlFor="withdrawAmount">Withdrawal Amount (₹)</Label>
+              <Input
+                id="withdrawAmount"
+                type="number"
+                placeholder="Enter amount (min ₹1,000)"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                min="1000"
+                max={wallet.balance}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Min: ₹1,000 | Max: {formatCurrencyCompact(wallet.balance, true)}
+              </p>
+            </div>
+
+            {/* Bank Account Info */}
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm font-medium mb-2">Bank Account</p>
+              <p className="text-xs text-muted-foreground">
+                This is a simulated withdrawal system. In production, this would transfer funds to your linked bank account via IMPS/NEFT/RTGS.
+              </p>
+            </div>
           </div>
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setWithdrawDialogOpen(false)}
-              disabled={isProcessing}
-            >
+            <Button variant="outline" onClick={() => setWithdrawDialogOpen(false)} disabled={isProcessing}>
               Cancel
             </Button>
-            <Button
-              onClick={handleWithdraw}
-              disabled={isProcessing || bankAccounts.length === 0}
-              className="bg-gradient-primary"
-            >
+            <Button onClick={handleWithdraw} disabled={isProcessing} variant="destructive">
               {isProcessing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Submitting...
+                  Processing...
                 </>
               ) : (
                 <>
                   <ArrowDownCircle className="h-4 w-4 mr-2" />
-                  Submit Request
+                  Withdraw {withdrawAmount ? formatCurrencyCompact(parseFloat(withdrawAmount), true) : '₹0'}
                 </>
               )}
             </Button>
