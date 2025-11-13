@@ -95,6 +95,7 @@ const LoadAgentDashboard = () => {
     agreementId: string;
   } | null>(null);
   const [contractLoading, setContractLoading] = useState(false);
+  const [allotmentLoading, setAllotmentLoading] = useState(false);
 
   // Rating dialog states
   const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
@@ -932,15 +933,21 @@ const LoadAgentDashboard = () => {
     setAllotmentConfirmDialogOpen(true);
   };
 
-  const handleConfirmAllotment = () => {
-    if (!pendingAllotmentConfirm) return;
-    handleAllotTrip(
-      pendingAllotmentConfirm.tripId,
-      pendingAllotmentConfirm.lenderId,
-      pendingAllotmentConfirm.lenderName
-    );
-    setAllotmentConfirmDialogOpen(false);
-    setPendingAllotmentConfirm(null);
+  const handleConfirmAllotment = async () => {
+    if (!pendingAllotmentConfirm || allotmentLoading) return;
+
+    try {
+      setAllotmentLoading(true);
+      await handleAllotTrip(
+        pendingAllotmentConfirm.tripId,
+        pendingAllotmentConfirm.lenderId,
+        pendingAllotmentConfirm.lenderName
+      );
+      setAllotmentConfirmDialogOpen(false);
+      setPendingAllotmentConfirm(null);
+    } finally {
+      setAllotmentLoading(false);
+    }
   };
 
   const handleAllotTrip = async (tripId: string, lenderId: string, lenderName: string) => {
@@ -4506,9 +4513,22 @@ print(response.json())`;
               >
                 Cancel
               </Button>
-              <Button className="bg-gradient-primary" onClick={handleConfirmAllotment}>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Confirm & Allot Trip
+              <Button
+                className="bg-gradient-primary"
+                onClick={handleConfirmAllotment}
+                disabled={allotmentLoading}
+              >
+                {allotmentLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Confirm & Allot Trip
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -49,6 +49,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Code,
+  Loader2,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatPercentage } from '@/lib/currency';
@@ -62,6 +63,7 @@ const LoadAgentDashboard = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [allTrips, setAllTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
+  const [allotmentLoading, setAllotmentLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const loadTrips = async () => {
@@ -563,20 +565,30 @@ const LoadAgentDashboard = () => {
   }, [advancedFilters]);
 
   const handleAllotTrip = async (tripId: string, lenderId: string, lenderName: string) => {
-    const result = await data.allotTrip(tripId, lenderId, lenderName);
+    const key = `${tripId}-${lenderId}`;
 
-    if (result) {
-      toast({
-        title: 'Trip Allotted Successfully!',
-        description: `Trip has been allotted to ${lenderName}`,
-      });
-      setRefreshKey(prev => prev + 1); // Refresh trip list
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to allot trip',
-      });
+    if (allotmentLoading[key]) return; // Prevent double-click
+
+    try {
+      setAllotmentLoading(prev => ({ ...prev, [key]: true }));
+
+      const result = await data.allotTrip(tripId, lenderId, lenderName);
+
+      if (result) {
+        toast({
+          title: 'Trip Allotted Successfully!',
+          description: `Trip has been allotted to ${lenderName}`,
+        });
+        setRefreshKey(prev => prev + 1); // Refresh trip list
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to allot trip',
+        });
+      }
+    } finally {
+      setAllotmentLoading(prev => ({ ...prev, [key]: false }));
     }
   };
 
@@ -911,9 +923,19 @@ const LoadAgentDashboard = () => {
                                           size="sm"
                                           onClick={() => handleAllotTrip(trip.id, bid.lenderId, bid.lenderName)}
                                           className="bg-green-600 hover:bg-green-700"
+                                          disabled={allotmentLoading[`${trip.id}-${bid.lenderId}`]}
                                         >
-                                          <CheckCircle className="h-4 w-4 mr-1" />
-                                          Allot
+                                          {allotmentLoading[`${trip.id}-${bid.lenderId}`] ? (
+                                            <>
+                                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                              Allotting...
+                                            </>
+                                          ) : (
+                                            <>
+                                              <CheckCircle className="h-4 w-4 mr-1" />
+                                              Allot
+                                            </>
+                                          )}
                                         </Button>
                                       </div>
                                     );
@@ -1106,9 +1128,19 @@ const LoadAgentDashboard = () => {
                                   const bid = trip.bids[0]; // For now, allot to first bidder
                                   handleAllotTrip(trip.id, bid.lenderId, bid.lenderName);
                                 }}
+                                disabled={allotmentLoading[`${trip.id}-${trip.bids[0]?.lenderId}`]}
                               >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Allot
+                                {allotmentLoading[`${trip.id}-${trip.bids[0]?.lenderId}`] ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                    Allotting...
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                    Allot
+                                  </>
+                                )}
                               </Button>
                             )}
                           </div>
