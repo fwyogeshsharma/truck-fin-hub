@@ -164,7 +164,7 @@ export const returnInvestment = async (userId: string, principal: number, return
   const wallet = await getWallet(userId);
   return await updateWallet(userId, {
     balance: wallet.balance + principal + returns,
-    total_invested: wallet.total_invested - principal,
+    total_invested: Math.max(0, wallet.total_invested - principal),
     total_returns: wallet.total_returns + returns,
   });
 };
