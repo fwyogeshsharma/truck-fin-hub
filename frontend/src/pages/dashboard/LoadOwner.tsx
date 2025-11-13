@@ -68,6 +68,34 @@ const LoadOwnerDashboard = () => {
     loadData();
   }, [user?.id]);
 
+  // Auto-refresh data every 15 seconds
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const autoRefresh = async () => {
+      try {
+        // Silently fetch updated data without showing loading state
+        const [allTrips, walletData] = await Promise.all([
+          data.getTrips(),
+          data.getWallet(user.id)
+        ]);
+
+        const filteredTrips = allTrips.filter(t =>
+          t.loadOwnerId === user.id || t.loadOwnerName.includes('ABC')
+        );
+
+        setTrips(filteredTrips);
+        setWallet(walletData);
+      } catch (error) {
+        console.error('Auto-refresh failed:', error);
+      }
+    };
+
+    const interval = setInterval(autoRefresh, 15000); // 15 seconds
+
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
   /**
    * Dashboard statistics cards showing key metrics:
    * - Active Trips: Count of trips that are pending, funded, or in transit

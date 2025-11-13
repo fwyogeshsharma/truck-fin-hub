@@ -88,6 +88,31 @@ const AdminDashboard = () => {
     loadData();
   }, []);
 
+  // Auto-refresh data every 15 seconds
+  useEffect(() => {
+    const autoRefresh = async () => {
+      try {
+        // Silently fetch updated data without showing loading state
+        const [trips, investments] = await Promise.all([
+          data.getTrips(),
+          data.getInvestments()
+        ]);
+        const users = auth.getAllUsers();
+
+        setAllTrips(trips);
+        setAllUsers(users);
+        setAllInvestments(investments);
+        await fetchPendingApprovals();
+      } catch (error) {
+        console.error('Auto-refresh failed:', error);
+      }
+    };
+
+    const interval = setInterval(autoRefresh, 15000); // 15 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handleApprove = async (userId: string) => {
     if (!user?.id) return;
 

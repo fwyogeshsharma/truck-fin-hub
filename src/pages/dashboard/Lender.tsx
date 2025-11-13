@@ -237,6 +237,31 @@ const LenderDashboard = () => {
     loadData();
   }, [user?.id, refreshKey]);
 
+  // Auto-refresh data every 15 seconds
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const autoRefresh = async () => {
+      try {
+        // Silently fetch updated data without showing loading state
+        const [tripsData, investmentsData, walletData] = await Promise.all([
+          data.getTrips(),
+          data.getInvestments(),
+          data.getWallet(user.id),
+        ]);
+        setTrips(tripsData);
+        setMyInvestments(investmentsData.filter(i => i.lenderId === user.id));
+        setWallet(walletData);
+      } catch (error) {
+        console.error('Auto-refresh failed:', error);
+      }
+    };
+
+    const interval = setInterval(autoRefresh, 15000); // 15 seconds
+
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
     toast({
@@ -449,18 +474,6 @@ const LenderDashboard = () => {
   return (
     <DashboardLayout role="lender">
       <div className="space-y-6">
-        <div className="flex justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            className="gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
-        </div>
-
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {stats.map((stat) => {
@@ -488,83 +501,6 @@ const LenderDashboard = () => {
 
         {/* Wallet */}
         {user?.id && <WalletCard userId={user.id} showDetails={true} />}
-
-        {/* Grant Access - Pending Approvals (Only for Admin users) */}
-        {user?.is_admin && (
-          <Card className={pendingApprovals && pendingApprovals.length > 0 ? "border-yellow-200 dark:border-yellow-800 bg-yellow-50/50 dark:bg-yellow-950/20" : ""}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-yellow-600" />
-                Grant Access - Pending User Approvals
-              </CardTitle>
-              <CardDescription>
-                {user?.company ?
-                  `Review and approve new user access requests for ${user.company}` :
-                  'Review and approve new user access requests'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!pendingApprovals || pendingApprovals.length === 0 ? (
-                <div className="text-center py-8 px-4 border rounded-lg bg-muted/50">
-                  <CheckCircle2 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    No Pending Approvals
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {user?.company
-                      ? `No user access requests for ${user.company} at this time.`
-                      : 'All user requests have been processed.'}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {pendingApprovals.map((pendingUser) => (
-                    <div key={pendingUser.id} className="flex items-center justify-between p-4 border rounded-lg bg-white dark:bg-background shadow-sm hover:shadow-md transition-shadow">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <UserCheck className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold">{toTitleCase(pendingUser.name)}</p>
-                            <p className="text-xs text-muted-foreground">{pendingUser.email}</p>
-                          </div>
-                        </div>
-                        <div className="ml-12 space-y-1">
-                          <p className="text-xs text-muted-foreground">Phone: {pendingUser.phone || 'N/A'}</p>
-                          <p className="text-xs text-muted-foreground">Company: <span className="font-medium text-foreground">{toTitleCase(pendingUser.company)}</span></p>
-                          <p className="text-xs text-muted-foreground">Role: <span className="font-medium text-foreground">{pendingUser.role?.replace('_', ' ')}</span></p>
-                          <p className="text-xs text-muted-foreground">Requested: {new Date(pendingUser.created_at).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleApprove(pendingUser.id)}
-                          disabled={approvingUserId === pendingUser.id}
-                          className="bg-green-600 hover:bg-green-700 min-w-[120px]"
-                        >
-                          <UserCheck className="h-4 w-4 mr-1" />
-                          {approvingUserId === pendingUser.id ? 'Approving...' : 'Grant Access'}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleReject(pendingUser.id)}
-                          disabled={approvingUserId === pendingUser.id}
-                          className="min-w-[120px]"
-                        >
-                          <UserX className="h-4 w-4 mr-1" />
-                          Deny Access
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
         {/* AI Insights */}
         <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">

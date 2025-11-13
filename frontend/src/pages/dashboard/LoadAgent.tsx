@@ -83,6 +83,27 @@ const LoadAgentDashboard = () => {
     loadTrips();
   }, [refreshKey, user?.company]);
 
+  // Auto-refresh data every 15 seconds
+  useEffect(() => {
+    const autoRefresh = async () => {
+      try {
+        // Silently fetch updated data without showing loading state
+        const trips = await data.getTrips();
+        const filteredTrips = trips.filter(trip => {
+          if (!user?.company) return true;
+          return trip.loadOwnerName === user.company;
+        });
+        setAllTrips(filteredTrips);
+      } catch (error) {
+        console.error('Auto-refresh failed:', error);
+      }
+    };
+
+    const interval = setInterval(autoRefresh, 15000); // 15 seconds
+
+    return () => clearInterval(interval);
+  }, [user?.company]);
+
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createTripTab, setCreateTripTab] = useState<'form' | 'excel' | 'api'>('form');
   const [selectedTrip, setSelectedTrip] = useState<any>(null);

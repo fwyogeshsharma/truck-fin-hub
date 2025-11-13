@@ -58,6 +58,34 @@ const TransporterDashboard = () => {
     loadData();
   }, [user?.id]);
 
+  // Auto-refresh data every 15 seconds
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const autoRefresh = async () => {
+      try {
+        // Silently fetch updated data without showing loading state
+        const [allTrips, walletData] = await Promise.all([
+          data.getTrips(),
+          data.getWallet(user.id)
+        ]);
+
+        const filteredTrips = allTrips.filter(t =>
+          t.transporterId === user.id || t.status === 'funded' || t.status === 'escrowed'
+        );
+
+        setMyTrips(filteredTrips);
+        setWallet(walletData);
+      } catch (error) {
+        console.error('Auto-refresh failed:', error);
+      }
+    };
+
+    const interval = setInterval(autoRefresh, 15000); // 15 seconds
+
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
   // Calculate financial analytics
   const completedTrips = myTrips.filter(t => t.status === 'completed' || t.status === 'repaid');
   const totalEarnings = completedTrips.reduce((sum, trip) => sum + trip.amount, 0);

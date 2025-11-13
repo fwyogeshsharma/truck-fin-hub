@@ -79,6 +79,31 @@ const LenderDashboard = () => {
     loadData();
   }, [user?.id, refreshKey]);
 
+  // Auto-refresh data every 15 seconds
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const autoRefresh = async () => {
+      try {
+        // Silently fetch updated data without showing loading state
+        const [tripsData, investmentsData, walletData] = await Promise.all([
+          data.getTrips(),
+          data.getInvestments(),
+          data.getWallet(user.id),
+        ]);
+        setTrips(tripsData);
+        setMyInvestments(investmentsData.filter(i => i.lenderId === user.id));
+        setWallet(walletData);
+      } catch (error) {
+        console.error('Auto-refresh failed:', error);
+      }
+    };
+
+    const interval = setInterval(autoRefresh, 15000); // 15 seconds
+
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
     toast({
@@ -228,18 +253,6 @@ const LenderDashboard = () => {
   return (
     <DashboardLayout role="lender">
       <div className="space-y-6">
-        <div className="flex justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            className="gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
-        </div>
-
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {stats.map((stat) => {
