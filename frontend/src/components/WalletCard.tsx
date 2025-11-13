@@ -540,9 +540,9 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
                 <div className="p-4 bg-muted rounded-lg">
                   <p className="text-sm font-medium mb-2">Bank Account</p>
                   <div className="text-xs text-muted-foreground space-y-1">
-                    <p><strong>Account:</strong> {primaryBankAccount.bankName}</p>
-                    <p><strong>Account No:</strong> XXXX XXXX {primaryBankAccount.accountNumber.slice(-4)}</p>
-                    <p><strong>IFSC:</strong> {primaryBankAccount.ifscCode}</p>
+                    <p><strong>Account:</strong> {primaryBankAccount?.bankName || 'N/A'}</p>
+                    <p><strong>Account No:</strong> XXXX XXXX {primaryBankAccount?.accountNumber?.slice(-4) || 'N/A'}</p>
+                    <p><strong>IFSC:</strong> {primaryBankAccount?.ifscCode || 'N/A'}</p>
                   </div>
                 </div>
 
