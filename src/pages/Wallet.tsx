@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { auth } from '@/lib/auth';
 import { data } from '@/lib/data';
-import { walletsAPI } from '@/api/wallets';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -184,8 +184,13 @@ const WalletPage = () => {
     setIsProcessing(true);
 
     try {
-      // Create transaction request using wallets API
-      await walletsAPI.requestAddMoney(user.id, amount, transactionImage);
+      // Create transaction request
+      await apiClient.post('/transaction-requests', {
+        user_id: user.id,
+        request_type: 'add_money',
+        amount,
+        transaction_image_url: transactionImage,
+      });
 
       toast({
         title: 'Request Submitted!',
@@ -254,12 +259,15 @@ const WalletPage = () => {
     setIsProcessing(true);
 
     try {
-      // Create withdrawal request using wallets API
-      await walletsAPI.requestWithdraw(user.id, amount, {
-        id: selectedBank?.id,
-        accountNumber: selectedBank?.accountNumber || '',
-        ifscCode: selectedBank?.ifscCode || '',
-        bankName: selectedBank?.bankName || '',
+      // Create withdrawal request
+      await apiClient.post('/transaction-requests', {
+        user_id: user.id,
+        request_type: 'withdrawal',
+        amount,
+        bank_account_id: selectedBank?.id,
+        bank_account_number: selectedBank?.accountNumber,
+        bank_ifsc_code: selectedBank?.ifscCode,
+        bank_name: selectedBank?.bankName,
       });
 
       toast({
