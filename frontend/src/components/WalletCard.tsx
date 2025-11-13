@@ -238,35 +238,38 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
 
     setIsProcessing(true);
 
-    try {
-      // Create withdrawal request
-      await apiClient.post('/transaction-requests', {
-        user_id: userId,
-        request_type: 'withdrawal',
+    setTimeout(async () => {
+      await data.updateWallet(userId, {
+        balance: wallet.balance - amount,
+      });
+
+      await data.createTransaction({
+        userId: userId,
+        type: 'debit',
         amount,
-        bank_account_id: primaryBankAccount?.id,
-        bank_account_number: primaryBankAccount?.accountNumber,
-        bank_ifsc_code: primaryBankAccount?.ifscCode,
-        bank_name: primaryBankAccount?.bankName,
+        category: 'payment',
+        description: `Withdrawal to ${primaryBankAccount?.bankName} A/C ${primaryBankAccount?.accountNumber?.slice(-4)}`,
+        balanceAfter: wallet.balance - amount,
       });
 
       toast({
-        title: 'Request Submitted!',
-        description: 'Your withdrawal request has been submitted. Funds will be transferred to your bank account within 24-48 hours.',
+        title: 'Withdrawal Successful!',
+        description: `${formatCurrency(amount)} withdrawn to your bank account`,
       });
 
       setIsProcessing(false);
       setWithdrawDialogOpen(false);
       setWithdrawAmount('');
-    } catch (error) {
-      console.error('Failed to submit request:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Request Failed',
-        description: 'Failed to submit withdrawal request. Please try again.',
-      });
-      setIsProcessing(false);
-    }
+
+      // Reload wallet data
+      const updatedWallet = await data.getWallet(userId);
+      setWallet(updatedWallet);
+
+      // Notify parent component
+      if (onBalanceUpdate) {
+        onBalanceUpdate();
+      }
+    }, 2000);
   };
 
   const availableBalance = wallet.balance;
@@ -505,7 +508,7 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
               <ArrowDownCircle className="h-5 w-5 text-primary" />
               Request Withdrawal
             </DialogTitle>
-            <DialogDescription>Submit a withdrawal request. Funds will be transferred to your bank account within 24-48 hours after verification.</DialogDescription>
+            <DialogDescription>Transfer money from wallet to your bank account</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
