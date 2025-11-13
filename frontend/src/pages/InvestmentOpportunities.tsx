@@ -71,7 +71,7 @@ const InvestmentOpportunities = () => {
         setTrips(pendingTrips);
         setWalletData(wallet);
 
-        // Get company members' investments for pending trips
+        // Get company members' investments for pending trips (including own bids)
         if (user.company) {
           const allUsers = auth.getAllUsers();
           const companyUserIds = allUsers
@@ -79,7 +79,7 @@ const InvestmentOpportunities = () => {
             .map(u => u.id);
 
           const companyBids = allInvestments.filter(i =>
-            companyUserIds.includes(i.lenderId) && i.lenderId !== user.id
+            companyUserIds.includes(i.lenderId)
           );
           setCompanyInvestments(companyBids);
         }
@@ -116,7 +116,7 @@ const InvestmentOpportunities = () => {
             .map(u => u.id);
 
           const companyBids = allInvestments.filter(i =>
-            companyUserIds.includes(i.lenderId) && i.lenderId !== user.id
+            companyUserIds.includes(i.lenderId)
           );
           setCompanyInvestments(companyBids);
         }
@@ -134,18 +134,26 @@ const InvestmentOpportunities = () => {
   const [selectedTrips, setSelectedTrips] = useState<string[]>([]);
   const [isCompactView, setIsCompactView] = useState(true); // Default to compact view
 
-  // Helper function to check if company members have bid on a trip
-  const getCompanyBidsForTrip = (tripId: string) => {
+  // Helper function to check if there are bids on a trip (including own bid)
+  const getBidsForTrip = (tripId: string) => {
     const tripBids = companyInvestments.filter(inv => inv.tripId === tripId);
     if (tripBids.length === 0) return null;
 
     const allUsers = auth.getAllUsers();
-    const lenders = tripBids.map(bid => {
-      const user = allUsers.find(u => u.id === bid.lenderId);
-      return user?.name || 'Unknown';
+    const userHasBid = tripBids.some(bid => bid.lenderId === user?.id);
+    const otherBids = tripBids.filter(bid => bid.lenderId !== user?.id);
+
+    const lenders = otherBids.slice(0, 2).map(bid => {
+      const lender = allUsers.find(u => u.id === bid.lenderId);
+      return toTitleCase(lender?.name || 'Unknown');
     });
 
-    return { count: lenders.length, lenders: lenders.slice(0, 2) }; // Show max 2 names
+    return {
+      totalCount: tripBids.length,
+      otherCount: otherBids.length,
+      userHasBid,
+      lenders,
+    };
   };
   const [tripInterestRates, setTripInterestRates] = useState<Record<string, number>>({});
   const [isExpanded, setIsExpanded] = useState(false);
@@ -460,10 +468,8 @@ const InvestmentOpportunities = () => {
         lenderInterestRate
       );
 
-      // Update trip status to escrowed
-      await data.updateTrip(tripId, {
-        status: 'escrowed',
-      });
+      // Don't update trip status - keep it as "pending" so other lenders can also bid
+      // Trip status will be updated only when load owner/agent confirms/allots the trip
 
       // Refresh trips list
       const allTrips = await data.getTrips();
@@ -567,10 +573,8 @@ const InvestmentOpportunities = () => {
           tripRate
         );
 
-        // Update trip status to escrowed
-        await data.updateTrip(tripId, {
-          status: 'escrowed',
-        });
+        // Don't update trip status - keep it as "pending" so other lenders can also bid
+        // Trip status will be updated only when load owner/agent confirms/allots the trip
       }
 
       // Refresh trips list
