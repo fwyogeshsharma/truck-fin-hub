@@ -93,14 +93,14 @@ const TermsAcceptance = () => {
                   <div className="border-b border-border pb-3">
                     <div className="flex justify-between items-start">
                       <span className="text-sm font-semibold text-foreground">Load Providers</span>
-                      <span className="text-lg font-bold text-primary">1-2%</span>
+                      <span className="text-lg font-bold text-primary">0.5%</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">Of financed amount</p>
                   </div>
                   <div className="border-b border-border pb-3">
                     <div className="flex justify-between items-start">
                       <span className="text-sm font-semibold text-foreground">Vehicle Providers</span>
-                      <span className="text-lg font-bold text-secondary">0.5-1%</span>
+                      <span className="text-lg font-bold text-secondary">0.5%</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">Of transaction value</p>
                   </div>
@@ -127,8 +127,8 @@ const TermsAcceptance = () => {
                 <ul className="space-y-3">
                   {[
                     { title: "Minimum Investment", value: "₹10,000" },
-                    { title: "Maximum Investment", value: "₹50 Lakhs per trip" },
-                    { title: "Expected Returns", value: "8-12% annually" },
+                    { title: "Maximum Investment", value: "₹1.5Lakhs per trip" },
+                    { title: "Expected Returns", value: "12-18% annually" },
                     { title: "Investment Duration", value: "30-90 days" },
                     { title: "Risk Category", value: "Medium-High" },
                     { title: "Repayment", value: "Automatic on trip completion" },

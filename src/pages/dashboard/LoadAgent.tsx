@@ -2072,11 +2072,11 @@ const LoadAgentDashboard = () => {
                         <TableCell>
                           <div className="text-center cursor-help relative group">
                             <p className="font-semibold text-green-600">
-                              {formatPercentage(trip.interestRate || 12)}% ARR
+                              {formatPercentage(trip.interestRate || 12)}% for {trip.maturityDays || 30}d
                             </p>
                             <div className="hidden group-hover:block absolute z-10 bg-popover text-popover-foreground border rounded-lg shadow-lg p-3 mt-1 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                              <p className="text-sm font-semibold">{formatPercentage(trip.interestRate || 12)}% ARR</p>
-                              <p className="text-sm text-muted-foreground">{formatPercentage((trip.interestRate || 12) * (trip.maturityDays || 30) / 365)}% for {trip.maturityDays || 30} days</p>
+                              <p className="text-sm font-semibold">{formatPercentage(trip.interestRate || 12)}% for {trip.maturityDays || 30} days</p>
+                              <p className="text-sm text-muted-foreground">{formatPercentage((trip.interestRate || 12) * 365 / (trip.maturityDays || 30))}% ARR (annualized)</p>
                             </div>
                           </div>
                         </TableCell>
