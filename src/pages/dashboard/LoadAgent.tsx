@@ -1649,11 +1649,7 @@ const LoadAgentDashboard = () => {
   return (
     <DashboardLayout role="load_agent">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Transporter Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Create and manage trips across the portal</p>
-          </div>
+        <div className="flex justify-end">
           <Button onClick={() => setCreateDialogOpen(true)} className="bg-gradient-primary">
             <Plus className="h-4 w-4 mr-2" />
             Create Trip
