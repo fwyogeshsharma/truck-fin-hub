@@ -1,6 +1,13 @@
 import { apiClient } from './client';
 import { Wallet } from '../lib/data';
 
+interface BankAccountInfo {
+  id?: string;
+  accountNumber: string;
+  ifscCode: string;
+  bankName: string;
+}
+
 export const walletsAPI = {
   async get(userId: string): Promise<Wallet> {
     return apiClient.get(`/wallets/${userId}`);
@@ -10,12 +17,27 @@ export const walletsAPI = {
     return apiClient.put(`/wallets/${userId}`, data);
   },
 
-  async addMoney(userId: string, amount: number): Promise<Wallet> {
-    return apiClient.post(`/wallets/${userId}/add-money`, { amount });
+  // Create add money request (requires admin verification)
+  async requestAddMoney(userId: string, amount: number, transactionImageUrl: string): Promise<any> {
+    return apiClient.post('/transaction-requests', {
+      user_id: userId,
+      request_type: 'add_money',
+      amount,
+      transaction_image_url: transactionImageUrl,
+    });
   },
 
-  async withdraw(userId: string, amount: number): Promise<Wallet> {
-    return apiClient.post(`/wallets/${userId}/withdraw`, { amount });
+  // Create withdrawal request (requires admin verification)
+  async requestWithdraw(userId: string, amount: number, bankAccount: BankAccountInfo): Promise<any> {
+    return apiClient.post('/transaction-requests', {
+      user_id: userId,
+      request_type: 'withdrawal',
+      amount,
+      bank_account_id: bankAccount.id,
+      bank_account_number: bankAccount.accountNumber,
+      bank_ifsc_code: bankAccount.ifscCode,
+      bank_name: bankAccount.bankName,
+    });
   },
 
   async moveToEscrow(userId: string, amount: number): Promise<Wallet> {
