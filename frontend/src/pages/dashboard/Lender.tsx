@@ -279,7 +279,7 @@ const LenderDashboard = () => {
         </div>
 
         {/* Wallet */}
-        {user?.id && <WalletCard userId={user.id} showDetails={true} />}
+        {user?.id && <WalletCard userId={user.id} showDetails={false} />}
 
         {/* AI Insights */}
         <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
