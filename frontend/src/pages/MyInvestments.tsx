@@ -92,25 +92,13 @@ const MyInvestments = () => {
           data.getTrips()
         ]);
 
-        // Get all users to find company members
-        const allUsers = auth.getAllUsers();
-
-        // Get user IDs from the same company (including current user)
-        const companyUserIds = user.company
-          ? allUsers
-              .filter(u => u.company === user.company && u.role === 'lender')
-              .map(u => u.id)
-          : [user.id];
-
-        // Filter investments for users in the same company
-        const companyInvestments = allInvestments.filter(i =>
-          companyUserIds.includes(i.lenderId)
-        );
+        // Filter investments for this user
+        const userInvestments = allInvestments.filter(i => i.lenderId === user.id);
 
         // Create a map of trips for quick lookup
         const tripsMap = new Map(allTrips.map(trip => [trip.id, trip]));
 
-        setMyInvestments(companyInvestments);
+        setMyInvestments(userInvestments);
         setWallet(walletData);
         setTrips(tripsMap);
       } catch (error) {
@@ -121,46 +109,7 @@ const MyInvestments = () => {
     };
 
     loadData();
-  }, [user?.id, user?.company]);
-
-  // Auto-refresh data every 15 seconds to sync company investments
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const autoRefresh = async () => {
-      try {
-        // Silently fetch updated data without showing loading state
-        const [allInvestments, walletData, allTrips] = await Promise.all([
-          data.getInvestments(),
-          data.getWallet(user.id),
-          data.getTrips()
-        ]);
-
-        const allUsers = auth.getAllUsers();
-        const companyUserIds = user.company
-          ? allUsers
-              .filter(u => u.company === user.company && u.role === 'lender')
-              .map(u => u.id)
-          : [user.id];
-
-        const companyInvestments = allInvestments.filter(i =>
-          companyUserIds.includes(i.lenderId)
-        );
-
-        const tripsMap = new Map(allTrips.map(trip => [trip.id, trip]));
-
-        setMyInvestments(companyInvestments);
-        setWallet(walletData);
-        setTrips(tripsMap);
-      } catch (error) {
-        console.error('Auto-refresh failed:', error);
-      }
-    };
-
-    const interval = setInterval(autoRefresh, 15000); // 15 seconds
-
-    return () => clearInterval(interval);
-  }, [user?.id, user?.company]);
+  }, [user?.id]);
 
   // Apply filters to investments
   const applyFilters = (investments: any[]) => {
@@ -237,12 +186,6 @@ const MyInvestments = () => {
     const trip = getTripDetails(investment.tripId);
     if (!trip) return null;
 
-    // Get lender name for company investments
-    const isOwnInvestment = investment.lenderId === user?.id;
-    const lenderName = isOwnInvestment
-      ? 'You'
-      : auth.getAllUsers().find(u => u.id === investment.lenderId)?.name || 'Unknown';
-
     return (
       <Card className="border-2 border-primary/20 bg-primary/5">
         <CardHeader>
@@ -253,11 +196,6 @@ const MyInvestments = () => {
                 <CardTitle className="text-xl">
                   {trip.origin} → {trip.destination}
                 </CardTitle>
-                {!isOwnInvestment && (
-                  <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
-                    {toTitleCase(lenderName)}'s Investment
-                  </Badge>
-                )}
               </div>
               <CardDescription>
                 {trip.loadType} • {trip.weight}kg • {trip.distance}km
@@ -321,12 +259,6 @@ const MyInvestments = () => {
     );
     const progress = investment.status === 'completed' ? 100 : Math.min((daysSinceInvestment / 30) * 100, 100);
 
-    // Get lender name for company investments
-    const isOwnInvestment = investment.lenderId === user?.id;
-    const lenderName = isOwnInvestment
-      ? 'You'
-      : auth.getAllUsers().find(u => u.id === investment.lenderId)?.name || 'Unknown';
-
     return (
       <Card>
         <CardHeader>
@@ -337,11 +269,6 @@ const MyInvestments = () => {
                 <CardTitle className="text-xl">
                   {trip.origin} → {trip.destination}
                 </CardTitle>
-                {!isOwnInvestment && (
-                  <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
-                    {toTitleCase(lenderName)}'s Investment
-                  </Badge>
-                )}
               </div>
               <CardDescription>
                 {trip.loadType} • {trip.weight}kg • {trip.distance}km

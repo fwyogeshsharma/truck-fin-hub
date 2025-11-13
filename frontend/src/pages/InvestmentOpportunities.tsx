@@ -49,7 +49,6 @@ const InvestmentOpportunities = () => {
   });
   const [loading, setLoading] = useState(true);
   const wallet = walletData;
-  const [companyInvestments, setCompanyInvestments] = useState<any[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -60,29 +59,15 @@ const InvestmentOpportunities = () => {
       }
 
       try {
-        const [allTrips, wallet, allInvestments] = await Promise.all([
+        const [allTrips, wallet] = await Promise.all([
           data.getTrips(),
-          data.getWallet(user.id),
-          data.getInvestments(),
+          data.getWallet(user.id)
         ]);
 
         // Filter for pending trips
         const pendingTrips = allTrips.filter(t => t.status === 'pending');
         setTrips(pendingTrips);
         setWalletData(wallet);
-
-        // Get company members' investments for pending trips
-        if (user.company) {
-          const allUsers = auth.getAllUsers();
-          const companyUserIds = allUsers
-            .filter(u => u.company === user.company && u.role === 'lender')
-            .map(u => u.id);
-
-          const companyBids = allInvestments.filter(i =>
-            companyUserIds.includes(i.lenderId) && i.lenderId !== user.id
-          );
-          setCompanyInvestments(companyBids);
-        }
       } catch (error) {
         console.error('Failed to load data:', error);
       } finally {
@@ -91,62 +76,11 @@ const InvestmentOpportunities = () => {
     };
 
     loadData();
-  }, [user?.id, user?.company]);
-
-  // Auto-refresh to sync company investments
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const autoRefresh = async () => {
-      try {
-        const [allTrips, wallet, allInvestments] = await Promise.all([
-          data.getTrips(),
-          data.getWallet(user.id),
-          data.getInvestments(),
-        ]);
-
-        const pendingTrips = allTrips.filter(t => t.status === 'pending');
-        setTrips(pendingTrips);
-        setWalletData(wallet);
-
-        if (user.company) {
-          const allUsers = auth.getAllUsers();
-          const companyUserIds = allUsers
-            .filter(u => u.company === user.company && u.role === 'lender')
-            .map(u => u.id);
-
-          const companyBids = allInvestments.filter(i =>
-            companyUserIds.includes(i.lenderId) && i.lenderId !== user.id
-          );
-          setCompanyInvestments(companyBids);
-        }
-      } catch (error) {
-        console.error('Auto-refresh failed:', error);
-      }
-    };
-
-    const interval = setInterval(autoRefresh, 15000); // 15 seconds
-
-    return () => clearInterval(interval);
-  }, [user?.id, user?.company]);
+  }, [user?.id]);
 
   const [selectedTrip, setSelectedTrip] = useState<string | null>(null);
   const [selectedTrips, setSelectedTrips] = useState<string[]>([]);
   const [isCompactView, setIsCompactView] = useState(true); // Default to compact view
-
-  // Helper function to check if company members have bid on a trip
-  const getCompanyBidsForTrip = (tripId: string) => {
-    const tripBids = companyInvestments.filter(inv => inv.tripId === tripId);
-    if (tripBids.length === 0) return null;
-
-    const allUsers = auth.getAllUsers();
-    const lenders = tripBids.map(bid => {
-      const user = allUsers.find(u => u.id === bid.lenderId);
-      return user?.name || 'Unknown';
-    });
-
-    return { count: lenders.length, lenders: lenders.slice(0, 2) }; // Show max 2 names
-  };
   const [tripInterestRates, setTripInterestRates] = useState<Record<string, number>>({});
   const [isExpanded, setIsExpanded] = useState(false);
 
