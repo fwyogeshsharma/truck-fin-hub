@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Wallet as WalletIcon, Plus, ArrowUpCircle, ArrowDownCircle, Loader2, Building2, AlertTriangle } from 'lucide-react';
+import { Wallet as WalletIcon, Plus, ArrowUpCircle, ArrowDownCircle, Loader2, Building2, AlertTriangle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { data, type Wallet, type BankAccount } from '@/lib/data';
 import { formatCurrency, formatCurrencyCompact } from '@/lib/currency';
@@ -73,8 +73,6 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
   }, [userId]);
 
   const hasBankAccount = primaryBankAccount !== null;
-
-  const quickAmounts = [10000, 25000, 50000, 100000, 250000, 500000];
 
   const handleAddBankAccount = async () => {
     if (!bankAccountForm.accountHolderName || !bankAccountForm.accountNumber ||
@@ -211,70 +209,64 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
       return;
     }
 
-    if (amount < 1000) {
-      toast({
-        variant: 'destructive',
-        title: 'Minimum Amount Required',
-        description: 'Minimum withdrawal amount is ₹1,000',
-      });
-      return;
-    }
-
     if (amount > wallet.balance) {
       toast({
         variant: 'destructive',
         title: 'Insufficient Balance',
-        description: 'You cannot withdraw more than your available balance',
+        description: 'Withdrawal amount exceeds available balance',
       });
       return;
     }
 
-    // Simulate withdrawal processing
+    if (amount < 100) {
+      toast({
+        variant: 'destructive',
+        title: 'Minimum Amount Required',
+        description: 'Minimum withdrawal amount is ₹100',
+      });
+      return;
+    }
+
+    if (!primaryBankAccount) {
+      toast({
+        variant: 'destructive',
+        title: 'Bank Account Required',
+        description: 'Please add a bank account for withdrawal',
+      });
+      return;
+    }
+
     setIsProcessing(true);
 
-    setTimeout(async () => {
-      try {
-        const newBalance = wallet.balance - amount;
+    try {
+      // Create withdrawal request
+      await apiClient.post('/transaction-requests', {
+        user_id: userId,
+        request_type: 'withdrawal',
+        amount,
+        bank_account_id: primaryBankAccount?.id,
+        bank_account_number: primaryBankAccount?.accountNumber,
+        bank_ifsc_code: primaryBankAccount?.ifscCode,
+        bank_name: primaryBankAccount?.bankName,
+      });
 
-        // Update wallet balance
-        const updatedWallet = await data.updateWallet(userId, {
-          balance: newBalance,
-        });
+      toast({
+        title: 'Request Submitted!',
+        description: 'Your withdrawal request has been submitted. Funds will be transferred to your bank account within 24-48 hours.',
+      });
 
-        // Create transaction record
-        await data.createTransaction({
-          userId,
-          type: 'debit',
-          amount,
-          category: 'withdrawal',
-          description: 'Wallet withdrawal to bank account',
-          balanceAfter: newBalance,
-        });
-
-        setWallet(updatedWallet);
-
-        toast({
-          title: 'Withdrawal Successful!',
-          description: `${formatCurrency(amount)} withdrawn from your wallet`,
-        });
-
-        setWithdrawDialogOpen(false);
-        setWithdrawAmount('');
-
-        // Notify parent component of balance update
-        if (onBalanceUpdate) {
-          onBalanceUpdate();
-        }
-      } catch (error: any) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: error.message || 'Failed to withdraw money',
-        });
-      } finally {
-        setIsProcessing(false);
-      }
-    }, 2000); // 2 second simulated withdrawal processing
+      setIsProcessing(false);
+      setWithdrawDialogOpen(false);
+      setWithdrawAmount('');
+    } catch (error) {
+      console.error('Failed to submit request:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Request Failed',
+        description: 'Failed to submit withdrawal request. Please try again.',
+      });
+      setIsProcessing(false);
+    }
   };
 
   const availableBalance = wallet.balance;
@@ -510,81 +502,92 @@ const WalletCard = ({ userId, showDetails = true, onBalanceUpdate }: WalletCardP
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ArrowDownCircle className="h-5 w-5 text-orange-600" />
-              Withdraw Money from Wallet
+              <ArrowDownCircle className="h-5 w-5 text-primary" />
+              Request Withdrawal
             </DialogTitle>
-            <DialogDescription>
-              Withdraw funds to your linked bank account
-            </DialogDescription>
+            <DialogDescription>Submit a withdrawal request. Funds will be transferred to your bank account within 24-48 hours after verification.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Available Balance */}
             <div className="p-4 bg-muted/50 rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Available Balance</span>
-                <span className="text-lg font-semibold text-primary">{formatCurrencyCompact(wallet.balance, true)}</span>
-              </div>
+              <p className="text-sm text-muted-foreground">Available Balance</p>
+              <p className="text-2xl font-bold">{formatCurrencyCompact(wallet.balance, true)}</p>
             </div>
 
-            {/* Quick Amount Selection */}
-            <div>
-              <Label className="text-sm mb-2 block">Quick Select</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {quickAmounts.filter(amt => amt <= wallet.balance).map((amount) => (
+            {!primaryBankAccount ? (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
+                <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-yellow-900">No Bank Account Added</p>
+                  <p className="text-xs text-yellow-800 mt-1">
+                    Please add a bank account first to withdraw funds
+                  </p>
                   <Button
-                    key={amount}
+                    size="sm"
                     variant="outline"
-                    onClick={() => setWithdrawAmount(amount.toString())}
-                    className={withdrawAmount === amount.toString() ? 'border-primary bg-primary/10' : ''}
+                    className="mt-2"
+                    onClick={() => {
+                      setWithdrawDialogOpen(false);
+                      setBankAccountDialogOpen(true);
+                    }}
                   >
-                    {formatCurrencyCompact(amount, true)}
+                    Add Bank Account
                   </Button>
-                ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm font-medium mb-2">Bank Account</p>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p><strong>Account:</strong> {primaryBankAccount.bankName}</p>
+                    <p><strong>Account No:</strong> XXXX XXXX {primaryBankAccount.accountNumber.slice(-4)}</p>
+                    <p><strong>IFSC:</strong> {primaryBankAccount.ifscCode}</p>
+                  </div>
+                </div>
 
-            {/* Custom Amount */}
-            <div>
-              <Label htmlFor="withdrawAmount">Withdrawal Amount (₹)</Label>
-              <Input
-                id="withdrawAmount"
-                type="number"
-                placeholder="Enter amount (min ₹1,000)"
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
-                min="1000"
-                max={wallet.balance}
-                className="mt-1"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Min: ₹1,000 | Max: {formatCurrencyCompact(wallet.balance, true)}
-              </p>
-            </div>
-
-            {/* Bank Account Info */}
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="text-sm font-medium mb-2">Bank Account</p>
-              <p className="text-xs text-muted-foreground">
-                This is a simulated withdrawal system. In production, this would transfer funds to your linked bank account via IMPS/NEFT/RTGS.
-              </p>
-            </div>
+                <div>
+                  <Label htmlFor="withdrawAmount">Withdrawal Amount (₹)</Label>
+                  <Input
+                    id="withdrawAmount"
+                    type="number"
+                    placeholder="Enter amount (min ₹100)"
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    min="100"
+                    max={wallet.balance}
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Min: ₹100 | Max: {formatCurrencyCompact(wallet.balance, true)}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setWithdrawDialogOpen(false)} disabled={isProcessing}>
+            <Button
+              variant="outline"
+              onClick={() => setWithdrawDialogOpen(false)}
+              disabled={isProcessing}
+            >
               Cancel
             </Button>
-            <Button onClick={handleWithdraw} disabled={isProcessing} variant="destructive">
+            <Button
+              onClick={handleWithdraw}
+              disabled={isProcessing || !primaryBankAccount}
+              className="bg-gradient-primary"
+            >
               {isProcessing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Processing...
+                  Submitting...
                 </>
               ) : (
                 <>
                   <ArrowDownCircle className="h-4 w-4 mr-2" />
-                  Withdraw {withdrawAmount ? formatCurrencyCompact(parseFloat(withdrawAmount), true) : '₹0'}
+                  Submit Request
                 </>
               )}
             </Button>
