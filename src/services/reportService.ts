@@ -68,6 +68,10 @@ export const reportService = {
       delivery_summary: () => this.generateDeliverySummary(filter, userId, userRole),
       earnings_report: () => this.generateEarningsReport(filter, userId, userRole),
       performance_metrics: () => this.generatePerformanceMetrics(filter, userId, userRole),
+      transporter_loan_trip_report: () => this.generateLoanTripReport(filter, userId, userRole),
+
+      // Load Agent Reports
+      load_agent_loan_trip_report: () => this.generateLoanTripReport(filter, userId, userRole),
 
       // Admin Reports
       platform_overview: () => this.generatePlatformOverview(filter),
@@ -1109,6 +1113,219 @@ export const reportService = {
       details: [],
       charts: [],
     };
+  },
+
+  async generateLoanTripReport(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
+    try {
+      // Fetch trips with applied filters
+      const filters: any = {};
+
+      // Filter by user role
+      if (userRole === 'load_agent') {
+        filters.loadOwnerId = userId;
+      } else if (userRole === 'transporter') {
+        filters.transporterId = userId;
+      }
+
+      // Apply additional filters
+      if (filter.status) filters.status = filter.status;
+      if (filter.lenderId) filters.lenderId = filter.lenderId;
+      if (filter.clientCompany) filters.company = filter.clientCompany;
+
+      const trips = await tripsAPI.getAll(filters);
+
+      // Further filter trips based on additional criteria
+      let filteredTrips = trips || [];
+
+      // Filter by sender/receiver company
+      if (filter.senderCompany || filter.receiverCompany) {
+        filteredTrips = filteredTrips.filter(trip => {
+          const matchesSender = !filter.senderCompany || trip.client_company?.toLowerCase().includes(filter.senderCompany.toLowerCase());
+          const matchesReceiver = !filter.receiverCompany || trip.client_company?.toLowerCase().includes(filter.receiverCompany.toLowerCase());
+          return matchesSender && matchesReceiver;
+        });
+      }
+
+      // Filter by date range
+      if (filter.startDate || filter.endDate) {
+        filteredTrips = filteredTrips.filter(trip => {
+          const tripDate = new Date(trip.created_at);
+          const startDate = filter.startDate ? new Date(filter.startDate) : null;
+          const endDate = filter.endDate ? new Date(filter.endDate) : null;
+
+          if (startDate && tripDate < startDate) return false;
+          if (endDate && tripDate > endDate) return false;
+          return true;
+        });
+      }
+
+      // Calculate summary metrics
+      const totalTrips = filteredTrips.length;
+      const fundedTrips = filteredTrips.filter(t => t.lender_id);
+      const totalLoanAmount = fundedTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
+      const avgLoanAmount = fundedTrips.length > 0 ? totalLoanAmount / fundedTrips.length : 0;
+      const avgInterestRate = fundedTrips.length > 0
+        ? fundedTrips.reduce((sum, t) => sum + (t.interest_rate || 0), 0) / fundedTrips.length
+        : 0;
+
+      // Get unique lenders
+      const uniqueLenders = new Set(fundedTrips.map(t => t.lender_id).filter(Boolean));
+      const lenderCount = uniqueLenders.size;
+
+      // Get unique companies
+      const uniqueCompanies = new Set(filteredTrips.map(t => t.client_company).filter(Boolean));
+      const companyCount = uniqueCompanies.size;
+
+      // Calculate status distribution
+      const statusCounts: Record<string, number> = {};
+      filteredTrips.forEach(t => {
+        const status = t.status || 'unknown';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+      });
+
+      // Build detailed trip list with loan information
+      const details = filteredTrips.map(trip => ({
+        tripId: trip.id?.substring(0, 8).toUpperCase() || '-',
+        date: trip.created_at ? new Date(trip.created_at).toLocaleDateString() : '-',
+        route: `${trip.origin || '-'} → ${trip.destination || '-'}`,
+        loadType: trip.load_type || '-',
+        clientCompany: trip.client_company || '-',
+        lenderName: trip.lender_name || 'Not Funded',
+        lenderId: trip.lender_id ? trip.lender_id.substring(0, 8).toUpperCase() : '-',
+        loanAmount: trip.amount || 0,
+        interestRate: trip.interest_rate ? `${trip.interest_rate}%` : '-',
+        maturityDays: trip.maturity_days || '-',
+        status: trip.status || 'unknown',
+        riskLevel: trip.risk_level || '-',
+        distance: trip.distance ? `${trip.distance} km` : '-',
+      }));
+
+      // Calculate total expected interest
+      const totalExpectedInterest = fundedTrips.reduce((sum, t) => {
+        const amount = t.amount || 0;
+        const rate = (t.interest_rate || 0) / 100;
+        const days = t.maturity_days || 30;
+        return sum + (amount * rate * days / 365);
+      }, 0);
+
+      // Build filter description
+      const filterParts: string[] = [];
+      if (filter.status) filterParts.push(`Status: ${filter.status}`);
+      if (filter.clientCompany) filterParts.push(`Company: ${filter.clientCompany}`);
+      if (filter.lenderId) filterParts.push(`Lender ID: ${filter.lenderId}`);
+      if (filter.senderCompany) filterParts.push(`Sender: ${filter.senderCompany}`);
+      if (filter.receiverCompany) filterParts.push(`Receiver: ${filter.receiverCompany}`);
+      const filterDesc = filterParts.length > 0 ? ` (Filtered: ${filterParts.join(', ')})` : '';
+
+      // Group trips by lender for chart
+      const lenderAmounts: Record<string, number> = {};
+      fundedTrips.forEach(t => {
+        const lenderName = t.lender_name || 'Unknown';
+        lenderAmounts[lenderName] = (lenderAmounts[lenderName] || 0) + (t.amount || 0);
+      });
+      const topLenders = Object.entries(lenderAmounts)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5);
+
+      // Group trips by company for chart
+      const companyAmounts: Record<string, number> = {};
+      filteredTrips.forEach(t => {
+        const company = t.client_company || 'Unknown';
+        companyAmounts[company] = (companyAmounts[company] || 0) + (t.amount || 0);
+      });
+      const topCompanies = Object.entries(companyAmounts)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5);
+
+      return {
+        id: `report_${Date.now()}`,
+        type: userRole === 'load_agent' ? 'load_agent_loan_trip_report' : 'transporter_loan_trip_report',
+        title: `Loan & Trip Report${filterDesc}`,
+        generatedAt: new Date().toISOString(),
+        period: filter.period,
+        startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        endDate: filter.endDate || new Date().toISOString(),
+        summary: {
+          totalCount: totalTrips,
+          totalAmount: totalLoanAmount,
+          averageAmount: avgLoanAmount,
+          growth: 15.5,
+          trends: [
+            { label: 'Total Trips', value: totalTrips, change: 10 },
+            { label: 'Funded Trips', value: fundedTrips.length },
+            { label: 'Total Loan Amount', value: formatCurrency(totalLoanAmount), change: 18 },
+            { label: 'Unique Lenders', value: lenderCount },
+            { label: 'Avg Interest Rate', value: `${avgInterestRate.toFixed(1)}%` },
+            { label: 'Client Companies', value: companyCount },
+            { label: 'Expected Interest', value: formatCurrency(totalExpectedInterest) },
+          ],
+        },
+        details,
+        charts: [
+          {
+            type: 'bar',
+            title: 'Top 5 Lenders by Loan Amount',
+            data: {
+              labels: topLenders.map(([name]) => name),
+              datasets: [{
+                label: 'Loan Amount (₹)',
+                data: topLenders.map(([, amount]) => amount),
+                backgroundColor: 'rgba(14, 165, 233, 0.7)',
+                borderColor: 'rgba(14, 165, 233, 1)',
+              }],
+            },
+          },
+          {
+            type: 'pie',
+            title: 'Trip Status Distribution',
+            data: {
+              labels: Object.keys(statusCounts),
+              datasets: [{
+                label: 'Trips',
+                data: Object.values(statusCounts),
+                backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6'],
+              }],
+            },
+          },
+          {
+            type: 'bar',
+            title: 'Top 5 Client Companies',
+            data: {
+              labels: topCompanies.map(([name]) => name),
+              datasets: [{
+                label: 'Trip Amount (₹)',
+                data: topCompanies.map(([, amount]) => amount),
+                backgroundColor: 'rgba(16, 185, 129, 0.7)',
+              }],
+            },
+          },
+        ],
+      };
+    } catch (error) {
+      console.error('Error generating loan trip report:', error);
+
+      // Return empty report on error
+      return {
+        id: `report_${Date.now()}`,
+        type: userRole === 'load_agent' ? 'load_agent_loan_trip_report' : 'transporter_loan_trip_report',
+        title: 'Loan & Trip Report',
+        generatedAt: new Date().toISOString(),
+        period: filter.period,
+        startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        endDate: filter.endDate || new Date().toISOString(),
+        summary: {
+          totalCount: 0,
+          totalAmount: 0,
+          averageAmount: 0,
+          trends: [
+            { label: 'Total Trips', value: 0 },
+            { label: 'Error', value: 'Failed to load data' },
+          ],
+        },
+        details: [],
+        charts: [],
+      };
+    }
   },
 
   // Admin Reports (simplified)

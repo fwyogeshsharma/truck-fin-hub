@@ -219,6 +219,48 @@ export const AdvancedReportFilter = ({ filter, onFilterChange }: AdvancedReportF
             </CardContent>
           </Card>
 
+          {/* Company Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Company Filters</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <Label htmlFor="clientCompany">Client Company</Label>
+                <Input
+                  id="clientCompany"
+                  type="text"
+                  placeholder="Enter client company name"
+                  value={localFilter.clientCompany || ''}
+                  onChange={(e) => setLocalFilter({ ...localFilter, clientCompany: e.target.value || undefined })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="senderCompany">Sender Company</Label>
+                <Input
+                  id="senderCompany"
+                  type="text"
+                  placeholder="Enter sender company"
+                  value={localFilter.senderCompany || ''}
+                  onChange={(e) => setLocalFilter({ ...localFilter, senderCompany: e.target.value || undefined })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="receiverCompany">Receiver Company</Label>
+                <Input
+                  id="receiverCompany"
+                  type="text"
+                  placeholder="Enter receiver company"
+                  value={localFilter.receiverCompany || ''}
+                  onChange={(e) => setLocalFilter({ ...localFilter, receiverCompany: e.target.value || undefined })}
+                  className="mt-1"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Risk & Interest Rate */}
           <Card>
             <CardHeader>

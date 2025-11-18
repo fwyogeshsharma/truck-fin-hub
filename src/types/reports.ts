@@ -15,6 +15,10 @@ export type ReportType =
   | 'delivery_summary'
   | 'earnings_report'
   | 'performance_metrics'
+  | 'transporter_loan_trip_report'
+
+  // Load Agent Reports
+  | 'load_agent_loan_trip_report'
 
   // Admin Reports
   | 'platform_overview'
@@ -61,6 +65,12 @@ export interface ReportFilter {
   interestRateMin?: number;
   interestRateMax?: number;
   userId?: string;
+  lenderId?: string;
+  transporterId?: string;
+  loadOwnerId?: string;
+  clientCompany?: string;
+  senderCompany?: string;
+  receiverCompany?: string;
   groupBy?: 'day' | 'week' | 'month' | 'company' | 'loadType' | 'status';
   sortBy?: 'date' | 'amount' | 'distance' | 'weight' | 'returns';
   sortOrder?: 'asc' | 'desc';

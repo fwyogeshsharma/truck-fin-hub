@@ -114,6 +114,27 @@ export const reportConfigs: Record<string, ReportConfig> = {
     dataPoints: ['Overall Rating', 'Delivery Success Rate', 'Customer Reviews', 'Efficiency Score', 'Safety Record'],
   },
 
+  transporter_loan_trip_report: {
+    type: 'transporter_loan_trip_report',
+    title: 'Loan & Trip Report',
+    description: 'Complete report of trips with loan details, lenders, and company information',
+    roles: ['transporter', 'admin', 'super_admin'],
+    icon: 'FileText',
+    category: 'financial',
+    dataPoints: ['Total Trips', 'Lenders', 'Loan Amount', 'Interest Rate', 'Trip Status', 'Client Companies', 'Sender/Receiver'],
+  },
+
+  // Load Agent Reports
+  load_agent_loan_trip_report: {
+    type: 'load_agent_loan_trip_report',
+    title: 'Loan & Trip Report',
+    description: 'Complete report of trips with loan details, lenders, and company information',
+    roles: ['load_agent', 'admin', 'super_admin'],
+    icon: 'FileText',
+    category: 'financial',
+    dataPoints: ['Total Trips', 'Lenders', 'Loan Amount', 'Interest Rate', 'Trip Status', 'Client Companies', 'Sender/Receiver'],
+  },
+
   // Admin Reports
   platform_overview: {
     type: 'platform_overview',
