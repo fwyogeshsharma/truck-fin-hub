@@ -4,6 +4,7 @@ import {
   getTrip,
   getTripsByLoadOwner,
   getTripsByLender,
+  getTripsByTransporter,
   getTripsByStatus,
   createTrip,
   updateTrip,
@@ -21,7 +22,7 @@ const router = Router();
 // GET /api/trips - Get all trips or filter by query params
 router.get('/', (req: Request, res: Response) => {
   try {
-    const { status, loadOwnerId, lenderId } = req.query;
+    const { status, loadOwnerId, lenderId, transporterId } = req.query;
 
     let trips;
     if (status) {
@@ -30,6 +31,8 @@ router.get('/', (req: Request, res: Response) => {
       trips = getTripsByLoadOwner(loadOwnerId as string);
     } else if (lenderId) {
       trips = getTripsByLender(lenderId as string);
+    } else if (transporterId) {
+      trips = getTripsByTransporter(transporterId as string);
     } else {
       trips = getAllTrips();
       console.log('getAllTrips returned', trips.length, 'trips');

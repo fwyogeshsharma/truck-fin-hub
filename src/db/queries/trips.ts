@@ -283,6 +283,42 @@ export const getTripsByLender = async (lenderId: string): Promise<(Trip & { docu
 };
 
 /**
+ * Get trips by transporter with documents
+ */
+export const getTripsByTransporter = async (transporterId: string): Promise<(Trip & { documents?: Record<string, string> })[]> => {
+  const db = await getDatabase();
+  const result = await db.query('SELECT * FROM trips WHERE transporter_id = $1 ORDER BY created_at DESC', [transporterId]);
+  const trips = result.rows as Trip[];
+
+  // Get all documents for these trips
+  const tripIds = trips.map(t => t.id);
+  if (tripIds.length === 0) return [];
+
+  const docsResult = await db.query('SELECT * FROM trip_documents WHERE trip_id = ANY($1)', [tripIds]);
+  const allDocs = docsResult.rows as TripDocument[];
+
+  // Group documents by trip_id
+  const docsByTrip = allDocs.reduce((acc, doc) => {
+    if (!acc[doc.trip_id]) {
+      acc[doc.trip_id] = {};
+    }
+    acc[doc.trip_id][doc.document_type] = doc.document_data;
+    return acc;
+  }, {} as Record<string, Record<string, string>>);
+
+  return trips.map(trip => ({
+    ...trip,
+    distance: Number(trip.distance),
+    weight: Number(trip.weight),
+    amount: Number(trip.amount),
+    interest_rate: trip.interest_rate ? Number(trip.interest_rate) : undefined,
+    maturity_days: trip.maturity_days ? Number(trip.maturity_days) : undefined,
+    load_owner_rating: trip.load_owner_rating ? Number(trip.load_owner_rating) : undefined,
+    documents: docsByTrip[trip.id] && Object.keys(docsByTrip[trip.id]).length > 0 ? docsByTrip[trip.id] : undefined,
+  }));
+};
+
+/**
  * Create trip
  */
 export const createTrip = async (input: CreateTripInput): Promise<Trip> => {

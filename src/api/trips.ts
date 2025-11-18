@@ -33,7 +33,7 @@ export interface UploadDocumentData {
 }
 
 export const tripsAPI = {
-  async getAll(filters?: { status?: string; loadOwnerId?: string; lenderId?: string }): Promise<Trip[]> {
+  async getAll(filters?: { status?: string; loadOwnerId?: string; lenderId?: string; transporterId?: string }): Promise<Trip[]> {
     const params = new URLSearchParams(filters as any).toString();
     return apiClient.get(`/trips${params ? `?${params}` : ''}`);
   },
