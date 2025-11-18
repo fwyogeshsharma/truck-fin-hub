@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/DashboardLayout';
 import { auth } from '@/lib/auth';
@@ -111,6 +111,9 @@ const LoadAgentDashboard = () => {
     bidAmount: number;
     interestRate: number;
   } | null>(null);
+
+  // Ref for scrolling to All Trips section
+  const allTripsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -1578,6 +1581,11 @@ const LoadAgentDashboard = () => {
 
   const monthlyData = getLast6MonthsData();
 
+  // Scroll to All Trips section
+  const scrollToAllTrips = () => {
+    allTripsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   // Stats
   const stats = [
     {
@@ -1697,8 +1705,13 @@ const LoadAgentDashboard = () => {
         <div className="grid md:grid-cols-4 gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
+          const isClickable = stat.title === 'Total Trips';
           return (
-            <Card key={stat.title}>
+            <Card
+              key={stat.title}
+              className={isClickable ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''}
+              onClick={isClickable ? scrollToAllTrips : undefined}
+            >
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -1991,7 +2004,7 @@ const LoadAgentDashboard = () => {
         )}
 
         {/* All Trips */}
-        <Card>
+        <Card ref={allTripsRef}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
