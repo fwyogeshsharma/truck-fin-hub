@@ -15,14 +15,6 @@ export type ReportType =
   | 'delivery_summary'
   | 'earnings_report'
   | 'performance_metrics'
-  | 'trip_history'
-  | 'route_analytics'
-
-  // Load Agent Reports
-  | 'agent_portfolio'
-  | 'client_management'
-  | 'agent_performance'
-  | 'commission_report'
 
   // Admin Reports
   | 'platform_overview'

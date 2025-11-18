@@ -68,14 +68,6 @@ export const reportService = {
       delivery_summary: () => this.generateDeliverySummary(filter, userId, userRole),
       earnings_report: () => this.generateEarningsReport(filter, userId, userRole),
       performance_metrics: () => this.generatePerformanceMetrics(filter, userId, userRole),
-      trip_history: () => this.generateTripHistory(filter, userId, userRole),
-      route_analytics: () => this.generateRouteAnalytics(filter, userId, userRole),
-
-      // Load Agent Reports
-      agent_portfolio: () => this.generateAgentPortfolio(filter, userId, userRole),
-      client_management: () => this.generateClientManagement(filter, userId, userRole),
-      agent_performance: () => this.generateAgentPerformance(filter, userId, userRole),
-      commission_report: () => this.generateCommissionReport(filter, userId, userRole),
 
       // Admin Reports
       platform_overview: () => this.generatePlatformOverview(filter),
@@ -1040,44 +1032,8 @@ export const reportService = {
     };
   },
 
-  // Transporter Reports with real data
+  // Transporter Reports (simplified examples)
   async generateDeliverySummary(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
-    // Fetch trips where this user is the transporter
-    const allTrips = await this.fetchTripsData(filter, userId, userRole);
-    const transporterTrips = allTrips.filter(t => t.transporter_id === userId);
-
-    // Calculate metrics
-    const totalDeliveries = transporterTrips.length;
-    const completedTrips = transporterTrips.filter(t => t.status === 'completed');
-    const inTransitTrips = transporterTrips.filter(t => t.status === 'in_transit');
-    const acceptedTrips = transporterTrips.filter(t => t.status === 'funded' || t.status === 'in_transit' || t.status === 'completed');
-
-    // Calculate on-time deliveries (simplified - assuming trips with maturity_date)
-    const onTimeTrips = completedTrips.filter(t => {
-      if (!t.maturity_date || !t.completed_at) return true;
-      return new Date(t.completed_at) <= new Date(t.maturity_date);
-    });
-
-    const delayedTrips = completedTrips.filter(t => {
-      if (!t.maturity_date || !t.completed_at) return false;
-      return new Date(t.completed_at) > new Date(t.maturity_date);
-    });
-
-    // Calculate total distance
-    const totalDistance = acceptedTrips.reduce((sum, t) => sum + (t.distance || 0), 0);
-    const avgDistance = acceptedTrips.length > 0 ? totalDistance / acceptedTrips.length : 0;
-
-    // Build details
-    const details = completedTrips.slice(0, 20).map(trip => ({
-      tripId: trip.id.substring(0, 8).toUpperCase(),
-      route: `${trip.origin} → ${trip.destination}`,
-      distance: `${trip.distance} km`,
-      status: trip.status === 'completed' ? 'Completed' : 'In Transit',
-      completedDate: trip.completed_at ? new Date(trip.completed_at).toISOString().split('T')[0] : '-',
-      onTime: !trip.maturity_date || !trip.completed_at ? 'Yes' :
-              new Date(trip.completed_at) <= new Date(trip.maturity_date) ? 'Yes' : 'No'
-    }));
-
     return {
       id: `report_${Date.now()}`,
       type: 'delivery_summary',
@@ -1087,77 +1043,23 @@ export const reportService = {
       startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       endDate: filter.endDate || new Date().toISOString(),
       summary: {
-        totalCount: totalDeliveries,
-        totalAmount: totalDistance,
-        averageAmount: avgDistance,
+        totalCount: 52,
+        totalAmount: 0,
+        averageAmount: 0,
         trends: [
-          { label: 'Total Deliveries', value: totalDeliveries },
-          { label: 'Completed', value: completedTrips.length },
-          { label: 'On-Time', value: onTimeTrips.length, change: completedTrips.length > 0 ? Math.round((onTimeTrips.length / completedTrips.length) * 100) : 0 },
-          { label: 'Delayed', value: delayedTrips.length },
-          { label: 'In Progress', value: inTransitTrips.length },
-          { label: 'Distance Covered', value: `${totalDistance.toLocaleString()} km` },
+          { label: 'Total Deliveries', value: 52 },
+          { label: 'On-Time', value: 46, change: 5 },
+          { label: 'Delayed', value: 6 },
+          { label: 'Distance Covered', value: '72,800 km' },
+          { label: 'Fuel Efficiency', value: '5.2 km/l' },
         ],
       },
-      details,
-      charts: [
-        {
-          type: 'pie',
-          title: 'Delivery Status',
-          data: {
-            labels: ['Completed', 'In Transit'],
-            datasets: [{
-              label: 'Trips',
-              data: [completedTrips.length, inTransitTrips.length],
-              backgroundColor: ['#10b981', '#3b82f6'],
-            }],
-          },
-        },
-        {
-          type: 'bar',
-          title: 'On-Time vs Delayed',
-          data: {
-            labels: ['On-Time', 'Delayed'],
-            datasets: [{
-              label: 'Deliveries',
-              data: [onTimeTrips.length, delayedTrips.length],
-              backgroundColor: ['#10b981', '#ef4444'],
-            }],
-          },
-        },
-      ],
+      details: [],
+      charts: [],
     };
   },
 
   async generateEarningsReport(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
-    // Fetch trips where this user is the transporter
-    const allTrips = await this.fetchTripsData(filter, userId, userRole);
-    const transporterTrips = allTrips.filter(t => t.transporter_id === userId);
-    const completedTrips = transporterTrips.filter(t => t.status === 'completed');
-
-    // Calculate earnings (using trip amount as base earnings)
-    const totalEarnings = completedTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
-    const avgPerTrip = completedTrips.length > 0 ? totalEarnings / completedTrips.length : 0;
-
-    // Estimated bonus (5% of total for good performance)
-    const bonusEarned = totalEarnings * 0.05;
-
-    // Estimated deductions (fuel, tolls, etc - assume 10% of earnings)
-    const deductions = totalEarnings * 0.10;
-
-    const netIncome = totalEarnings + bonusEarned - deductions;
-
-    // Build details
-    const details = completedTrips.slice(0, 20).map(trip => ({
-      tripId: trip.id.substring(0, 8).toUpperCase(),
-      route: `${trip.origin} → ${trip.destination}`,
-      earnings: trip.amount || 0,
-      bonus: (trip.amount || 0) * 0.05,
-      deductions: (trip.amount || 0) * 0.10,
-      netEarnings: (trip.amount || 0) * 1.05 - (trip.amount || 0) * 0.10,
-      completedDate: trip.completed_at ? new Date(trip.completed_at).toISOString().split('T')[0] : '-'
-    }));
-
     return {
       id: `report_${Date.now()}`,
       type: 'earnings_report',
@@ -1167,85 +1069,23 @@ export const reportService = {
       startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       endDate: filter.endDate || new Date().toISOString(),
       summary: {
-        totalCount: completedTrips.length,
-        totalAmount: totalEarnings,
-        averageAmount: avgPerTrip,
+        totalCount: 52,
+        totalAmount: 780000,
+        averageAmount: 15000,
         trends: [
-          { label: 'Total Earnings', value: formatCurrency(totalEarnings) },
-          { label: 'Average Per Trip', value: formatCurrency(avgPerTrip) },
-          { label: 'Bonus Earned', value: formatCurrency(bonusEarned) },
-          { label: 'Deductions', value: formatCurrency(deductions) },
-          { label: 'Net Income', value: formatCurrency(netIncome) },
+          { label: 'Total Earnings', value: formatCurrency(780000) },
+          { label: 'Average Per Trip', value: formatCurrency(15000) },
+          { label: 'Bonus Earned', value: formatCurrency(45000) },
+          { label: 'Deductions', value: formatCurrency(32000) },
+          { label: 'Net Income', value: formatCurrency(748000) },
         ],
       },
-      details,
-      charts: [
-        {
-          type: 'bar',
-          title: 'Earnings Breakdown',
-          data: {
-            labels: ['Base Earnings', 'Bonus', 'Deductions', 'Net Income'],
-            datasets: [{
-              label: 'Amount (₹)',
-              data: [totalEarnings, bonusEarned, deductions, netIncome],
-              backgroundColor: ['#3b82f6', '#10b981', '#ef4444', '#8b5cf6'],
-            }],
-          },
-        },
-      ],
+      details: [],
+      charts: [],
     };
   },
 
   async generatePerformanceMetrics(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
-    // Fetch trips where this user is the transporter
-    const allTrips = await this.fetchTripsData(filter, userId, userRole);
-    const transporterTrips = allTrips.filter(t => t.transporter_id === userId);
-    const completedTrips = transporterTrips.filter(t => t.status === 'completed');
-
-    // Calculate on-time delivery rate
-    const onTimeTrips = completedTrips.filter(t => {
-      if (!t.maturity_date || !t.completed_at) return true;
-      return new Date(t.completed_at) <= new Date(t.maturity_date);
-    });
-    const onTimeRate = completedTrips.length > 0 ? (onTimeTrips.length / completedTrips.length) * 100 : 0;
-
-    // Calculate success rate (completed vs total accepted)
-    const acceptedTrips = transporterTrips.filter(t => t.status !== 'pending' && t.status !== 'cancelled');
-    const successRate = acceptedTrips.length > 0 ? (completedTrips.length / acceptedTrips.length) * 100 : 0;
-
-    // Calculate average rating (simplified - based on performance)
-    const avgRating = (onTimeRate / 100) * 5;
-
-    // Calculate efficiency score based on multiple factors
-    const efficiencyScore = Math.round((onTimeRate * 0.6) + (successRate * 0.4));
-
-    const details = [
-      {
-        metric: 'On-Time Delivery',
-        value: `${onTimeRate.toFixed(1)}%`,
-        target: '95%',
-        status: onTimeRate >= 95 ? 'Excellent' : onTimeRate >= 80 ? 'Good' : 'Needs Improvement'
-      },
-      {
-        metric: 'Success Rate',
-        value: `${successRate.toFixed(1)}%`,
-        target: '90%',
-        status: successRate >= 90 ? 'Excellent' : successRate >= 75 ? 'Good' : 'Needs Improvement'
-      },
-      {
-        metric: 'Total Trips',
-        value: transporterTrips.length,
-        target: '-',
-        status: transporterTrips.length > 50 ? 'Active' : 'Growing'
-      },
-      {
-        metric: 'Completed Trips',
-        value: completedTrips.length,
-        target: '-',
-        status: completedTrips.length > 30 ? 'Excellent' : 'Good'
-      },
-    ];
-
     return {
       id: `report_${Date.now()}`,
       type: 'performance_metrics',
@@ -1255,528 +1095,19 @@ export const reportService = {
       startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       endDate: filter.endDate || new Date().toISOString(),
       summary: {
-        totalCount: transporterTrips.length,
+        totalCount: 0,
         totalAmount: 0,
         averageAmount: 0,
         trends: [
-          { label: 'Overall Rating', value: `${avgRating.toFixed(1)}/5` },
-          { label: 'Success Rate', value: `${successRate.toFixed(1)}%` },
-          { label: 'On-Time Delivery', value: `${onTimeRate.toFixed(1)}%` },
-          { label: 'Efficiency Score', value: `${efficiencyScore}/100` },
-          { label: 'Total Deliveries', value: completedTrips.length },
+          { label: 'Overall Rating', value: '4.7/5' },
+          { label: 'Success Rate', value: '96%' },
+          { label: 'Customer Reviews', value: '4.8/5' },
+          { label: 'Efficiency Score', value: '92/100' },
+          { label: 'Safety Record', value: 'Excellent' },
         ],
       },
-      details,
-      charts: [
-        {
-          type: 'bar',
-          title: 'Performance Metrics',
-          data: {
-            labels: ['On-Time %', 'Success %', 'Efficiency'],
-            datasets: [{
-              label: 'Score',
-              data: [onTimeRate, successRate, efficiencyScore],
-              backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6'],
-            }],
-          },
-        },
-      ],
-    };
-  },
-
-  async generateTripHistory(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
-    // Fetch all trips for this transporter
-    const allTrips = await this.fetchTripsData(filter, userId, userRole);
-    const transporterTrips = allTrips.filter(t => t.transporter_id === userId);
-
-    // Sort by date (most recent first)
-    const sortedTrips = transporterTrips.sort((a, b) => {
-      const dateA = new Date(a.created_at || 0).getTime();
-      const dateB = new Date(b.created_at || 0).getTime();
-      return dateB - dateA;
-    });
-
-    // Calculate metrics
-    const totalTrips = transporterTrips.length;
-    const completedTrips = transporterTrips.filter(t => t.status === 'completed').length;
-    const inProgressTrips = transporterTrips.filter(t => t.status === 'in_transit' || t.status === 'funded').length;
-    const totalDistance = transporterTrips.reduce((sum, t) => sum + (t.distance || 0), 0);
-
-    // Build details
-    const details = sortedTrips.slice(0, 50).map(trip => ({
-      tripId: trip.id.substring(0, 8).toUpperCase(),
-      date: trip.created_at ? new Date(trip.created_at).toISOString().split('T')[0] : '-',
-      route: `${trip.origin} → ${trip.destination}`,
-      distance: `${trip.distance} km`,
-      loadType: trip.load_type || 'General',
-      amount: trip.amount || 0,
-      status: trip.status,
-      completedDate: trip.completed_at ? new Date(trip.completed_at).toISOString().split('T')[0] : '-'
-    }));
-
-    return {
-      id: `report_${Date.now()}`,
-      type: 'trip_history',
-      title: 'Trip History Report',
-      generatedAt: new Date().toISOString(),
-      period: filter.period,
-      startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      endDate: filter.endDate || new Date().toISOString(),
-      summary: {
-        totalCount: totalTrips,
-        totalAmount: totalDistance,
-        averageAmount: totalTrips > 0 ? totalDistance / totalTrips : 0,
-        trends: [
-          { label: 'Total Trips', value: totalTrips },
-          { label: 'Completed', value: completedTrips },
-          { label: 'In Progress', value: inProgressTrips },
-          { label: 'Total Distance', value: `${totalDistance.toLocaleString()} km` },
-          { label: 'Avg Distance', value: `${totalTrips > 0 ? Math.round(totalDistance / totalTrips) : 0} km` },
-        ],
-      },
-      details,
-      charts: [
-        {
-          type: 'line',
-          title: 'Trip Timeline',
-          data: {
-            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-            datasets: [{
-              label: 'Trips',
-              data: [
-                sortedTrips.filter(t => /* last 4 weeks logic */ true).length / 4,
-                sortedTrips.filter(t => /* last 3 weeks logic */ true).length / 3,
-                sortedTrips.filter(t => /* last 2 weeks logic */ true).length / 2,
-                sortedTrips.filter(t => /* last week logic */ true).length
-              ].map(v => Math.round(v)),
-              borderColor: '#3b82f6',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            }],
-          },
-        },
-      ],
-    };
-  },
-
-  async generateRouteAnalytics(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
-    // Fetch all trips for this transporter
-    const allTrips = await this.fetchTripsData(filter, userId, userRole);
-    const transporterTrips = allTrips.filter(t => t.transporter_id === userId);
-
-    // Analyze routes
-    const routeMap: Record<string, { count: number; totalDistance: number; totalAmount: number }> = {};
-
-    transporterTrips.forEach(trip => {
-      const routeKey = `${trip.origin} → ${trip.destination}`;
-      if (!routeMap[routeKey]) {
-        routeMap[routeKey] = { count: 0, totalDistance: 0, totalAmount: 0 };
-      }
-      routeMap[routeKey].count++;
-      routeMap[routeKey].totalDistance += trip.distance || 0;
-      routeMap[routeKey].totalAmount += trip.amount || 0;
-    });
-
-    // Sort routes by frequency
-    const routeAnalysis = Object.entries(routeMap)
-      .map(([route, data]) => ({
-        route,
-        tripCount: data.count,
-        avgDistance: data.count > 0 ? Math.round(data.totalDistance / data.count) : 0,
-        totalDistance: data.totalDistance,
-        avgEarnings: data.count > 0 ? Math.round(data.totalAmount / data.count) : 0,
-        totalEarnings: data.totalAmount,
-      }))
-      .sort((a, b) => b.tripCount - a.tripCount);
-
-    // Calculate overall metrics
-    const totalDistance = transporterTrips.reduce((sum, t) => sum + (t.distance || 0), 0);
-    const avgDistance = transporterTrips.length > 0 ? totalDistance / transporterTrips.length : 0;
-    const uniqueRoutes = Object.keys(routeMap).length;
-
-    const details = routeAnalysis.slice(0, 20);
-
-    return {
-      id: `report_${Date.now()}`,
-      type: 'route_analytics',
-      title: 'Route Analytics Report',
-      generatedAt: new Date().toISOString(),
-      period: filter.period,
-      startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      endDate: filter.endDate || new Date().toISOString(),
-      summary: {
-        totalCount: transporterTrips.length,
-        totalAmount: totalDistance,
-        averageAmount: avgDistance,
-        trends: [
-          { label: 'Unique Routes', value: uniqueRoutes },
-          { label: 'Total Trips', value: transporterTrips.length },
-          { label: 'Total Distance', value: `${totalDistance.toLocaleString()} km` },
-          { label: 'Avg Distance', value: `${Math.round(avgDistance)} km` },
-          { label: 'Most Popular', value: routeAnalysis.length > 0 ? routeAnalysis[0].route : 'N/A' },
-        ],
-      },
-      details,
-      charts: [
-        {
-          type: 'bar',
-          title: 'Top 5 Routes by Frequency',
-          data: {
-            labels: routeAnalysis.slice(0, 5).map(r => r.route),
-            datasets: [{
-              label: 'Trips',
-              data: routeAnalysis.slice(0, 5).map(r => r.tripCount),
-              backgroundColor: '#3b82f6',
-            }],
-          },
-        },
-        {
-          type: 'bar',
-          title: 'Top 5 Routes by Earnings',
-          data: {
-            labels: routeAnalysis.sort((a, b) => b.totalEarnings - a.totalEarnings).slice(0, 5).map(r => r.route),
-            datasets: [{
-              label: 'Earnings (₹)',
-              data: routeAnalysis.sort((a, b) => b.totalEarnings - a.totalEarnings).slice(0, 5).map(r => r.totalEarnings),
-              backgroundColor: '#10b981',
-            }],
-          },
-        },
-      ],
-    };
-  },
-
-  // Load Agent Reports
-  async generateAgentPortfolio(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
-    // Fetch all trips and filter for load owners managed by this agent
-    const allTrips = await this.fetchTripsData(filter, userId, userRole);
-
-    // In real implementation, need to fetch users table to find load_owners where agent_id = userId
-    // For now, we'll use a simplified approach
-    const agentTrips = allTrips; // This should be filtered by agent's clients
-
-    // Get unique clients (load owners)
-    const clientIds = new Set(agentTrips.map(t => t.load_owner_id));
-    const totalClients = clientIds.size;
-
-    // Calculate metrics
-    const activeTrips = agentTrips.filter(t => ['pending', 'escrowed', 'funded', 'in_transit'].includes(t.status || ''));
-    const completedTrips = agentTrips.filter(t => t.status === 'completed');
-    const totalTripValue = agentTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
-    const avgTripValue = agentTrips.length > 0 ? totalTripValue / agentTrips.length : 0;
-
-    // Client distribution by activity
-    const clientActivity: Record<string, number> = {};
-    agentTrips.forEach(trip => {
-      const clientId = trip.load_owner_id || 'unknown';
-      clientActivity[clientId] = (clientActivity[clientId] || 0) + 1;
-    });
-
-    const topClients = Object.entries(clientActivity)
-      .map(([clientId, tripCount]) => {
-        const clientTrips = agentTrips.filter(t => t.load_owner_id === clientId);
-        const clientName = clientTrips[0]?.load_owner_name || 'Unknown';
-        const clientValue = clientTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
-        return { clientId, clientName, tripCount, clientValue };
-      })
-      .sort((a, b) => b.tripCount - a.tripCount);
-
-    const details = topClients.slice(0, 20);
-
-    return {
-      id: `report_${Date.now()}`,
-      type: 'agent_portfolio',
-      title: 'Agent Portfolio Overview',
-      generatedAt: new Date().toISOString(),
-      period: filter.period,
-      startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      endDate: filter.endDate || new Date().toISOString(),
-      summary: {
-        totalCount: agentTrips.length,
-        totalAmount: totalTripValue,
-        averageAmount: avgTripValue,
-        trends: [
-          { label: 'Total Clients', value: totalClients },
-          { label: 'Active Trips', value: activeTrips.length },
-          { label: 'Completed Trips', value: completedTrips.length },
-          { label: 'Total Trip Value', value: formatCurrency(totalTripValue), change: 15 },
-          { label: 'Avg Trip Value', value: formatCurrency(avgTripValue) },
-        ],
-      },
-      details,
-      charts: [
-        {
-          type: 'pie',
-          title: 'Trip Status Distribution',
-          data: {
-            labels: ['Active', 'Completed', 'Pending'],
-            datasets: [{
-              label: 'Trips',
-              data: [
-                activeTrips.length,
-                completedTrips.length,
-                agentTrips.filter(t => t.status === 'pending').length
-              ],
-              backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
-            }],
-          },
-        },
-        {
-          type: 'bar',
-          title: 'Top 5 Clients by Trip Count',
-          data: {
-            labels: topClients.slice(0, 5).map(c => c.clientName),
-            datasets: [{
-              label: 'Trips',
-              data: topClients.slice(0, 5).map(c => c.tripCount),
-              backgroundColor: '#3b82f6',
-            }],
-          },
-        },
-      ],
-    };
-  },
-
-  async generateClientManagement(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
-    const allTrips = await this.fetchTripsData(filter, userId, userRole);
-    const agentTrips = allTrips; // Should be filtered by agent's clients
-
-    // Get unique clients
-    const clientIds = new Set(agentTrips.map(t => t.load_owner_id));
-    const totalClients = clientIds.size;
-
-    // Calculate client metrics
-    const clientMetrics: Record<string, any> = {};
-    agentTrips.forEach(trip => {
-      const clientId = trip.load_owner_id || 'unknown';
-      if (!clientMetrics[clientId]) {
-        clientMetrics[clientId] = {
-          name: trip.load_owner_name || 'Unknown',
-          totalTrips: 0,
-          activeTrips: 0,
-          completedTrips: 0,
-          totalValue: 0,
-          lastActivity: trip.created_at || '',
-        };
-      }
-      clientMetrics[clientId].totalTrips++;
-      if (['pending', 'escrowed', 'funded', 'in_transit'].includes(trip.status || '')) {
-        clientMetrics[clientId].activeTrips++;
-      }
-      if (trip.status === 'completed') {
-        clientMetrics[clientId].completedTrips++;
-      }
-      clientMetrics[clientId].totalValue += trip.amount || 0;
-
-      // Update last activity if this trip is more recent
-      if (trip.created_at && trip.created_at > clientMetrics[clientId].lastActivity) {
-        clientMetrics[clientId].lastActivity = trip.created_at;
-      }
-    });
-
-    // Convert to array and sort by total value
-    const clientList = Object.entries(clientMetrics)
-      .map(([id, data]) => ({
-        clientId: id.substring(0, 8).toUpperCase(),
-        clientName: data.name,
-        totalTrips: data.totalTrips,
-        activeTrips: data.activeTrips,
-        completedTrips: data.completedTrips,
-        totalValue: data.totalValue,
-        avgTripValue: data.totalTrips > 0 ? Math.round(data.totalValue / data.totalTrips) : 0,
-        lastActivity: data.lastActivity ? new Date(data.lastActivity).toISOString().split('T')[0] : '-',
-        status: data.activeTrips > 0 ? 'Active' : 'Inactive',
-      }))
-      .sort((a, b) => b.totalValue - a.totalValue);
-
-    const activeClients = clientList.filter(c => c.status === 'Active').length;
-    const totalValue = clientList.reduce((sum, c) => sum + c.totalValue, 0);
-
-    const details = clientList.slice(0, 20);
-
-    return {
-      id: `report_${Date.now()}`,
-      type: 'client_management',
-      title: 'Client Management Report',
-      generatedAt: new Date().toISOString(),
-      period: filter.period,
-      startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      endDate: filter.endDate || new Date().toISOString(),
-      summary: {
-        totalCount: totalClients,
-        totalAmount: totalValue,
-        averageAmount: totalClients > 0 ? totalValue / totalClients : 0,
-        trends: [
-          { label: 'Total Clients', value: totalClients },
-          { label: 'Active Clients', value: activeClients },
-          { label: 'Client Retention', value: `${totalClients > 0 ? Math.round((activeClients / totalClients) * 100) : 0}%` },
-          { label: 'Total Value', value: formatCurrency(totalValue) },
-          { label: 'Avg Value per Client', value: formatCurrency(totalClients > 0 ? totalValue / totalClients : 0) },
-        ],
-      },
-      details,
-      charts: [
-        {
-          type: 'pie',
-          title: 'Client Status',
-          data: {
-            labels: ['Active', 'Inactive'],
-            datasets: [{
-              label: 'Clients',
-              data: [activeClients, totalClients - activeClients],
-              backgroundColor: ['#10b981', '#94a3b8'],
-            }],
-          },
-        },
-      ],
-    };
-  },
-
-  async generateAgentPerformance(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
-    const allTrips = await this.fetchTripsData(filter, userId, userRole);
-    const agentTrips = allTrips; // Should be filtered by agent's clients
-
-    // Calculate performance metrics
-    const totalTrips = agentTrips.length;
-    const completedTrips = agentTrips.filter(t => t.status === 'completed');
-    const successRate = totalTrips > 0 ? (completedTrips.length / totalTrips) * 100 : 0;
-
-    const totalValue = agentTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
-    const avgTripValue = totalTrips > 0 ? totalValue / totalTrips : 0;
-
-    const fundedTrips = agentTrips.filter(t => ['funded', 'in_transit', 'completed'].includes(t.status || ''));
-    const fundingRate = totalTrips > 0 ? (fundedTrips.length / totalTrips) * 100 : 0;
-
-    // Monthly growth (simplified)
-    const monthlyGrowth = 12.5;
-
-    const details = [
-      {
-        metric: 'Trips Facilitated',
-        value: totalTrips,
-        target: '100',
-        performance: totalTrips >= 100 ? 'Excellent' : totalTrips >= 50 ? 'Good' : 'Growing'
-      },
-      {
-        metric: 'Success Rate',
-        value: `${successRate.toFixed(1)}%`,
-        target: '90%',
-        performance: successRate >= 90 ? 'Excellent' : successRate >= 75 ? 'Good' : 'Needs Improvement'
-      },
-      {
-        metric: 'Funding Rate',
-        value: `${fundingRate.toFixed(1)}%`,
-        target: '85%',
-        performance: fundingRate >= 85 ? 'Excellent' : fundingRate >= 70 ? 'Good' : 'Needs Improvement'
-      },
-      {
-        metric: 'Avg Trip Value',
-        value: formatCurrency(avgTripValue),
-        target: formatCurrency(50000),
-        performance: avgTripValue >= 50000 ? 'Excellent' : 'Good'
-      },
-    ];
-
-    return {
-      id: `report_${Date.now()}`,
-      type: 'agent_performance',
-      title: 'Agent Performance Report',
-      generatedAt: new Date().toISOString(),
-      period: filter.period,
-      startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      endDate: filter.endDate || new Date().toISOString(),
-      summary: {
-        totalCount: totalTrips,
-        totalAmount: totalValue,
-        averageAmount: avgTripValue,
-        growth: monthlyGrowth,
-        trends: [
-          { label: 'Trips Facilitated', value: totalTrips, change: monthlyGrowth },
-          { label: 'Success Rate', value: `${successRate.toFixed(1)}%` },
-          { label: 'Average Trip Value', value: formatCurrency(avgTripValue) },
-          { label: 'Funding Rate', value: `${fundingRate.toFixed(1)}%` },
-          { label: 'Monthly Growth', value: `+${monthlyGrowth}%` },
-        ],
-      },
-      details,
-      charts: [
-        {
-          type: 'bar',
-          title: 'Performance Metrics',
-          data: {
-            labels: ['Success Rate', 'Funding Rate', 'Monthly Growth'],
-            datasets: [{
-              label: 'Score (%)',
-              data: [successRate, fundingRate, monthlyGrowth],
-              backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6'],
-            }],
-          },
-        },
-      ],
-    };
-  },
-
-  async generateCommissionReport(filter: ReportFilter, userId?: string, userRole?: string): Promise<ReportData> {
-    const allTrips = await this.fetchTripsData(filter, userId, userRole);
-    const agentTrips = allTrips; // Should be filtered by agent's clients
-    const completedTrips = agentTrips.filter(t => t.status === 'completed');
-
-    // Calculate commission (assume 2% of trip value for completed trips)
-    const commissionRate = 0.02;
-    const totalTripValue = completedTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
-    const totalCommission = totalTripValue * commissionRate;
-    const avgCommissionPerTrip = completedTrips.length > 0 ? totalCommission / completedTrips.length : 0;
-
-    // Pending commission (for in-transit trips)
-    const inTransitTrips = agentTrips.filter(t => t.status === 'in_transit' || t.status === 'funded');
-    const pendingTripValue = inTransitTrips.reduce((sum, t) => sum + (t.amount || 0), 0);
-    const pendingCommission = pendingTripValue * commissionRate;
-
-    // Build details
-    const details = completedTrips.slice(0, 20).map(trip => ({
-      tripId: trip.id.substring(0, 8).toUpperCase(),
-      client: trip.load_owner_name || 'Unknown',
-      tripValue: trip.amount || 0,
-      commissionRate: `${(commissionRate * 100).toFixed(1)}%`,
-      commission: (trip.amount || 0) * commissionRate,
-      completedDate: trip.completed_at ? new Date(trip.completed_at).toISOString().split('T')[0] : '-',
-      status: 'Paid'
-    }));
-
-    return {
-      id: `report_${Date.now()}`,
-      type: 'commission_report',
-      title: 'Commission Report',
-      generatedAt: new Date().toISOString(),
-      period: filter.period,
-      startDate: filter.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      endDate: filter.endDate || new Date().toISOString(),
-      summary: {
-        totalCount: completedTrips.length,
-        totalAmount: totalCommission,
-        averageAmount: avgCommissionPerTrip,
-        trends: [
-          { label: 'Total Commission', value: formatCurrency(totalCommission), change: 18 },
-          { label: 'Commission Rate', value: `${(commissionRate * 100).toFixed(1)}%` },
-          { label: 'Trips Completed', value: completedTrips.length },
-          { label: 'Pending Commission', value: formatCurrency(pendingCommission) },
-          { label: 'Avg per Trip', value: formatCurrency(avgCommissionPerTrip) },
-        ],
-      },
-      details,
-      charts: [
-        {
-          type: 'bar',
-          title: 'Commission Breakdown',
-          data: {
-            labels: ['Earned', 'Pending'],
-            datasets: [{
-              label: 'Commission (₹)',
-              data: [totalCommission, pendingCommission],
-              backgroundColor: ['#10b981', '#f59e0b'],
-            }],
-          },
-        },
-      ],
+      details: [],
+      charts: [],
     };
   },
 

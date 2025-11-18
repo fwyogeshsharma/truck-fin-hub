@@ -8,8 +8,7 @@
       "Bash(npx tsx run-migration-024.ts)",
       "Bash(curl:*)",
       "Bash(npx tsx:*)",
-      "Bash(find:*)",
-      "Bash(npx tsc:*)"
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

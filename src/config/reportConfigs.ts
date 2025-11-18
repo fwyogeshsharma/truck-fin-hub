@@ -114,67 +114,6 @@ export const reportConfigs: Record<string, ReportConfig> = {
     dataPoints: ['Overall Rating', 'Delivery Success Rate', 'Customer Reviews', 'Efficiency Score', 'Safety Record'],
   },
 
-  trip_history: {
-    type: 'trip_history',
-    title: 'Trip History Report',
-    description: 'Complete history of all accepted and completed trips',
-    roles: ['transporter', 'admin'],
-    icon: 'History',
-    category: 'operational',
-    dataPoints: ['Total Trips', 'Completed Trips', 'In Progress', 'Total Distance', 'Trip Timeline'],
-  },
-
-  route_analytics: {
-    type: 'route_analytics',
-    title: 'Route Analytics',
-    description: 'Analysis of routes, distances, and efficiency metrics',
-    roles: ['transporter', 'admin'],
-    icon: 'MapPin',
-    category: 'operational',
-    dataPoints: ['Popular Routes', 'Average Distance', 'Fuel Consumption', 'Route Efficiency', 'Time Analysis'],
-  },
-
-  // Load Agent Reports
-  agent_portfolio: {
-    type: 'agent_portfolio',
-    title: 'Agent Portfolio Overview',
-    description: 'Overview of all clients and their trips managed by the agent',
-    roles: ['load_agent', 'admin'],
-    icon: 'Briefcase',
-    category: 'operational',
-    dataPoints: ['Total Clients', 'Active Trips', 'Total Trip Value', 'Client Distribution', 'Growth Metrics'],
-  },
-
-  client_management: {
-    type: 'client_management',
-    title: 'Client Management Report',
-    description: 'Detailed analysis of client activity and engagement',
-    roles: ['load_agent', 'admin'],
-    icon: 'Users',
-    category: 'operational',
-    dataPoints: ['Active Clients', 'New Clients', 'Client Trip Volume', 'Top Clients', 'Client Retention'],
-  },
-
-  agent_performance: {
-    type: 'agent_performance',
-    title: 'Agent Performance Report',
-    description: 'Performance metrics and KPIs for agent activities',
-    roles: ['load_agent', 'admin'],
-    icon: 'TrendingUp',
-    category: 'performance',
-    dataPoints: ['Trips Facilitated', 'Success Rate', 'Average Trip Value', 'Client Satisfaction', 'Monthly Growth'],
-  },
-
-  commission_report: {
-    type: 'commission_report',
-    title: 'Commission Report',
-    description: 'Detailed breakdown of commissions earned from client trips',
-    roles: ['load_agent', 'admin'],
-    icon: 'DollarSign',
-    category: 'financial',
-    dataPoints: ['Total Commission', 'Commission Rate', 'Trips Completed', 'Pending Commission', 'Payment History'],
-  },
-
   // Admin Reports
   platform_overview: {
     type: 'platform_overview',
