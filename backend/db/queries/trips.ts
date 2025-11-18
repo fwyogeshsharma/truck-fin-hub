@@ -157,15 +157,6 @@ export const getTripsByLender = (lenderId: string): Trip[] => {
 };
 
 /**
- * Get trips by transporter
- */
-export const getTripsByTransporter = (transporterId: string): Trip[] => {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM trips WHERE transporter_id = ? ORDER BY created_at DESC');
-  return stmt.all(transporterId) as Trip[];
-};
-
-/**
  * Create trip
  */
 export const createTrip = (input: CreateTripInput): Trip => {
@@ -340,7 +331,6 @@ export default {
   getTripsByStatus,
   getTripsByLoadOwner,
   getTripsByLender,
-  getTripsByTransporter,
   createTrip,
   updateTrip,
   addBid,

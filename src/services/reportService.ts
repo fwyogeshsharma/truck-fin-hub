@@ -17,13 +17,6 @@ export const reportService = {
         filters.loadOwnerId = userId;
       } else if (userRole === 'lender') {
         filters.lenderId = userId;
-      } else if (userRole === 'transporter' || userRole === 'vehicle_owner') {
-        // For transporters, only fetch trips where they are the assigned transporter
-        filters.transporterId = userId;
-      } else if (userRole === 'load_agent') {
-        // For load agents, fetch trips for their managed clients
-        // This would need additional logic to get client IDs
-        // For now, return all trips and filter later
       }
 
       const trips = await tripsAPI.getAll(filters);
