@@ -2037,7 +2037,6 @@ const LoadAgentDashboard = () => {
                   <TableHead>Consignor</TableHead>
                   <TableHead>Route</TableHead>
                   <TableHead>Load Type</TableHead>
-                  <TableHead>Transporter</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Interest Rate</TableHead>
                   <TableHead>Bid Amount</TableHead>
@@ -2049,7 +2048,7 @@ const LoadAgentDashboard = () => {
               <TableBody>
                 {filteredTrips.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground">
                       No trips found
                     </TableCell>
                   </TableRow>
@@ -2087,29 +2086,6 @@ const LoadAgentDashboard = () => {
                           <div>
                             <p className="font-medium">{trip.loadType}</p>
                             <p className="text-xs text-muted-foreground">{trip.weight} kg</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-center gap-2">
-                            {trip.loadOwnerLogo ? (
-                              <img
-                                src={trip.loadOwnerLogo}
-                                alt={trip.loadOwnerName}
-                                className="h-8 object-contain"
-                                title={trip.loadOwnerName}
-                              />
-                            ) : (
-                              <div className="flex items-center gap-1.5">
-                                <Building2 className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-xs font-medium text-foreground">{toTitleCase(trip.loadOwnerName)}</span>
-                              </div>
-                            )}
-                            {trip.loadOwnerRating && (
-                              <div className="flex items-center gap-1">
-                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                <span className="text-xs font-medium">{trip.loadOwnerRating.toFixed(1)}</span>
-                              </div>
-                            )}
                           </div>
                         </TableCell>
                         <TableCell>
