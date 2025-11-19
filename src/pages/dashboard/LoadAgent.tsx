@@ -1246,27 +1246,27 @@ const LoadAgentDashboard = () => {
     console.log('Starting bulk allotment...');
     console.log('All trips:', allTrips);
 
-    const pendingTripsWithBids = allTrips.filter((t) => t.status === 'pending' && t.bids && t.bids.length > 0);
-    console.log('Pending trips with bids:', pendingTripsWithBids);
+    const escrowedTrips = allTrips.filter((t) => t.status === 'escrowed' && t.bids && t.bids.length > 0);
+    console.log('Escrowed trips with bids:', escrowedTrips);
 
-    if (pendingTripsWithBids.length === 0) {
+    if (escrowedTrips.length === 0) {
       toast({
         variant: 'destructive',
         title: 'No Trips to Allot',
-        description: 'There are no pending trips with bids',
+        description: 'There are no escrowed trips with bids',
       });
       return;
     }
 
     toast({
       title: 'Allotting Trips...',
-      description: `Processing ${pendingTripsWithBids.length} trips`,
+      description: `Processing ${escrowedTrips.length} trips`,
     });
 
     let successCount = 0;
     let errorCount = 0;
 
-    for (const trip of pendingTripsWithBids) {
+    for (const trip of escrowedTrips) {
       try {
         console.log(`Allotting trip ${trip.id} to ${trip.bids[0].lenderName}...`);
 
@@ -1904,15 +1904,15 @@ const LoadAgentDashboard = () => {
           </TabsList>
 
           <TabsContent value="all-trips" className="space-y-6">
-        {/* Pending Trips with Bids - Awaiting Allotment */}
-        {allTrips.filter((t) => t.status === 'pending' && t.bids && t.bids.length > 0).length > 0 && (
+        {/* Escrowed Trips - Pending Allotment */}
+        {allTrips.filter((t) => t.status === 'escrowed').length > 0 && (
           <Card className="border-orange-500/50 bg-orange-50/50 dark:bg-orange-950/20">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Shield className="h-5 w-5 text-orange-600" />
-                    Pending Trips with Bids - Awaiting Allotment
+                    Escrowed Trips - Awaiting Allotment
                   </CardTitle>
                   <CardDescription>Trips with lender bids pending your approval</CardDescription>
                 </div>
@@ -1928,7 +1928,7 @@ const LoadAgentDashboard = () => {
             <CardContent>
               <div className="space-y-4">
                 {allTrips
-                  .filter((t) => t.status === 'pending' && t.bids && t.bids.length > 0)
+                  .filter((t) => t.status === 'escrowed')
                   .map((trip) => (
                     <Card key={trip.id} className="border-orange-300 bg-white dark:bg-card">
                       <CardContent className="pt-6">
@@ -2159,7 +2159,7 @@ const LoadAgentDashboard = () => {
                                 </Button>
                               </>
                             )}
-                            {trip.status === 'pending' && trip.bids && trip.bids.length > 0 && (
+                            {trip.status === 'escrowed' && trip.bids && trip.bids.length > 0 && (
                               <Button
                                 size="sm"
                                 className="bg-green-600 hover:bg-green-700"

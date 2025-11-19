@@ -598,8 +598,11 @@ const InvestmentOpportunities = () => {
         interestRate,
       );
 
-      // NOTE: Trip status remains "pending" to allow other lenders to bid
-      // The trip status will be updated to "escrowed" only when borrower accepts a specific bid
+      // Update trip status to escrowed and set the accepted bid's interest rate
+      await data.updateTrip(tripId, {
+        status: "escrowed",
+        interestRate: interestRate,
+      });
 
       // Refresh trips list
       const allTrips = await data.getTrips();
@@ -640,7 +643,7 @@ const InvestmentOpportunities = () => {
         title: "Invalid Interest Rate",
         description: "Interest rate must be between 0% and 20%",
       });
-       return;
+      return;
     }
 
     // Store bid data and show contract dialog
