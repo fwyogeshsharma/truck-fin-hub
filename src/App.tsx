@@ -78,6 +78,7 @@ const App = () => {
           <Route path="/dashboard/super_admin" element={<SuperAdminDashboard />} />
           <Route path="/dashboard/load_agent" element={<LoadAgentDashboard />} />
           <Route path="/dashboard/shipper" element={<ShipperDashboard />} />
+          <Route path="/dashboard/trust_account" element={<TrustAccount />} />
           <Route path="/trust-account" element={<TrustAccount />} />
           <Route path="/create-trip" element={<CreateTrip />} />
           <Route path="/opportunities" element={<InvestmentOpportunities />} />

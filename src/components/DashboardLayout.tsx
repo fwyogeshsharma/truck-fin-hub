@@ -92,7 +92,7 @@ const roleConfig = {
     title: "Trust Account",
     icon: Shield,
     nav: [
-      { label: "Trust Account", path: "/trust-account", icon: Home },
+      { label: "Dashboard", path: "/dashboard/trust_account", icon: Home },
     ],
   },
 };
