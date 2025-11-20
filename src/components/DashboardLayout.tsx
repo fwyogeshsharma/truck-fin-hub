@@ -38,6 +38,7 @@ const roleConfig = {
     nav: [
       { label: "Dashboard", path: "/dashboard/load_agent", icon: Home },
       { label: "Wallet", path: "/wallet", icon: Wallet },
+      { label: "Reconciliation", path: "/reconciliation", icon: FileText },
     ],
   },
   transporter: {
@@ -47,6 +48,7 @@ const roleConfig = {
       { label: "Dashboard", path: "/dashboard/transporter", icon: Home },
       { label: "My Trips", path: "/trips", icon: TruckIcon },
       { label: "Wallet", path: "/wallet", icon: Wallet },
+      { label: "Reconciliation", path: "/reconciliation", icon: FileText },
     ],
   },
   lender: {
@@ -93,6 +95,7 @@ const roleConfig = {
     icon: Shield,
     nav: [
       { label: "Dashboard", path: "/dashboard/trust_account", icon: Home },
+      { label: "Reconciliation", path: "/reconciliation", icon: FileText },
     ],
   },
 };

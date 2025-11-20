@@ -1,0 +1,621 @@
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import DashboardLayout from '@/components/DashboardLayout';
+import { auth } from '@/lib/auth';
+import { apiClient } from '@/api/client';
+import {
+  Upload,
+  FileText,
+  Eye,
+  Download,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Loader2,
+  AlertCircle,
+} from 'lucide-react';
+import { formatCurrency } from '@/lib/currency';
+
+interface TrustAccount {
+  id: string;
+  name: string;
+  email: string;
+  company?: string;
+}
+
+interface Reconciliation {
+  id: string;
+  transporter_id: string;
+  transporter_name: string;
+  trust_account_id: string;
+  trust_account_name: string;
+  trip_id?: string;
+  document_name: string;
+  document_type: string;
+  document_url: string;
+  document_data: string;
+  document_size: number;
+  description?: string;
+  reconciliation_amount?: number;
+  reconciliation_date?: string;
+  status: 'pending' | 'reviewed' | 'approved' | 'rejected';
+  reviewed_by?: string;
+  reviewed_at?: string;
+  review_notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+const Reconciliation = () => {
+  const { toast } = useToast();
+  const user = auth.getCurrentUser();
+  const [reconciliations, setReconciliations] = useState<Reconciliation[]>([]);
+  const [trustAccounts, setTrustAccounts] = useState<TrustAccount[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [viewingDoc, setViewingDoc] = useState<Reconciliation | null>(null);
+
+  // Form state
+  const [selectedTrustAccount, setSelectedTrustAccount] = useState('');
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [description, setDescription] = useState('');
+  const [reconciliationAmount, setReconciliationAmount] = useState('');
+  const [reconciliationDate, setReconciliationDate] = useState('');
+
+  // Fetch reconciliations
+  useEffect(() => {
+    fetchReconciliations();
+    fetchTrustAccounts();
+  }, [user?.id]);
+
+  const fetchReconciliations = async () => {
+    setLoading(true);
+    try {
+      const data = await apiClient.get(`/reconciliations?userId=${user?.id}&userRole=${user?.role}`);
+      setReconciliations(data);
+    } catch (error: any) {
+      console.error('Error fetching reconciliations:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to load reconciliations',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTrustAccounts = async () => {
+    try {
+      const data = await apiClient.get('/reconciliations/trust-accounts/list');
+      setTrustAccounts(data);
+    } catch (error: any) {
+      console.error('Error fetching trust accounts:', error);
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+
+    // Validate file type
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid file type',
+        description: 'Please upload PDF, Excel, or image files only.',
+      });
+      return;
+    }
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        variant: 'destructive',
+        title: 'File too large',
+        description: 'File size should not exceed 10MB.',
+      });
+      return;
+    }
+
+    setDocumentFile(file);
+  };
+
+  const handleUploadReconciliation = async () => {
+    if (!documentFile || !selectedTrustAccount) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing information',
+        description: 'Please select a trust account and upload a document.',
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      const fileDataPromise = new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(documentFile);
+      });
+      const fileData = await fileDataPromise;
+
+      const selectedAccount = trustAccounts.find(ta => ta.id === selectedTrustAccount);
+
+      const reconciliationData = {
+        id: `recon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        transporter_id: user?.id,
+        transporter_name: user?.name,
+        trust_account_id: selectedTrustAccount,
+        trust_account_name: selectedAccount?.name || 'Trust Account',
+        document_name: documentFile.name,
+        document_type: documentFile.type,
+        document_url: '',
+        document_data: fileData,
+        document_size: documentFile.size,
+        description: description || null,
+        reconciliation_amount: reconciliationAmount ? parseFloat(reconciliationAmount) : null,
+        reconciliation_date: reconciliationDate || null,
+      };
+
+      await apiClient.post('/reconciliations', reconciliationData);
+
+      toast({
+        title: 'Reconciliation Uploaded',
+        description: 'Your reconciliation document has been submitted successfully.',
+      });
+
+      // Reset form
+      setUploadDialogOpen(false);
+      setDocumentFile(null);
+      setSelectedTrustAccount('');
+      setDescription('');
+      setReconciliationAmount('');
+      setReconciliationDate('');
+
+      // Refresh list
+      fetchReconciliations();
+    } catch (error: any) {
+      console.error('Error uploading reconciliation:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Upload Failed',
+        description: error.message || 'Failed to upload reconciliation.',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteReconciliation = async (id: string) => {
+    try {
+      await apiClient.delete(`/reconciliations/${id}?userId=${user?.id}`);
+
+      toast({
+        title: 'Deleted',
+        description: 'Reconciliation deleted successfully.',
+      });
+
+      fetchReconciliations();
+    } catch (error: any) {
+      console.error('Error deleting reconciliation:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Delete Failed',
+        description: error.message || 'Failed to delete reconciliation.',
+      });
+    }
+  };
+
+  const handleReviewReconciliation = async (id: string, status: string, notes: string) => {
+    try {
+      await apiClient.patch(`/reconciliations/${id}/review`, {
+        status,
+        review_notes: notes,
+        reviewed_by: user?.id,
+      });
+
+      toast({
+        title: 'Review Submitted',
+        description: `Reconciliation marked as ${status}.`,
+      });
+
+      fetchReconciliations();
+    } catch (error: any) {
+      console.error('Error reviewing reconciliation:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Review Failed',
+        description: error.message || 'Failed to update reconciliation status.',
+      });
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      pending: { color: 'bg-yellow-100 text-yellow-700', icon: Clock, label: 'Pending' },
+      reviewed: { color: 'bg-blue-100 text-blue-700', icon: Eye, label: 'Reviewed' },
+      approved: { color: 'bg-green-100 text-green-700', icon: CheckCircle, label: 'Approved' },
+      rejected: { color: 'bg-red-100 text-red-700', icon: XCircle, label: 'Rejected' },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
+    const Icon = config.icon;
+
+    return (
+      <Badge className={`${config.color} flex items-center gap-1`}>
+        <Icon className="h-3 w-3" />
+        {config.label}
+      </Badge>
+    );
+  };
+
+  const isTrustAccount = user?.role === 'trust_account';
+
+  return (
+    <DashboardLayout role={user?.role || 'load_agent'}>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Reconciliation</h1>
+            <p className="text-muted-foreground mt-1">
+              {isTrustAccount
+                ? 'Review reconciliation documents submitted by transporters'
+                : 'Upload reconciliation documents for trust accounts'}
+            </p>
+          </div>
+          {!isTrustAccount && (
+            <Button onClick={() => setUploadDialogOpen(true)} className="gap-2">
+              <Upload className="h-4 w-4" />
+              Upload Document
+            </Button>
+          )}
+        </div>
+
+        {/* Reconciliations List */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : reconciliations.length === 0 ? (
+          <Card>
+            <CardContent className="py-12">
+              <div className="text-center space-y-2">
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto" />
+                <p className="text-muted-foreground">
+                  {isTrustAccount
+                    ? 'No reconciliation documents to review yet.'
+                    : 'No reconciliation documents uploaded yet.'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {reconciliations.map((recon) => (
+              <Card key={recon.id} className="border-l-4 border-l-primary">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 space-y-3">
+                      {/* Header */}
+                      <div className="flex items-start gap-3">
+                        <FileText className="h-5 w-5 text-primary mt-1" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-semibold text-lg">{recon.document_name}</h3>
+                            {getStatusBadge(recon.status)}
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {isTrustAccount
+                              ? `From: ${recon.transporter_name}`
+                              : `To: ${recon.trust_account_name}`
+                            }
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Uploaded on {new Date(recon.created_at).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Details */}
+                      {(recon.reconciliation_amount || recon.reconciliation_date || recon.description) && (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 bg-muted/50 rounded-lg">
+                          {recon.reconciliation_amount && (
+                            <div>
+                              <p className="text-xs text-muted-foreground">Amount</p>
+                              <p className="font-semibold">{formatCurrency(recon.reconciliation_amount)}</p>
+                            </div>
+                          )}
+                          {recon.reconciliation_date && (
+                            <div>
+                              <p className="text-xs text-muted-foreground">Date</p>
+                              <p className="font-semibold">
+                                {new Date(recon.reconciliation_date).toLocaleDateString('en-IN')}
+                              </p>
+                            </div>
+                          )}
+                          {recon.description && (
+                            <div className="md:col-span-2">
+                              <p className="text-xs text-muted-foreground">Description</p>
+                              <p className="text-sm">{recon.description}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Review Notes */}
+                      {recon.review_notes && (
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200">
+                          <p className="text-xs text-blue-700 dark:text-blue-300 mb-1 flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            Review Notes
+                          </p>
+                          <p className="text-sm">{recon.review_notes}</p>
+                          {recon.reviewed_at && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Reviewed on {new Date(recon.reviewed_at).toLocaleDateString('en-IN')}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setViewingDoc(recon)}
+                        title="View Document"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = recon.document_data;
+                          link.download = recon.document_name;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                        title="Download Document"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      {!isTrustAccount && recon.status === 'pending' && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteReconciliation(recon.id)}
+                          title="Delete"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Upload Dialog */}
+        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Upload Reconciliation Document</DialogTitle>
+              <DialogDescription>
+                Upload a reconciliation document for review by a trust account
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              {/* Trust Account Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="trust-account">
+                  Select Trust Account <span className="text-destructive">*</span>
+                </Label>
+                <Select value={selectedTrustAccount} onValueChange={setSelectedTrustAccount}>
+                  <SelectTrigger id="trust-account">
+                    <SelectValue placeholder="Choose trust account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {trustAccounts.map((ta) => (
+                      <SelectItem key={ta.id} value={ta.id}>
+                        {ta.name} {ta.company ? `- ${ta.company}` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* File Upload */}
+              <div className="space-y-2">
+                <Label htmlFor="document">
+                  Document <span className="text-destructive">*</span>
+                </Label>
+                <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                  <Input
+                    type="file"
+                    id="document"
+                    accept=".pdf,.xlsx,.xls,image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <label htmlFor="document" className="cursor-pointer">
+                    <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                    {documentFile ? (
+                      <div>
+                        <p className="font-medium">{documentFile.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(documentFile.size / 1024).toFixed(2)} KB
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-sm font-medium">Click to upload</p>
+                        <p className="text-xs text-muted-foreground">PDF, Excel, or Image (Max 10MB)</p>
+                      </div>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              {/* Amount */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Amount (Optional)</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={reconciliationAmount}
+                    onChange={(e) => setReconciliationAmount(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="date">Date (Optional)</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={reconciliationDate}
+                    onChange={(e) => setReconciliationDate(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="description">Description (Optional)</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Add any notes or description about this reconciliation..."
+                  rows={3}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setUploadDialogOpen(false)} disabled={saving}>
+                Cancel
+              </Button>
+              <Button onClick={handleUploadReconciliation} disabled={saving} className="gap-2">
+                {saving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4" />
+                    Upload
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* View Document Dialog */}
+        <Dialog open={!!viewingDoc} onOpenChange={() => setViewingDoc(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                {viewingDoc?.document_name}
+              </DialogTitle>
+              <DialogDescription>
+                {viewingDoc && `${(viewingDoc.document_size / 1024).toFixed(2)} KB • ${viewingDoc.document_type}`}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="overflow-auto max-h-[70vh]">
+              {viewingDoc && (
+                <>
+                  {viewingDoc.document_type === 'application/pdf' ? (
+                    <iframe
+                      src={viewingDoc.document_data}
+                      className="w-full h-[70vh] border rounded"
+                      title="Document Preview"
+                    />
+                  ) : (
+                    <img
+                      src={viewingDoc.document_data}
+                      alt={viewingDoc.document_name}
+                      className="w-full h-auto border rounded"
+                    />
+                  )}
+                </>
+              )}
+            </div>
+
+            <DialogFooter className="flex justify-between items-center">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (viewingDoc) {
+                      const link = document.createElement('a');
+                      link.href = viewingDoc.document_data;
+                      link.download = viewingDoc.document_name;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }
+                  }}
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Download
+                </Button>
+              </div>
+              <Button onClick={() => setViewingDoc(null)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default Reconciliation;

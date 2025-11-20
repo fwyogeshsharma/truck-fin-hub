@@ -44,6 +44,7 @@ import VideoTutorials from "./pages/help/VideoTutorials";
 import FAQ from "./pages/FAQ";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Reconciliation from "./pages/Reconciliation";
 import CookieConsent from "./components/CookieConsent";
 import ScrollToTop from "./components/ScrollToTop";
 
@@ -92,6 +93,7 @@ const App = () => {
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/notifications" element={<NotificationSettings />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/reconciliation" element={<Reconciliation />} />
           <Route path="/platform-fee-report" element={<PlatformFeeReport />} />
           <Route path="/admin/users" element={<Users />} />
           <Route path="/admin-panel" element={<AdminPanel />} />

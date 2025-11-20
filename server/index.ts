@@ -21,6 +21,7 @@ import loanContractTemplateRoutes from './routes/loanContractTemplates.ts';
 import platformFeesRoutes from './routes/platformFees.ts';
 import ratingsRoutes from './routes/ratings.ts';
 import contractRoutes from './routes/contracts.ts';
+import reconciliationRoutes from './routes/reconciliations.ts';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -99,6 +100,7 @@ app.use('/api/loan-contract-templates', loanContractTemplateRoutes);
 app.use('/api/platform-fees', platformFeesRoutes);
 app.use('/api/ratings', ratingsRoutes);
 app.use('/api/contracts', contractRoutes);
+app.use('/api/reconciliations', reconciliationRoutes);
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
