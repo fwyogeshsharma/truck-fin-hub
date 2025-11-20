@@ -51,11 +51,25 @@ interface UploadedContract {
   ltv: string; // Loan to Value ratio
   contractType: '2-party' | '3-party' | '';
   party1Name: string;
+  party1UserId: string;
   party2Name: string;
+  party2UserId: string;
   party3Name: string;
+  party3UserId: string;
+  party4Name: string; // LogiFin (readonly)
+  party4UserId: string; // LogiFin (readonly)
   validityDate: string;
   tripStage: string; // Optional
   penaltyAfterDueDate: string; // Penalty percentage after due date
+}
+
+interface RegisteredUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  company?: string;
+  user_type?: 'individual' | 'company';
 }
 
 const tripStages = [
@@ -209,6 +223,10 @@ const Settings = () => {
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
   const [viewingContract, setViewingContract] = useState<UploadedContract | null>(null);
 
+  // Registered users state
+  const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
   // Load saved theme from localStorage
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme-settings');
@@ -223,6 +241,47 @@ const Settings = () => {
       }
     }
   }, []);
+
+  // Fetch all registered users
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoadingUsers(true);
+      try {
+        const users = await apiClient.get('/users');
+        setRegisteredUsers(users);
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to load registered users',
+        });
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    fetchUsers();
+  }, [toast]);
+
+  // Format user display name with company info
+  const formatUserDisplay = (user: RegisteredUser): string => {
+    if (user.company) {
+      return `${user.name} - ${user.company}`;
+    }
+
+    // For individual users, show their role type
+    const roleMap: { [key: string]: string } = {
+      'lender': 'Individual Lender',
+      'load_owner': 'Individual Shipper',
+      'load_agent': 'Individual Transporter',
+      'vehicle_owner': 'Individual Vehicle Owner',
+      'transporter': 'Individual Transporter',
+    };
+
+    const roleLabel = roleMap[user.role] || `Individual ${user.role}`;
+    return `${user.name} - ${roleLabel}`;
+  };
 
   const handleThemeChange = (updates: Partial<ThemeSettings>) => {
     const newTheme = { ...theme, ...updates };
@@ -321,8 +380,13 @@ const Settings = () => {
         ltv: '',
         contractType: '',
         party1Name: '',
+        party1UserId: '',
         party2Name: '',
+        party2UserId: '',
         party3Name: '',
+        party3UserId: '',
+        party4Name: 'LogiFin Hub Private Limited - Platform Facilitator',
+        party4UserId: 'logifin-platform',
         validityDate: '',
         tripStage: 'none',
         penaltyAfterDueDate: '',
@@ -343,6 +407,22 @@ const Settings = () => {
     ));
   };
 
+  const handlePartySelect = (contractId: string, partyField: 'party1' | 'party2' | 'party3', userId: string) => {
+    const selectedUser = registeredUsers.find(u => u.id === userId);
+    if (!selectedUser) return;
+
+    setContracts(contracts.map((contract) => {
+      if (contract.id === contractId) {
+        return {
+          ...contract,
+          [`${partyField}Name`]: formatUserDisplay(selectedUser),
+          [`${partyField}UserId`]: userId,
+        };
+      }
+      return contract;
+    }));
+  };
+
   const handleDeleteContract = (id: string) => {
     const contract = contracts.find((c) => c.id === id);
     if (contract) {
@@ -359,8 +439,8 @@ const Settings = () => {
   const handleSaveContracts = async () => {
     // Validate contracts
     const invalidContracts = contracts.filter(
-      (c) => !c.loanPercentage || !c.ltv || !c.contractType || !c.party1Name || !c.party2Name || !c.validityDate ||
-      !c.penaltyAfterDueDate || (c.contractType === '3-party' && !c.party3Name)
+      (c) => !c.loanPercentage || !c.ltv || !c.contractType || !c.party1UserId || !c.party2UserId || !c.validityDate ||
+      !c.penaltyAfterDueDate || (c.contractType === '3-party' && !c.party3UserId)
     );
 
     if (invalidContracts.length > 0) {
@@ -386,8 +466,13 @@ const Settings = () => {
         ltv: contract.ltv,
         contractType: contract.contractType,
         party1Name: contract.party1Name,
+        party1UserId: contract.party1UserId,
         party2Name: contract.party2Name,
+        party2UserId: contract.party2UserId,
         party3Name: contract.party3Name,
+        party3UserId: contract.party3UserId,
+        party4Name: contract.party4Name,
+        party4UserId: contract.party4UserId,
         validityDate: contract.validityDate,
         tripStage: contract.tripStage,
         penaltyAfterDueDate: contract.penaltyAfterDueDate,
@@ -414,29 +499,37 @@ const Settings = () => {
 
   const downloadSampleAgreement = () => {
     const sampleAgreement = `
-TRIPARTITE LOAN AGREEMENT
+MULTI-PARTY LOAN AGREEMENT
 
-This Tripartite Loan Agreement ("Agreement") is entered into on this ____ day of ________, 20__ at ____________.
+This Multi-Party Loan Agreement ("Agreement") is entered into on this ____ day of ________, 20__ at ____________.
 
 BETWEEN:
 
-PARTY 1 (BORROWER):
-Name: [Borrower/Transporter Name]
+PARTY 1 (PRIMARY PARTY):
+Name: [Party 1 Name - Borrower/Transporter/Shipper]
 Address: _______________________________________
 PAN: ___________________
 Contact: _______________
 
 AND
 
-PARTY 2 (LENDER):
-Name: [Lender Name]
+PARTY 2 (SECONDARY PARTY):
+Name: [Party 2 Name - Lender/Other Party]
 Address: _______________________________________
 PAN: ___________________
 Contact: _______________
 
 AND
 
-PARTY 3 (FACILITATOR):
+PARTY 3 (THIRD PARTY - If Applicable):
+Name: [Party 3 Name]
+Address: _______________________________________
+PAN: ___________________
+Contact: _______________
+
+AND
+
+PARTY 4 (PLATFORM FACILITATOR):
 LogiFin Hub Private Limited
 Registered Office: [LogiFin Address]
 CIN: [Company Identification Number]
@@ -446,9 +539,9 @@ Contact: [LogiFin Contact Number]
 (Hereinafter collectively referred to as "Parties" and individually as "Party")
 
 WHEREAS:
-A. The Borrower requires financial assistance for completing transportation/logistics services.
-B. The Lender agrees to provide a loan to the Borrower on the terms and conditions set forth in this Agreement.
-C. LogiFin Hub facilitates this transaction through its digital platform and acts as an intermediary to ensure smooth execution and compliance.
+A. Party 1 and Party 2 (and Party 3, if applicable) wish to enter into a financial agreement.
+B. The parties require platform infrastructure and facilitation services for the execution and monitoring of this agreement.
+C. LogiFin Hub (Party 4) provides the digital platform and acts as a facilitator to ensure smooth execution, transparency, and compliance.
 
 NOW, THEREFORE, in consideration of the mutual covenants and agreements contained herein, the Parties agree as follows:
 
@@ -471,16 +564,18 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
    3.3 Early repayment is permitted without penalty.
    3.4 In case of default, penal interest of ___% per month shall apply on overdue amounts.
 
-4. ROLE OF LOGIFIN (PARTY 3)
-   4.1 LogiFin acts as a facilitating platform for loan transactions between Party 1 and Party 2.
+4. ROLE OF LOGIFIN (PARTY 4 - PLATFORM FACILITATOR)
+   4.1 LogiFin acts as the platform facilitator for transactions and agreements between all parties.
    4.2 LogiFin shall:
-       a) Maintain digital records of all transactions
-       b) Provide a secure platform for fund transfers
-       c) Generate necessary documentation and reports
-       d) Facilitate communication between parties
-       e) Monitor trip progress and milestone completion
-   4.3 LogiFin charges a platform fee of ___% which shall be borne by [Borrower/Lender/Split].
-   4.4 LogiFin does not guarantee loan repayment and acts solely as a facilitator.
+       a) Maintain digital records of all transactions and agreement milestones
+       b) Provide a secure platform for fund transfers and escrow services
+       c) Generate necessary documentation, reports, and compliance records
+       d) Facilitate communication and coordination between all parties
+       e) Monitor agreement progress and milestone completion
+       f) Ensure transparency and proper record-keeping
+   4.3 LogiFin charges a platform fee of ___% which shall be borne by [Party 1/Party 2/Split between parties].
+   4.4 LogiFin does not guarantee loan repayment or performance by any party and acts solely as a facilitator.
+   4.5 LogiFin's inclusion as Party 4 is mandatory for all agreements executed through the platform.
 
 5. SECURITY AND COLLATERAL
    5.1 [Specify if any collateral/security is provided]
@@ -538,12 +633,20 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
 IN WITNESS WHEREOF, the Parties have executed this Agreement on the date first written above.
 
 
-PARTY 1 (BORROWER)                    PARTY 2 (LENDER)                    PARTY 3 (LOGIFIN)
+PARTY 1                              PARTY 2                              PARTY 3 (if applicable)
 
-_____________________                 _____________________                _____________________
-Signature                             Signature                            Authorized Signatory
-Name: _______________                 Name: _______________                Name: _______________
-Date: _______________                 Date: _______________                Date: _______________
+_____________________                _____________________                _____________________
+Signature                            Signature                            Signature
+Name: _______________                Name: _______________                Name: _______________
+Date: _______________                Date: _______________                Date: _______________
+
+
+PARTY 4 (LOGIFIN - PLATFORM FACILITATOR)
+
+_____________________
+Authorized Signatory
+Name: _______________
+Date: _______________
 
 
 WITNESSES:
@@ -559,10 +662,12 @@ NOTES FOR USER:
 1. This is a SAMPLE template. Please consult with a legal advisor before using.
 2. Fill in all blank fields with appropriate information.
 3. Customize clauses based on your specific requirements.
-4. Ensure all parties sign in presence of witnesses.
-5. Keep original copies with all parties.
-6. LogiFin's role as Party 3 ensures transparency and proper record-keeping.
-7. Platform fees and terms should be agreed upon before signing.
+4. For 2-party contracts, omit Party 3 section. Party 4 (LogiFin) is always included.
+5. Ensure all parties sign in presence of witnesses.
+6. Keep original copies with all parties.
+7. LogiFin's role as Party 4 (Platform Facilitator) is mandatory and ensures transparency, proper record-keeping, and compliance.
+8. Platform fees and terms should be agreed upon before signing.
+9. All parties listed must be registered users on the LogiFin platform.
 
 For questions, contact: support@logifin.com
 ---
@@ -573,7 +678,7 @@ For questions, contact: support@logifin.com
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'LogiFin_3Party_Agreement_Sample.txt';
+    link.download = 'LogiFin_Multi_Party_Agreement_Sample.txt';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -581,7 +686,7 @@ For questions, contact: support@logifin.com
 
     toast({
       title: 'Sample downloaded!',
-      description: 'The 3-party agreement template has been downloaded successfully.',
+      description: 'The multi-party agreement template has been downloaded successfully.',
     });
   };
 
@@ -716,6 +821,23 @@ For questions, contact: support@logifin.com
 
           {/* Upload Agreement Tab */}
           <TabsContent value="agreements" className="space-y-6 mt-6">
+            {/* Info Alert */}
+            <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertTitle className="text-blue-800 dark:text-blue-200">
+                Contract Parties & LogiFin Facilitator
+              </AlertTitle>
+              <AlertDescription className="text-blue-700 dark:text-blue-300 space-y-2">
+                <p>
+                  <strong>Party Selection:</strong> You can only create contracts with users who are registered on the platform.
+                  When selecting parties, you'll see their name and company (or individual status) from our registered users list.
+                </p>
+                <p>
+                  <strong>LogiFin as Party 4:</strong> LogiFin Hub Private Limited is automatically included as Party 4 (Platform Facilitator) in all contracts to ensure transparency, proper record-keeping, and compliance.
+                </p>
+              </AlertDescription>
+            </Alert>
+
             {/* Upload Section */}
             <Card>
               <CardHeader>
@@ -912,31 +1034,34 @@ For questions, contact: support@logifin.com
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="2-party">2-Party Contract</SelectItem>
-                          <SelectItem value="3-party">3-Party Contract</SelectItem>
+                          <SelectItem value="2-party">2-Party + LogiFin</SelectItem>
+                          <SelectItem value="3-party">3-Party + LogiFin</SelectItem>
                         </SelectContent>
                       </Select>
+                      <p className="text-xs text-muted-foreground">
+                        LogiFin is automatically added as Party 4 (facilitator)
+                      </p>
                     </div>
                   </div>
 
-                  {/* 2-Party Warning Alert */}
+                  {/* Contract Info Alert */}
                   {contract.contractType === '2-party' && (
-                    <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
-                      <AlertTriangle className="h-4 w-4 text-orange-600" />
-                      <AlertTitle className="text-orange-800 dark:text-orange-200">
-                        3-Party Agreement Recommended
+                    <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950">
+                      <Info className="h-4 w-4 text-blue-600" />
+                      <AlertTitle className="text-blue-800 dark:text-blue-200">
+                        2-Party Contract + LogiFin as Facilitator
                       </AlertTitle>
-                      <AlertDescription className="text-orange-700 dark:text-orange-300 space-y-3">
+                      <AlertDescription className="text-blue-700 dark:text-blue-300 space-y-3">
                         <p>
-                          For better transparency and legal compliance, we recommend creating a <strong>3-Party Agreement</strong> that includes LogiFin as the third party.
+                          This is a <strong>2-party contract</strong> between Party 1 and Party 2, with LogiFin automatically included as Party 4 (Platform Facilitator).
                         </p>
                         <div className="space-y-2">
-                          <p className="font-medium">Why 3-Party Agreement?</p>
+                          <p className="font-medium">LogiFin's Role as Party 4:</p>
                           <ul className="list-disc list-inside space-y-1 text-sm">
-                            <li>LogiFin acts as a facilitator and maintains transaction records</li>
-                            <li>Provides additional security and transparency</li>
+                            <li>Acts as a facilitator and maintains transaction records</li>
+                            <li>Provides platform infrastructure and security</li>
                             <li>Ensures proper documentation and compliance</li>
-                            <li>Protects all parties through platform oversight</li>
+                            <li>Monitors and facilitates the agreement execution</li>
                           </ul>
                         </div>
                         <div className="pt-2">
@@ -944,14 +1069,39 @@ For questions, contact: support@logifin.com
                             onClick={downloadSampleAgreement}
                             variant="outline"
                             size="sm"
-                            className="gap-2 border-orange-600 text-orange-700 hover:bg-orange-100 dark:border-orange-400 dark:text-orange-300"
+                            className="gap-2 border-blue-600 text-blue-700 hover:bg-blue-100 dark:border-blue-400 dark:text-blue-300"
                           >
                             <Download className="h-4 w-4" />
-                            Download Sample 3-Party Agreement
+                            Download Sample Agreement Template
                           </Button>
                           <p className="text-xs mt-2 text-muted-foreground">
-                            Download our template to see how LogiFin should be included in your agreement
+                            Download our template to see how the agreement should be structured
                           </p>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {contract.contractType === '3-party' && (
+                    <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950">
+                      <Info className="h-4 w-4 text-blue-600" />
+                      <AlertTitle className="text-blue-800 dark:text-blue-200">
+                        3-Party Contract + LogiFin as Facilitator
+                      </AlertTitle>
+                      <AlertDescription className="text-blue-700 dark:text-blue-300 space-y-3">
+                        <p>
+                          This is a <strong>3-party contract</strong> between Party 1, Party 2, and Party 3, with LogiFin automatically included as Party 4 (Platform Facilitator).
+                        </p>
+                        <div className="pt-2">
+                          <Button
+                            onClick={downloadSampleAgreement}
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 border-blue-600 text-blue-700 hover:bg-blue-100 dark:border-blue-400 dark:text-blue-300"
+                          >
+                            <Download className="h-4 w-4" />
+                            Download Sample Agreement Template
+                          </Button>
                         </div>
                       </AlertDescription>
                     </Alert>
@@ -961,49 +1111,121 @@ For questions, contact: support@logifin.com
                     {/* Party 1 Name */}
                     <div className="space-y-2">
                       <Label htmlFor={`party1-${contract.id}`}>
-                        Party 1 Name <span className="text-destructive">*</span>
+                        Party 1 (Registered User) <span className="text-destructive">*</span>
                       </Label>
-                      <Input
-                        id={`party1-${contract.id}`}
-                        placeholder="Enter party 1 name"
-                        value={contract.party1Name}
-                        onChange={(e) =>
-                          handleContractUpdate(contract.id, 'party1Name', e.target.value)
-                        }
-                      />
+                      <Select
+                        value={contract.party1UserId}
+                        onValueChange={(userId) => handlePartySelect(contract.id, 'party1', userId)}
+                        disabled={loadingUsers}
+                      >
+                        <SelectTrigger id={`party1-${contract.id}`}>
+                          <SelectValue placeholder={loadingUsers ? "Loading users..." : "Select registered user"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {registeredUsers.map((user) => (
+                            <SelectItem key={user.id} value={user.id}>
+                              {formatUserDisplay(user)}
+                            </SelectItem>
+                          ))}
+                          {registeredUsers.length === 0 && !loadingUsers && (
+                            <div className="p-2 text-sm text-muted-foreground text-center">
+                              No registered users found
+                            </div>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {contract.party1Name && (
+                        <p className="text-xs text-muted-foreground">
+                          Selected: {contract.party1Name}
+                        </p>
+                      )}
                     </div>
 
                     {/* Party 2 Name */}
                     <div className="space-y-2">
                       <Label htmlFor={`party2-${contract.id}`}>
-                        Party 2 Name <span className="text-destructive">*</span>
+                        Party 2 (Registered User) <span className="text-destructive">*</span>
                       </Label>
-                      <Input
-                        id={`party2-${contract.id}`}
-                        placeholder="Enter party 2 name"
-                        value={contract.party2Name}
-                        onChange={(e) =>
-                          handleContractUpdate(contract.id, 'party2Name', e.target.value)
-                        }
-                      />
+                      <Select
+                        value={contract.party2UserId}
+                        onValueChange={(userId) => handlePartySelect(contract.id, 'party2', userId)}
+                        disabled={loadingUsers}
+                      >
+                        <SelectTrigger id={`party2-${contract.id}`}>
+                          <SelectValue placeholder={loadingUsers ? "Loading users..." : "Select registered user"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {registeredUsers.map((user) => (
+                            <SelectItem key={user.id} value={user.id}>
+                              {formatUserDisplay(user)}
+                            </SelectItem>
+                          ))}
+                          {registeredUsers.length === 0 && !loadingUsers && (
+                            <div className="p-2 text-sm text-muted-foreground text-center">
+                              No registered users found
+                            </div>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {contract.party2Name && (
+                        <p className="text-xs text-muted-foreground">
+                          Selected: {contract.party2Name}
+                        </p>
+                      )}
                     </div>
 
                     {/* Party 3 Name (conditional) */}
                     {contract.contractType === '3-party' && (
                       <div className="space-y-2">
                         <Label htmlFor={`party3-${contract.id}`}>
-                          Party 3 Name <span className="text-destructive">*</span>
+                          Party 3 (Registered User) <span className="text-destructive">*</span>
                         </Label>
-                        <Input
-                          id={`party3-${contract.id}`}
-                          placeholder="Enter party 3 name"
-                          value={contract.party3Name}
-                          onChange={(e) =>
-                            handleContractUpdate(contract.id, 'party3Name', e.target.value)
-                          }
-                        />
+                        <Select
+                          value={contract.party3UserId}
+                          onValueChange={(userId) => handlePartySelect(contract.id, 'party3', userId)}
+                          disabled={loadingUsers}
+                        >
+                          <SelectTrigger id={`party3-${contract.id}`}>
+                            <SelectValue placeholder={loadingUsers ? "Loading users..." : "Select registered user"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {registeredUsers.map((user) => (
+                              <SelectItem key={user.id} value={user.id}>
+                                {formatUserDisplay(user)}
+                              </SelectItem>
+                            ))}
+                            {registeredUsers.length === 0 && !loadingUsers && (
+                              <div className="p-2 text-sm text-muted-foreground text-center">
+                                No registered users found
+                              </div>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        {contract.party3Name && (
+                          <p className="text-xs text-muted-foreground">
+                            Selected: {contract.party3Name}
+                          </p>
+                        )}
                       </div>
                     )}
+
+                    {/* Party 4 - LogiFin (Static/Readonly) */}
+                    <div className="space-y-2">
+                      <Label htmlFor={`party4-${contract.id}`}>
+                        Party 4 (Platform Facilitator)
+                      </Label>
+                      <Input
+                        id={`party4-${contract.id}`}
+                        value={contract.party4Name}
+                        readOnly
+                        disabled
+                        className="bg-muted cursor-not-allowed"
+                      />
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Info className="h-3 w-3" />
+                        LogiFin is automatically included as the facilitating platform
+                      </p>
+                    </div>
 
                     {/* Validity Date */}
                     <div className="space-y-2">
