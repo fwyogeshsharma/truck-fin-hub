@@ -288,31 +288,45 @@ const TrustAccountPage = () => {
     if (!uploadedContract) return;
 
     try {
-      const formData = new FormData();
-      formData.append('file', uploadedContract.file);
-      formData.append('uploadedBy', user?.id || '');
-      formData.append('loanPercentage', uploadedContract.loanPercentage);
-      formData.append('ltv', uploadedContract.ltv);
-      formData.append('contractType', uploadedContract.contractType);
-      formData.append('party1UserId', uploadedContract.party1UserId);
-      formData.append('party2UserId', uploadedContract.party2UserId);
-      formData.append('party3UserId', uploadedContract.party3UserId);
-      formData.append('party4UserId', uploadedContract.party4UserId);
-      formData.append('validityDate', uploadedContract.validityDate);
-      formData.append('tripStage', uploadedContract.tripStage);
-      formData.append('penaltyAfterDueDate', uploadedContract.penaltyAfterDueDate);
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Data = reader.result as string;
 
-      await apiClient.post('/contracts', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+        const contractData = {
+          id: `contract_${Date.now()}`,
+          file_name: uploadedContract.file.name,
+          file_type: uploadedContract.file.type,
+          file_size: uploadedContract.file.size,
+          file_url: uploadedContract.previewUrl,
+          file_data: base64Data,
+          loan_percentage: uploadedContract.loanPercentage,
+          ltv: uploadedContract.ltv,
+          penalty_after_due_date: uploadedContract.penaltyAfterDueDate,
+          contract_type: uploadedContract.contractType,
+          validity_date: uploadedContract.validityDate,
+          trip_stage: uploadedContract.tripStage || 'none',
+          party1_user_id: uploadedContract.party1UserId,
+          party1_name: uploadedContract.party1Name,
+          party2_user_id: uploadedContract.party2UserId,
+          party2_name: uploadedContract.party2Name,
+          party3_user_id: uploadedContract.party3UserId || '',
+          party3_name: uploadedContract.party3Name || '',
+          uploaded_by: user?.id || '',
+        };
 
-      toast({
-        title: 'Success',
-        description: 'Contract saved successfully',
-      });
+        await apiClient.post('/contracts', contractData);
 
-      setUploadedContract(null);
-      fetchContracts();
+        toast({
+          title: 'Success',
+          description: 'Contract saved successfully',
+        });
+
+        setUploadedContract(null);
+        fetchContracts();
+      };
+
+      reader.readAsDataURL(uploadedContract.file);
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -364,30 +378,43 @@ const TrustAccountPage = () => {
 
     try {
       setIsProcessing(true);
-      const formData = new FormData();
-      formData.append('userId', user?.id || '');
-      formData.append('amount', topUpAmount);
-      formData.append('type', 'topup');
-      formData.append('screenshot', transactionImageFile);
 
-      await apiClient.post('/transaction-requests', formData);
+      // Convert image to base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Image = reader.result as string;
 
-      toast({
-        title: 'Success',
-        description: 'Top-up request submitted. Processing time: 24-48 hours',
-      });
+        const requestData = {
+          user_id: user?.id || '',
+          request_type: 'add_money',
+          amount: parseFloat(topUpAmount),
+          transaction_image_url: base64Image,
+        };
 
-      setTopUpDialogOpen(false);
-      setTopUpAmount('');
-      setTransactionImage('');
-      setTransactionImageFile(null);
+        await apiClient.post('/transaction-requests', requestData);
+
+        toast({
+          title: 'Success',
+          description: 'Top-up request submitted. Processing time: 24-48 hours',
+        });
+
+        setTopUpDialogOpen(false);
+        setTopUpAmount('');
+        setTransactionImage('');
+        setTransactionImageFile(null);
+        setIsProcessing(false);
+
+        // Refresh transactions
+        fetchTransactions();
+      };
+
+      reader.readAsDataURL(transactionImageFile);
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to submit top-up request',
+        description: error.response?.data?.error || 'Failed to submit top-up request',
       });
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -423,12 +450,24 @@ const TrustAccountPage = () => {
 
     try {
       setIsProcessing(true);
-      await apiClient.post('/transaction-requests', {
-        userId: user?.id,
-        amount: withdrawAmount,
-        type: 'withdrawal',
-        bankAccountId: selectedBankId,
-      });
+
+      // Get selected bank account details
+      const selectedBank = bankAccounts.find(b => b.id === selectedBankId);
+      if (!selectedBank) {
+        throw new Error('Bank account not found');
+      }
+
+      const requestData = {
+        user_id: user?.id || '',
+        request_type: 'withdrawal',
+        amount: parseFloat(withdrawAmount),
+        bank_account_id: selectedBankId,
+        bank_account_number: selectedBank.accountNumber,
+        bank_ifsc_code: selectedBank.ifscCode,
+        bank_name: selectedBank.bankName,
+      };
+
+      await apiClient.post('/transaction-requests', requestData);
 
       toast({
         title: 'Success',
@@ -438,11 +477,15 @@ const TrustAccountPage = () => {
       setWithdrawDialogOpen(false);
       setWithdrawAmount('');
       setSelectedBankId('');
+
+      // Refresh wallet and transactions
+      fetchWalletData();
+      fetchTransactions();
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to submit withdrawal request',
+        description: error.response?.data?.error || 'Failed to submit withdrawal request',
       });
     } finally {
       setIsProcessing(false);
