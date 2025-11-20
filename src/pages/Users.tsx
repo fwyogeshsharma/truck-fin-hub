@@ -1244,14 +1244,14 @@ const Users = () => {
                   Company <span className="text-xs text-muted-foreground">(Optional)</span>
                 </Label>
                 <Select
-                  value={newUser.company_id}
-                  onValueChange={(value) => setNewUser({ ...newUser, company_id: value })}
+                  value={newUser.company_id || "__none__"}
+                  onValueChange={(value) => setNewUser({ ...newUser, company_id: value === "__none__" ? "" : value })}
                 >
                   <SelectTrigger id="company_id">
                     <SelectValue placeholder="Select a company or leave empty for individual" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Individual (No Company)</SelectItem>
+                    <SelectItem value="__none__">Individual (No Company)</SelectItem>
                     {companies.map((company) => (
                       <SelectItem key={company.id} value={company.id}>
                         {company.display_name || company.name}
