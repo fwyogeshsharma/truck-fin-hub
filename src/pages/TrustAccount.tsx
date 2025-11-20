@@ -207,7 +207,7 @@ const TrustAccountPage = () => {
   const fetchWalletData = async () => {
     try {
       setDataLoading(true);
-      const response = await apiClient.get(`/wallet/${user?.id}`);
+      const response = await apiClient.get(`/wallets/${user?.id}`);
       if (response.data) {
         setWalletData(response.data);
       }
@@ -226,7 +226,7 @@ const TrustAccountPage = () => {
   // Fetch transactions
   const fetchTransactions = async () => {
     try {
-      const response = await apiClient.get(`/transactions/${user?.id}`);
+      const response = await apiClient.get(`/transactions?userId=${user?.id}`);
       setTransactions(response.data || []);
     } catch (error: any) {
       console.error('Error fetching transactions:', error);
@@ -287,6 +287,52 @@ const TrustAccountPage = () => {
   const saveContract = async () => {
     if (!uploadedContract) return;
 
+    // Validate required fields
+    if (!uploadedContract.loanPercentage || !uploadedContract.ltv || !uploadedContract.penaltyAfterDueDate) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Fields',
+        description: 'Please fill in Loan %, LTV, and Penalty fields',
+      });
+      return;
+    }
+
+    if (!uploadedContract.contractType) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Contract Type',
+        description: 'Please select contract type (2-party or 3-party)',
+      });
+      return;
+    }
+
+    if (!uploadedContract.party1UserId || !uploadedContract.party2UserId) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Parties',
+        description: 'Please select Party 1 and Party 2',
+      });
+      return;
+    }
+
+    if (uploadedContract.contractType === '3-party' && !uploadedContract.party3UserId) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Party 3',
+        description: 'Please select Party 3 for 3-party contracts',
+      });
+      return;
+    }
+
+    if (!uploadedContract.validityDate) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Validity Date',
+        description: 'Please select validity date',
+      });
+      return;
+    }
+
     try {
       // Convert file to base64
       const reader = new FileReader();
@@ -331,7 +377,7 @@ const TrustAccountPage = () => {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.response?.data?.message || 'Failed to save contract',
+        description: error.response?.data?.error || error.response?.data?.message || 'Failed to save contract',
       });
     }
   };
