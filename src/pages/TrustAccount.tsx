@@ -283,6 +283,7 @@ const TrustAccountPage = () => {
       'load_agent': 'Individual Transporter',
       'vehicle_owner': 'Individual Vehicle Owner',
       'transporter': 'Individual Transporter',
+      'trust_account': 'Individual trust_account',
     };
 
     const roleLabel = roleMap[user.role] || `Individual ${user.role}`;
@@ -291,6 +292,26 @@ const TrustAccountPage = () => {
 
   // Check if contract has a trust account party
   const hasTrustAccountParty = (contract: any): boolean => {
+    // Check if any party name contains "trust_account" indicator
+    const partyNames = [
+      contract.party1_name,
+      contract.party2_name,
+      contract.party3_name,
+      contract.party5_name,
+      contract.party6_name
+    ].filter(Boolean);
+
+    // Check by party name pattern (contains "Trust Account" or "trust_account")
+    const hasTrustByName = partyNames.some(name =>
+      name && (
+        name.toLowerCase().includes('trust account') ||
+        name.toLowerCase().includes('trust_account')
+      )
+    );
+
+    if (hasTrustByName) return true;
+
+    // Also check by registered users if available
     const partyIds = [
       contract.party1_user_id,
       contract.party2_user_id,
