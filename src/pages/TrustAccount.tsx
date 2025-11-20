@@ -676,11 +676,13 @@ const TrustAccountPage = () => {
                             <SelectValue placeholder="Select party 1" />
                           </SelectTrigger>
                           <SelectContent>
-                            {registeredUsers.map(user => (
-                              <SelectItem key={user.id} value={user.id}>
-                                {user.name} ({user.role})
-                              </SelectItem>
-                            ))}
+                            {registeredUsers
+                              .filter(u => u.role !== 'trust_account' && u.role !== 'admin' && u.role !== 'super_admin')
+                              .map(user => (
+                                <SelectItem key={user.id} value={user.id}>
+                                  {user.name} ({user.role})
+                                </SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -701,11 +703,13 @@ const TrustAccountPage = () => {
                             <SelectValue placeholder="Select party 2" />
                           </SelectTrigger>
                           <SelectContent>
-                            {registeredUsers.map(user => (
-                              <SelectItem key={user.id} value={user.id}>
-                                {user.name} ({user.role})
-                              </SelectItem>
-                            ))}
+                            {registeredUsers
+                              .filter(u => u.role !== 'trust_account' && u.role !== 'admin' && u.role !== 'super_admin')
+                              .map(user => (
+                                <SelectItem key={user.id} value={user.id}>
+                                  {user.name} ({user.role})
+                                </SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -727,11 +731,13 @@ const TrustAccountPage = () => {
                               <SelectValue placeholder="Select party 3" />
                             </SelectTrigger>
                             <SelectContent>
-                              {registeredUsers.map(user => (
-                                <SelectItem key={user.id} value={user.id}>
-                                  {user.name} ({user.role})
-                                </SelectItem>
-                              ))}
+                              {registeredUsers
+                                .filter(u => u.role !== 'trust_account' && u.role !== 'admin' && u.role !== 'super_admin')
+                                .map(user => (
+                                  <SelectItem key={user.id} value={user.id}>
+                                    {user.name} ({user.role})
+                                  </SelectItem>
+                                ))}
                             </SelectContent>
                           </Select>
                         </div>
