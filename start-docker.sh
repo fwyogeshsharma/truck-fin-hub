@@ -350,6 +350,13 @@ echo "✅ PostgreSQL is ready!"
 #  rated_user_id = borrower_id
 #WHERE rated_by_id IS NULL;
 #
+#-- Migration 028: Add 'trust_account' role to users table
+#-- Description: Adds a new role type 'trust_account' to the system for managing trust accounts
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check
+  CHECK(role IN ('load_owner', 'vehicle_owner', 'lender', 'admin', 'super_admin', 'load_agent', 'vehicle_agent', 'trust_account'));
+COMMENT ON COLUMN users.role IS 'User role: load_owner, vehicle_owner, lender, admin, super_admin, load_agent, vehicle_agent, trust_account';
+
 #SELECT 'Migrations completed!' as status;
 #EOFMIGRATION
 

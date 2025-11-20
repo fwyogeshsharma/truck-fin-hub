@@ -8,7 +8,7 @@ export interface User {
   phone: string;
   name: string;
   password_hash: string;
-  role?: 'load_owner' | 'vehicle_owner' | 'lender' | 'admin' | 'super_admin' | 'load_agent' | 'vehicle_agent' | 'shipper';
+  role?: 'load_owner' | 'vehicle_owner' | 'lender' | 'admin' | 'super_admin' | 'load_agent' | 'vehicle_agent' | 'shipper' | 'trust_account';
   company?: string;  // Deprecated: use company_id and join with companies table
   company_id?: string;  // Foreign key to companies table
   company_logo?: string;  // Deprecated: use companies.logo
