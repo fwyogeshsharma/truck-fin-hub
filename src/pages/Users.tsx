@@ -47,6 +47,7 @@ import {
   ChevronLeft,
   ChevronRight,
   UserX,
+  UserPlus,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -92,6 +93,19 @@ const Users = () => {
     state: "",
     pincode: "",
     country: "India",
+  });
+
+  // Create user dialog state
+  const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [newUser, setNewUser] = useState({
+    user_id: "",
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    role: "lender" as const,
+    company_id: "",
   });
 
   // Security check - only super admin can access
@@ -154,6 +168,13 @@ const Users = () => {
     // Reset to first page when filters change
     setCurrentPage(1);
   }, [searchTerm, filterRole, allUsers]);
+
+  // Fetch companies when create user dialog is opened
+  useEffect(() => {
+    if (createUserDialogOpen && companies.length === 0) {
+      fetchCompanies();
+    }
+  }, [createUserDialogOpen]);
 
   // Calculate pagination values
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
@@ -310,6 +331,93 @@ const Users = () => {
     }
   };
 
+  const handleCreateUser = async () => {
+    // Validate required fields
+    if (!newUser.user_id || !newUser.name || !newUser.email || !newUser.phone || !newUser.password) {
+      toast({
+        variant: 'destructive',
+        title: 'Validation Error',
+        description: 'Please fill in all required fields (User ID, Name, Email, Phone, Password)',
+      });
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newUser.email)) {
+      toast({
+        variant: 'destructive',
+        title: 'Validation Error',
+        description: 'Please enter a valid email address',
+      });
+      return;
+    }
+
+    // Validate phone format (Indian phone number)
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(newUser.phone)) {
+      toast({
+        variant: 'destructive',
+        title: 'Validation Error',
+        description: 'Please enter a valid 10-digit Indian phone number',
+      });
+      return;
+    }
+
+    // Validate password length
+    if (newUser.password.length < 6) {
+      toast({
+        variant: 'destructive',
+        title: 'Validation Error',
+        description: 'Password must be at least 6 characters long',
+      });
+      return;
+    }
+
+    try {
+      setCreatingUser(true);
+
+      const createdUser = await apiClient.post('/users', {
+        user_id: newUser.user_id,
+        name: newUser.name,
+        email: newUser.email,
+        phone: newUser.phone,
+        password: newUser.password,
+        role: newUser.role,
+        company_id: newUser.company_id || undefined,
+      });
+
+      toast({
+        title: 'Success!',
+        description: `User "${createdUser.name}" has been created successfully`,
+      });
+
+      // Refresh users list
+      await handleRefreshUsers();
+
+      // Close dialog and reset form
+      setCreateUserDialogOpen(false);
+      setNewUser({
+        user_id: "",
+        name: "",
+        email: "",
+        phone: "",
+        password: "",
+        role: "lender",
+        company_id: "",
+      });
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to create user. Please try again.',
+      });
+    } finally {
+      setCreatingUser(false);
+    }
+  };
+
   const handleMakeAdmin = async () => {
     if (!selectedUser || !selectedCompany) {
       toast({
@@ -429,6 +537,13 @@ const Users = () => {
           </div>
           <div className="flex gap-2">
             <Button
+              onClick={() => setCreateUserDialogOpen(true)}
+              className="gap-2 bg-gradient-primary"
+            >
+              <UserPlus className="h-4 w-4" />
+              Create User
+            </Button>
+            <Button
               onClick={handleRefreshUsers}
               variant="outline"
               className="gap-2"
@@ -437,7 +552,7 @@ const Users = () => {
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Button onClick={exportToCSV} className="gap-2 bg-gradient-primary">
+            <Button onClick={exportToCSV} variant="outline" className="gap-2">
               <Download className="h-4 w-4" />
               Export to CSV
             </Button>
@@ -1015,6 +1130,179 @@ const Users = () => {
                   Confirm & Make Admin
                 </Button>
               )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create User Dialog */}
+        <Dialog open={createUserDialogOpen} onOpenChange={setCreateUserDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5" />
+                Create New User
+              </DialogTitle>
+              <DialogDescription>
+                Add a new user to the platform. All fields marked with * are required.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              {/* User ID */}
+              <div className="space-y-2">
+                <Label htmlFor="user_id">
+                  User ID * <span className="text-xs text-muted-foreground">(Unique identifier)</span>
+                </Label>
+                <Input
+                  id="user_id"
+                  placeholder="e.g., U123456"
+                  value={newUser.user_id}
+                  onChange={(e) => setNewUser({ ...newUser, user_id: e.target.value })}
+                  required
+                />
+              </div>
+
+              {/* Name */}
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  id="name"
+                  placeholder="e.g., John Doe"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              {/* Email */}
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="e.g., john.doe@example.com"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  required
+                />
+              </div>
+
+              {/* Phone */}
+              <div className="space-y-2">
+                <Label htmlFor="phone">
+                  Phone Number * <span className="text-xs text-muted-foreground">(10 digits)</span>
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="e.g., 9876543210"
+                  value={newUser.phone}
+                  onChange={(e) => setNewUser({ ...newUser, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                  maxLength={10}
+                  required
+                />
+              </div>
+
+              {/* Password */}
+              <div className="space-y-2">
+                <Label htmlFor="password">
+                  Password * <span className="text-xs text-muted-foreground">(Min 6 characters)</span>
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter password"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  required
+                />
+              </div>
+
+              {/* Role */}
+              <div className="space-y-2">
+                <Label htmlFor="role">Role *</Label>
+                <Select
+                  value={newUser.role}
+                  onValueChange={(value: any) => setNewUser({ ...newUser, role: value })}
+                >
+                  <SelectTrigger id="role">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="lender">Lender</SelectItem>
+                    <SelectItem value="load_owner">Load Owner (Shipper)</SelectItem>
+                    <SelectItem value="load_agent">Load Agent (Borrower)</SelectItem>
+                    <SelectItem value="transporter">Transporter</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Company (Optional) */}
+              <div className="space-y-2">
+                <Label htmlFor="company_id">
+                  Company <span className="text-xs text-muted-foreground">(Optional)</span>
+                </Label>
+                <Select
+                  value={newUser.company_id}
+                  onValueChange={(value) => setNewUser({ ...newUser, company_id: value })}
+                >
+                  <SelectTrigger id="company_id">
+                    <SelectValue placeholder="Select a company or leave empty for individual" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Individual (No Company)</SelectItem>
+                    {companies.map((company) => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.display_name || company.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!companies.length && (
+                  <p className="text-xs text-muted-foreground">
+                    No companies available. User will be created as individual.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCreateUserDialogOpen(false);
+                  setNewUser({
+                    user_id: "",
+                    name: "",
+                    email: "",
+                    phone: "",
+                    password: "",
+                    role: "lender",
+                    company_id: "",
+                  });
+                }}
+                disabled={creatingUser}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateUser}
+                disabled={creatingUser}
+                className="bg-gradient-primary"
+              >
+                {creatingUser ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Create User
+                  </>
+                )}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
