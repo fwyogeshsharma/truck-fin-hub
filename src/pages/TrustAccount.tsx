@@ -129,6 +129,8 @@ const TrustAccountPage = () => {
   const [viewingContractDetails, setViewingContractDetails] = useState<any | null>(null);
   const [editingContract, setEditingContract] = useState<any | null>(null);
   const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
+  const [viewingTrustBalance, setViewingTrustBalance] = useState<any | null>(null);
+  const [trustBalanceLoading, setTrustBalanceLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // Wallet states
@@ -481,6 +483,55 @@ const TrustAccountPage = () => {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Fetch trust account balance for contract
+  const handleViewTrustBalance = async (contract: any) => {
+    setTrustBalanceLoading(true);
+    try {
+      // Fetch the trust account user's wallet balance
+      // Assuming the trust account is one of the parties in the contract
+      const trustAccountUserId = [
+        contract.party1_user_id,
+        contract.party2_user_id,
+        contract.party3_user_id,
+        contract.party5_user_id,
+        contract.party6_user_id
+      ].find(userId => {
+        const user = registeredUsers.find(u => u.id === userId);
+        return user?.role === 'trust_account';
+      });
+
+      if (!trustAccountUserId) {
+        toast({
+          variant: 'destructive',
+          title: 'No Trust Account',
+          description: 'This contract does not have a trust account party.',
+        });
+        setTrustBalanceLoading(false);
+        return;
+      }
+
+      // Fetch wallet data for the trust account
+      const walletResponse = await apiClient.get(`/wallet/${trustAccountUserId}`);
+
+      setViewingTrustBalance({
+        contract: contract,
+        balance: walletResponse?.balance || 0,
+        escrowedAmount: walletResponse?.escrowedAmount || walletResponse?.escrowed_amount || 0,
+        trustAccountUserId: trustAccountUserId,
+        trustAccountName: registeredUsers.find(u => u.id === trustAccountUserId)?.name || 'Trust Account'
+      });
+    } catch (error: any) {
+      console.error('Error fetching trust account balance:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to fetch trust account balance.',
+      });
+    } finally {
+      setTrustBalanceLoading(false);
     }
   };
 
@@ -1560,6 +1611,15 @@ Visit the Settings page to download the complete sample agreement template.`;
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleViewTrustBalance(contract)}
+                                title="View Trust Account Balance"
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              >
+                                <WalletIcon className="h-4 w-4" />
+                              </Button>
                               {contract.uploaded_by === user?.id && (
                                 <>
                                   <Button
@@ -1937,6 +1997,84 @@ Visit the Settings page to download the complete sample agreement template.`;
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Trust Account Balance Dialog */}
+      <Dialog open={!!viewingTrustBalance} onOpenChange={() => setViewingTrustBalance(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <WalletIcon className="h-5 w-5 text-green-600" />
+              Trust Account Balance
+            </DialogTitle>
+            <DialogDescription>
+              Available balance for this contract
+            </DialogDescription>
+          </DialogHeader>
+          {viewingTrustBalance && (
+            <div className="space-y-4">
+              {/* Contract Info */}
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm font-medium text-muted-foreground mb-1">Contract</p>
+                <p className="font-semibold">{viewingTrustBalance.contract.file_name}</p>
+              </div>
+
+              {/* Trust Account Info */}
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm font-medium text-muted-foreground mb-1">Trust Account</p>
+                <p className="font-semibold">{viewingTrustBalance.trustAccountName}</p>
+              </div>
+
+              {/* Balance Cards */}
+              <div className="grid grid-cols-1 gap-3">
+                <Card className="border-green-200 bg-green-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-green-700">Available Balance</p>
+                        <p className="text-2xl font-bold text-green-900 mt-1">
+                          {formatCurrency(viewingTrustBalance.balance)}
+                        </p>
+                      </div>
+                      <WalletIcon className="h-8 w-8 text-green-600 opacity-50" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-orange-200 bg-orange-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-orange-700">In Escrow</p>
+                        <p className="text-2xl font-bold text-orange-900 mt-1">
+                          {formatCurrency(viewingTrustBalance.escrowedAmount)}
+                        </p>
+                      </div>
+                      <WalletIcon className="h-8 w-8 text-orange-600 opacity-50" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Alert className="border-blue-200 bg-blue-50">
+                <Info className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-sm text-blue-700">
+                  This shows the current wallet balance of the trust account associated with this contract.
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+          {trustBalanceLoading && (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewingTrustBalance(null)}>
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
