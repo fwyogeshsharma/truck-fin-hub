@@ -1,4 +1,4 @@
-import pool from '../index.js';
+import { getDatabase } from '../database.js';
 
 export interface Contract {
   id: string;
@@ -53,7 +53,8 @@ export interface CreateContractInput {
  * Get all contracts
  */
 export async function getAllContracts(): Promise<Contract[]> {
-  const result = await pool.query(
+  const db = await getDatabase();
+  const result = await db.query(
     'SELECT * FROM contracts ORDER BY created_at DESC'
   );
   return result.rows;
@@ -63,7 +64,8 @@ export async function getAllContracts(): Promise<Contract[]> {
  * Get active contracts
  */
 export async function getActiveContracts(): Promise<Contract[]> {
-  const result = await pool.query(
+  const db = await getDatabase();
+  const result = await db.query(
     "SELECT * FROM contracts WHERE status = 'active' ORDER BY created_at DESC"
   );
   return result.rows;
@@ -73,7 +75,8 @@ export async function getActiveContracts(): Promise<Contract[]> {
  * Get contract by ID
  */
 export async function getContractById(id: string): Promise<Contract | null> {
-  const result = await pool.query(
+  const db = await getDatabase();
+  const result = await db.query(
     'SELECT * FROM contracts WHERE id = $1',
     [id]
   );
@@ -84,7 +87,8 @@ export async function getContractById(id: string): Promise<Contract | null> {
  * Get contracts uploaded by a specific user
  */
 export async function getContractsByUploader(uploaderId: string): Promise<Contract[]> {
-  const result = await pool.query(
+  const db = await getDatabase();
+  const result = await db.query(
     'SELECT * FROM contracts WHERE uploaded_by = $1 ORDER BY created_at DESC',
     [uploaderId]
   );
@@ -95,7 +99,8 @@ export async function getContractsByUploader(uploaderId: string): Promise<Contra
  * Get contracts where a user is any party
  */
 export async function getContractsByParty(userId: string): Promise<Contract[]> {
-  const result = await pool.query(
+  const db = await getDatabase();
+  const result = await db.query(
     `SELECT * FROM contracts
      WHERE party1_user_id = $1
         OR party2_user_id = $1
@@ -113,7 +118,8 @@ export async function getContractsBetweenParties(
   party1Id: string,
   party2Id: string
 ): Promise<Contract[]> {
-  const result = await pool.query(
+  const db = await getDatabase();
+  const result = await db.query(
     `SELECT * FROM contracts
      WHERE (party1_user_id = $1 AND party2_user_id = $2)
         OR (party1_user_id = $2 AND party2_user_id = $1)
@@ -127,6 +133,7 @@ export async function getContractsBetweenParties(
  * Create a new contract
  */
 export async function createContract(input: CreateContractInput): Promise<Contract> {
+  const db = await getDatabase();
   const {
     id,
     file_name,
@@ -149,7 +156,7 @@ export async function createContract(input: CreateContractInput): Promise<Contra
     uploaded_by,
   } = input;
 
-  const result = await pool.query(
+  const result = await db.query(
     `INSERT INTO contracts (
       id, file_name, file_type, file_size, file_url, file_data,
       loan_percentage, ltv, penalty_after_due_date,
@@ -182,7 +189,8 @@ export async function updateContractStatus(
   id: string,
   status: 'active' | 'expired' | 'cancelled' | 'archived'
 ): Promise<Contract | null> {
-  const result = await pool.query(
+  const db = await getDatabase();
+  const result = await db.query(
     'UPDATE contracts SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
     [status, id]
   );
@@ -193,7 +201,8 @@ export async function updateContractStatus(
  * Delete a contract
  */
 export async function deleteContract(id: string): Promise<boolean> {
-  const result = await pool.query(
+  const db = await getDatabase();
+  const result = await db.query(
     'DELETE FROM contracts WHERE id = $1',
     [id]
   );
@@ -204,7 +213,8 @@ export async function deleteContract(id: string): Promise<boolean> {
  * Get contracts count
  */
 export async function getContractsCount(): Promise<number> {
-  const result = await pool.query('SELECT COUNT(*) FROM contracts');
+  const db = await getDatabase();
+  const result = await db.query('SELECT COUNT(*) FROM contracts');
   return parseInt(result.rows[0].count);
 }
 
@@ -212,7 +222,8 @@ export async function getContractsCount(): Promise<number> {
  * Get active contracts count
  */
 export async function getActiveContractsCount(): Promise<number> {
-  const result = await pool.query(
+  const db = await getDatabase();
+  const result = await db.query(
     "SELECT COUNT(*) FROM contracts WHERE status = 'active'"
   );
   return parseInt(result.rows[0].count);
@@ -222,7 +233,8 @@ export async function getActiveContractsCount(): Promise<number> {
  * Get contracts expiring soon (within specified days)
  */
 export async function getContractsExpiringSoon(days: number = 30): Promise<Contract[]> {
-  const result = await pool.query(
+  const db = await getDatabase();
+  const result = await db.query(
     `SELECT * FROM contracts
      WHERE status = 'active'
        AND validity_date <= CURRENT_DATE + INTERVAL '${days} days'
@@ -236,7 +248,8 @@ export async function getContractsExpiringSoon(days: number = 30): Promise<Contr
  * Get expired contracts
  */
 export async function getExpiredContracts(): Promise<Contract[]> {
-  const result = await pool.query(
+  const db = await getDatabase();
+  const result = await db.query(
     `SELECT * FROM contracts
      WHERE status = 'active'
        AND validity_date < CURRENT_DATE
@@ -249,7 +262,8 @@ export async function getExpiredContracts(): Promise<Contract[]> {
  * Auto-expire contracts past their validity date
  */
 export async function autoExpireContracts(): Promise<number> {
-  const result = await pool.query(
+  const db = await getDatabase();
+  const result = await db.query(
     `UPDATE contracts
      SET status = 'expired', updated_at = CURRENT_TIMESTAMP
      WHERE status = 'active'
@@ -262,7 +276,8 @@ export async function autoExpireContracts(): Promise<number> {
  * Get contract statistics for a user
  */
 export async function getUserContractStats(userId: string) {
-  const result = await pool.query(
+  const db = await getDatabase();
+  const result = await db.query(
     `SELECT
       COUNT(*) as total_contracts,
       COUNT(CASE WHEN status = 'active' THEN 1 END) as active_contracts,
