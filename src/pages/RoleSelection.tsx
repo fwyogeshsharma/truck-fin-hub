@@ -140,8 +140,8 @@ const RoleSelection = () => {
       return;
     }
 
-    // For transporters (load_agent), show select/create company dialog
-    if (selectedRole === 'load_agent' && !user?.company) {
+    // For transporters (load_agent) and shippers (load_owner), show select/create company dialog
+    if ((selectedRole === 'load_agent' || selectedRole === 'load_owner') && !user?.company) {
       setShowShipperActionDialog(true);
       return;
     }
@@ -247,7 +247,7 @@ const RoleSelection = () => {
     try {
       // Determine user type based on role and selection
       const userType = selectedRole === 'lender' ? lenderType || 'individual' :
-                       (selectedCompany || selectedRole === 'load_agent') ? 'company' : 'individual';
+                       (selectedCompany || selectedRole === 'load_agent' || selectedRole === 'load_owner') ? 'company' : 'individual';
 
       const updatedUser = await auth.updateUserRole(
         selectedRole,
@@ -280,8 +280,8 @@ const RoleSelection = () => {
     setSelectedCompany(company);
     setShowCompanyDialog(false);
 
-    // For transporter and lender roles, submit to backend which will determine if user is first (admin) or needs approval
-    if (selectedRole === 'load_agent' || selectedRole === 'lender') {
+    // For transporter, shipper, and lender roles, submit to backend which will determine if user is first (admin) or needs approval
+    if (selectedRole === 'load_agent' || selectedRole === 'lender' || selectedRole === 'load_owner') {
       setIsLoading(true);
       try {
         // Update user with company - backend will determine if they're first user (admin) or need approval
@@ -291,10 +291,11 @@ const RoleSelection = () => {
           company.logo,
           company.id,
           undefined, // Let backend determine approval status
-          'company' // Company lender/transporter
+          'company' // Company lender/transporter/shipper
         );
 
-        const roleTitle = selectedRole === 'load_agent' ? 'transporter' : 'lender';
+        const roleTitle = selectedRole === 'load_agent' ? 'transporter' :
+                         selectedRole === 'load_owner' ? 'shipper' : 'lender';
 
         // Check if user was auto-approved (first user of company becomes admin)
         if (updatedUser?.approval_status === 'approved' && updatedUser?.is_admin) {
@@ -459,7 +460,7 @@ const RoleSelection = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Company Action Selection Dialog (for both Transporter and Company Lender) */}
+      {/* Company Action Selection Dialog (for Transporter, Shipper, and Company Lender) */}
       <Dialog open={showShipperActionDialog} onOpenChange={setShowShipperActionDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -467,6 +468,8 @@ const RoleSelection = () => {
             <DialogDescription>
               {selectedRole === 'lender'
                 ? 'Select an existing lending company or create a new one'
+                : selectedRole === 'load_owner'
+                ? 'Select an existing shipper company or create a new one'
                 : 'Select an existing company or create a new one'}
             </DialogDescription>
           </DialogHeader>
@@ -481,6 +484,8 @@ const RoleSelection = () => {
                 <p className="text-sm text-muted-foreground">
                   {selectedRole === 'lender'
                     ? 'Choose from registered lending companies'
+                    : selectedRole === 'load_owner'
+                    ? 'Choose from registered shipper companies'
                     : 'Choose from registered logistics companies'}
                 </p>
               </CardContent>
@@ -495,6 +500,8 @@ const RoleSelection = () => {
                 <p className="text-sm text-muted-foreground">
                   {selectedRole === 'lender'
                     ? 'Register your own lending company'
+                    : selectedRole === 'load_owner'
+                    ? 'Register your own shipper company'
                     : 'Register your own logistics company'}
                 </p>
               </CardContent>
@@ -511,6 +518,8 @@ const RoleSelection = () => {
             <DialogDescription>
               {selectedRole === 'lender'
                 ? 'Fill in your lending company details to get started'
+                : selectedRole === 'load_owner'
+                ? 'Fill in your shipper company details to get started'
                 : 'Fill in your company details to get started'}
             </DialogDescription>
           </DialogHeader>
@@ -659,6 +668,8 @@ const RoleSelection = () => {
                     ? 'Choose the logistics company you represent as a Transporter'
                     : selectedRole === 'lender'
                     ? 'Choose the lending company you want to represent'
+                    : selectedRole === 'load_owner'
+                    ? 'Choose the shipper company you want to represent'
                     : 'Choose the company you want to work for'}
                 </DialogDescription>
               </div>
