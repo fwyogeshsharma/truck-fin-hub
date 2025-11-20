@@ -317,7 +317,7 @@ const TrustAccountPage = () => {
         party2UserId: '',
         party3Name: '',
         party3UserId: '',
-        party4Name: 'LogiFin Hub Private Limited - Platform Facilitator',
+        party4Name: 'LogiFin Private Limited - Platform Facilitator',
         party4UserId: 'logifin-platform',
         validityDate: '',
         tripStage: 'none',
@@ -514,7 +514,7 @@ const TrustAccountPage = () => {
   const downloadSampleAgreement = () => {
     const sampleText = `MULTI-PARTY LOAN AGREEMENT
 
-This Multi-Party Loan Agreement is entered into between registered parties and LogiFin Hub Private Limited as the platform facilitator.
+This Multi-Party Loan Agreement is entered into between registered parties and LogiFin Private Limited as the platform facilitator.
 
 Visit the Settings page to download the complete sample agreement template.`;
 
@@ -789,7 +789,7 @@ Visit the Settings page to download the complete sample agreement template.`;
                   When selecting parties, you'll see their name and company (or individual status) from our registered users list.
                 </p>
                 <p>
-                  <strong>LogiFin as Party 4:</strong> LogiFin Hub Private Limited is automatically included as Party 4 (Platform Facilitator) in all contracts to ensure transparency, proper record-keeping, and compliance.
+                  <strong>LogiFin as Party 4:</strong> LogiFin Private Limited is automatically included as Party 4 (Platform Facilitator) in all contracts to ensure transparency, proper record-keeping, and compliance.
                 </p>
               </AlertDescription>
             </Alert>
@@ -1269,10 +1269,10 @@ Visit the Settings page to download the complete sample agreement template.`;
                               <div className="flex items-start gap-3">
                                 <FileText className="h-5 w-5 text-primary mt-1" />
                                 <div className="flex-1">
-                                  <h3 className="font-semibold text-lg">{contract.file_name}</h3>
+                                  <h3 className="font-semibold text-lg">{contract.file_name || 'Untitled Contract'}</h3>
                                   <p className="text-sm text-muted-foreground">
                                     {contract.contract_type === '2-party' ? '2-Party + LogiFin' : '3-Party + LogiFin'} •
-                                    Uploaded {new Date(contract.created_at).toLocaleDateString('en-IN')}
+                                    Uploaded {contract.created_at ? new Date(contract.created_at).toLocaleDateString('en-IN') : 'N/A'}
                                   </p>
                                 </div>
                               </div>
@@ -1281,19 +1281,19 @@ Visit the Settings page to download the complete sample agreement template.`;
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-muted/50 rounded-lg">
                                 <div>
                                   <p className="text-xs text-muted-foreground">Loan %</p>
-                                  <p className="font-semibold">{contract.loan_percentage}%</p>
+                                  <p className="font-semibold">{contract.loan_percentage || 0}%</p>
                                 </div>
                                 <div>
                                   <p className="text-xs text-muted-foreground">LTV</p>
-                                  <p className="font-semibold">{contract.ltv}%</p>
+                                  <p className="font-semibold">{contract.ltv || 0}%</p>
                                 </div>
                                 <div>
                                   <p className="text-xs text-muted-foreground">Penalty</p>
-                                  <p className="font-semibold">{contract.penalty_after_due_date}%</p>
+                                  <p className="font-semibold">{contract.penalty_after_due_date || 0}%</p>
                                 </div>
                                 <div>
                                   <p className="text-xs text-muted-foreground">Valid Until</p>
-                                  <p className="font-semibold">{new Date(contract.validity_date).toLocaleDateString('en-IN')}</p>
+                                  <p className="font-semibold">{contract.validity_date ? new Date(contract.validity_date).toLocaleDateString('en-IN') : 'N/A'}</p>
                                 </div>
                               </div>
 
@@ -1301,14 +1301,14 @@ Visit the Settings page to download the complete sample agreement template.`;
                               <div className="space-y-2">
                                 <div className="flex items-center gap-2 text-sm">
                                   <span className="font-medium">Party 1:</span>
-                                  <span className="text-muted-foreground">{contract.party1_name}</span>
+                                  <span className="text-muted-foreground">{contract.party1_name || 'N/A'}</span>
                                   {contract.party1_user_id === user?.id && (
                                     <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">You</span>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-2 text-sm">
                                   <span className="font-medium">Party 2:</span>
-                                  <span className="text-muted-foreground">{contract.party2_name}</span>
+                                  <span className="text-muted-foreground">{contract.party2_name || 'N/A'}</span>
                                   {contract.party2_user_id === user?.id && (
                                     <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">You</span>
                                   )}
@@ -1316,7 +1316,7 @@ Visit the Settings page to download the complete sample agreement template.`;
                                 {contract.contract_type === '3-party' && contract.party3_name && (
                                   <div className="flex items-center gap-2 text-sm">
                                     <span className="font-medium">Party 3:</span>
-                                    <span className="text-muted-foreground">{contract.party3_name}</span>
+                                    <span className="text-muted-foreground">{contract.party3_name || 'N/A'}</span>
                                     {contract.party3_user_id === user?.id && (
                                       <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">You</span>
                                     )}
@@ -1324,7 +1324,7 @@ Visit the Settings page to download the complete sample agreement template.`;
                                 )}
                                 <div className="flex items-center gap-2 text-sm">
                                   <span className="font-medium">Party 4:</span>
-                                  <span className="text-muted-foreground">{contract.party4_name}</span>
+                                  <span className="text-muted-foreground">{contract.party4_name || 'LogiFin '}</span>
                                 </div>
                               </div>
 
@@ -1554,9 +1554,9 @@ Visit the Settings page to download the complete sample agreement template.`;
                           {filteredTransactions.map((transaction) => (
                             <TableRow key={transaction.id}>
                               <TableCell>
-                                {new Date(transaction.timestamp).toLocaleDateString()}
+                                {transaction.timestamp ? new Date(transaction.timestamp).toLocaleDateString() : 'N/A'}
                               </TableCell>
-                              <TableCell>{transaction.description}</TableCell>
+                              <TableCell>{transaction.description || 'N/A'}</TableCell>
                               <TableCell>
                                 <Badge
                                   variant={
@@ -1565,7 +1565,7 @@ Visit the Settings page to download the complete sample agreement template.`;
                                       : 'secondary'
                                   }
                                 >
-                                  {transaction.type}
+                                  {transaction.type || 'N/A'}
                                 </Badge>
                               </TableCell>
                               <TableCell
@@ -1578,10 +1578,10 @@ Visit the Settings page to download the complete sample agreement template.`;
                                 {transaction.type === 'credit' || transaction.type === 'topup'
                                   ? '+'
                                   : '-'}
-                                {formatCurrency(transaction.amount)}
+                                {formatCurrency(transaction.amount || 0)}
                               </TableCell>
                               <TableCell className="text-right">
-                                {formatCurrency(transaction.balanceAfter)}
+                                {formatCurrency(transaction.balanceAfter || transaction.balance_after || 0)}
                               </TableCell>
                             </TableRow>
                           ))}

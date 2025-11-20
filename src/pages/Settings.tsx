@@ -419,7 +419,7 @@ const Settings = () => {
         party2UserId: '',
         party3Name: '',
         party3UserId: '',
-        party4Name: 'LogiFin Hub Private Limited - Platform Facilitator',
+        party4Name: 'LogiFin Private Limited - Platform Facilitator',
         party4UserId: 'logifin-platform',
         validityDate: '',
         tripStage: 'none',
@@ -655,7 +655,7 @@ Contact: _______________
 AND
 
 PARTY 4 (PLATFORM FACILITATOR):
-LogiFin Hub Private Limited
+LogiFin Private Limited
 Registered Office: [LogiFin Address]
 CIN: [Company Identification Number]
 Email: support@logifin.com
@@ -666,7 +666,7 @@ Contact: [LogiFin Contact Number]
 WHEREAS:
 A. Party 1 and Party 2 (and Party 3, if applicable) wish to enter into a financial agreement.
 B. The parties require platform infrastructure and facilitation services for the execution and monitoring of this agreement.
-C. LogiFin Hub (Party 4) provides the digital platform and acts as a facilitator to ensure smooth execution, transparency, and compliance.
+C. LogiFin (Party 4) provides the digital platform and acts as a facilitator to ensure smooth execution, transparency, and compliance.
 
 NOW, THEREFORE, in consideration of the mutual covenants and agreements contained herein, the Parties agree as follows:
 
@@ -958,7 +958,7 @@ For questions, contact: support@logifin.com
                   When selecting parties, you'll see their name and company (or individual status) from our registered users list.
                 </p>
                 <p>
-                  <strong>LogiFin as Party 4:</strong> LogiFin Hub Private Limited is automatically included as Party 4 (Platform Facilitator) in all contracts to ensure transparency, proper record-keeping, and compliance.
+                  <strong>LogiFin as Party 4:</strong> LogiFin Private Limited is automatically included as Party 4 (Platform Facilitator) in all contracts to ensure transparency, proper record-keeping, and compliance.
                 </p>
               </AlertDescription>
             </Alert>

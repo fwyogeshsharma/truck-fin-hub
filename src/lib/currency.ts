@@ -11,6 +11,10 @@
  * Example: 1234567 → "₹12,34,567"
  */
 export const formatCurrency = (amount: number): string => {
+  // Handle null, undefined, or NaN values
+  if (amount === null || amount === undefined || isNaN(amount)) {
+    return '₹0';
+  }
   return `₹${amount.toLocaleString('en-IN')}`;
 };
 
@@ -28,6 +32,11 @@ export const formatCurrency = (amount: number): string => {
  * - 50000 (50 thousand) → "₹50 K" (compact) or "₹50,000" (full)
  */
 export const formatCurrencyCompact = (amount: number, compact: boolean = false): string => {
+  // Handle null, undefined, or NaN values
+  if (amount === null || amount === undefined || isNaN(amount)) {
+    return '₹0';
+  }
+
   if (!compact) {
     return formatCurrency(amount);
   }
