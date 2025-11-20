@@ -1161,7 +1161,7 @@ Visit the Settings page to download the complete sample agreement template.`;
                         </SelectTrigger>
                         <SelectContent>
                           {registeredUsers
-                            .filter(u => u.role !== 'trust_account' && u.role !== 'admin' && u.role !== 'super_admin')
+                            .filter(u => u.role !== 'admin' && u.role !== 'super_admin')
                             .map((user) => (
                               <SelectItem key={user.id} value={user.id}>
                                 {formatUserDisplay(user)}
@@ -1196,7 +1196,7 @@ Visit the Settings page to download the complete sample agreement template.`;
                         </SelectTrigger>
                         <SelectContent>
                           {registeredUsers
-                            .filter(u => u.role !== 'trust_account' && u.role !== 'admin' && u.role !== 'super_admin')
+                            .filter(u => u.role !== 'admin' && u.role !== 'super_admin')
                             .map((user) => (
                               <SelectItem key={user.id} value={user.id}>
                                 {formatUserDisplay(user)}
@@ -1232,7 +1232,7 @@ Visit the Settings page to download the complete sample agreement template.`;
                           </SelectTrigger>
                           <SelectContent>
                             {registeredUsers
-                              .filter(u => u.role !== 'trust_account' && u.role !== 'admin' && u.role !== 'super_admin')
+                              .filter(u => u.role !== 'admin' && u.role !== 'super_admin')
                               .map((user) => (
                                 <SelectItem key={user.id} value={user.id}>
                                   {formatUserDisplay(user)}
@@ -1269,7 +1269,7 @@ Visit the Settings page to download the complete sample agreement template.`;
                           </SelectTrigger>
                           <SelectContent>
                             {registeredUsers
-                              .filter(u => u.role !== 'trust_account' && u.role !== 'admin' && u.role !== 'super_admin')
+                              .filter(u => u.role !== 'admin' && u.role !== 'super_admin')
                               .map((user) => (
                                 <SelectItem key={user.id} value={user.id}>
                                   {formatUserDisplay(user)}
@@ -1306,7 +1306,7 @@ Visit the Settings page to download the complete sample agreement template.`;
                           </SelectTrigger>
                           <SelectContent>
                             {registeredUsers
-                              .filter(u => u.role !== 'trust_account' && u.role !== 'admin' && u.role !== 'super_admin')
+                              .filter(u => u.role !== 'admin' && u.role !== 'super_admin')
                               .map((user) => (
                                 <SelectItem key={user.id} value={user.id}>
                                   {formatUserDisplay(user)}
