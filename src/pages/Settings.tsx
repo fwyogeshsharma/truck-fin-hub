@@ -455,42 +455,56 @@ const Settings = () => {
     setIsSaving(true);
 
     try {
-      // Here you would upload to your API
-      // For now, we'll save to localStorage
-      const contractsData = contracts.map((contract) => ({
-        id: contract.id,
-        fileName: contract.file.name,
-        fileSize: contract.file.size,
-        fileType: contract.file.type,
-        loanPercentage: contract.loanPercentage,
-        ltv: contract.ltv,
-        contractType: contract.contractType,
-        party1Name: contract.party1Name,
-        party1UserId: contract.party1UserId,
-        party2Name: contract.party2Name,
-        party2UserId: contract.party2UserId,
-        party3Name: contract.party3Name,
-        party3UserId: contract.party3UserId,
-        party4Name: contract.party4Name,
-        party4UserId: contract.party4UserId,
-        validityDate: contract.validityDate,
-        tripStage: contract.tripStage,
-        penaltyAfterDueDate: contract.penaltyAfterDueDate,
-        uploadedAt: new Date().toISOString(),
-      }));
+      // Upload contracts to API
+      const uploadPromises = contracts.map(async (contract) => {
+        // Convert file to base64 for storage
+        const reader = new FileReader();
+        const fileDataPromise = new Promise<string>((resolve) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(contract.file);
+        });
+        const fileData = await fileDataPromise;
 
-      localStorage.setItem('uploaded-contracts', JSON.stringify(contractsData));
+        const contractData = {
+          id: contract.id,
+          file_name: contract.file.name,
+          file_type: contract.file.type,
+          file_size: contract.file.size,
+          file_url: fileData, // Using base64 data as URL for now
+          file_data: fileData, // Store base64 data
+          loan_percentage: parseFloat(contract.loanPercentage),
+          ltv: parseFloat(contract.ltv),
+          penalty_after_due_date: parseFloat(contract.penaltyAfterDueDate),
+          contract_type: contract.contractType,
+          validity_date: contract.validityDate,
+          trip_stage: contract.tripStage || null,
+          party1_user_id: contract.party1UserId,
+          party1_name: contract.party1Name,
+          party2_user_id: contract.party2UserId,
+          party2_name: contract.party2Name,
+          party3_user_id: contract.party3UserId || null,
+          party3_name: contract.party3Name || null,
+          uploaded_by: user?.id,
+        };
+
+        return apiClient.post('/contracts', contractData);
+      });
+
+      await Promise.all(uploadPromises);
+
+      // Clear the contracts list after successful upload
+      setContracts([]);
 
       toast({
         title: 'Contracts saved!',
-        description: `${contracts.length} contract(s) saved successfully.`,
+        description: `${contracts.length} contract(s) saved successfully to the database.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving contracts:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to save contracts.',
+        description: error.message || 'Failed to save contracts.',
       });
     } finally {
       setIsSaving(false);
