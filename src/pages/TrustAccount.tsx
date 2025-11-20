@@ -289,6 +289,22 @@ const TrustAccountPage = () => {
     return `${user.name} - ${roleLabel}`;
   };
 
+  // Check if contract has a trust account party
+  const hasTrustAccountParty = (contract: any): boolean => {
+    const partyIds = [
+      contract.party1_user_id,
+      contract.party2_user_id,
+      contract.party3_user_id,
+      contract.party5_user_id,
+      contract.party6_user_id
+    ].filter(Boolean);
+
+    return partyIds.some(userId => {
+      const user = registeredUsers.find(u => u.id === userId);
+      return user?.role === 'trust_account';
+    });
+  };
+
   // Handle file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -1611,15 +1627,17 @@ Visit the Settings page to download the complete sample agreement template.`;
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleViewTrustBalance(contract)}
-                                title="View Trust Account Balance"
-                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                              >
-                                <WalletIcon className="h-4 w-4" />
-                              </Button>
+                              {hasTrustAccountParty(contract) && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleViewTrustBalance(contract)}
+                                  title="View Trust Account Balance"
+                                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                >
+                                  <WalletIcon className="h-4 w-4" />
+                                </Button>
+                              )}
                               {contract.uploaded_by === user?.id && (
                                 <>
                                   <Button
