@@ -1566,34 +1566,12 @@ Visit the Settings page to download the complete sample agreement template.`;
                                   {contract.party1_user_id === user?.id && (
                                     <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">You</span>
                                   )}
-                                  {contract.party1_user_id && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                      onClick={() => handleViewPartyBalance(contract, contract.party1_user_id, contract.party1_name)}
-                                      title="View Party 1 Wallet Balance"
-                                    >
-                                      <WalletIcon className="h-3 w-3" />
-                                    </Button>
-                                  )}
                                 </div>
                                 <div className="flex items-center gap-2 text-sm">
                                   <span className="font-medium">Party 2:</span>
                                   <span className="text-muted-foreground">{contract.party2_name || 'N/A'}</span>
                                   {contract.party2_user_id === user?.id && (
                                     <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">You</span>
-                                  )}
-                                  {contract.party2_user_id && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                      onClick={() => handleViewPartyBalance(contract, contract.party2_user_id, contract.party2_name)}
-                                      title="View Party 2 Wallet Balance"
-                                    >
-                                      <WalletIcon className="h-3 w-3" />
-                                    </Button>
                                   )}
                                 </div>
                                 {(contract.contract_type === '3-party' || contract.contract_type === '4-party' || contract.contract_type === '5-party' || contract.contract_type === '6-party') && contract.party3_name && (
@@ -1602,17 +1580,6 @@ Visit the Settings page to download the complete sample agreement template.`;
                                     <span className="text-muted-foreground">{contract.party3_name || 'N/A'}</span>
                                     {contract.party3_user_id === user?.id && (
                                       <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">You</span>
-                                    )}
-                                    {contract.party3_user_id && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                        onClick={() => handleViewPartyBalance(contract, contract.party3_user_id, contract.party3_name)}
-                                        title="View Party 3 Wallet Balance"
-                                      >
-                                        <WalletIcon className="h-3 w-3" />
-                                      </Button>
                                     )}
                                   </div>
                                 )}
@@ -1627,17 +1594,6 @@ Visit the Settings page to download the complete sample agreement template.`;
                                     {contract.party5_user_id === user?.id && (
                                       <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">You</span>
                                     )}
-                                    {contract.party5_user_id && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                        onClick={() => handleViewPartyBalance(contract, contract.party5_user_id, contract.party5_name)}
-                                        title="View Party 5 Wallet Balance"
-                                      >
-                                        <WalletIcon className="h-3 w-3" />
-                                      </Button>
-                                    )}
                                   </div>
                                 )}
                                 {contract.contract_type === '6-party' && contract.party6_name && (
@@ -1646,17 +1602,6 @@ Visit the Settings page to download the complete sample agreement template.`;
                                     <span className="text-muted-foreground">{contract.party6_name || 'N/A'}</span>
                                     {contract.party6_user_id === user?.id && (
                                       <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">You</span>
-                                    )}
-                                    {contract.party6_user_id && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                        onClick={() => handleViewPartyBalance(contract, contract.party6_user_id, contract.party6_name)}
-                                        title="View Party 6 Wallet Balance"
-                                      >
-                                        <WalletIcon className="h-3 w-3" />
-                                      </Button>
                                     )}
                                   </div>
                                 )}
@@ -2095,16 +2040,16 @@ Visit the Settings page to download the complete sample agreement template.`;
         </DialogContent>
       </Dialog>
 
-      {/* Party Wallet Balance Dialog */}
+      {/* Trust Account Wallet Balance Dialog */}
       <Dialog open={!!viewingTrustBalance} onOpenChange={() => setViewingTrustBalance(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <WalletIcon className="h-5 w-5 text-green-600" />
-              Wallet Balance
+              Trust Account Wallet Balance
             </DialogTitle>
             <DialogDescription>
-              Available balance for this contract party
+              Available balance for the trust account in this contract
             </DialogDescription>
           </DialogHeader>
           {viewingTrustBalance && (
@@ -2115,9 +2060,9 @@ Visit the Settings page to download the complete sample agreement template.`;
                 <p className="font-semibold">{viewingTrustBalance.contract.file_name}</p>
               </div>
 
-              {/* Party Info */}
+              {/* Trust Account Info */}
               <div className="p-3 bg-muted/50 rounded-lg">
-                <p className="text-sm font-medium text-muted-foreground mb-1">Party</p>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Trust Account</p>
                 <p className="font-semibold">{viewingTrustBalance.partyName || viewingTrustBalance.trustAccountName}</p>
               </div>
 
