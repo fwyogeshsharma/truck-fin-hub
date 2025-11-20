@@ -183,6 +183,61 @@ export async function createContract(input: CreateContractInput): Promise<Contra
 }
 
 /**
+ * Update contract financial details
+ */
+export interface UpdateContractInput {
+  loan_percentage?: number;
+  ltv?: number;
+  penalty_after_due_date?: number;
+  validity_date?: string;
+  trip_stage?: string;
+}
+
+export async function updateContract(
+  id: string,
+  updates: UpdateContractInput
+): Promise<Contract | null> {
+  const db = await getDatabase();
+
+  const setClauses: string[] = [];
+  const values: any[] = [];
+  let paramIndex = 1;
+
+  if (updates.loan_percentage !== undefined) {
+    setClauses.push(`loan_percentage = $${paramIndex++}`);
+    values.push(updates.loan_percentage);
+  }
+  if (updates.ltv !== undefined) {
+    setClauses.push(`ltv = $${paramIndex++}`);
+    values.push(updates.ltv);
+  }
+  if (updates.penalty_after_due_date !== undefined) {
+    setClauses.push(`penalty_after_due_date = $${paramIndex++}`);
+    values.push(updates.penalty_after_due_date);
+  }
+  if (updates.validity_date !== undefined) {
+    setClauses.push(`validity_date = $${paramIndex++}`);
+    values.push(updates.validity_date);
+  }
+  if (updates.trip_stage !== undefined) {
+    setClauses.push(`trip_stage = $${paramIndex++}`);
+    values.push(updates.trip_stage);
+  }
+
+  if (setClauses.length === 0) {
+    return null;
+  }
+
+  setClauses.push(`updated_at = CURRENT_TIMESTAMP`);
+  values.push(id);
+
+  const query = `UPDATE contracts SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+  const result = await db.query(query, values);
+
+  return result.rows[0] || null;
+}
+
+/**
  * Update contract status
  */
 export async function updateContractStatus(

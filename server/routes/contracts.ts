@@ -7,6 +7,7 @@ import {
   getContractsByParty,
   getContractsBetweenParties,
   createContract,
+  updateContract,
   updateContractStatus,
   deleteContract,
   getContractsCount,
@@ -16,6 +17,7 @@ import {
   autoExpireContracts,
   getUserContractStats,
   CreateContractInput,
+  UpdateContractInput,
 } from '@/db/queries/contracts';
 
 const router = Router();
@@ -210,6 +212,52 @@ router.post('/', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Create contract error:', error);
     res.status(500).json({ error: 'Failed to create contract', message: error.message });
+  }
+});
+
+// PATCH /api/contracts/:id - Update contract financial details
+router.patch('/:id', async (req: Request, res: Response) => {
+  try {
+    const {
+      loan_percentage,
+      ltv,
+      penalty_after_due_date,
+      validity_date,
+      trip_stage,
+    } = req.body;
+
+    const updates: UpdateContractInput = {};
+
+    if (loan_percentage !== undefined) {
+      updates.loan_percentage = parseFloat(loan_percentage);
+    }
+    if (ltv !== undefined) {
+      updates.ltv = parseFloat(ltv);
+    }
+    if (penalty_after_due_date !== undefined) {
+      updates.penalty_after_due_date = parseFloat(penalty_after_due_date);
+    }
+    if (validity_date !== undefined) {
+      updates.validity_date = validity_date;
+    }
+    if (trip_stage !== undefined) {
+      updates.trip_stage = trip_stage;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+
+    const contract = await updateContract(req.params.id, updates);
+
+    if (!contract) {
+      return res.status(404).json({ error: 'Contract not found' });
+    }
+
+    res.json(contract);
+  } catch (error: any) {
+    console.error('Update contract error:', error);
+    res.status(500).json({ error: 'Failed to update contract', message: error.message });
   }
 });
 

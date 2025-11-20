@@ -549,7 +549,7 @@ const Settings = () => {
     }
   };
 
-  const handleDeleteContract = async (contractId: string) => {
+  const handleDeleteSavedContract = async (contractId: string) => {
     setIsSaving(true);
     try {
       await apiClient.delete(`/contracts/${contractId}`);
@@ -2000,7 +2000,7 @@ For questions, contact: support@logifin.com
             </Button>
             <Button
               variant="destructive"
-              onClick={() => deletingContractId && handleDeleteContract(deletingContractId)}
+              onClick={() => deletingContractId && handleDeleteSavedContract(deletingContractId)}
               disabled={isSaving}
               className="gap-2"
             >
