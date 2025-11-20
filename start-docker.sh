@@ -47,7 +47,22 @@ until docker exec logifin-postgres pg_isready -U "$DB_USER" -d "$DB_NAME" > /dev
 done
 echo "✅ PostgreSQL is ready!"
 
-## Run migrations
+# Run migrations
+echo ""
+echo "🔄 Running migration 028: Add trust_account role..."
+if [ -f "src/db/migrations/028_add_trust_account_role.sql" ]; then
+  docker exec -i logifin-postgres psql -U "$DB_USER" -d "$DB_NAME" < src/db/migrations/028_add_trust_account_role.sql
+  if [ $? -eq 0 ]; then
+    echo "✅ Migration 028 completed successfully!"
+  else
+    echo "❌ Migration 028 failed!"
+    exit 1
+  fi
+else
+  echo "⚠️  Migration file not found: src/db/migrations/028_add_trust_account_role.sql"
+fi
+
+## Run migrations (commented out)
 #docker exec -i logifin-postgres psql -U "$DB_USER" -d "$DB_NAME" << 'EOFMIGRATION'
 #-- Create companies table
 #CREATE TABLE IF NOT EXISTS companies (
@@ -352,10 +367,10 @@ echo "✅ PostgreSQL is ready!"
 #
 #-- Migration 028: Add 'trust_account' role to users table
 #-- Description: Adds a new role type 'trust_account' to the system for managing trust accounts
-ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
-ALTER TABLE users ADD CONSTRAINT users_role_check
-  CHECK(role IN ('load_owner', 'vehicle_owner', 'lender', 'admin', 'super_admin', 'load_agent', 'vehicle_agent', 'trust_account'));
-COMMENT ON COLUMN users.role IS 'User role: load_owner, vehicle_owner, lender, admin, super_admin, load_agent, vehicle_agent, trust_account';
+#ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+#ALTER TABLE users ADD CONSTRAINT users_role_check
+#  CHECK(role IN ('load_owner', 'vehicle_owner', 'lender', 'admin', 'super_admin', 'load_agent', 'vehicle_agent', 'trust_account'));
+#COMMENT ON COLUMN users.role IS 'User role: load_owner, vehicle_owner, lender, admin, super_admin, load_agent, vehicle_agent, trust_account';
 
 #SELECT 'Migrations completed!' as status;
 #EOFMIGRATION
