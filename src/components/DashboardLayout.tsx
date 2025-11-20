@@ -189,20 +189,6 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            {/* Role Badge with Settings - Shown for all roles */}
-            <div className="hidden sm:flex items-center gap-2 px-2 md:px-3 py-1 md:py-1.5 bg-primary/10 rounded-full">
-              <RoleIcon className="h-3 w-3 md:h-4 md:w-4 text-primary" />
-              <span className="text-xs md:text-sm font-medium">{config.title}</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 ml-1"
-                onClick={() => navigate('/settings')}
-              >
-                <Settings className="h-3 w-3 md:h-4 md:w-4" />
-              </Button>
-            </div>
-
             {/* Notification Bell */}
             {user?.id && <NotificationBell userId={user.id} />}
 
@@ -226,6 +212,24 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
                     </p>
                   </div>
                 </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {/* Role Section with Settings */}
+                <div className="px-2 py-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <RoleIcon className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">{config.title}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => navigate('/settings')}
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate('/profile')}>
                   <UserIcon className="mr-2 h-4 w-4" />
