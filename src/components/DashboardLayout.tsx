@@ -88,6 +88,13 @@ const roleConfig = {
       { label: "Wallet", path: "/wallet", icon: Wallet },
     ],
   },
+  trust_account: {
+    title: "Trust Account",
+    icon: Shield,
+    nav: [
+      { label: "Trust Account", path: "/trust-account", icon: Home },
+    ],
+  },
 };
 
 const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
