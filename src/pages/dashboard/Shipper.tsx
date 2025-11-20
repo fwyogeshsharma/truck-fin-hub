@@ -132,7 +132,7 @@ const ShipperDashboard = () => {
 
   if (loading) {
     return (
-      <DashboardLayout role="shipper">
+      <DashboardLayout role="load_owner">
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-4">
             <RefreshCw className="h-12 w-12 animate-spin mx-auto text-primary" />
@@ -144,7 +144,7 @@ const ShipperDashboard = () => {
   }
 
   return (
-    <DashboardLayout role="shipper">
+    <DashboardLayout role="load_owner">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

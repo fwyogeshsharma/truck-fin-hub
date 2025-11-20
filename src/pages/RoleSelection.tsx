@@ -40,7 +40,7 @@ const roles = [
     color: "accent",
   },
   {
-    id: "shipper" as const,
+    id: "load_owner" as const,
     title: "Shipper",
     description: "Manage accounts and money transfers with integrated wallet system",
     icon: TruckIcon,
