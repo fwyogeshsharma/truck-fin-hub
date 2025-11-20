@@ -48,6 +48,8 @@ import {
   ChevronRight,
   UserX,
   UserPlus,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -107,6 +109,7 @@ const Users = () => {
     role: "lender" as const,
     company_id: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   // Security check - only super admin can access
   useEffect(() => {
@@ -1208,14 +1211,24 @@ const Users = () => {
                 <Label htmlFor="password">
                   Password * <span className="text-xs text-muted-foreground">(Min 6 characters)</span>
                 </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter password"
-                  value={newUser.password}
-                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter password"
+                    value={newUser.password}
+                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                    required
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
 
               {/* Role */}
@@ -1234,6 +1247,7 @@ const Users = () => {
                     <SelectItem value="load_agent">Load Agent (Borrower)</SelectItem>
                     <SelectItem value="transporter">Transporter</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="trust_account">Trust Account</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
