@@ -530,7 +530,7 @@ const TrustAccountPage = () => {
       }
 
       // Fetch wallet data for the trust account
-      const walletResponse = await apiClient.get(`/wallet/${trustAccountUserId}`);
+      const walletResponse = await apiClient.get(`/wallets/${trustAccountUserId}`);
 
       setViewingTrustBalance({
         contract: contract,
