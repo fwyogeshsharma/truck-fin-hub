@@ -16,7 +16,7 @@ import {
   autoExpireContracts,
   getUserContractStats,
   CreateContractInput,
-} from '../../src/db/queries/contracts.ts';
+} from '@/db/queries/contracts';
 
 const router = Router();
 
