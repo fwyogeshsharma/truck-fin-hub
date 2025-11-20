@@ -227,6 +227,11 @@ const Settings = () => {
   const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
 
+  // Saved contracts state
+  const [savedContracts, setSavedContracts] = useState<any[]>([]);
+  const [loadingSavedContracts, setLoadingSavedContracts] = useState(false);
+  const [viewingContractDetails, setViewingContractDetails] = useState<any | null>(null);
+
   // Load saved theme from localStorage
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme-settings');
@@ -263,6 +268,31 @@ const Settings = () => {
 
     fetchUsers();
   }, [toast]);
+
+  // Fetch saved contracts where user is involved
+  useEffect(() => {
+    const fetchSavedContracts = async () => {
+      if (!user?.id) return;
+
+      setLoadingSavedContracts(true);
+      try {
+        // Fetch contracts where user is any party (party1, party2, party3, or uploader)
+        const userContracts = await apiClient.get(`/contracts?party=${user.id}`);
+        setSavedContracts(userContracts);
+      } catch (error) {
+        console.error('Failed to fetch saved contracts:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to load saved contracts',
+        });
+      } finally {
+        setLoadingSavedContracts(false);
+      }
+    };
+
+    fetchSavedContracts();
+  }, [user?.id, toast]);
 
   // Format user display name with company info
   const formatUserDisplay = (user: RegisteredUser): string => {
@@ -494,6 +524,10 @@ const Settings = () => {
 
       // Clear the contracts list after successful upload
       setContracts([]);
+
+      // Refresh saved contracts list
+      const userContracts = await apiClient.get(`/contracts?party=${user?.id}`);
+      setSavedContracts(userContracts);
 
       toast({
         title: 'Contracts saved!',
@@ -1300,6 +1334,162 @@ For questions, contact: support@logifin.com
                 </CardContent>
               </Card>
             )}
+
+            {/* Saved Contracts Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  My Contracts
+                </CardTitle>
+                <CardDescription>
+                  View all contracts where you are involved as a party
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingSavedContracts ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                    <p className="ml-3 text-muted-foreground">Loading contracts...</p>
+                  </div>
+                ) : savedContracts.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No saved contracts found. You'll see contracts here once they are uploaded.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {savedContracts.map((contract) => (
+                      <Card key={contract.id} className="border-l-4 border-l-primary hover:shadow-md transition-shadow">
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 space-y-3">
+                              {/* Contract Header */}
+                              <div className="flex items-start gap-3">
+                                <FileText className="h-5 w-5 text-primary mt-1" />
+                                <div className="flex-1">
+                                  <h3 className="font-semibold text-lg">{contract.file_name}</h3>
+                                  <p className="text-sm text-muted-foreground">
+                                    {contract.contract_type === '2-party' ? '2-Party + LogiFin' : '3-Party + LogiFin'} •
+                                    Uploaded {new Date(contract.created_at).toLocaleDateString('en-IN')}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Financial Details */}
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-muted/50 rounded-lg">
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Loan %</p>
+                                  <p className="font-semibold">{contract.loan_percentage}%</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">LTV</p>
+                                  <p className="font-semibold">{contract.ltv}%</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Penalty</p>
+                                  <p className="font-semibold">{contract.penalty_after_due_date}%</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Valid Until</p>
+                                  <p className="font-semibold">{new Date(contract.validity_date).toLocaleDateString('en-IN')}</p>
+                                </div>
+                              </div>
+
+                              {/* Parties Information */}
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-sm">
+                                  <span className="font-medium">Party 1:</span>
+                                  <span className="text-muted-foreground">{contract.party1_name}</span>
+                                  {contract.party1_user_id === user?.id && (
+                                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">You</span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 text-sm">
+                                  <span className="font-medium">Party 2:</span>
+                                  <span className="text-muted-foreground">{contract.party2_name}</span>
+                                  {contract.party2_user_id === user?.id && (
+                                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">You</span>
+                                  )}
+                                </div>
+                                {contract.contract_type === '3-party' && contract.party3_name && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <span className="font-medium">Party 3:</span>
+                                    <span className="text-muted-foreground">{contract.party3_name}</span>
+                                    {contract.party3_user_id === user?.id && (
+                                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">You</span>
+                                    )}
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-2 text-sm">
+                                  <span className="font-medium">Party 4:</span>
+                                  <span className="text-muted-foreground">{contract.party4_name}</span>
+                                </div>
+                              </div>
+
+                              {/* Uploader Info */}
+                              <div className="flex items-center gap-2 pt-2 border-t">
+                                <Upload className="h-4 w-4 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">
+                                  Uploaded by {contract.uploaded_by === user?.id ? 'You' : 'Another Party'}
+                                </p>
+                                {contract.trip_stage && contract.trip_stage !== 'none' && (
+                                  <>
+                                    <span className="text-muted-foreground">•</span>
+                                    <p className="text-sm text-muted-foreground">
+                                      Stage: {contract.trip_stage}
+                                    </p>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setViewingContractDetails(contract)}
+                                title="View Details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  // Download contract file
+                                  const link = document.createElement('a');
+                                  link.href = contract.file_data || contract.file_url;
+                                  link.download = contract.file_name;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
+                                title="Download Contract"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Status Badge */}
+                          <div className="mt-3">
+                            <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
+                              contract.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' :
+                              contract.status === 'expired' ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400' :
+                              contract.status === 'cancelled' ? 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400' :
+                              'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                            }`}>
+                              {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Other Settings Tab */}
@@ -1371,6 +1561,168 @@ For questions, contact: support@logifin.com
               Download
             </Button>
             <Button onClick={() => setViewingContract(null)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Saved Contract Details Dialog */}
+      <Dialog open={!!viewingContractDetails} onOpenChange={() => setViewingContractDetails(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Contract Details
+            </DialogTitle>
+            <DialogDescription>
+              {viewingContractDetails?.file_name}
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewingContractDetails && (
+            <div className="space-y-6">
+              {/* Contract Preview */}
+              <div className="border rounded-lg overflow-hidden">
+                {viewingContractDetails.file_type === 'application/pdf' ? (
+                  <iframe
+                    src={viewingContractDetails.file_data || viewingContractDetails.file_url}
+                    className="w-full h-[400px]"
+                    title="Contract Preview"
+                  />
+                ) : (
+                  <img
+                    src={viewingContractDetails.file_data || viewingContractDetails.file_url}
+                    alt={viewingContractDetails.file_name}
+                    className="w-full h-auto"
+                  />
+                )}
+              </div>
+
+              {/* Contract Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Contract Type</Label>
+                  <p className="text-sm">
+                    {viewingContractDetails.contract_type === '2-party' ? '2-Party + LogiFin' : '3-Party + LogiFin'}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
+                    viewingContractDetails.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' :
+                    viewingContractDetails.status === 'expired' ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400' :
+                    viewingContractDetails.status === 'cancelled' ? 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400' :
+                    'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                  }`}>
+                    {viewingContractDetails.status.charAt(0).toUpperCase() + viewingContractDetails.status.slice(1)}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  <Label>Loan Percentage</Label>
+                  <p className="text-sm font-semibold">{viewingContractDetails.loan_percentage}%</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>LTV (Loan to Value)</Label>
+                  <p className="text-sm font-semibold">{viewingContractDetails.ltv}%</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Penalty After Due Date</Label>
+                  <p className="text-sm font-semibold">{viewingContractDetails.penalty_after_due_date}%</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Validity Date</Label>
+                  <p className="text-sm">{new Date(viewingContractDetails.validity_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                </div>
+                {viewingContractDetails.trip_stage && viewingContractDetails.trip_stage !== 'none' && (
+                  <div className="space-y-2">
+                    <Label>Preferred Loan Stage</Label>
+                    <p className="text-sm capitalize">{viewingContractDetails.trip_stage.replace('_', ' ')}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Parties Section */}
+              <div className="space-y-3 border-t pt-4">
+                <h4 className="font-semibold">Contract Parties</h4>
+                <div className="space-y-2">
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Party 1 (Primary Party)</p>
+                        <p className="font-medium">{viewingContractDetails.party1_name}</p>
+                      </div>
+                      {viewingContractDetails.party1_user_id === user?.id && (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">You</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Party 2 (Secondary Party)</p>
+                        <p className="font-medium">{viewingContractDetails.party2_name}</p>
+                      </div>
+                      {viewingContractDetails.party2_user_id === user?.id && (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">You</span>
+                      )}
+                    </div>
+                  </div>
+                  {viewingContractDetails.contract_type === '3-party' && viewingContractDetails.party3_name && (
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Party 3 (Third Party)</p>
+                          <p className="font-medium">{viewingContractDetails.party3_name}</p>
+                        </div>
+                        {viewingContractDetails.party3_user_id === user?.id && (
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">You</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Party 4 (Platform Facilitator)</p>
+                      <p className="font-medium">{viewingContractDetails.party4_name}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Metadata */}
+              <div className="border-t pt-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Upload className="h-4 w-4" />
+                  <span>Uploaded by {viewingContractDetails.uploaded_by === user?.id ? 'You' : 'Another Party'}</span>
+                  <span>•</span>
+                  <span>{new Date(viewingContractDetails.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <FileText className="h-4 w-4" />
+                  <span>File: {viewingContractDetails.file_name} ({(viewingContractDetails.file_size / 1024).toFixed(2)} KB)</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 mt-4 border-t pt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (viewingContractDetails) {
+                  const link = document.createElement('a');
+                  link.href = viewingContractDetails.file_data || viewingContractDetails.file_url;
+                  link.download = viewingContractDetails.file_name;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }
+              }}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download Contract
+            </Button>
+            <Button onClick={() => setViewingContractDetails(null)}>Close</Button>
           </div>
         </DialogContent>
       </Dialog>
