@@ -74,7 +74,7 @@ interface UploadedContract {
   previewUrl: string;
   loanPercentage: string;
   ltv: string;
-  contractType: '2-party' | '3-party' | '';
+  contractType: '2-party' | '3-party' | '4-party' | '5-party' | '6-party' | '';
   party1Name: string;
   party1UserId: string;
   party2Name: string;
@@ -83,6 +83,10 @@ interface UploadedContract {
   party3UserId: string;
   party4Name: string;
   party4UserId: string;
+  party5Name: string;
+  party5UserId: string;
+  party6Name: string;
+  party6UserId: string;
   validityDate: string;
   tripStage: string;
   penaltyAfterDueDate: string;
@@ -319,6 +323,10 @@ const TrustAccountPage = () => {
         party3UserId: '',
         party4Name: 'LogiFin Private Limited - Platform Facilitator',
         party4UserId: 'logifin-platform',
+        party5Name: '',
+        party5UserId: '',
+        party6Name: '',
+        party6UserId: '',
         validityDate: '',
         tripStage: 'none',
         penaltyAfterDueDate: '',
@@ -341,7 +349,7 @@ const TrustAccountPage = () => {
   };
 
   // Handle party select
-  const handlePartySelect = (contractId: string, partyField: 'party1' | 'party2' | 'party3', userId: string) => {
+  const handlePartySelect = (contractId: string, partyField: 'party1' | 'party2' | 'party3' | 'party5' | 'party6', userId: string) => {
     const selectedUser = registeredUsers.find(u => u.id === userId);
     if (!selectedUser) return;
 
@@ -375,7 +383,11 @@ const TrustAccountPage = () => {
   const handleSaveContracts = async () => {
     const invalidContracts = contracts.filter(
       (c) => !c.loanPercentage || !c.ltv || !c.contractType || !c.party1UserId || !c.party2UserId || !c.validityDate ||
-      !c.penaltyAfterDueDate || (c.contractType === '3-party' && !c.party3UserId)
+      !c.penaltyAfterDueDate ||
+      (c.contractType === '3-party' && !c.party3UserId) ||
+      (c.contractType === '4-party' && !c.party3UserId) ||
+      (c.contractType === '5-party' && (!c.party3UserId || !c.party5UserId)) ||
+      (c.contractType === '6-party' && (!c.party3UserId || !c.party5UserId || !c.party6UserId))
     );
 
     if (invalidContracts.length > 0) {
@@ -417,6 +429,10 @@ const TrustAccountPage = () => {
           party2_name: contract.party2Name,
           party3_user_id: contract.party3UserId || null,
           party3_name: contract.party3Name || null,
+          party5_user_id: contract.party5UserId || null,
+          party5_name: contract.party5Name || null,
+          party6_user_id: contract.party6UserId || null,
+          party6_name: contract.party6Name || null,
           uploaded_by: user?.id,
         };
 
@@ -982,7 +998,7 @@ Visit the Settings page to download the complete sample agreement template.`;
                       </Label>
                       <Select
                         value={contract.contractType}
-                        onValueChange={(value: '2-party' | '3-party') =>
+                        onValueChange={(value: '2-party' | '3-party' | '4-party' | '5-party' | '6-party') =>
                           handleContractUpdate(contract.id, 'contractType', value)
                         }
                       >
@@ -992,6 +1008,9 @@ Visit the Settings page to download the complete sample agreement template.`;
                         <SelectContent>
                           <SelectItem value="2-party">2-Party + LogiFin</SelectItem>
                           <SelectItem value="3-party">3-Party + LogiFin</SelectItem>
+                          <SelectItem value="4-party">4-Party + LogiFin</SelectItem>
+                          <SelectItem value="5-party">5-Party + LogiFin</SelectItem>
+                          <SelectItem value="6-party">6-Party + LogiFin</SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
@@ -1035,6 +1054,81 @@ Visit the Settings page to download the complete sample agreement template.`;
                       <AlertDescription className="text-blue-700 dark:text-blue-300 space-y-3">
                         <p>
                           This is a <strong>3-party contract</strong> between Party 1, Party 2, and Party 3, with LogiFin automatically included as Party 4 (Platform Facilitator).
+                        </p>
+                        <div className="pt-2">
+                          <Button
+                            onClick={downloadSampleAgreement}
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 border-blue-600 text-blue-700 hover:bg-blue-100"
+                          >
+                            <Download className="h-4 w-4" />
+                            Download Sample Agreement Template
+                          </Button>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {contract.contractType === '4-party' && (
+                    <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950">
+                      <Info className="h-4 w-4 text-blue-600" />
+                      <AlertTitle className="text-blue-800 dark:text-blue-200">
+                        4-Party Contract + LogiFin as Facilitator
+                      </AlertTitle>
+                      <AlertDescription className="text-blue-700 dark:text-blue-300 space-y-3">
+                        <p>
+                          This is a <strong>4-party contract</strong> between Party 1, Party 2, and Party 3, with LogiFin automatically included as Party 4 (Platform Facilitator).
+                        </p>
+                        <div className="pt-2">
+                          <Button
+                            onClick={downloadSampleAgreement}
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 border-blue-600 text-blue-700 hover:bg-blue-100"
+                          >
+                            <Download className="h-4 w-4" />
+                            Download Sample Agreement Template
+                          </Button>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {contract.contractType === '5-party' && (
+                    <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950">
+                      <Info className="h-4 w-4 text-blue-600" />
+                      <AlertTitle className="text-blue-800 dark:text-blue-200">
+                        5-Party Contract + LogiFin as Facilitator
+                      </AlertTitle>
+                      <AlertDescription className="text-blue-700 dark:text-blue-300 space-y-3">
+                        <p>
+                          This is a <strong>5-party contract</strong> between Party 1, Party 2, Party 3, and Party 5, with LogiFin automatically included as Party 4 (Platform Facilitator).
+                        </p>
+                        <div className="pt-2">
+                          <Button
+                            onClick={downloadSampleAgreement}
+                            variant="outline"
+                            size="sm"
+                            className="gap-2 border-blue-600 text-blue-700 hover:bg-blue-100"
+                          >
+                            <Download className="h-4 w-4" />
+                            Download Sample Agreement Template
+                          </Button>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {contract.contractType === '6-party' && (
+                    <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950">
+                      <Info className="h-4 w-4 text-blue-600" />
+                      <AlertTitle className="text-blue-800 dark:text-blue-200">
+                        6-Party Contract + LogiFin as Facilitator
+                      </AlertTitle>
+                      <AlertDescription className="text-blue-700 dark:text-blue-300 space-y-3">
+                        <p>
+                          This is a <strong>6-party contract</strong> between Party 1, Party 2, Party 3, Party 5, and Party 6, with LogiFin automatically included as Party 4 (Platform Facilitator).
                         </p>
                         <div className="pt-2">
                           <Button
@@ -1123,7 +1217,7 @@ Visit the Settings page to download the complete sample agreement template.`;
                     </div>
 
                     {/* Party 3 (conditional) */}
-                    {contract.contractType === '3-party' && (
+                    {(contract.contractType === '3-party' || contract.contractType === '4-party' || contract.contractType === '5-party' || contract.contractType === '6-party') && (
                       <div className="space-y-2">
                         <Label htmlFor={`party3-${contract.id}`}>
                           Party 3 (Registered User) <span className="text-destructive">*</span>
@@ -1154,6 +1248,80 @@ Visit the Settings page to download the complete sample agreement template.`;
                         {contract.party3Name && (
                           <p className="text-xs text-muted-foreground">
                             Selected: {contract.party3Name}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Party 5 (conditional) */}
+                    {(contract.contractType === '5-party' || contract.contractType === '6-party') && (
+                      <div className="space-y-2">
+                        <Label htmlFor={`party5-${contract.id}`}>
+                          Party 5 (Registered User) <span className="text-destructive">*</span>
+                        </Label>
+                        <Select
+                          value={contract.party5UserId}
+                          onValueChange={(userId) => handlePartySelect(contract.id, 'party5', userId)}
+                          disabled={loadingUsers}
+                        >
+                          <SelectTrigger id={`party5-${contract.id}`}>
+                            <SelectValue placeholder={loadingUsers ? "Loading users..." : "Select registered user"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {registeredUsers
+                              .filter(u => u.role !== 'trust_account' && u.role !== 'admin' && u.role !== 'super_admin')
+                              .map((user) => (
+                                <SelectItem key={user.id} value={user.id}>
+                                  {formatUserDisplay(user)}
+                                </SelectItem>
+                              ))}
+                            {registeredUsers.length === 0 && !loadingUsers && (
+                              <div className="p-2 text-sm text-muted-foreground text-center">
+                                No registered users found
+                              </div>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        {contract.party5Name && (
+                          <p className="text-xs text-muted-foreground">
+                            Selected: {contract.party5Name}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Party 6 (conditional) */}
+                    {contract.contractType === '6-party' && (
+                      <div className="space-y-2">
+                        <Label htmlFor={`party6-${contract.id}`}>
+                          Party 6 (Registered User) <span className="text-destructive">*</span>
+                        </Label>
+                        <Select
+                          value={contract.party6UserId}
+                          onValueChange={(userId) => handlePartySelect(contract.id, 'party6', userId)}
+                          disabled={loadingUsers}
+                        >
+                          <SelectTrigger id={`party6-${contract.id}`}>
+                            <SelectValue placeholder={loadingUsers ? "Loading users..." : "Select registered user"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {registeredUsers
+                              .filter(u => u.role !== 'trust_account' && u.role !== 'admin' && u.role !== 'super_admin')
+                              .map((user) => (
+                                <SelectItem key={user.id} value={user.id}>
+                                  {formatUserDisplay(user)}
+                                </SelectItem>
+                              ))}
+                            {registeredUsers.length === 0 && !loadingUsers && (
+                              <div className="p-2 text-sm text-muted-foreground text-center">
+                                No registered users found
+                              </div>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        {contract.party6Name && (
+                          <p className="text-xs text-muted-foreground">
+                            Selected: {contract.party6Name}
                           </p>
                         )}
                       </div>
@@ -1271,7 +1439,11 @@ Visit the Settings page to download the complete sample agreement template.`;
                                 <div className="flex-1">
                                   <h3 className="font-semibold text-lg">{contract.file_name || 'Untitled Contract'}</h3>
                                   <p className="text-sm text-muted-foreground">
-                                    {contract.contract_type === '2-party' ? '2-Party + LogiFin' : '3-Party + LogiFin'} •
+                                    {contract.contract_type === '2-party' && '2-Party + LogiFin'}
+                                    {contract.contract_type === '3-party' && '3-Party + LogiFin'}
+                                    {contract.contract_type === '4-party' && '4-Party + LogiFin'}
+                                    {contract.contract_type === '5-party' && '5-Party + LogiFin'}
+                                    {contract.contract_type === '6-party' && '6-Party + LogiFin'} •
                                     Uploaded {contract.created_at ? new Date(contract.created_at).toLocaleDateString('en-IN') : 'N/A'}
                                   </p>
                                 </div>
@@ -1313,7 +1485,7 @@ Visit the Settings page to download the complete sample agreement template.`;
                                     <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">You</span>
                                   )}
                                 </div>
-                                {contract.contract_type === '3-party' && contract.party3_name && (
+                                {(contract.contract_type === '3-party' || contract.contract_type === '4-party' || contract.contract_type === '5-party' || contract.contract_type === '6-party') && contract.party3_name && (
                                   <div className="flex items-center gap-2 text-sm">
                                     <span className="font-medium">Party 3:</span>
                                     <span className="text-muted-foreground">{contract.party3_name || 'N/A'}</span>
@@ -1326,6 +1498,24 @@ Visit the Settings page to download the complete sample agreement template.`;
                                   <span className="font-medium">Party 4:</span>
                                   <span className="text-muted-foreground">{contract.party4_name || 'LogiFin '}</span>
                                 </div>
+                                {(contract.contract_type === '5-party' || contract.contract_type === '6-party') && contract.party5_name && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <span className="font-medium">Party 5:</span>
+                                    <span className="text-muted-foreground">{contract.party5_name || 'N/A'}</span>
+                                    {contract.party5_user_id === user?.id && (
+                                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">You</span>
+                                    )}
+                                  </div>
+                                )}
+                                {contract.contract_type === '6-party' && contract.party6_name && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <span className="font-medium">Party 6:</span>
+                                    <span className="text-muted-foreground">{contract.party6_name || 'N/A'}</span>
+                                    {contract.party6_user_id === user?.id && (
+                                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">You</span>
+                                    )}
+                                  </div>
+                                )}
                               </div>
 
                               {/* Uploader Info */}
@@ -1722,10 +1912,16 @@ Visit the Settings page to download the complete sample agreement template.`;
                 <div className="text-sm">
                   <div>Party 1: {viewingContractDetails.party1_name}</div>
                   <div>Party 2: {viewingContractDetails.party2_name}</div>
-                  {viewingContractDetails.contract_type === '3-party' && (
+                  {(viewingContractDetails.contract_type === '3-party' || viewingContractDetails.contract_type === '4-party' || viewingContractDetails.contract_type === '5-party' || viewingContractDetails.contract_type === '6-party') && (
                     <div>Party 3: {viewingContractDetails.party3_name}</div>
                   )}
                   <div>Party 4: {viewingContractDetails.party4_name}</div>
+                  {(viewingContractDetails.contract_type === '5-party' || viewingContractDetails.contract_type === '6-party') && viewingContractDetails.party5_name && (
+                    <div>Party 5: {viewingContractDetails.party5_name}</div>
+                  )}
+                  {viewingContractDetails.contract_type === '6-party' && viewingContractDetails.party6_name && (
+                    <div>Party 6: {viewingContractDetails.party6_name}</div>
+                  )}
                 </div>
               </div>
               {viewingContractDetails.file_url && (
