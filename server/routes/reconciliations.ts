@@ -1,11 +1,12 @@
 import express from 'express';
-import { db } from '../db/index.js';
+import { getDatabase } from '../../src/db/database.js';
 
 const router = express.Router();
 
 // Get all reconciliations for current user (transporter or trust account)
 router.get('/', async (req, res) => {
   try {
+    const db = await getDatabase();
     const userId = req.query.userId as string;
     const userRole = req.query.userRole as string;
 
@@ -51,6 +52,7 @@ router.get('/', async (req, res) => {
 // Get a single reconciliation by ID
 router.get('/:id', async (req, res) => {
   try {
+    const db = await getDatabase();
     const { id } = req.params;
 
     const result = await db.query(
@@ -80,6 +82,7 @@ router.get('/:id', async (req, res) => {
 // Create a new reconciliation
 router.post('/', async (req, res) => {
   try {
+    const db = await getDatabase();
     const {
       id,
       transporter_id,
@@ -138,6 +141,7 @@ router.post('/', async (req, res) => {
 // Update reconciliation status (for trust account review)
 router.patch('/:id/review', async (req, res) => {
   try {
+    const db = await getDatabase();
     const { id } = req.params;
     const { status, review_notes, reviewed_by } = req.body;
 
@@ -175,6 +179,7 @@ router.patch('/:id/review', async (req, res) => {
 // Delete a reconciliation (only by transporter who created it)
 router.delete('/:id', async (req, res) => {
   try {
+    const db = await getDatabase();
     const { id } = req.params;
     const { userId } = req.query;
 
@@ -208,6 +213,7 @@ router.delete('/:id', async (req, res) => {
 // Get all trust account users (for dropdown selection)
 router.get('/trust-accounts/list', async (req, res) => {
   try {
+    const db = await getDatabase();
     const result = await db.query(
       `SELECT id, name, email, company
        FROM users
