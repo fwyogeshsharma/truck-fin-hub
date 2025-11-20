@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
   phone VARCHAR(20) UNIQUE NOT NULL,
   name VARCHAR(255) NOT NULL,
   password_hash TEXT NOT NULL,
-  role VARCHAR(50) CHECK(role IN ('load_owner', 'vehicle_owner', 'lender', 'admin', 'super_admin', 'load_agent', 'vehicle_agent')),
+  role VARCHAR(50) CHECK(role IN ('load_owner', 'vehicle_owner', 'lender', 'admin', 'super_admin', 'load_agent', 'vehicle_agent', 'shipper')),
   company VARCHAR(255),
   company_id VARCHAR(255),
   company_logo TEXT,

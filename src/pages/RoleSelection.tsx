@@ -39,6 +39,13 @@ const roles = [
     icon: Wallet,
     color: "accent",
   },
+  {
+    id: "shipper" as const,
+    title: "Shipper",
+    description: "Manage accounts and money transfers with integrated wallet system",
+    icon: TruckIcon,
+    color: "primary",
+  },
   // Note: admin and super_admin roles are not shown here
   // They are accessible only through direct login with specific credentials
 ];

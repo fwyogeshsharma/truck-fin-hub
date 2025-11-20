@@ -9,7 +9,7 @@ export interface User {
   name: string;
   phone?: string;
   location?: string;
-  role?: 'load_owner' | 'vehicle_owner' | 'lender' | 'admin' | 'super_admin' | 'load_agent' | 'vehicle_agent';
+  role?: 'load_owner' | 'vehicle_owner' | 'lender' | 'admin' | 'super_admin' | 'load_agent' | 'vehicle_agent' | 'shipper';
   company?: string;
   company_id?: string;
   companyLogo?: string;

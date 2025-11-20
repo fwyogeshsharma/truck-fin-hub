@@ -81,6 +81,14 @@ const roleConfig = {
       { label: "Users", path: "/admin/users", icon: Users },
     ],
   },
+  shipper: {
+    title: "Shipper",
+    icon: TruckIcon,
+    nav: [
+      { label: "Dashboard", path: "/dashboard/shipper", icon: Home },
+      { label: "Wallet", path: "/wallet", icon: Wallet },
+    ],
+  },
 };
 
 const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
