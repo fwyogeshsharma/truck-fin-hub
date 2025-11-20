@@ -189,8 +189,8 @@ const TrustAccountPage = () => {
   const fetchRegisteredUsers = async () => {
     setLoadingUsers(true);
     try {
-      const response = await apiClient.get('/users');
-      setRegisteredUsers(response.data || []);
+      const users = await apiClient.get('/users');
+      setRegisteredUsers(users || []);
     } catch (error: any) {
       console.error('Error fetching users:', error);
       toast({
@@ -207,8 +207,8 @@ const TrustAccountPage = () => {
   const fetchSavedContracts = async () => {
     setLoadingSavedContracts(true);
     try {
-      const response = await apiClient.get(`/contracts?party=${user?.id}`);
-      setSavedContracts(response.data || []);
+      const userContracts = await apiClient.get(`/contracts?party=${user?.id}`);
+      setSavedContracts(userContracts || []);
     } catch (error: any) {
       console.error('Error fetching contracts:', error);
       toast({
@@ -225,9 +225,9 @@ const TrustAccountPage = () => {
   const fetchWalletData = async () => {
     try {
       setDataLoading(true);
-      const response = await apiClient.get(`/wallets/${user?.id}`);
-      if (response.data) {
-        setWalletData(response.data);
+      const wallet = await apiClient.get(`/wallets/${user?.id}`);
+      if (wallet) {
+        setWalletData(wallet);
       }
     } catch (error: any) {
       console.error('Error fetching wallet:', error);
@@ -244,8 +244,8 @@ const TrustAccountPage = () => {
   // Fetch transactions
   const fetchTransactions = async () => {
     try {
-      const response = await apiClient.get(`/transactions?userId=${user?.id}`);
-      setTransactions(response.data || []);
+      const transactionData = await apiClient.get(`/transactions?userId=${user?.id}`);
+      setTransactions(transactionData || []);
     } catch (error: any) {
       console.error('Error fetching transactions:', error);
     }
@@ -601,7 +601,7 @@ Visit the Settings page to download the complete sample agreement template.`;
       return;
     }
 
-    if (parseFloat(withdrawAmount) > walletData.balance) {
+    if (parseFloat(withdrawAmount) > (walletData?.balance || 0)) {
       toast({
         variant: 'destructive',
         title: 'Insufficient Balance',
@@ -1424,72 +1424,82 @@ Visit the Settings page to download the complete sample agreement template.`;
           {/* Wallet Tab - keeping your existing wallet implementation */}
           <TabsContent value="wallet" className="space-y-6 mt-6">
             {/* Wallet Balance Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
-                  <WalletIcon className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(walletData.balance)}</div>
-                </CardContent>
-              </Card>
+            {dataLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                <p className="ml-3 text-muted-foreground">Loading wallet data...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
+                    <WalletIcon className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatCurrency(walletData?.balance || 0)}</div>
+                  </CardContent>
+                </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">In Escrow</CardTitle>
-                  <ArrowUpCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(walletData.escrowedAmount)}</div>
-                </CardContent>
-              </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">In Escrow</CardTitle>
+                    <ArrowUpCircle className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatCurrency(walletData?.escrowedAmount || walletData?.escrowed_amount || 0)}</div>
+                  </CardContent>
+                </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Total Invested</CardTitle>
-                  <ArrowDownCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(walletData.totalInvested)}</div>
-                </CardContent>
-              </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Total Invested</CardTitle>
+                    <ArrowDownCircle className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatCurrency(walletData?.totalInvested || walletData?.total_invested || 0)}</div>
+                  </CardContent>
+                </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Total Returns</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency(walletData.totalReturns)}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Total Returns</CardTitle>
+                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatCurrency(walletData?.totalReturns || walletData?.total_returns || 0)}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* Action Buttons */}
-            <div className="flex gap-4">
-              <Button onClick={() => setTopUpDialogOpen(true)} className="flex-1">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Money
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setWithdrawDialogOpen(true)}
-                className="flex-1"
-              >
-                <ArrowUpCircle className="h-4 w-4 mr-2" />
-                Withdraw
-              </Button>
-            </div>
+            {!dataLoading && (
+              <div className="flex gap-4">
+                <Button onClick={() => setTopUpDialogOpen(true)} className="flex-1">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Money
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setWithdrawDialogOpen(true)}
+                  className="flex-1"
+                >
+                  <ArrowUpCircle className="h-4 w-4 mr-2" />
+                  Withdraw
+                </Button>
+              </div>
+            )}
 
             {/* Wallet Tabs */}
-            <Tabs defaultValue="ledger" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="ledger">Transaction Ledger</TabsTrigger>
-                <TabsTrigger value="banks">Bank Accounts</TabsTrigger>
-              </TabsList>
+            {!dataLoading && (
+              <Tabs defaultValue="ledger" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="ledger">Transaction Ledger</TabsTrigger>
+                  <TabsTrigger value="banks">Bank Accounts</TabsTrigger>
+                </TabsList>
 
               {/* Transaction Ledger */}
               <TabsContent value="ledger" className="space-y-4">
@@ -1643,7 +1653,8 @@ Visit the Settings page to download the complete sample agreement template.`;
                   </div>
                 )}
               </TabsContent>
-            </Tabs>
+              </Tabs>
+            )}
           </TabsContent>
         </Tabs>
       </div>
@@ -1920,7 +1931,7 @@ Visit the Settings page to download the complete sample agreement template.`;
           <div className="space-y-4">
             <div>
               <Label>Available Balance</Label>
-              <div className="text-2xl font-bold">{formatCurrency(walletData.balance)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(walletData?.balance || 0)}</div>
             </div>
             <div>
               <Label htmlFor="withdraw-amount">Amount (Minimum ₹100)</Label>
