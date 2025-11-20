@@ -21,7 +21,9 @@ import {
   AlertTriangle,
   Download,
   Info,
-  ExternalLink
+  ExternalLink,
+  Edit,
+  RefreshCw
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -231,6 +233,8 @@ const Settings = () => {
   const [savedContracts, setSavedContracts] = useState<any[]>([]);
   const [loadingSavedContracts, setLoadingSavedContracts] = useState(false);
   const [viewingContractDetails, setViewingContractDetails] = useState<any | null>(null);
+  const [editingContract, setEditingContract] = useState<any | null>(null);
+  const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
 
   // Load saved theme from localStorage
   useEffect(() => {
@@ -539,6 +543,79 @@ const Settings = () => {
         variant: 'destructive',
         title: 'Error',
         description: error.message || 'Failed to save contracts.',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteContract = async (contractId: string) => {
+    setIsSaving(true);
+    try {
+      await apiClient.delete(`/contracts/${contractId}`);
+
+      // Refresh contracts list
+      const userContracts = await apiClient.get(`/contracts?party=${user?.id}`);
+      setSavedContracts(userContracts);
+
+      setDeletingContractId(null);
+
+      toast({
+        title: 'Contract deleted',
+        description: 'The contract has been deleted successfully.',
+      });
+    } catch (error: any) {
+      console.error('Error deleting contract:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to delete contract.',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleUpdateContract = async () => {
+    if (!editingContract) return;
+
+    // Validate required fields
+    if (!editingContract.loanPercentage || !editingContract.ltv || !editingContract.penaltyAfterDueDate || !editingContract.validityDate) {
+      toast({
+        variant: 'destructive',
+        title: 'Incomplete information',
+        description: 'Please fill in all required fields.',
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Update contract via API - we'll need to create an update endpoint
+      await apiClient.patch(`/contracts/${editingContract.id}`, {
+        loan_percentage: parseFloat(editingContract.loanPercentage),
+        ltv: parseFloat(editingContract.ltv),
+        penalty_after_due_date: parseFloat(editingContract.penaltyAfterDueDate),
+        validity_date: editingContract.validityDate,
+        trip_stage: editingContract.tripStage || null,
+      });
+
+      // Refresh contracts list
+      const userContracts = await apiClient.get(`/contracts?party=${user?.id}`);
+      setSavedContracts(userContracts);
+
+      setEditingContract(null);
+
+      toast({
+        title: 'Contract updated',
+        description: 'The contract has been updated successfully.',
+      });
+    } catch (error: any) {
+      console.error('Error updating contract:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to update contract.',
       });
     } finally {
       setIsSaving(false);
@@ -1469,6 +1546,35 @@ For questions, contact: support@logifin.com
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
+                              {/* Show Edit and Delete only for uploader */}
+                              {contract.uploaded_by === user?.id && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setEditingContract({
+                                      id: contract.id,
+                                      loanPercentage: contract.loan_percentage.toString(),
+                                      ltv: contract.ltv.toString(),
+                                      penaltyAfterDueDate: contract.penalty_after_due_date.toString(),
+                                      validityDate: contract.validity_date,
+                                      tripStage: contract.trip_stage || 'none',
+                                    })}
+                                    title="Edit Contract"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setDeletingContractId(contract.id)}
+                                    title="Delete Contract"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
                             </div>
                           </div>
 
@@ -1723,6 +1829,193 @@ For questions, contact: support@logifin.com
               Download Contract
             </Button>
             <Button onClick={() => setViewingContractDetails(null)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Contract Dialog */}
+      <Dialog open={!!editingContract} onOpenChange={() => setEditingContract(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5" />
+              Edit Contract Details
+            </DialogTitle>
+            <DialogDescription>
+              Update the financial terms and validity date of the contract
+            </DialogDescription>
+          </DialogHeader>
+
+          {editingContract && (
+            <div className="space-y-4 py-4">
+              {/* Financial Fields */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-loan-percentage">Loan Percentage (%)</Label>
+                  <Input
+                    id="edit-loan-percentage"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    value={editingContract.loanPercentage}
+                    onChange={(e) => setEditingContract({
+                      ...editingContract,
+                      loanPercentage: e.target.value,
+                    })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-ltv">Loan to Value (LTV) %</Label>
+                  <Input
+                    id="edit-ltv"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    value={editingContract.ltv}
+                    onChange={(e) => setEditingContract({
+                      ...editingContract,
+                      ltv: e.target.value,
+                    })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-penalty">Penalty After Due Date (%)</Label>
+                  <Input
+                    id="edit-penalty"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editingContract.penaltyAfterDueDate}
+                    onChange={(e) => setEditingContract({
+                      ...editingContract,
+                      penaltyAfterDueDate: e.target.value,
+                    })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-validity-date">Validity Date</Label>
+                  <Input
+                    id="edit-validity-date"
+                    type="date"
+                    value={editingContract.validityDate}
+                    onChange={(e) => setEditingContract({
+                      ...editingContract,
+                      validityDate: e.target.value,
+                    })}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Trip Stage */}
+              <div className="space-y-2">
+                <Label htmlFor="edit-trip-stage">Trip Stage (Optional)</Label>
+                <Select
+                  value={editingContract.tripStage}
+                  onValueChange={(value) => setEditingContract({
+                    ...editingContract,
+                    tripStage: value,
+                  })}
+                >
+                  <SelectTrigger id="edit-trip-stage">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tripStages.map((stage) => (
+                      <SelectItem key={stage.value} value={stage.value}>
+                        {stage.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 border-t pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setEditingContract(null)}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdateContract}
+              disabled={isSaving}
+              className="gap-2"
+            >
+              {isSaving ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Contract Confirmation Dialog */}
+      <Dialog open={!!deletingContractId} onOpenChange={() => setDeletingContractId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              Delete Contract
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this contract? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Warning</AlertTitle>
+            <AlertDescription>
+              Deleting this contract will permanently remove it from the database and it will no longer be visible to any parties.
+            </AlertDescription>
+          </Alert>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setDeletingContractId(null)}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deletingContractId && handleDeleteContract(deletingContractId)}
+              disabled={isSaving}
+              className="gap-2"
+            >
+              {isSaving ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Delete Contract
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
