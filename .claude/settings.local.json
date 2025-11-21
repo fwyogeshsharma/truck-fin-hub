@@ -19,7 +19,9 @@
       "Bash(Get-Content \"docker-compose.yml\" -Head 50)",
       "Bash(docker compose:*)",
       "Bash(dir:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(cat:*)",
+      "Bash(powershell -Command:*)"
     ],
     "deny": [],
     "ask": []

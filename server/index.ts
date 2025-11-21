@@ -59,7 +59,7 @@ app.use(cors({
     if (isAllowed) {
       callback(null, true);
     } else {
-      console.log(`CORS blocked origin: ${origin}`);
+      console.log(`⚠️ CORS origin not in whitelist (but allowing): ${origin}`);
       callback(null, true); // Allow anyway for now, log for debugging
     }
   },
