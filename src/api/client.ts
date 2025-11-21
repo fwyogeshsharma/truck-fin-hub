@@ -92,6 +92,26 @@ export const apiClient = {
     return response.json();
   },
 
+  async patch<T = any>(endpoint: string, data?: any, options?: RequestOptions): Promise<T> {
+    const token = getAuthToken();
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : '',
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      body: data ? JSON.stringify(data) : undefined,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      throw new ApiError(error.error || error.message || 'Request failed', response.status, error);
+    }
+
+    return response.json();
+  },
+
   async delete<T = any>(endpoint: string, options?: RequestOptions): Promise<T> {
     const token = getAuthToken();
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
