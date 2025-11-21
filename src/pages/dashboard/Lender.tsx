@@ -977,19 +977,25 @@ const LenderDashboard = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ClipboardList className="h-5 w-5 text-blue-600" />
-                  Pending Claim Approvals ({allPendingApprovalTrips.length})
+                  Pending Claim Approvals ({allPendingItems.length})
                 </CardTitle>
-                <CardDescription>Completed trips awaiting claim amount approval</CardDescription>
+                <CardDescription>
+                  {allPendingItems.length > 0
+                    ? 'Completed trips and reconciliation claims awaiting approval'
+                    : 'Completed trips awaiting claim processing will appear here'}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {paginatedPendingApprovalTrips.length === 0 ? (
+                  {paginatedPendingApprovalTrips.length === 0 && paginatedReconciliationClaims.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <ClipboardList className="h-12 w-12 mx-auto mb-2 opacity-50" />
                       <p>No pending claim approvals</p>
                       <p className="text-xs mt-1">Completed trips awaiting claim processing will appear here</p>
                     </div>
                   ) : (
+                    <>
+                    {paginatedPendingApprovalTrips.length > 0 && (
                     paginatedPendingApprovalTrips.map((item: any) => {
                       const trip = item;
                       const investment = item.investment;
@@ -1054,7 +1060,7 @@ const LenderDashboard = () => {
                         </div>
                       );
                     })
-                  )}
+                    )}
 
                   {/* Reconciliation Claims */}
                   {paginatedReconciliationClaims.map((claim: any) => (
@@ -1100,6 +1106,8 @@ const LenderDashboard = () => {
                       </div>
                     </div>
                   ))}
+                  </>
+                  )}
                 </div>
 
                 {/* Pagination Controls for Pending Approvals */}
