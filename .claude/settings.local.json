@@ -16,7 +16,10 @@
       "Bash(nul)",
       "Bash(docker-compose restart:*)",
       "Bash(docker compose restart:*)",
-      "Bash(Get-Content \"docker-compose.yml\" -Head 50)"
+      "Bash(Get-Content \"docker-compose.yml\" -Head 50)",
+      "Bash(docker compose:*)",
+      "Bash(dir:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []
