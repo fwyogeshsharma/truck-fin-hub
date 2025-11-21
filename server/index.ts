@@ -38,6 +38,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
       'https://34.93.247.3:4000',
       'http://34.93.247.3:8080',
       'https://tf.rollingradius.com',
+      'https://logifin.rollingradius.com',
       'https://*.netlify.app'
     ];
 
@@ -63,7 +64,7 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Token']
 }));
 
