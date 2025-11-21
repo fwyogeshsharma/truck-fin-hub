@@ -295,6 +295,18 @@ router.patch('/:id/claim', async (req, res) => {
       return res.status(400).json({ error: 'Trip ID and Lender ID are required' });
     }
 
+    // Check if the claim columns exist
+    const columnCheck = await db.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = 'reconciliations'
+       AND column_name IN ('claim_requested', 'lender_id')`
+    );
+
+    if (columnCheck.rows.length < 2) {
+      return res.status(400).json({ error: 'Claim feature not available. Please run migration 030.' });
+    }
+
     // Check if reconciliation is approved
     const checkResult = await db.query(
       'SELECT status FROM reconciliations WHERE id = $1',
@@ -343,6 +355,18 @@ router.patch('/:id/approve-claim', async (req, res) => {
       return res.status(400).json({ error: 'Lender ID is required' });
     }
 
+    // Check if the claim columns exist
+    const columnCheck = await db.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = 'reconciliations'
+       AND column_name IN ('lender_approved', 'payment_notification_sent')`
+    );
+
+    if (columnCheck.rows.length < 2) {
+      return res.status(400).json({ error: 'Claim approval feature not available. Please run migration 030.' });
+    }
+
     // Generate payment notification message
     const paymentMessage = 'Within 24 hours you will receive an approval request in Jaipur Golden Trust Account. Please approve that to complete the payment process.';
 
@@ -377,6 +401,20 @@ router.get('/lender/pending-claims', async (req, res) => {
 
     if (!lenderId) {
       return res.status(400).json({ error: 'Lender ID is required' });
+    }
+
+    // First check if the claim columns exist
+    const columnCheck = await db.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = 'reconciliations'
+       AND column_name IN ('claim_requested', 'lender_approved', 'lender_id')`
+    );
+
+    // If columns don't exist yet, return empty array
+    if (columnCheck.rows.length < 3) {
+      console.log('Reconciliation claim columns not yet created. Run migration 030.');
+      return res.json([]);
     }
 
     const result = await db.query(
