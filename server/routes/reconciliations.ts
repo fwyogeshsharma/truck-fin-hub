@@ -77,7 +77,7 @@ router.get('/lender/pending-claims', async (req, res) => {
       `SELECT r.*,
               t.name as transporter_name,
               ta.name as trust_account_name,
-              tr.origin, tr.destination, tr.load_type, tr.distance, tr.eway_bill_number
+              tr.origin, tr.destination, tr.load_type, tr.distance, tr.amount as trip_amount
        FROM reconciliations r
        LEFT JOIN users t ON r.transporter_id = t.id
        LEFT JOIN users ta ON r.trust_account_id = ta.id
