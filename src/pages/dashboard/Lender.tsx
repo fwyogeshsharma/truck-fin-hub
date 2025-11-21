@@ -529,11 +529,11 @@ const LenderDashboard = () => {
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="investments">My Investments</TabsTrigger>
-            <TabsTrigger value="pending-approvals" className="flex items-center gap-2">
+            <TabsTrigger value="pending-approvals" className="flex items-center gap-2 relative">
               <ClipboardList className="h-4 w-4" />
               Pending Approvals
               {allPendingApprovalTrips.length > 0 && (
-                <span className="ml-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-xs">
+                <span className="ml-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-semibold shadow-sm animate-pulse">
                   {allPendingApprovalTrips.length}
                 </span>
               )}
