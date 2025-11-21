@@ -25,6 +25,7 @@ const LenderDashboard = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [myInvestments, setMyInvestments] = useState<Investment[]>([]);
+  const [reconciliationClaims, setReconciliationClaims] = useState<any[]>([]);
   const [wallet, setWallet] = useState<WalletType>({
     userId: user?.id || '',
     balance: 0,
@@ -194,6 +195,39 @@ const LenderDashboard = () => {
     return rangeWithDots;
   };
 
+  const fetchReconciliationClaims = async () => {
+    if (!user?.id) return;
+
+    try {
+      const claims = await apiClient.get(`/reconciliations/lender/pending-claims?lenderId=${user.id}`);
+      setReconciliationClaims(claims);
+    } catch (error) {
+      console.error('Failed to fetch reconciliation claims:', error);
+    }
+  };
+
+  const handleApproveClaim = async (reconId: string) => {
+    try {
+      await apiClient.patch(`/reconciliations/${reconId}/approve-claim`, {
+        lender_id: user?.id,
+      });
+
+      toast({
+        title: 'Claim Approved',
+        description: 'Payment notification has been sent to both parties.',
+      });
+
+      fetchReconciliationClaims();
+    } catch (error: any) {
+      console.error('Failed to approve claim:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Approval Failed',
+        description: error.message || 'Failed to approve claim.',
+      });
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       if (!user?.id) {
@@ -217,6 +251,9 @@ const LenderDashboard = () => {
 
         // Fetch pending ratings (trips that need rating by lender)
         await fetchPendingRatings();
+
+        // Fetch reconciliation claims
+        await fetchReconciliationClaims();
 
         // Show financial questionnaire if not completed (only for lenders, not admins)
         // Only show once per session to avoid annoying the user
@@ -488,10 +525,14 @@ const LenderDashboard = () => {
   };
 
   const allPendingApprovalTrips = getPendingApprovalTrips();
-  const totalPendingApprovalPages = Math.ceil(allPendingApprovalTrips.length / itemsPerPage);
+  const allPendingItems = [...allPendingApprovalTrips, ...reconciliationClaims];
+  const totalPendingApprovalPages = Math.ceil(allPendingItems.length / itemsPerPage);
   const pendingApprovalStartIndex = (pendingApprovalsPage - 1) * itemsPerPage;
   const pendingApprovalEndIndex = pendingApprovalStartIndex + itemsPerPage;
-  const paginatedPendingApprovalTrips = allPendingApprovalTrips.slice(pendingApprovalStartIndex, pendingApprovalEndIndex);
+  const paginatedPendingApprovalTrips = allPendingApprovalTrips.slice(pendingApprovalStartIndex, Math.min(pendingApprovalEndIndex, allPendingApprovalTrips.length));
+  const reconciliationStart = Math.max(0, pendingApprovalStartIndex - allPendingApprovalTrips.length);
+  const reconciliationEnd = Math.max(0, pendingApprovalEndIndex - allPendingApprovalTrips.length);
+  const paginatedReconciliationClaims = reconciliationClaims.slice(reconciliationStart, reconciliationEnd);
 
   return (
     <DashboardLayout role="lender">
@@ -532,9 +573,9 @@ const LenderDashboard = () => {
             <TabsTrigger value="pending-approvals" className="flex items-center gap-2 relative">
               <ClipboardList className="h-4 w-4" />
               Pending Approvals
-              {allPendingApprovalTrips.length > 0 && (
+              {allPendingItems.length > 0 && (
                 <span className="ml-1 min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-semibold shadow-sm animate-pulse">
-                  {allPendingApprovalTrips.length}
+                  {allPendingItems.length}
                 </span>
               )}
             </TabsTrigger>
@@ -1014,13 +1055,58 @@ const LenderDashboard = () => {
                       );
                     })
                   )}
+
+                  {/* Reconciliation Claims */}
+                  {paginatedReconciliationClaims.map((claim: any) => (
+                    <div key={claim.id} className="flex items-start justify-between p-4 border rounded-lg bg-purple-50/50 border-purple-200">
+                      <div className="flex items-start gap-4 flex-1">
+                        <div className="flex-1">
+                          <h4 className="font-semibold">{claim.origin} → {claim.destination}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Reconciliation Claim from {claim.transporter_name}
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Document: {claim.document_name}
+                          </p>
+                          <div className="mt-2">
+                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                              Pending Your Approval
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right ml-4">
+                        <div className="space-y-2">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Total Claim Amount</p>
+                            <p className="text-lg font-bold text-purple-700">{formatCurrency(claim.claim_amount)}</p>
+                          </div>
+                          <div className="p-2 bg-white rounded border">
+                            <p className="text-xs text-muted-foreground">Your Share (70%)</p>
+                            <p className="text-sm font-semibold text-green-600">{formatCurrency(claim.lender_claim_amount)}</p>
+                          </div>
+                          <div className="p-2 bg-white rounded border">
+                            <p className="text-xs text-muted-foreground">Transporter Share (30%)</p>
+                            <p className="text-sm font-semibold">{formatCurrency(claim.transporter_claim_amount)}</p>
+                          </div>
+                          <Button
+                            onClick={() => handleApproveClaim(claim.id)}
+                            className="w-full mt-2 bg-green-600 hover:bg-green-700"
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-1" />
+                            Approve Claim
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Pagination Controls for Pending Approvals */}
                 {totalPendingApprovalPages > 1 && (
                   <div className="flex items-center justify-between mt-6 pt-4 border-t">
                     <div className="text-sm text-muted-foreground">
-                      Showing {pendingApprovalStartIndex + 1} to {Math.min(pendingApprovalEndIndex, allPendingApprovalTrips.length)} of {allPendingApprovalTrips.length} claims
+                      Showing {pendingApprovalStartIndex + 1} to {Math.min(pendingApprovalEndIndex, allPendingItems.length)} of {allPendingItems.length} claims
                     </div>
                     <div className="flex items-center gap-2">
                       <Button

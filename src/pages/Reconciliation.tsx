@@ -66,6 +66,17 @@ interface Reconciliation {
   review_notes?: string;
   created_at: string;
   updated_at: string;
+  claim_requested?: boolean;
+  claim_requested_at?: string;
+  claim_amount?: number;
+  lender_id?: string;
+  lender_name?: string;
+  lender_claim_amount?: number;
+  transporter_claim_amount?: number;
+  lender_approved?: boolean;
+  lender_approved_at?: string;
+  payment_notification_sent?: boolean;
+  payment_notification_message?: string;
 }
 
 const Reconciliation = () => {
@@ -77,6 +88,11 @@ const Reconciliation = () => {
   const [saving, setSaving] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [viewingDoc, setViewingDoc] = useState<Reconciliation | null>(null);
+  const [claimDialogOpen, setClaimDialogOpen] = useState(false);
+  const [selectedReconciliation, setSelectedReconciliation] = useState<Reconciliation | null>(null);
+  const [claimTrips, setClaimTrips] = useState<any[]>([]);
+  const [selectedTripId, setSelectedTripId] = useState('');
+  const [claiming, setClaiming] = useState(false);
 
   // Form state
   const [selectedTrustAccount, setSelectedTrustAccount] = useState('');
@@ -114,6 +130,76 @@ const Reconciliation = () => {
       setTrustAccounts(data);
     } catch (error: any) {
       console.error('Error fetching trust accounts:', error);
+    }
+  };
+
+  const fetchUserTrips = async () => {
+    try {
+      const data = await apiClient.get(`/trips?status=completed&transporterId=${user?.id}`);
+      setClaimTrips(data);
+    } catch (error: any) {
+      console.error('Error fetching trips:', error);
+    }
+  };
+
+  const handleOpenClaimDialog = (recon: Reconciliation) => {
+    setSelectedReconciliation(recon);
+    setClaimDialogOpen(true);
+    fetchUserTrips();
+  };
+
+  const handleSubmitClaim = async () => {
+    if (!selectedTripId || !selectedReconciliation) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing information',
+        description: 'Please select a trip to submit claim.',
+      });
+      return;
+    }
+
+    setClaiming(true);
+    try {
+      // Find the selected trip to get lender info
+      const selectedTrip = claimTrips.find(t => t.id === selectedTripId);
+      if (!selectedTrip || !selectedTrip.lender_id) {
+        throw new Error('Trip must have a lender');
+      }
+
+      // Calculate claim amounts (simple example - can be customized)
+      const totalAmount = selectedReconciliation.reconciliation_amount || 0;
+      const lenderPercentage = 0.7; // 70% to lender
+      const transporterPercentage = 0.3; // 30% to transporter
+      const lenderClaimAmount = totalAmount * lenderPercentage;
+      const transporterClaimAmount = totalAmount * transporterPercentage;
+
+      await apiClient.patch(`/reconciliations/${selectedReconciliation.id}/claim`, {
+        trip_id: selectedTripId,
+        lender_id: selectedTrip.lender_id,
+        lender_name: selectedTrip.lender_name,
+        lender_claim_amount: lenderClaimAmount,
+        transporter_claim_amount: transporterClaimAmount,
+        claim_amount: totalAmount,
+      });
+
+      toast({
+        title: 'Claim Submitted',
+        description: 'Your claim has been submitted to the lender for approval.',
+      });
+
+      setClaimDialogOpen(false);
+      setSelectedTripId('');
+      setSelectedReconciliation(null);
+      fetchReconciliations();
+    } catch (error: any) {
+      console.error('Error submitting claim:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Claim Failed',
+        description: error.message || 'Failed to submit claim.',
+      });
+    } finally {
+      setClaiming(false);
     }
   };
 
@@ -258,6 +344,54 @@ const Reconciliation = () => {
     }
   };
 
+  const handleApproveReconciliation = async (id: string) => {
+    try {
+      await apiClient.patch(`/reconciliations/${id}/approve`, {
+        reviewed_by: user?.id,
+      });
+
+      toast({
+        title: 'Approved',
+        description: 'Reconciliation approved successfully. Transporter can now request claim.',
+      });
+
+      fetchReconciliations();
+    } catch (error: any) {
+      console.error('Error approving reconciliation:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Approval Failed',
+        description: error.message || 'Failed to approve reconciliation.',
+      });
+    }
+  };
+
+  const handleRejectReconciliation = async (id: string) => {
+    const notes = prompt('Please provide a reason for rejection:');
+    if (!notes) return;
+
+    try {
+      await apiClient.patch(`/reconciliations/${id}/reject`, {
+        reviewed_by: user?.id,
+        review_notes: notes,
+      });
+
+      toast({
+        title: 'Rejected',
+        description: 'Reconciliation rejected. Transporter will be notified.',
+      });
+
+      fetchReconciliations();
+    } catch (error: any) {
+      console.error('Error rejecting reconciliation:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Rejection Failed',
+        description: error.message || 'Failed to reject reconciliation.',
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       pending: { color: 'bg-yellow-100 text-yellow-700', icon: Clock, label: 'Pending' },
@@ -319,8 +453,16 @@ const Reconciliation = () => {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {reconciliations.map((recon) => (
-              <Card key={recon.id} className="border-l-4 border-l-primary">
+            {reconciliations.map((recon) => {
+              // Dynamic card styling based on status
+              const getCardStyle = () => {
+                if (recon.status === 'approved') return 'border-l-4 border-l-green-500 bg-green-50/50';
+                if (recon.status === 'rejected') return 'border-l-4 border-l-red-500 bg-red-50/50';
+                return 'border-l-4 border-l-primary';
+              };
+
+              return (
+              <Card key={recon.id} className={getCardStyle()}>
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 space-y-3">
@@ -389,6 +531,64 @@ const Reconciliation = () => {
                           )}
                         </div>
                       )}
+
+                      {/* Approve/Disapprove Buttons for Trust Account */}
+                      {isTrustAccount && recon.status === 'pending' && (
+                        <div className="flex gap-2 mt-3">
+                          <Button
+                            onClick={() => handleApproveReconciliation(recon.id)}
+                            className="flex-1 bg-green-600 hover:bg-green-700 gap-2"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                            Approve
+                          </Button>
+                          <Button
+                            onClick={() => handleRejectReconciliation(recon.id)}
+                            variant="destructive"
+                            className="flex-1 gap-2"
+                          >
+                            <XCircle className="h-4 w-4" />
+                            Disapprove
+                          </Button>
+                        </div>
+                      )}
+
+                      {/* Claim Button for Transporter (after approval) */}
+                      {!isTrustAccount && recon.status === 'approved' && !recon.claim_requested && (
+                        <Button
+                          onClick={() => handleOpenClaimDialog(recon)}
+                          className="w-full mt-3 bg-blue-600 hover:bg-blue-700 gap-2"
+                        >
+                          <ArrowUpCircle className="h-4 w-4" />
+                          Request Claim
+                        </Button>
+                      )}
+
+                      {/* Claim Requested Message */}
+                      {!isTrustAccount && recon.claim_requested && (
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 mt-3">
+                          <p className="text-xs text-blue-700 dark:text-blue-300 mb-1 flex items-center gap-1">
+                            <Info className="h-3 w-3" />
+                            Claim Status
+                          </p>
+                          <p className="text-sm">
+                            {recon.lender_approved
+                              ? 'Claim approved by lender. Payment pending.'
+                              : 'Claim submitted. Awaiting lender approval.'}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Payment Notification Message */}
+                      {recon.payment_notification_sent && recon.payment_notification_message && (
+                        <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 mt-3">
+                          <p className="text-xs text-green-700 dark:text-green-300 mb-1 flex items-center gap-1">
+                            <Info className="h-3 w-3" />
+                            Payment Notification
+                          </p>
+                          <p className="text-sm">{recon.payment_notification_message}</p>
+                        </div>
+                      )}
                     </div>
 
                     {/* Action Buttons */}
@@ -431,7 +631,8 @@ const Reconciliation = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -610,6 +811,123 @@ const Reconciliation = () => {
                 </Button>
               </div>
               <Button onClick={() => setViewingDoc(null)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Claim Dialog */}
+        <Dialog open={claimDialogOpen} onOpenChange={setClaimDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Request Claim</DialogTitle>
+              <DialogDescription>
+                Select the trip for which you want to claim payment
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              {/* Reconciliation Details */}
+              {selectedReconciliation && (
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm font-medium mb-2">Reconciliation Details</p>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Document:</span>
+                      <span className="ml-2">{selectedReconciliation.document_name}</span>
+                    </div>
+                    {selectedReconciliation.reconciliation_amount && (
+                      <div>
+                        <span className="text-muted-foreground">Amount:</span>
+                        <span className="ml-2 font-semibold">
+                          {formatCurrency(selectedReconciliation.reconciliation_amount)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Trip Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="trip-select">
+                  Select Trip <span className="text-destructive">*</span>
+                </Label>
+                <Select value={selectedTripId} onValueChange={setSelectedTripId}>
+                  <SelectTrigger id="trip-select">
+                    <SelectValue placeholder="Choose a completed trip" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {claimTrips.length === 0 ? (
+                      <SelectItem value="none" disabled>No completed trips with lender</SelectItem>
+                    ) : (
+                      claimTrips.map((trip) => (
+                        <SelectItem key={trip.id} value={trip.id}>
+                          {trip.origin} → {trip.destination} ({formatCurrency(trip.amount)}) - Lender: {trip.lender_name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Only trips with assigned lenders are shown
+                </p>
+              </div>
+
+              {/* Claim Breakdown */}
+              {selectedTripId && selectedReconciliation?.reconciliation_amount && (
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200">
+                  <p className="text-sm font-medium mb-3">Claim Breakdown</p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Total Amount:</span>
+                      <span className="font-semibold">
+                        {formatCurrency(selectedReconciliation.reconciliation_amount)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Lender Share (70%):</span>
+                      <span>{formatCurrency(selectedReconciliation.reconciliation_amount * 0.7)}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Your Share (30%):</span>
+                      <span>{formatCurrency(selectedReconciliation.reconciliation_amount * 0.3)}</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3">
+                    The lender will be notified to approve your claim
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setClaimDialogOpen(false);
+                  setSelectedTripId('');
+                }}
+                disabled={claiming}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSubmitClaim}
+                disabled={claiming || !selectedTripId}
+                className="gap-2"
+              >
+                {claiming ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <ArrowUpCircle className="h-4 w-4" />
+                    Submit Claim
+                  </>
+                )}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

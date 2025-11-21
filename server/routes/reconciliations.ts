@@ -210,6 +210,198 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// Approve reconciliation (trust account)
+router.patch('/:id/approve', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { id } = req.params;
+    const { reviewed_by } = req.body;
+
+    if (!reviewed_by) {
+      return res.status(400).json({ error: 'Reviewer ID is required' });
+    }
+
+    const result = await db.query(
+      `UPDATE reconciliations
+       SET status = 'approved',
+           reviewed_by = $1,
+           reviewed_at = NOW(),
+           updated_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+      [reviewed_by, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Reconciliation not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error approving reconciliation:', error);
+    res.status(500).json({ error: 'Failed to approve reconciliation' });
+  }
+});
+
+// Reject reconciliation (trust account)
+router.patch('/:id/reject', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { id } = req.params;
+    const { reviewed_by, review_notes } = req.body;
+
+    if (!reviewed_by) {
+      return res.status(400).json({ error: 'Reviewer ID is required' });
+    }
+
+    const result = await db.query(
+      `UPDATE reconciliations
+       SET status = 'rejected',
+           reviewed_by = $1,
+           review_notes = $2,
+           reviewed_at = NOW(),
+           updated_at = NOW()
+       WHERE id = $3
+       RETURNING *`,
+      [reviewed_by, review_notes || null, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Reconciliation not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error rejecting reconciliation:', error);
+    res.status(500).json({ error: 'Failed to reject reconciliation' });
+  }
+});
+
+// Request claim (transporter - after approval)
+router.patch('/:id/claim', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { id } = req.params;
+    const {
+      trip_id,
+      lender_id,
+      lender_name,
+      lender_claim_amount,
+      transporter_claim_amount,
+      claim_amount
+    } = req.body;
+
+    if (!trip_id || !lender_id) {
+      return res.status(400).json({ error: 'Trip ID and Lender ID are required' });
+    }
+
+    // Check if reconciliation is approved
+    const checkResult = await db.query(
+      'SELECT status FROM reconciliations WHERE id = $1',
+      [id]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Reconciliation not found' });
+    }
+
+    if (checkResult.rows[0].status !== 'approved') {
+      return res.status(400).json({ error: 'Reconciliation must be approved before claiming' });
+    }
+
+    const result = await db.query(
+      `UPDATE reconciliations
+       SET claim_requested = TRUE,
+           claim_requested_at = NOW(),
+           trip_id = $1,
+           lender_id = $2,
+           lender_name = $3,
+           lender_claim_amount = $4,
+           transporter_claim_amount = $5,
+           claim_amount = $6,
+           updated_at = NOW()
+       WHERE id = $7
+       RETURNING *`,
+      [trip_id, lender_id, lender_name, lender_claim_amount, transporter_claim_amount, claim_amount, id]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error requesting claim:', error);
+    res.status(500).json({ error: 'Failed to request claim' });
+  }
+});
+
+// Approve claim (lender)
+router.patch('/:id/approve-claim', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { id } = req.params;
+    const { lender_id } = req.body;
+
+    if (!lender_id) {
+      return res.status(400).json({ error: 'Lender ID is required' });
+    }
+
+    // Generate payment notification message
+    const paymentMessage = 'Within 24 hours you will receive an approval request in Jaipur Golden Trust Account. Please approve that to complete the payment process.';
+
+    const result = await db.query(
+      `UPDATE reconciliations
+       SET lender_approved = TRUE,
+           lender_approved_at = NOW(),
+           payment_notification_sent = TRUE,
+           payment_notification_message = $1,
+           updated_at = NOW()
+       WHERE id = $2 AND lender_id = $3
+       RETURNING *`,
+      [paymentMessage, id, lender_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Reconciliation not found or not authorized' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error approving claim:', error);
+    res.status(500).json({ error: 'Failed to approve claim' });
+  }
+});
+
+// Get reconciliations pending lender approval
+router.get('/lender/pending-claims', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { lenderId } = req.query;
+
+    if (!lenderId) {
+      return res.status(400).json({ error: 'Lender ID is required' });
+    }
+
+    const result = await db.query(
+      `SELECT r.*,
+              t.name as transporter_name,
+              ta.name as trust_account_name,
+              tr.origin, tr.destination, tr.load_type, tr.distance, tr.eway_bill_number
+       FROM reconciliations r
+       LEFT JOIN users t ON r.transporter_id = t.id
+       LEFT JOIN users ta ON r.trust_account_id = ta.id
+       LEFT JOIN trips tr ON r.trip_id = tr.id
+       WHERE r.lender_id = $1
+         AND r.claim_requested = TRUE
+         AND r.lender_approved = FALSE
+       ORDER BY r.claim_requested_at DESC`,
+      [lenderId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching pending claims:', error);
+    res.status(500).json({ error: 'Failed to fetch pending claims' });
+  }
+});
+
 // Get all trust account users (for dropdown selection)
 router.get('/trust-accounts/list', async (req, res) => {
   try {
