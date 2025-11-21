@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Wallet, TrendingUp, Package, IndianRupee, Lock, ArrowUpRight, ArrowDownRight, Sparkles, Brain, RefreshCw, Clock, CheckCircle2, UserCheck, UserX, Eye, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Wallet, TrendingUp, Package, IndianRupee, Lock, ArrowUpRight, ArrowDownRight, Sparkles, Brain, RefreshCw, Clock, CheckCircle2, UserCheck, UserX, Eye, FileText, ChevronLeft, ChevronRight, ClipboardList } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { data, type Trip, type Investment, type Wallet as WalletType } from "@/lib/data";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -52,7 +53,11 @@ const LenderDashboard = () => {
   // Pagination state
   const [pendingBidsPage, setPendingBidsPage] = useState(1);
   const [activeInvestmentsPage, setActiveInvestmentsPage] = useState(1);
+  const [pendingApprovalsPage, setPendingApprovalsPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Active tab state
+  const [activeTab, setActiveTab] = useState("overview");
 
   // Update chart colors when theme changes
   useEffect(() => {
@@ -471,6 +476,23 @@ const LenderDashboard = () => {
     },
   ].filter(Boolean);
 
+  // Get pending approval trips (completed trips awaiting claim processing)
+  const getPendingApprovalTrips = () => {
+    return myInvestments
+      .filter(i => i.status === 'completed')
+      .map(investment => {
+        const trip = trips.find(t => t.id === investment.tripId);
+        return trip ? { ...trip, investment } : null;
+      })
+      .filter(Boolean);
+  };
+
+  const allPendingApprovalTrips = getPendingApprovalTrips();
+  const totalPendingApprovalPages = Math.ceil(allPendingApprovalTrips.length / itemsPerPage);
+  const pendingApprovalStartIndex = (pendingApprovalsPage - 1) * itemsPerPage;
+  const pendingApprovalEndIndex = pendingApprovalStartIndex + itemsPerPage;
+  const paginatedPendingApprovalTrips = allPendingApprovalTrips.slice(pendingApprovalStartIndex, pendingApprovalEndIndex);
+
   return (
     <DashboardLayout role="lender">
       <div className="space-y-6">
@@ -501,6 +523,25 @@ const LenderDashboard = () => {
 
         {/* Wallet */}
         {user?.id && <WalletCard userId={user.id} showDetails={false} />}
+
+        {/* Tabs for different sections */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="investments">My Investments</TabsTrigger>
+            <TabsTrigger value="pending-approvals" className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              Pending Approvals
+              {allPendingApprovalTrips.length > 0 && (
+                <span className="ml-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-xs">
+                  {allPendingApprovalTrips.length}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6 mt-6">
 
         {/* AI Insights */}
         <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
@@ -666,7 +707,10 @@ const LenderDashboard = () => {
             </CardContent>
           </Card>
         </div>
+          </TabsContent>
 
+          {/* My Investments Tab */}
+          <TabsContent value="investments" className="space-y-6 mt-6">
         {/* Escrowed Investments */}
         {allEscrowedInvestments.length > 0 && (
           <Card className="border-orange-500/50 bg-orange-50/50">
@@ -884,6 +928,145 @@ const LenderDashboard = () => {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+
+          {/* Pending Approvals Tab */}
+          <TabsContent value="pending-approvals" className="space-y-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5 text-blue-600" />
+                  Pending Claim Approvals ({allPendingApprovalTrips.length})
+                </CardTitle>
+                <CardDescription>Completed trips awaiting claim amount approval</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {paginatedPendingApprovalTrips.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <ClipboardList className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>No pending claim approvals</p>
+                      <p className="text-xs mt-1">Completed trips awaiting claim processing will appear here</p>
+                    </div>
+                  ) : (
+                    paginatedPendingApprovalTrips.map((item: any) => {
+                      const trip = item;
+                      const investment = item.investment;
+                      const claimAmount = investment.expectedReturn;
+
+                      return (
+                        <div key={trip.id} className="flex items-start justify-between p-4 border rounded-lg bg-blue-50/50 border-blue-200">
+                          <div className="flex items-start gap-4 flex-1">
+                            {trip.loadOwnerLogo && (
+                              <img
+                                src={trip.loadOwnerLogo}
+                                alt={trip.loadOwnerName}
+                                className="h-12 w-12 object-contain rounded border p-1 bg-white"
+                              />
+                            )}
+                            <div className="flex-1">
+                              <h4 className="font-semibold">{trip.origin} → {trip.destination}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                {trip.loadType} • {trip.distance} km • E-way Bill: {trip.ewayBillNumber}
+                              </p>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Borrower: {trip.loadOwnerName}
+                              </p>
+                              <div className="mt-2 flex items-center gap-2">
+                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                  Awaiting Claim Approval
+                                </span>
+                                {trip.completedAt && (
+                                  <span className="text-xs text-muted-foreground">
+                                    Completed: {new Date(trip.completedAt).toLocaleDateString()}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right ml-4">
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground">Investment Amount</p>
+                              <p className="text-sm font-semibold">{formatCurrency(investment.amount)}</p>
+                            </div>
+                            <div className="space-y-1 mt-2">
+                              <p className="text-xs text-muted-foreground">Interest Rate</p>
+                              <p className="text-sm font-semibold">{Number(investment.interestRate).toFixed(2)}%</p>
+                            </div>
+                            <div className="space-y-1 mt-2 p-2 bg-green-100 rounded">
+                              <p className="text-xs text-green-700">Claim Amount</p>
+                              <p className="text-lg font-bold text-green-700">{formatCurrency(claimAmount)}</p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="mt-3 text-xs h-7"
+                              onClick={() => {
+                                setSelectedTripForDocs(trip);
+                                setDocumentViewOpen(true);
+                              }}
+                            >
+                              <FileText className="h-3 w-3 mr-1" />
+                              View Documents
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Pagination Controls for Pending Approvals */}
+                {totalPendingApprovalPages > 1 && (
+                  <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {pendingApprovalStartIndex + 1} to {Math.min(pendingApprovalEndIndex, allPendingApprovalTrips.length)} of {allPendingApprovalTrips.length} claims
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPendingApprovalsPage(prev => Math.max(1, prev - 1))}
+                        disabled={pendingApprovalsPage === 1}
+                        className="gap-1"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {getPaginationRange(pendingApprovalsPage, totalPendingApprovalPages).map((page, idx) => (
+                          page === '...' ? (
+                            <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">...</span>
+                          ) : (
+                            <Button
+                              key={page}
+                              variant={pendingApprovalsPage === page ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setPendingApprovalsPage(page as number)}
+                              className="min-w-[36px]"
+                            >
+                              {page}
+                            </Button>
+                          )
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPendingApprovalsPage(prev => Math.min(totalPendingApprovalPages, prev + 1))}
+                        disabled={pendingApprovalsPage === totalPendingApprovalPages}
+                        className="gap-1"
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Document Viewer Dialog */}

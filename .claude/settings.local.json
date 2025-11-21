@@ -12,7 +12,8 @@
       "Bash(npm run build:*)",
       "Bash(npx tsc:*)",
       "Bash(npx eslint:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(nul)"
     ],
     "deny": [],
     "ask": []
