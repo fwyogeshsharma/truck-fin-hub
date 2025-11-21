@@ -13,7 +13,9 @@
       "Bash(npx tsc:*)",
       "Bash(npx eslint:*)",
       "Bash(findstr:*)",
-      "Bash(nul)"
+      "Bash(nul)",
+      "Bash(docker-compose restart:*)",
+      "Bash(docker compose restart:*)"
     ],
     "deny": [],
     "ask": []

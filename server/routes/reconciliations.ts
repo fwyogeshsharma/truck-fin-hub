@@ -49,6 +49,71 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Get reconciliations pending lender approval (must come before /:id route)
+router.get('/lender/pending-claims', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { lenderId } = req.query;
+
+    if (!lenderId) {
+      return res.status(400).json({ error: 'Lender ID is required' });
+    }
+
+    // First check if the claim columns exist
+    const columnCheck = await db.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = 'reconciliations'
+       AND column_name IN ('claim_requested', 'lender_approved', 'lender_id')`
+    );
+
+    // If columns don't exist yet, return empty array
+    if (columnCheck.rows.length < 3) {
+      console.log('Reconciliation claim columns not yet created. Run migration 030.');
+      return res.json([]);
+    }
+
+    const result = await db.query(
+      `SELECT r.*,
+              t.name as transporter_name,
+              ta.name as trust_account_name,
+              tr.origin, tr.destination, tr.load_type, tr.distance, tr.eway_bill_number
+       FROM reconciliations r
+       LEFT JOIN users t ON r.transporter_id = t.id
+       LEFT JOIN users ta ON r.trust_account_id = ta.id
+       LEFT JOIN trips tr ON r.trip_id = tr.id
+       WHERE r.lender_id = $1
+         AND r.claim_requested = TRUE
+         AND r.lender_approved = FALSE
+       ORDER BY r.claim_requested_at DESC`,
+      [lenderId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching pending claims:', error);
+    res.status(500).json({ error: 'Failed to fetch pending claims' });
+  }
+});
+
+// Get all trust account users (for dropdown selection)
+router.get('/trust-accounts/list', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const result = await db.query(
+      `SELECT id, name, email, company
+       FROM users
+       WHERE role = 'trust_account'
+       ORDER BY name ASC`
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching trust accounts:', error);
+    res.status(500).json({ error: 'Failed to fetch trust accounts' });
+  }
+});
+
 // Get a single reconciliation by ID
 router.get('/:id', async (req, res) => {
   try {
@@ -390,71 +455,6 @@ router.patch('/:id/approve-claim', async (req, res) => {
   } catch (error) {
     console.error('Error approving claim:', error);
     res.status(500).json({ error: 'Failed to approve claim' });
-  }
-});
-
-// Get reconciliations pending lender approval
-router.get('/lender/pending-claims', async (req, res) => {
-  try {
-    const db = await getDatabase();
-    const { lenderId } = req.query;
-
-    if (!lenderId) {
-      return res.status(400).json({ error: 'Lender ID is required' });
-    }
-
-    // First check if the claim columns exist
-    const columnCheck = await db.query(
-      `SELECT column_name
-       FROM information_schema.columns
-       WHERE table_name = 'reconciliations'
-       AND column_name IN ('claim_requested', 'lender_approved', 'lender_id')`
-    );
-
-    // If columns don't exist yet, return empty array
-    if (columnCheck.rows.length < 3) {
-      console.log('Reconciliation claim columns not yet created. Run migration 030.');
-      return res.json([]);
-    }
-
-    const result = await db.query(
-      `SELECT r.*,
-              t.name as transporter_name,
-              ta.name as trust_account_name,
-              tr.origin, tr.destination, tr.load_type, tr.distance, tr.eway_bill_number
-       FROM reconciliations r
-       LEFT JOIN users t ON r.transporter_id = t.id
-       LEFT JOIN users ta ON r.trust_account_id = ta.id
-       LEFT JOIN trips tr ON r.trip_id = tr.id
-       WHERE r.lender_id = $1
-         AND r.claim_requested = TRUE
-         AND r.lender_approved = FALSE
-       ORDER BY r.claim_requested_at DESC`,
-      [lenderId]
-    );
-
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Error fetching pending claims:', error);
-    res.status(500).json({ error: 'Failed to fetch pending claims' });
-  }
-});
-
-// Get all trust account users (for dropdown selection)
-router.get('/trust-accounts/list', async (req, res) => {
-  try {
-    const db = await getDatabase();
-    const result = await db.query(
-      `SELECT id, name, email, company
-       FROM users
-       WHERE role = 'trust_account'
-       ORDER BY name ASC`
-    );
-
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Error fetching trust accounts:', error);
-    res.status(500).json({ error: 'Failed to fetch trust accounts' });
   }
 });
 

@@ -2,19 +2,27 @@
 -- Description: Adds claim-related fields to reconciliation table
 
 -- Add claim-related columns to reconciliations table
-ALTER TABLE reconciliations ADD COLUMN IF NOT EXISTS claim_requested BOOLEAN DEFAULT FALSE;
+ALTER TABLE reconciliations ADD COLUMN IF NOT EXISTS claim_requested BOOLEAN DEFAULT FALSE NOT NULL;
 ALTER TABLE reconciliations ADD COLUMN IF NOT EXISTS claim_requested_at TIMESTAMP;
 ALTER TABLE reconciliations ADD COLUMN IF NOT EXISTS claim_amount NUMERIC(15,2);
 ALTER TABLE reconciliations ADD COLUMN IF NOT EXISTS lender_id VARCHAR(255);
 ALTER TABLE reconciliations ADD COLUMN IF NOT EXISTS lender_name VARCHAR(255);
 ALTER TABLE reconciliations ADD COLUMN IF NOT EXISTS lender_claim_amount NUMERIC(15,2);
 ALTER TABLE reconciliations ADD COLUMN IF NOT EXISTS transporter_claim_amount NUMERIC(15,2);
-ALTER TABLE reconciliations ADD COLUMN IF NOT EXISTS lender_approved BOOLEAN DEFAULT FALSE;
+ALTER TABLE reconciliations ADD COLUMN IF NOT EXISTS lender_approved BOOLEAN DEFAULT FALSE NOT NULL;
 ALTER TABLE reconciliations ADD COLUMN IF NOT EXISTS lender_approved_at TIMESTAMP;
-ALTER TABLE reconciliations ADD COLUMN IF NOT EXISTS payment_notification_sent BOOLEAN DEFAULT FALSE;
+ALTER TABLE reconciliations ADD COLUMN IF NOT EXISTS payment_notification_sent BOOLEAN DEFAULT FALSE NOT NULL;
 ALTER TABLE reconciliations ADD COLUMN IF NOT EXISTS payment_notification_message TEXT;
 
--- Add foreign key for lender
+-- Add foreign key for lender (drop first if exists to avoid duplicate constraint error)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_reconciliations_lender') THEN
+    ALTER TABLE reconciliations DROP CONSTRAINT fk_reconciliations_lender;
+  END IF;
+END
+$$;
+
 ALTER TABLE reconciliations ADD CONSTRAINT fk_reconciliations_lender
   FOREIGN KEY (lender_id) REFERENCES users(id) ON DELETE SET NULL;
 
