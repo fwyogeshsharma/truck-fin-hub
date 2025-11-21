@@ -35,6 +35,8 @@ import {
   Clock,
   Loader2,
   AlertCircle,
+  ArrowUpCircle,
+  Info,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 
