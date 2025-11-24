@@ -199,6 +199,8 @@ const Users = () => {
         return 'bg-red-100 text-red-800 border-red-300';
       case 'super_admin':
         return 'bg-pink-100 text-pink-800 border-pink-300';
+      case 'trust_account':
+        return 'bg-teal-100 text-teal-800 border-teal-300';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-300';
     }
@@ -218,6 +220,8 @@ const Users = () => {
         return 'Admin';
       case 'super_admin':
         return 'Super Admin';
+      case 'trust_account':
+        return 'Trust Account';
       default:
         return role?.replace('_', ' ') || 'N/A';
     }
@@ -522,6 +526,7 @@ const Users = () => {
     transporters: allUsers.filter(u => u.role === 'transporter').length,
     admins: allUsers.filter(u => u.role === 'admin').length,
     superAdmins: allUsers.filter(u => u.role === 'super_admin').length,
+    trustAccounts: allUsers.filter(u => u.role === 'trust_account').length,
   };
 
   return (
@@ -643,6 +648,13 @@ const Users = () => {
                   size="sm"
                 >
                   Admins ({stats.admins})
+                </Button>
+                <Button
+                  variant={filterRole === "trust_account" ? "default" : "outline"}
+                  onClick={() => setFilterRole("trust_account")}
+                  size="sm"
+                >
+                  Trust Accounts ({stats.trustAccounts})
                 </Button>
               </div>
             </div>
