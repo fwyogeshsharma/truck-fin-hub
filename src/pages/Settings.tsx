@@ -61,8 +61,6 @@ interface UploadedContract {
   party2UserId: string;
   party3Name: string;
   party3UserId: string;
-  party4Name: string; // LogiFin (readonly)
-  party4UserId: string; // LogiFin (readonly)
   validityDate: string;
   tripStage: string; // Optional
   penaltyAfterDueDate: string; // Penalty percentage after due date
@@ -424,8 +422,6 @@ const Settings = () => {
         party2UserId: '',
         party3Name: '',
         party3UserId: '',
-        party4Name: 'LogiFin Private Limited - Platform Facilitator',
-        party4UserId: 'logifin-platform',
         validityDate: '',
         tripStage: 'none',
         penaltyAfterDueDate: '',
@@ -770,9 +766,9 @@ Contact: [LogiFin Contact Number]
 (Hereinafter collectively referred to as "Parties" and individually as "Party")
 
 WHEREAS:
-A. Party 1 and Party 2 (and Party 3, if applicable) wish to enter into a financial agreement.
+A. Party 1 and Party 2 wish to enter into a financial agreement.
 B. The parties require platform infrastructure and facilitation services for the execution and monitoring of this agreement.
-C. LogiFin (Party 4) provides the digital platform and acts as a facilitator to ensure smooth execution, transparency, and compliance.
+C. LogiFin (Party 3) provides the digital platform and acts as a facilitator to ensure smooth execution, transparency, and compliance.
 
 NOW, THEREFORE, in consideration of the mutual covenants and agreements contained herein, the Parties agree as follows:
 
@@ -806,7 +802,7 @@ NOW, THEREFORE, in consideration of the mutual covenants and agreements containe
        f) Ensure transparency and proper record-keeping
    4.3 LogiFin charges a platform fee of ___% which shall be borne by [Party 1/Party 2/Split between parties].
    4.4 LogiFin does not guarantee loan repayment or performance by any party and acts solely as a facilitator.
-   4.5 LogiFin's inclusion as Party 4 is mandatory for all agreements executed through the platform.
+   4.5 LogiFin's inclusion as Party 3 is mandatory for all agreements executed through the platform.
 
 5. SECURITY AND COLLATERAL
    5.1 [Specify if any collateral/security is provided]
@@ -893,10 +889,10 @@ NOTES FOR USER:
 1. This is a SAMPLE template. Please consult with a legal advisor before using.
 2. Fill in all blank fields with appropriate information.
 3. Customize clauses based on your specific requirements.
-4. For 2-party contracts, omit Party 3 section. Party 4 (LogiFin) is always included.
+4. For 2-party contracts, Party 3 (LogiFin) is always included as the platform facilitator.
 5. Ensure all parties sign in presence of witnesses.
 6. Keep original copies with all parties.
-7. LogiFin's role as Party 4 (Platform Facilitator) is mandatory and ensures transparency, proper record-keeping, and compliance.
+7. LogiFin's role as Party 3 (Platform Facilitator) is mandatory and ensures transparency, proper record-keeping, and compliance.
 8. Platform fees and terms should be agreed upon before signing.
 9. All parties listed must be registered users on the LogiFin platform.
 
@@ -1064,7 +1060,7 @@ For questions, contact: support@logifin.com
                   When selecting parties, you'll see their name and company (or individual status) from our registered users list.
                 </p>
                 <p>
-                  <strong>LogiFin as Party 4:</strong> LogiFin Private Limited is automatically included as Party 4 (Platform Facilitator) in all contracts to ensure transparency, proper record-keeping, and compliance.
+                  <strong>LogiFin as Party 3:</strong> LogiFin Private Limited is automatically included as Party 3 (Platform Facilitator) in all contracts to ensure transparency, proper record-keeping, and compliance.
                 </p>
               </AlertDescription>
             </Alert>
@@ -1270,7 +1266,7 @@ For questions, contact: support@logifin.com
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
-                        LogiFin is automatically added as Party 4 (facilitator)
+                        LogiFin is automatically added as Party 3 (facilitator)
                       </p>
                     </div>
                   </div>
@@ -1284,10 +1280,10 @@ For questions, contact: support@logifin.com
                       </AlertTitle>
                       <AlertDescription className="text-blue-700 dark:text-blue-300 space-y-3">
                         <p>
-                          This is a <strong>2-party contract</strong> between Party 1 and Party 2, with LogiFin automatically included as Party 4 (Platform Facilitator).
+                          This is a <strong>2-party contract</strong> between Party 1 and Party 2, with LogiFin automatically included as Party 3 (Platform Facilitator).
                         </p>
                         <div className="space-y-2">
-                          <p className="font-medium">LogiFin's Role as Party 4:</p>
+                          <p className="font-medium">LogiFin's Role as Party 3:</p>
                           <ul className="list-disc list-inside space-y-1 text-sm">
                             <li>Acts as a facilitator and maintains transaction records</li>
                             <li>Provides platform infrastructure and security</li>
@@ -1321,7 +1317,7 @@ For questions, contact: support@logifin.com
                       </AlertTitle>
                       <AlertDescription className="text-blue-700 dark:text-blue-300 space-y-3">
                         <p>
-                          This is a <strong>3-party contract</strong> between Party 1, Party 2, and Party 3, with LogiFin automatically included as Party 4 (Platform Facilitator).
+                          This is a <strong>3-party contract</strong> between Party 1, Party 2, and Party 3, with LogiFin automatically managing as the facilitator.
                         </p>
                         <div className="pt-2">
                           <Button
@@ -1440,14 +1436,14 @@ For questions, contact: support@logifin.com
                       </div>
                     )}
 
-                    {/* Party 4 - LogiFin (Static/Readonly) */}
+                    {/* Party 3 - LogiFin (Static/Readonly) */}
                     <div className="space-y-2">
-                      <Label htmlFor={`party4-${contract.id}`}>
-                        Party 4 (Platform Facilitator)
+                      <Label htmlFor={`party3-logifin-${contract.id}`}>
+                        Party 3 (Platform Facilitator)
                       </Label>
                       <Input
-                        id={`party4-${contract.id}`}
-                        value={contract.party4Name}
+                        id={`party3-logifin-${contract.id}`}
+                        value="LogiFin Private Limited - Platform Facilitator"
                         readOnly
                         disabled
                         className="bg-muted cursor-not-allowed"
@@ -1604,8 +1600,8 @@ For questions, contact: support@logifin.com
                                   </div>
                                 )}
                                 <div className="flex items-center gap-2 text-sm">
-                                  <span className="font-medium">Party 4:</span>
-                                  <span className="text-muted-foreground">{contract.party4_name}</span>
+                                  <span className="font-medium">Party 3:</span>
+                                  <span className="text-muted-foreground">LogiFin Private Limited - Platform Facilitator</span>
                                 </div>
                               </div>
 
@@ -1904,8 +1900,8 @@ For questions, contact: support@logifin.com
                   )}
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <div>
-                      <p className="text-xs text-muted-foreground">Party 4 (Platform Facilitator)</p>
-                      <p className="font-medium">{viewingContractDetails.party4_name}</p>
+                      <p className="text-xs text-muted-foreground">Party 3 (Platform Facilitator)</p>
+                      <p className="font-medium">LogiFin Private Limited - Platform Facilitator</p>
                     </div>
                   </div>
                 </div>
