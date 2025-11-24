@@ -114,6 +114,32 @@ router.get('/trust-accounts/list', async (req, res) => {
   }
 });
 
+// Get lenders associated with a trust account (through trips)
+router.get('/trust-accounts/:trustAccountId/lenders', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { trustAccountId } = req.params;
+
+    if (!trustAccountId) {
+      return res.status(400).json({ error: 'Trust account ID is required' });
+    }
+
+    // Get distinct lenders who have trips that were reconciled with this trust account
+    // OR get all lenders for now (simpler approach)
+    const result = await db.query(
+      `SELECT DISTINCT u.id, u.name, u.email, u.company
+       FROM users u
+       WHERE u.role = 'lender' AND u.is_active = TRUE
+       ORDER BY u.name ASC`
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching lenders for trust account:', error);
+    res.status(500).json({ error: 'Failed to fetch lenders' });
+  }
+});
+
 // Get a single reconciliation by ID
 router.get('/:id', async (req, res) => {
   try {

@@ -47,6 +47,13 @@ interface TrustAccount {
   company?: string;
 }
 
+interface Lender {
+  id: string;
+  name: string;
+  email: string;
+  company?: string;
+}
+
 interface Trip {
   id: string;
   origin: string;
@@ -113,6 +120,7 @@ const Reconciliation = () => {
   const user = auth.getCurrentUser();
   const [reconciliations, setReconciliations] = useState<Reconciliation[]>([]);
   const [trustAccounts, setTrustAccounts] = useState<TrustAccount[]>([]);
+  const [trustAccountLenders, setTrustAccountLenders] = useState<Lender[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -130,6 +138,7 @@ const Reconciliation = () => {
 
   // Form state
   const [selectedTrustAccount, setSelectedTrustAccount] = useState('');
+  const [selectedTrustAccountLender, setSelectedTrustAccountLender] = useState('');
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [description, setDescription] = useState('');
   const [reconciliationAmount, setReconciliationAmount] = useState('');
@@ -164,6 +173,20 @@ const Reconciliation = () => {
       setTrustAccounts(data);
     } catch (error: any) {
       console.error('Error fetching trust accounts:', error);
+    }
+  };
+
+  const fetchTrustAccountLenders = async (trustAccountId: string) => {
+    try {
+      const data = await apiClient.get(`/reconciliations/trust-accounts/${trustAccountId}/lenders`);
+      setTrustAccountLenders(data);
+    } catch (error: any) {
+      console.error('Error fetching lenders for trust account:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to load lenders',
+      });
     }
   };
 
@@ -216,6 +239,16 @@ const Reconciliation = () => {
   const handleOpenUploadDialog = () => {
     setUploadDialogOpen(true);
     fetchActiveTrips();
+  };
+
+  const handleTrustAccountChange = (trustAccountId: string) => {
+    setSelectedTrustAccount(trustAccountId);
+    setSelectedTrustAccountLender(''); // Clear selected lender when trust account changes
+    setTrustAccountLenders([]); // Clear lenders list
+
+    if (trustAccountId) {
+      fetchTrustAccountLenders(trustAccountId);
+    }
   };
 
   const handleLenderChange = (lenderId: string) => {
@@ -383,6 +416,8 @@ const Reconciliation = () => {
       setUploadDialogOpen(false);
       setDocumentFile(null);
       setSelectedTrustAccount('');
+      setSelectedTrustAccountLender('');
+      setTrustAccountLenders([]);
       setSelectedLenderId('');
       setSelectedTripIds([]);
       setDescription('');
@@ -815,7 +850,7 @@ const Reconciliation = () => {
                 <Label htmlFor="trust-account">
                   Select Trust Account <span className="text-destructive">*</span>
                 </Label>
-                <Select value={selectedTrustAccount} onValueChange={setSelectedTrustAccount}>
+                <Select value={selectedTrustAccount} onValueChange={handleTrustAccountChange}>
                   <SelectTrigger id="trust-account">
                     <SelectValue placeholder="Choose trust account" />
                   </SelectTrigger>
@@ -828,6 +863,34 @@ const Reconciliation = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Trust Account Lender Selection */}
+              {selectedTrustAccount && (
+                <div className="space-y-2">
+                  <Label htmlFor="trust-account-lender">
+                    Select Lender Associated with Trust Account (Optional)
+                  </Label>
+                  <Select value={selectedTrustAccountLender} onValueChange={setSelectedTrustAccountLender}>
+                    <SelectTrigger id="trust-account-lender">
+                      <SelectValue placeholder="Choose lender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {trustAccountLenders.length === 0 ? (
+                        <SelectItem value="none" disabled>Loading lenders...</SelectItem>
+                      ) : (
+                        trustAccountLenders.map((lender) => (
+                          <SelectItem key={lender.id} value={lender.id}>
+                            {lender.name} {lender.company ? `- ${lender.company}` : ''}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Select a lender if this reconciliation is specific to a lender
+                  </p>
+                </div>
+              )}
 
               {/* Lender Selection */}
               <div className="space-y-2">
