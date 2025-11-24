@@ -204,15 +204,15 @@ const Reconciliation = () => {
         const hasActiveStatus = ['funded', 'in_transit', 'completed', 'repaid'].includes(trip.status);
         const hasLender = !!trip.lender_id || !!trip.lender_name; // Match by ID or name
 
-        console.log(`Trip ${trip.id}:`, {
-          isTransporter,
-          hasActiveStatus,
-          hasLender,
-          status: trip.status,
-          lender_id: trip.lender_id,
-          lender_name: trip.lender_name,
-          transporter_id: trip.transporter_id,
-          current_user_id: user?.id
+        console.log(`🔍 Trip ${trip.id}:`, {
+          '✅ Current User (Transporter)': user?.name,
+          '📦 Trip Transporter': trip.transporter_name,
+          '💰 Trip Lender': trip.lender_name,
+          'isTransporter (user is transporter?)': isTransporter,
+          'hasActiveStatus': hasActiveStatus,
+          'hasLender': hasLender,
+          'status': trip.status,
+          'Result': isTransporter && hasActiveStatus && hasLender ? '✅ INCLUDED' : '❌ EXCLUDED'
         });
 
         return isTransporter && hasActiveStatus && hasLender;
