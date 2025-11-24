@@ -118,20 +118,6 @@ else
   echo "⚠️  Migration file not found: src/db/migrations/032_rename_party4_to_party3.sql"
 fi
 
-echo ""
-echo "🔄 Running migration 033: Enhance reconciliation workflow..."
-if [ -f "src/db/migrations/033_enhance_reconciliation_workflow.sql" ]; then
-  docker exec -i logifin-postgres psql -U "$DB_USER" -d "$DB_NAME" < src/db/migrations/033_enhance_reconciliation_workflow.sql
-  if [ $? -eq 0 ]; then
-    echo "✅ Migration 033 completed successfully!"
-  else
-    echo "❌ Migration 033 failed!"
-    exit 1
-  fi
-else
-  echo "⚠️  Migration file not found: src/db/migrations/033_enhance_reconciliation_workflow.sql"
-fi
-
 ## Run migrations (commented out)
 #docker exec -i logifin-postgres psql -U "$DB_USER" -d "$DB_NAME" << 'EOFMIGRATION'
 #-- Create companies table
