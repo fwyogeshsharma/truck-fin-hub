@@ -22,11 +22,12 @@ Changed the lender selection in the "Upload Reconciliation Document" dialog to s
 
 **File**: `server/routes/reconciliations.ts`
 
-#### 1. New Endpoint: Get All Lenders
+#### 1. Using Existing Users API
+Instead of creating a new endpoint, we use the existing users API:
 ```typescript
-GET /api/reconciliations/lenders/list
+GET /api/users?role=lender
 ```
-Returns all users with role = 'lender'
+This endpoint already exists in `server/routes/users.ts` and returns all users with role = 'lender'
 
 **Response:**
 ```json
@@ -137,20 +138,20 @@ const [lenderTrips, setLenderTrips] = useState<Trip[]>([]);
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
-| GET | `/reconciliations/lenders/list` | Get all lenders (NEW) |
+| GET | `/users?role=lender` | Get all lenders (EXISTING) |
 | GET | `/reconciliations/trips/by-lender?transporterId={id}` | Get trips grouped by lender |
 | GET | `/reconciliations/trips/by-lender?transporterId={id}&lenderId={id}` | Get trips for specific lender (ENHANCED) |
 
 ## Files Modified
 
 1. `server/routes/reconciliations.ts`
-   - Added `/lenders/list` endpoint (lines 117-133)
-   - Enhanced `/trips/by-lender` to support lenderId parameter (lines 135-218)
+   - Enhanced `/trips/by-lender` to support lenderId parameter (lines 117-200)
+   - Now supports optional `lenderId` query parameter for filtering trips
 
 2. `src/pages/Reconciliation.tsx`
    - Added `Lender` interface (lines 63-68)
    - Updated state management (lines 135-138)
-   - Added `fetchAllLenders()` function (lines 188-200)
+   - Added `fetchAllLenders()` function using `/users?role=lender` (lines 188-200)
    - Added `fetchTripsForLender()` function (lines 202-215)
    - Added `handleLenderChange()` function (lines 222-229)
    - Updated lender dropdown UI (lines 836-857)
