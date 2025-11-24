@@ -195,14 +195,31 @@ const Reconciliation = () => {
     try {
       // Fetch all trips and filter on frontend for active trips of this transporter
       const allTrips = await apiClient.get('/trips');
+      console.log('🔍 Total trips fetched:', allTrips.length);
+      console.log('🔍 Sample trip:', allTrips[0]);
 
       // Filter for active trips where user is the transporter
-      const filtered = allTrips.filter((trip: any) =>
-        trip.transporter_id === user?.id &&
-        ['funded', 'in_transit', 'completed', 'repaid'].includes(trip.status) &&
-        trip.lender_id // Only trips with a lender
-      );
+      const filtered = allTrips.filter((trip: any) => {
+        const isTransporter = trip.transporter_id === user?.id;
+        const hasActiveStatus = ['funded', 'in_transit', 'completed', 'repaid'].includes(trip.status);
+        const hasLender = !!trip.lender_id || !!trip.lender_name; // Match by ID or name
 
+        console.log(`Trip ${trip.id}:`, {
+          isTransporter,
+          hasActiveStatus,
+          hasLender,
+          status: trip.status,
+          lender_id: trip.lender_id,
+          lender_name: trip.lender_name,
+          transporter_id: trip.transporter_id,
+          current_user_id: user?.id
+        });
+
+        return isTransporter && hasActiveStatus && hasLender;
+      });
+
+      console.log('✅ Filtered active trips:', filtered.length);
+      console.log('✅ Filtered trips:', filtered);
       setActiveTrips(filtered);
     } catch (error: any) {
       console.error('Error fetching active trips:', error);
@@ -845,7 +862,11 @@ const Reconciliation = () => {
                       <SelectItem value="none" disabled>No lenders found</SelectItem>
                     ) : (
                       allLenders.map((lender) => {
-                        const lenderTripsCount = activeTrips.filter(t => t.lender_id === lender.id).length;
+                        // Match by lender_id OR by lender_name (in case of ID mismatch)
+                        const lenderTripsCount = activeTrips.filter(t =>
+                          t.lender_id === lender.id ||
+                          t.lender_name === lender.name
+                        ).length;
                         return (
                           <SelectItem key={lender.id} value={lender.id}>
                             {lender.name} ({lenderTripsCount} trips)
@@ -859,8 +880,12 @@ const Reconciliation = () => {
 
               {/* Trip Selection (Multi-select) - Shows only when lender is selected */}
               {selectedLenderId && (() => {
-                const lenderTrips = activeTrips.filter(t => t.lender_id === selectedLenderId);
                 const selectedLender = allLenders.find(l => l.id === selectedLenderId);
+                // Match by lender_id OR by lender_name (in case of ID mismatch)
+                const lenderTrips = activeTrips.filter(t =>
+                  t.lender_id === selectedLenderId ||
+                  (selectedLender && t.lender_name === selectedLender.name)
+                );
 
                 return (
                   <div className="space-y-2">
