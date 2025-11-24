@@ -360,8 +360,8 @@ const TrustAccountPage = () => {
         party1UserId: '',
         party2Name: '',
         party2UserId: '',
-        party3Name: 'LogiFin Private Limited - Platform Facilitator',
-        party3UserId: 'logifin-platform',
+        party3Name: user?.name || user?.email || '',
+        party3UserId: user?.id || '',
         party5Name: '',
         party5UserId: '',
         party6Name: '',
@@ -906,7 +906,7 @@ Visit the Settings page to download the complete sample agreement template.`;
                   When selecting parties, you'll see their name and company (or individual status) from our registered users list.
                 </p>
                 <p>
-                  <strong>LogiFin as Party 3:</strong> LogiFin Private Limited is automatically included as Party 3 (Platform Facilitator) in all contracts to ensure transparency, proper record-keeping, and compliance.
+                  <strong>Trust Account as Party 3:</strong> The trust account user (you) is automatically included as Party 3 (Contract Manager) in all contracts to manage and facilitate the agreement between parties.
                 </p>
               </AlertDescription>
             </Alert>
@@ -1111,7 +1111,7 @@ Visit the Settings page to download the complete sample agreement template.`;
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
-                        LogiFin is automatically added as Party 3 (facilitator)
+                        You (Trust Account) are automatically added as Party 3 (Contract Manager)
                       </p>
                     </div>
                   </div>
@@ -1125,7 +1125,7 @@ Visit the Settings page to download the complete sample agreement template.`;
                       </AlertTitle>
                       <AlertDescription className="text-blue-700 dark:text-blue-300 space-y-3">
                         <p>
-                          This is a <strong>2-party contract</strong> between Party 1 and Party 2, with LogiFin automatically included as Party 3 (Platform Facilitator).
+                          This is a <strong>2-party contract</strong> between Party 1 and Party 2, with you (Trust Account) automatically included as Party 3 (Contract Manager).
                         </p>
                         <div className="pt-2">
                           <Button
@@ -1232,21 +1232,21 @@ Visit the Settings page to download the complete sample agreement template.`;
                       </p>
                     </div>
 
-                    {/* Party 3 - LogiFin (Static/Readonly) */}
+                    {/* Party 3 - Trust Account (Static/Readonly) */}
                     <div className="space-y-2">
-                      <Label htmlFor={`party3-logifin-${contract.id}`}>
-                        Party 3 (Platform Facilitator)
+                      <Label htmlFor={`party3-manager-${contract.id}`}>
+                        Party 3 (Contract Manager)
                       </Label>
                       <Input
-                        id={`party3-logifin-${contract.id}`}
-                        value={contract.party3Name}
+                        id={`party3-manager-${contract.id}`}
+                        value={user?.name || user?.email || 'Trust Account'}
                         readOnly
                         disabled
                         className="bg-muted cursor-not-allowed"
                       />
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Info className="h-3 w-3" />
-                        LogiFin is automatically included as the facilitating platform
+                        You (Trust Account) are managing this contract
                       </p>
                     </div>
 

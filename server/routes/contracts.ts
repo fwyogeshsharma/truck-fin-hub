@@ -179,6 +179,14 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Missing uploader information' });
     }
 
+    // Get the uploader's details to set as party3 (trust account managing the contract)
+    const { getUserById } = await import('../../src/db/queries/users.ts');
+    const uploader = await getUserById(uploaded_by);
+
+    if (!uploader) {
+      return res.status(400).json({ error: 'Uploader user not found' });
+    }
+
     const contractInput: CreateContractInput = {
       id,
       file_name,
@@ -197,6 +205,8 @@ router.post('/', async (req: Request, res: Response) => {
       party1_name,
       party2_user_id,
       party2_name,
+      party3_user_id: uploaded_by,
+      party3_name: uploader.name || uploader.email,
       uploaded_by,
     };
 

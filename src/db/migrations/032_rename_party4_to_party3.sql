@@ -1,21 +1,19 @@
--- Migration 032: Rename party4 columns to party3 (LogiFin as Party 3)
--- Changes LogiFin from Party 4 to Party 3 in the contracts table
+-- Migration 032: Rename party4 columns to party3 (Trust Account Manager as Party 3)
+-- Changes party3 to be the trust account user managing the contract
 
--- Update party3 to use LogiFin's default values (for existing 2-party contracts)
+-- Update existing contracts to set party3 as the uploader (trust account manager)
 UPDATE contracts
 SET
-  party3_user_id = 'logifin-platform',
-  party3_name = 'LogiFin Hub Private Limited - Platform Facilitator'
+  party3_user_id = uploaded_by,
+  party3_name = (SELECT name FROM users WHERE id = uploaded_by)
 WHERE party3_user_id IS NULL;
 
--- Make party3 required (since it will always be LogiFin)
+-- Make party3 required (since it will always be the trust account manager)
 ALTER TABLE contracts
-ALTER COLUMN party3_user_id SET NOT NULL,
-ALTER COLUMN party3_user_id SET DEFAULT 'logifin-platform';
+ALTER COLUMN party3_user_id SET NOT NULL;
 
 ALTER TABLE contracts
-ALTER COLUMN party3_name SET NOT NULL,
-ALTER COLUMN party3_name SET DEFAULT 'LogiFin Hub Private Limited - Platform Facilitator';
+ALTER COLUMN party3_name SET NOT NULL;
 
 -- Drop party4 columns (no longer needed)
 ALTER TABLE contracts
@@ -23,8 +21,8 @@ DROP COLUMN IF EXISTS party4_user_id,
 DROP COLUMN IF EXISTS party4_name;
 
 -- Update comments
-COMMENT ON COLUMN contracts.party3_user_id IS 'User ID of Party 3 (LogiFin - Platform Facilitator)';
-COMMENT ON COLUMN contracts.party3_name IS 'Name of Party 3 (LogiFin - Platform Facilitator)';
+COMMENT ON COLUMN contracts.party3_user_id IS 'User ID of Party 3 (Trust Account Manager - the user who created/manages this contract)';
+COMMENT ON COLUMN contracts.party3_name IS 'Name of Party 3 (Trust Account Manager - the user who created/manages this contract)';
 
 -- Update the active_contracts_view to remove party4 references
 DROP VIEW IF EXISTS active_contracts_view;

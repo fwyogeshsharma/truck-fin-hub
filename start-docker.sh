@@ -105,7 +105,7 @@ else
 fi
 
 echo ""
-echo "🔄 Running migration 032: Rename party4 to party3 (LogiFin)..."
+echo "🔄 Running migration 032: Set party3 as trust account manager..."
 if [ -f "src/db/migrations/032_rename_party4_to_party3.sql" ]; then
   docker exec -i logifin-postgres psql -U "$DB_USER" -d "$DB_NAME" < src/db/migrations/032_rename_party4_to_party3.sql
   if [ $? -eq 0 ]; then
