@@ -60,6 +60,13 @@ interface Trip {
   completion_date?: string;
 }
 
+interface Lender {
+  id: string;
+  name: string;
+  email: string;
+  company?: string;
+}
+
 interface LenderGroup {
   lender_id: string;
   lender_name: string;
@@ -125,7 +132,8 @@ const Reconciliation = () => {
   const [claiming, setClaiming] = useState(false);
 
   // New states for multi-trip selection
-  const [lenderGroups, setLenderGroups] = useState<LenderGroup[]>([]);
+  const [allLenders, setAllLenders] = useState<Lender[]>([]);
+  const [lenderTrips, setLenderTrips] = useState<Trip[]>([]);
   const [selectedLenderId, setSelectedLenderId] = useState('');
   const [selectedTripIds, setSelectedTripIds] = useState<string[]>([]);
 
@@ -177,23 +185,47 @@ const Reconciliation = () => {
     }
   };
 
-  const fetchLenderGroupedTrips = async () => {
+  const fetchAllLenders = async () => {
     try {
-      const data = await apiClient.get(`/reconciliations/trips/by-lender?transporterId=${user?.id}`);
-      setLenderGroups(data);
+      const data = await apiClient.get('/reconciliations/lenders/list');
+      setAllLenders(data);
     } catch (error: any) {
-      console.error('Error fetching lender-grouped trips:', error);
+      console.error('Error fetching lenders:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to load trips',
+        description: 'Failed to load lenders',
+      });
+    }
+  };
+
+  const fetchTripsForLender = async (lenderId: string) => {
+    try {
+      const data = await apiClient.get(`/reconciliations/trips/by-lender?transporterId=${user?.id}&lenderId=${lenderId}`);
+      setLenderTrips(data);
+    } catch (error: any) {
+      console.error('Error fetching trips for lender:', error);
+      setLenderTrips([]);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to load trips for this lender',
       });
     }
   };
 
   const handleOpenUploadDialog = () => {
     setUploadDialogOpen(true);
-    fetchLenderGroupedTrips();
+    fetchAllLenders();
+  };
+
+  const handleLenderChange = (lenderId: string) => {
+    setSelectedLenderId(lenderId);
+    setSelectedTripIds([]);
+    setLenderTrips([]);
+    if (lenderId) {
+      fetchTripsForLender(lenderId);
+    }
   };
 
   const handleToggleTripSelection = (tripId: string) => {
@@ -303,11 +335,11 @@ const Reconciliation = () => {
       return;
     }
 
-    if (!selectedLenderId || selectedTripIds.length === 0) {
+    if (!selectedLenderId) {
       toast({
         variant: 'destructive',
         title: 'Missing information',
-        description: 'Please select a lender and at least one trip.',
+        description: 'Please select a lender.',
       });
       return;
     }
@@ -323,7 +355,7 @@ const Reconciliation = () => {
       const fileData = await fileDataPromise;
 
       const selectedAccount = trustAccounts.find(ta => ta.id === selectedTrustAccount);
-      const selectedLenderGroup = lenderGroups.find(lg => lg.lender_id === selectedLenderId);
+      const selectedLender = allLenders.find(l => l.id === selectedLenderId);
 
       const reconciliationData = {
         id: `recon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -333,7 +365,7 @@ const Reconciliation = () => {
         trust_account_name: selectedAccount?.name || 'Trust Account',
         selected_trip_ids: selectedTripIds,
         selected_lender_id: selectedLenderId,
-        selected_lender_name: selectedLenderGroup?.lender_name || '',
+        selected_lender_name: selectedLender?.name || '',
         document_name: documentFile.name,
         document_type: documentFile.type,
         document_url: '',
@@ -806,20 +838,17 @@ const Reconciliation = () => {
                 <Label htmlFor="lender-select">
                   Select Lender <span className="text-destructive">*</span>
                 </Label>
-                <Select value={selectedLenderId} onValueChange={(value) => {
-                  setSelectedLenderId(value);
-                  setSelectedTripIds([]);
-                }}>
+                <Select value={selectedLenderId} onValueChange={handleLenderChange}>
                   <SelectTrigger id="lender-select">
                     <SelectValue placeholder="Choose lender" />
                   </SelectTrigger>
                   <SelectContent>
-                    {lenderGroups.length === 0 ? (
-                      <SelectItem value="none" disabled>No lenders with completed trips</SelectItem>
+                    {allLenders.length === 0 ? (
+                      <SelectItem value="none" disabled>No lenders available</SelectItem>
                     ) : (
-                      lenderGroups.map((lg) => (
-                        <SelectItem key={lg.lender_id} value={lg.lender_id}>
-                          {lg.lender_name} {lg.lender_company ? `- ${lg.lender_company}` : ''} ({lg.trips.length} trips)
+                      allLenders.map((lender) => (
+                        <SelectItem key={lender.id} value={lender.id}>
+                          {lender.name} {lender.company ? `- ${lender.company}` : ''}
                         </SelectItem>
                       ))
                     )}
@@ -831,37 +860,45 @@ const Reconciliation = () => {
               {selectedLenderId && (
                 <div className="space-y-2">
                   <Label>
-                    Select Trips <span className="text-destructive">*</span>
+                    Select Trips (Optional)
                   </Label>
-                  <div className="border rounded-lg p-3 max-h-64 overflow-y-auto bg-muted/30">
-                    {lenderGroups
-                      .find(lg => lg.lender_id === selectedLenderId)
-                      ?.trips.map((trip) => (
-                        <div
-                          key={trip.id}
-                          className={`flex items-start gap-3 p-3 rounded-md mb-2 cursor-pointer hover:bg-muted/50 ${
-                            selectedTripIds.includes(trip.id) ? 'bg-primary/10 border border-primary' : 'bg-background border border-border'
-                          }`}
-                          onClick={() => handleToggleTripSelection(trip.id)}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedTripIds.includes(trip.id)}
-                            onChange={() => handleToggleTripSelection(trip.id)}
-                            className="mt-1"
-                          />
-                          <div className="flex-1 text-sm">
-                            <div className="font-medium">{trip.origin} → {trip.destination}</div>
-                            <div className="text-muted-foreground">
-                              {trip.load_type} • {formatCurrency(trip.amount)} • {trip.distance} km
+                  {lenderTrips.length === 0 ? (
+                    <div className="border rounded-lg p-6 text-center bg-muted/30">
+                      <p className="text-sm text-muted-foreground">
+                        No completed trips found for this lender
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="border rounded-lg p-3 max-h-64 overflow-y-auto bg-muted/30">
+                        {lenderTrips.map((trip) => (
+                          <div
+                            key={trip.id}
+                            className={`flex items-start gap-3 p-3 rounded-md mb-2 cursor-pointer hover:bg-muted/50 ${
+                              selectedTripIds.includes(trip.id) ? 'bg-primary/10 border border-primary' : 'bg-background border border-border'
+                            }`}
+                            onClick={() => handleToggleTripSelection(trip.id)}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedTripIds.includes(trip.id)}
+                              onChange={() => handleToggleTripSelection(trip.id)}
+                              className="mt-1"
+                            />
+                            <div className="flex-1 text-sm">
+                              <div className="font-medium">{trip.origin} → {trip.destination}</div>
+                              <div className="text-muted-foreground">
+                                {trip.load_type} • {formatCurrency(trip.amount)} • {trip.distance} km
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedTripIds.length} trip{selectedTripIds.length !== 1 ? 's' : ''} selected
-                  </p>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedTripIds.length} trip{selectedTripIds.length !== 1 ? 's' : ''} selected from {lenderTrips.length} available trips
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
 

@@ -114,19 +114,59 @@ router.get('/trust-accounts/list', async (req, res) => {
   }
 });
 
+// Get all lenders (for dropdown selection)
+router.get('/lenders/list', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const result = await db.query(
+      `SELECT id, name, email, company
+       FROM users
+       WHERE role = 'lender'
+       ORDER BY name ASC`
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching lenders:', error);
+    res.status(500).json({ error: 'Failed to fetch lenders' });
+  }
+});
+
 // Get trips grouped by lender for reconciliation (transporter only)
 router.get('/trips/by-lender', async (req, res) => {
   try {
     const db = await getDatabase();
-    const { transporterId } = req.query;
+    const { transporterId, lenderId } = req.query;
 
     if (!transporterId) {
       return res.status(400).json({ error: 'Transporter ID is required' });
     }
 
-    // Get completed trips with lenders, grouped by lender
-    const result = await db.query(
-      `SELECT
+    let query;
+    let params;
+
+    if (lenderId) {
+      // Get trips for specific lender
+      query = `SELECT
+        t.id,
+        t.origin,
+        t.destination,
+        t.load_type,
+        t.amount,
+        t.distance,
+        t.lender_id,
+        t.lender_name,
+        t.status,
+        t.completion_date
+       FROM trips t
+       WHERE t.transporter_id = $1
+         AND t.lender_id = $2
+         AND t.status = 'completed'
+       ORDER BY t.completion_date DESC`;
+      params = [transporterId, lenderId];
+    } else {
+      // Get all completed trips with lenders, grouped by lender
+      query = `SELECT
         t.id,
         t.origin,
         t.destination,
@@ -144,26 +184,33 @@ router.get('/trips/by-lender', async (req, res) => {
        WHERE t.transporter_id = $1
          AND t.status = 'completed'
          AND t.lender_id IS NOT NULL
-       ORDER BY t.lender_id, t.completion_date DESC`,
-      [transporterId]
-    );
+       ORDER BY t.lender_id, t.completion_date DESC`;
+      params = [transporterId];
+    }
 
-    // Group trips by lender
-    const groupedTrips: Record<string, any> = {};
-    result.rows.forEach((trip) => {
-      const lenderId = trip.lender_id;
-      if (!groupedTrips[lenderId]) {
-        groupedTrips[lenderId] = {
-          lender_id: lenderId,
-          lender_name: trip.lender_name || trip.lender_full_name,
-          lender_company: trip.lender_company,
-          trips: [],
-        };
-      }
-      groupedTrips[lenderId].trips.push(trip);
-    });
+    const result = await db.query(query, params);
 
-    res.json(Object.values(groupedTrips));
+    if (lenderId) {
+      // Return trips array for specific lender
+      res.json(result.rows);
+    } else {
+      // Group trips by lender
+      const groupedTrips: Record<string, any> = {};
+      result.rows.forEach((trip) => {
+        const lenderId = trip.lender_id;
+        if (!groupedTrips[lenderId]) {
+          groupedTrips[lenderId] = {
+            lender_id: lenderId,
+            lender_name: trip.lender_name || trip.lender_full_name,
+            lender_company: trip.lender_company,
+            trips: [],
+          };
+        }
+        groupedTrips[lenderId].trips.push(trip);
+      });
+
+      res.json(Object.values(groupedTrips));
+    }
   } catch (error) {
     console.error('Error fetching trips by lender:', error);
     res.status(500).json({ error: 'Failed to fetch trips' });
