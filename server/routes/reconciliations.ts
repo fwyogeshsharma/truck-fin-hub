@@ -114,93 +114,42 @@ router.get('/trust-accounts/list', async (req, res) => {
   }
 });
 
-// Get trips grouped by lender for reconciliation (transporter only)
-router.get('/trips/by-lender', async (req, res) => {
+// Get all active trips for transporter (for reconciliation)
+router.get('/trips/active', async (req, res) => {
   try {
     const db = await getDatabase();
-    const { transporterId, lenderId } = req.query;
+    const { transporterId } = req.query;
 
     if (!transporterId) {
       return res.status(400).json({ error: 'Transporter ID is required' });
     }
 
-    let query;
-    let params;
+    // Get all active trips for this transporter
+    const query = `SELECT
+      t.id,
+      t.origin,
+      t.destination,
+      t.load_type,
+      t.amount,
+      t.distance,
+      t.lender_id,
+      t.lender_name,
+      t.status,
+      t.completed_at,
+      t.funded_at,
+      t.interest_rate,
+      t.maturity_days,
+      t.created_at
+     FROM trips t
+     WHERE t.transporter_id = $1
+       AND t.status IN ('funded', 'in_transit', 'completed', 'repaid')
+     ORDER BY t.created_at DESC`;
 
-    if (lenderId) {
-      // Get trips for specific lender where they provided funding
-      // Include funded, in_transit, completed, and repaid statuses
-      query = `SELECT
-        t.id,
-        t.origin,
-        t.destination,
-        t.load_type,
-        t.amount,
-        t.distance,
-        t.lender_id,
-        t.lender_name,
-        t.status,
-        t.completed_at as completion_date,
-        t.funded_at,
-        t.interest_rate,
-        t.maturity_days
-       FROM trips t
-       WHERE t.transporter_id = $1
-         AND t.lender_id = $2
-         AND t.status IN ('funded', 'in_transit', 'completed', 'repaid')
-       ORDER BY t.completed_at DESC NULLS LAST, t.funded_at DESC`;
-      params = [transporterId, lenderId];
-    } else {
-      // Get all trips with lenders where funding was provided, grouped by lender
-      query = `SELECT
-        t.id,
-        t.origin,
-        t.destination,
-        t.load_type,
-        t.amount,
-        t.distance,
-        t.lender_id,
-        t.lender_name,
-        t.status,
-        t.completed_at as completion_date,
-        t.funded_at,
-        u.name as lender_full_name,
-        u.company as lender_company
-       FROM trips t
-       LEFT JOIN users u ON t.lender_id = u.id
-       WHERE t.transporter_id = $1
-         AND t.status IN ('funded', 'in_transit', 'completed', 'repaid')
-         AND t.lender_id IS NOT NULL
-       ORDER BY t.lender_id, t.completed_at DESC NULLS LAST`;
-      params = [transporterId];
-    }
-
-    const result = await db.query(query, params);
-
-    if (lenderId) {
-      // Return trips array for specific lender
-      res.json(result.rows);
-    } else {
-      // Group trips by lender
-      const groupedTrips: Record<string, any> = {};
-      result.rows.forEach((trip) => {
-        const lenderId = trip.lender_id;
-        if (!groupedTrips[lenderId]) {
-          groupedTrips[lenderId] = {
-            lender_id: lenderId,
-            lender_name: trip.lender_name || trip.lender_full_name,
-            lender_company: trip.lender_company,
-            trips: [],
-          };
-        }
-        groupedTrips[lenderId].trips.push(trip);
-      });
-
-      res.json(Object.values(groupedTrips));
-    }
+    const result = await db.query(query, [transporterId]);
+    res.json(result.rows);
   } catch (error) {
-    console.error('Error fetching trips by lender:', error);
-    res.status(500).json({ error: 'Failed to fetch trips' });
+    console.error('Error fetching active trips:', error);
+    res.status(500).json({ error: 'Failed to fetch active trips' });
   }
 });
 
