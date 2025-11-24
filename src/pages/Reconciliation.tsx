@@ -124,8 +124,7 @@ const Reconciliation = () => {
   const [claiming, setClaiming] = useState(false);
 
   // New states for multi-trip selection
-  const [allLenders, setAllLenders] = useState<any[]>([]);
-  const [activeTrips, setActiveTrips] = useState<Trip[]>([]);
+  const [lenderGroups, setLenderGroups] = useState<LenderGroup[]>([]);
   const [selectedLenderId, setSelectedLenderId] = useState('');
   const [selectedTripIds, setSelectedTripIds] = useState<string[]>([]);
 
@@ -177,20 +176,6 @@ const Reconciliation = () => {
     }
   };
 
-  const fetchAllLenders = async () => {
-    try {
-      const data = await apiClient.get('/users?role=lender');
-      setAllLenders(data);
-    } catch (error: any) {
-      console.error('Error fetching lenders:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to load lenders',
-      });
-    }
-  };
-
   const fetchActiveTrips = async () => {
     try {
       // Fetch all trips and filter on frontend for active trips of this transporter
@@ -203,7 +188,21 @@ const Reconciliation = () => {
         trip.lender_id // Only trips with a lender
       );
 
-      setActiveTrips(filtered);
+      // Group trips by lender
+      const grouped: Record<string, LenderGroup> = {};
+      filtered.forEach((trip: any) => {
+        const lenderId = trip.lender_id;
+        if (!grouped[lenderId]) {
+          grouped[lenderId] = {
+            lender_id: lenderId,
+            lender_name: trip.lender_name || 'Unknown Lender',
+            trips: [],
+          };
+        }
+        grouped[lenderId].trips.push(trip);
+      });
+
+      setLenderGroups(Object.values(grouped));
     } catch (error: any) {
       console.error('Error fetching active trips:', error);
       toast({
@@ -216,7 +215,6 @@ const Reconciliation = () => {
 
   const handleOpenUploadDialog = () => {
     setUploadDialogOpen(true);
-    fetchAllLenders();
     fetchActiveTrips();
   };
 
@@ -353,7 +351,7 @@ const Reconciliation = () => {
       const fileData = await fileDataPromise;
 
       const selectedAccount = trustAccounts.find(ta => ta.id === selectedTrustAccount);
-      const selectedLender = allLenders.find(l => l.id === selectedLenderId);
+      const selectedLenderGroup = lenderGroups.find(lg => lg.lender_id === selectedLenderId);
 
       const reconciliationData = {
         id: `recon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -363,7 +361,7 @@ const Reconciliation = () => {
         trust_account_name: selectedAccount?.name || 'Trust Account',
         selected_trip_ids: selectedTripIds,
         selected_lender_id: selectedLenderId || null,
-        selected_lender_name: selectedLender?.name || null,
+        selected_lender_name: selectedLenderGroup?.lender_name || null,
         document_name: documentFile.name,
         document_type: documentFile.type,
         document_url: '',
@@ -841,42 +839,37 @@ const Reconciliation = () => {
                     <SelectValue placeholder="Choose lender to see their trips" />
                   </SelectTrigger>
                   <SelectContent>
-                    {allLenders.length === 0 ? (
-                      <SelectItem value="none" disabled>No lenders found</SelectItem>
+                    {lenderGroups.length === 0 ? (
+                      <SelectItem value="none" disabled>No active trips with lenders found</SelectItem>
                     ) : (
-                      allLenders.map((lender) => {
-                        const lenderTripsCount = activeTrips.filter(t => t.lender_id === lender.id).length;
-                        return (
-                          <SelectItem key={lender.id} value={lender.id}>
-                            {lender.name} ({lenderTripsCount} trips)
-                          </SelectItem>
-                        );
-                      })
+                      lenderGroups.map((group) => (
+                        <SelectItem key={group.lender_id} value={group.lender_id}>
+                          {group.lender_name} ({group.trips.length} trips)
+                        </SelectItem>
+                      ))
                     )}
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Trip Selection (Multi-select) - Shows only when lender is selected */}
-              {selectedLenderId && (() => {
-                const lenderTrips = activeTrips.filter(t => t.lender_id === selectedLenderId);
-                const selectedLender = allLenders.find(l => l.id === selectedLenderId);
-
-                return (
-                  <div className="space-y-2">
-                    <Label>
-                      Select Trips for {selectedLender?.name || 'Selected Lender'} (Optional)
-                    </Label>
-                    {lenderTrips.length === 0 ? (
-                      <div className="border rounded-lg p-6 text-center bg-muted/30">
-                        <p className="text-sm text-muted-foreground">
-                          No trips found for this lender
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="border rounded-lg p-3 max-h-64 overflow-y-auto bg-muted/30">
-                          {lenderTrips.map((trip) => (
+              {selectedLenderId && (
+                <div className="space-y-2">
+                  <Label>
+                    Select Trips for {lenderGroups.find(lg => lg.lender_id === selectedLenderId)?.lender_name} (Optional)
+                  </Label>
+                  {lenderGroups.find(lg => lg.lender_id === selectedLenderId)?.trips.length === 0 ? (
+                    <div className="border rounded-lg p-6 text-center bg-muted/30">
+                      <p className="text-sm text-muted-foreground">
+                        No trips found for this lender
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="border rounded-lg p-3 max-h-64 overflow-y-auto bg-muted/30">
+                        {lenderGroups
+                          .find(lg => lg.lender_id === selectedLenderId)
+                          ?.trips.map((trip) => (
                             <div
                               key={trip.id}
                               className={`flex items-start gap-3 p-3 rounded-md mb-2 cursor-pointer hover:bg-muted/50 ${
@@ -901,15 +894,14 @@ const Reconciliation = () => {
                               </div>
                             </div>
                           ))}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {selectedTripIds.length} trip{selectedTripIds.length !== 1 ? 's' : ''} selected from {lenderTrips.length} trips
-                        </p>
-                      </>
-                    )}
-                  </div>
-                );
-              })()}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedTripIds.length} trip{selectedTripIds.length !== 1 ? 's' : ''} selected from {lenderGroups.find(lg => lg.lender_id === selectedLenderId)?.trips.length} trips
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
 
               {/* File Upload */}
               <div className="space-y-2">
