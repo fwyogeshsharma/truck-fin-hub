@@ -171,8 +171,16 @@ const Reconciliation = () => {
 
   const fetchActiveTrips = async () => {
     try {
-      const data = await apiClient.get(`/reconciliations/trips/active?transporterId=${user?.id}`);
-      setActiveTrips(data);
+      // Fetch all trips and filter on frontend for active trips of this transporter
+      const allTrips = await apiClient.get('/trips');
+
+      // Filter for active trips where user is the transporter
+      const filtered = allTrips.filter((trip: any) =>
+        trip.transporter_id === user?.id &&
+        ['funded', 'in_transit', 'completed', 'repaid'].includes(trip.status)
+      );
+
+      setActiveTrips(filtered);
     } catch (error: any) {
       console.error('Error fetching active trips:', error);
       toast({
