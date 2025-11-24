@@ -114,6 +114,24 @@ router.get('/trust-accounts/list', async (req, res) => {
   }
 });
 
+// Get all lenders (for dropdown selection)
+router.get('/lenders/list', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const result = await db.query(
+      `SELECT id, name, email, company
+       FROM users
+       WHERE role = 'lender'
+       ORDER BY name ASC`
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching lenders:', error);
+    res.status(500).json({ error: 'Failed to fetch lenders' });
+  }
+});
+
 // Get trips grouped by lender for reconciliation (transporter only)
 router.get('/trips/by-lender', async (req, res) => {
   try {

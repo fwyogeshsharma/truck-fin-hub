@@ -187,7 +187,7 @@ const Reconciliation = () => {
 
   const fetchAllLenders = async () => {
     try {
-      const data = await apiClient.get('/users?role=lender');
+      const data = await apiClient.get('/reconciliations/lenders/list');
       setAllLenders(data);
     } catch (error: any) {
       console.error('Error fetching lenders:', error);
