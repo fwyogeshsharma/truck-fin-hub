@@ -47,6 +47,26 @@ interface TrustAccount {
   company?: string;
 }
 
+interface Trip {
+  id: string;
+  origin: string;
+  destination: string;
+  load_type: string;
+  amount: number;
+  distance: number;
+  lender_id: string;
+  lender_name: string;
+  status: string;
+  completion_date?: string;
+}
+
+interface LenderGroup {
+  lender_id: string;
+  lender_name: string;
+  lender_company?: string;
+  trips: Trip[];
+}
+
 interface Reconciliation {
   id: string;
   transporter_id: string;
@@ -54,6 +74,9 @@ interface Reconciliation {
   trust_account_id: string;
   trust_account_name: string;
   trip_id?: string;
+  selected_trip_ids?: string[];
+  selected_lender_id?: string;
+  selected_lender_name?: string;
   document_name: string;
   document_type: string;
   document_url: string;
@@ -63,6 +86,7 @@ interface Reconciliation {
   reconciliation_amount?: number;
   reconciliation_date?: string;
   status: 'pending' | 'reviewed' | 'approved' | 'rejected';
+  workflow_status?: string;
   reviewed_by?: string;
   reviewed_at?: string;
   review_notes?: string;
@@ -77,8 +101,12 @@ interface Reconciliation {
   transporter_claim_amount?: number;
   lender_approved?: boolean;
   lender_approved_at?: string;
+  transporter_approved?: boolean;
+  transporter_approved_at?: string;
   payment_notification_sent?: boolean;
   payment_notification_message?: string;
+  bank_request_generated?: boolean;
+  bank_request_message?: string;
 }
 
 const Reconciliation = () => {
@@ -95,6 +123,11 @@ const Reconciliation = () => {
   const [claimTrips, setClaimTrips] = useState<any[]>([]);
   const [selectedTripId, setSelectedTripId] = useState('');
   const [claiming, setClaiming] = useState(false);
+
+  // New states for multi-trip selection
+  const [lenderGroups, setLenderGroups] = useState<LenderGroup[]>([]);
+  const [selectedLenderId, setSelectedLenderId] = useState('');
+  const [selectedTripIds, setSelectedTripIds] = useState<string[]>([]);
 
   // Form state
   const [selectedTrustAccount, setSelectedTrustAccount] = useState('');
@@ -142,6 +175,31 @@ const Reconciliation = () => {
     } catch (error: any) {
       console.error('Error fetching trips:', error);
     }
+  };
+
+  const fetchLenderGroupedTrips = async () => {
+    try {
+      const data = await apiClient.get(`/reconciliations/trips/by-lender?transporterId=${user?.id}`);
+      setLenderGroups(data);
+    } catch (error: any) {
+      console.error('Error fetching lender-grouped trips:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to load trips',
+      });
+    }
+  };
+
+  const handleOpenUploadDialog = () => {
+    setUploadDialogOpen(true);
+    fetchLenderGroupedTrips();
+  };
+
+  const handleToggleTripSelection = (tripId: string) => {
+    setSelectedTripIds((prev) =>
+      prev.includes(tripId) ? prev.filter((id) => id !== tripId) : [...prev, tripId]
+    );
   };
 
   const handleOpenClaimDialog = (recon: Reconciliation) => {
@@ -245,6 +303,15 @@ const Reconciliation = () => {
       return;
     }
 
+    if (!selectedLenderId || selectedTripIds.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing information',
+        description: 'Please select a lender and at least one trip.',
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       // Convert file to base64
@@ -256,6 +323,7 @@ const Reconciliation = () => {
       const fileData = await fileDataPromise;
 
       const selectedAccount = trustAccounts.find(ta => ta.id === selectedTrustAccount);
+      const selectedLenderGroup = lenderGroups.find(lg => lg.lender_id === selectedLenderId);
 
       const reconciliationData = {
         id: `recon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -263,6 +331,9 @@ const Reconciliation = () => {
         transporter_name: user?.name,
         trust_account_id: selectedTrustAccount,
         trust_account_name: selectedAccount?.name || 'Trust Account',
+        selected_trip_ids: selectedTripIds,
+        selected_lender_id: selectedLenderId,
+        selected_lender_name: selectedLenderGroup?.lender_name || '',
         document_name: documentFile.name,
         document_type: documentFile.type,
         document_url: '',
@@ -284,6 +355,8 @@ const Reconciliation = () => {
       setUploadDialogOpen(false);
       setDocumentFile(null);
       setSelectedTrustAccount('');
+      setSelectedLenderId('');
+      setSelectedTripIds([]);
       setDescription('');
       setReconciliationAmount('');
       setReconciliationDate('');
@@ -413,6 +486,28 @@ const Reconciliation = () => {
     );
   };
 
+  const handleApproveAsTransporter = async (id: string) => {
+    try {
+      await apiClient.patch(`/reconciliations/${id}/approve-transporter`, {
+        transporter_id: user?.id,
+      });
+
+      toast({
+        title: 'Approved',
+        description: 'You have approved this reconciliation. Awaiting lender approval.',
+      });
+
+      fetchReconciliations();
+    } catch (error: any) {
+      console.error('Error approving as transporter:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Approval Failed',
+        description: error.message || 'Failed to approve reconciliation.',
+      });
+    }
+  };
+
   const isTrustAccount = user?.role === 'trust_account';
 
   return (
@@ -428,7 +523,7 @@ const Reconciliation = () => {
             </p>
           </div>
           {!isTrustAccount && (
-            <Button onClick={() => setUploadDialogOpen(true)} className="gap-2">
+            <Button onClick={handleOpenUploadDialog} className="gap-2">
               <Upload className="h-4 w-4" />
               Upload Document
             </Button>
@@ -555,34 +650,72 @@ const Reconciliation = () => {
                         </div>
                       )}
 
-                      {/* Claim Button for Transporter (after approval) */}
-                      {!isTrustAccount && recon.status === 'approved' && !recon.claim_requested && (
+                      {/* Transporter Approval Button (after trust account approval) */}
+                      {!isTrustAccount && recon.workflow_status === 'trust_approved' && !recon.transporter_approved && (
                         <Button
-                          onClick={() => handleOpenClaimDialog(recon)}
-                          className="w-full mt-3 bg-blue-600 hover:bg-blue-700 gap-2"
+                          onClick={() => handleApproveAsTransporter(recon.id)}
+                          className="w-full mt-3 bg-green-600 hover:bg-green-700 gap-2"
                         >
-                          <ArrowUpCircle className="h-4 w-4" />
-                          Request Claim
+                          <CheckCircle className="h-4 w-4" />
+                          Approve Reconciliation
                         </Button>
                       )}
 
-                      {/* Claim Requested Message */}
-                      {!isTrustAccount && recon.claim_requested && (
+                      {/* Approval Status Badges */}
+                      {recon.workflow_status && recon.workflow_status !== 'pending' && (
                         <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 mt-3">
-                          <p className="text-xs text-blue-700 dark:text-blue-300 mb-1 flex items-center gap-1">
+                          <p className="text-xs text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-1">
                             <Info className="h-3 w-3" />
-                            Claim Status
+                            Approval Status
                           </p>
-                          <p className="text-sm">
-                            {recon.lender_approved
-                              ? 'Claim approved by lender. Payment pending.'
-                              : 'Claim submitted. Awaiting lender approval.'}
+                          <div className="space-y-2 text-sm">
+                            <div className="flex items-center justify-between">
+                              <span>Trust Account:</span>
+                              <Badge className={recon.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
+                                {recon.status === 'approved' ? 'Approved' : 'Pending'}
+                              </Badge>
+                            </div>
+                            {recon.selected_lender_id && (
+                              <div className="flex items-center justify-between">
+                                <span>Lender:</span>
+                                <Badge className={recon.lender_approved ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                                  {recon.lender_approved ? 'Approved' : 'Pending'}
+                                </Badge>
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <span>Transporter:</span>
+                              <Badge className={recon.transporter_approved ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                                {recon.transporter_approved ? 'Approved' : 'Pending'}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Bank Request Message */}
+                      {recon.bank_request_generated && recon.bank_request_message && (
+                        <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 mt-3">
+                          <p className="text-xs text-green-700 dark:text-green-300 mb-1 flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            All Approvals Complete
+                          </p>
+                          <p className="text-sm">{recon.bank_request_message}</p>
+                        </div>
+                      )}
+
+                      {/* Selected Trips Display */}
+                      {recon.selected_trip_ids && recon.selected_trip_ids.length > 0 && (
+                        <div className="p-3 bg-muted/50 rounded-lg mt-3">
+                          <p className="text-xs font-medium mb-2">Selected Trips ({recon.selected_trip_ids.length})</p>
+                          <p className="text-xs text-muted-foreground">
+                            Lender: {recon.selected_lender_name}
                           </p>
                         </div>
                       )}
 
-                      {/* Payment Notification Message */}
-                      {recon.payment_notification_sent && recon.payment_notification_message && (
+                      {/* Payment Notification Message (legacy support) */}
+                      {recon.payment_notification_sent && recon.payment_notification_message && !recon.bank_request_generated && (
                         <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 mt-3">
                           <p className="text-xs text-green-700 dark:text-green-300 mb-1 flex items-center gap-1">
                             <Info className="h-3 w-3" />
@@ -667,6 +800,70 @@ const Reconciliation = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Lender Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="lender-select">
+                  Select Lender <span className="text-destructive">*</span>
+                </Label>
+                <Select value={selectedLenderId} onValueChange={(value) => {
+                  setSelectedLenderId(value);
+                  setSelectedTripIds([]);
+                }}>
+                  <SelectTrigger id="lender-select">
+                    <SelectValue placeholder="Choose lender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {lenderGroups.length === 0 ? (
+                      <SelectItem value="none" disabled>No lenders with completed trips</SelectItem>
+                    ) : (
+                      lenderGroups.map((lg) => (
+                        <SelectItem key={lg.lender_id} value={lg.lender_id}>
+                          {lg.lender_name} {lg.lender_company ? `- ${lg.lender_company}` : ''} ({lg.trips.length} trips)
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Trip Selection (Multi-select) */}
+              {selectedLenderId && (
+                <div className="space-y-2">
+                  <Label>
+                    Select Trips <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="border rounded-lg p-3 max-h-64 overflow-y-auto bg-muted/30">
+                    {lenderGroups
+                      .find(lg => lg.lender_id === selectedLenderId)
+                      ?.trips.map((trip) => (
+                        <div
+                          key={trip.id}
+                          className={`flex items-start gap-3 p-3 rounded-md mb-2 cursor-pointer hover:bg-muted/50 ${
+                            selectedTripIds.includes(trip.id) ? 'bg-primary/10 border border-primary' : 'bg-background border border-border'
+                          }`}
+                          onClick={() => handleToggleTripSelection(trip.id)}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedTripIds.includes(trip.id)}
+                            onChange={() => handleToggleTripSelection(trip.id)}
+                            className="mt-1"
+                          />
+                          <div className="flex-1 text-sm">
+                            <div className="font-medium">{trip.origin} → {trip.destination}</div>
+                            <div className="text-muted-foreground">
+                              {trip.load_type} • {formatCurrency(trip.amount)} • {trip.distance} km
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedTripIds.length} trip{selectedTripIds.length !== 1 ? 's' : ''} selected
+                  </p>
+                </div>
+              )}
 
               {/* File Upload */}
               <div className="space-y-2">
