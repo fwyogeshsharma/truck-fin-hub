@@ -18,10 +18,8 @@ export interface Contract {
   party1_name: string;
   party2_user_id: string;
   party2_name: string;
-  party3_user_id?: string;
-  party3_name?: string;
-  party4_user_id: string;
-  party4_name: string;
+  party3_user_id: string;
+  party3_name: string;
   status: 'active' | 'expired' | 'cancelled' | 'archived';
   uploaded_by: string;
   created_at: Date;
@@ -46,8 +44,6 @@ export interface CreateContractInput {
   party1_name: string;
   party2_user_id: string;
   party2_name: string;
-  party3_user_id?: string;
-  party3_name?: string;
   uploaded_by: string;
 }
 
@@ -154,8 +150,6 @@ export async function createContract(input: CreateContractInput): Promise<Contra
     party1_name,
     party2_user_id,
     party2_name,
-    party3_user_id,
-    party3_name,
     uploaded_by,
   } = input;
 
@@ -166,10 +160,9 @@ export async function createContract(input: CreateContractInput): Promise<Contra
       contract_type, consignee_sender, validity_date, trip_stage,
       party1_user_id, party1_name,
       party2_user_id, party2_name,
-      party3_user_id, party3_name,
       uploaded_by
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
     ) RETURNING *`,
     [
       id, file_name, file_type, file_size, file_url, file_data,
@@ -177,7 +170,6 @@ export async function createContract(input: CreateContractInput): Promise<Contra
       contract_type, consignee_sender, validity_date, trip_stage,
       party1_user_id, party1_name,
       party2_user_id, party2_name,
-      party3_user_id, party3_name,
       uploaded_by,
     ]
   );

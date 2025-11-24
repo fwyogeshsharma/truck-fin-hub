@@ -155,8 +155,6 @@ router.post('/', async (req: Request, res: Response) => {
       party1_name,
       party2_user_id,
       party2_name,
-      party3_user_id,
-      party3_name,
       uploaded_by,
     } = req.body;
 
@@ -199,8 +197,6 @@ router.post('/', async (req: Request, res: Response) => {
       party1_name,
       party2_user_id,
       party2_name,
-      party3_user_id,
-      party3_name,
       uploaded_by,
     };
 
