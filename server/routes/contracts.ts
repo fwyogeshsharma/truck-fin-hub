@@ -148,6 +148,7 @@ router.post('/', async (req: Request, res: Response) => {
       ltv,
       penalty_after_due_date,
       contract_type,
+      consignee_sender,
       validity_date,
       trip_stage,
       party1_user_id,
@@ -176,10 +177,6 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Missing required party information' });
     }
 
-    if (contract_type === '3-party' && (!party3_user_id || !party3_name)) {
-      return res.status(400).json({ error: 'Party 3 required for 3-party contracts' });
-    }
-
     if (!uploaded_by) {
       return res.status(400).json({ error: 'Missing uploader information' });
     }
@@ -195,6 +192,7 @@ router.post('/', async (req: Request, res: Response) => {
       ltv: parseFloat(ltv),
       penalty_after_due_date: parseFloat(penalty_after_due_date),
       contract_type,
+      consignee_sender,
       validity_date,
       trip_stage,
       party1_user_id,

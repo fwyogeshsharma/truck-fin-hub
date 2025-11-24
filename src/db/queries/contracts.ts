@@ -10,7 +10,8 @@ export interface Contract {
   loan_percentage: number;
   ltv: number;
   penalty_after_due_date: number;
-  contract_type: '2-party' | '3-party';
+  contract_type: '2-party';
+  consignee_sender?: string;
   validity_date: string;
   trip_stage?: string;
   party1_user_id: string;
@@ -37,7 +38,8 @@ export interface CreateContractInput {
   loan_percentage: number;
   ltv: number;
   penalty_after_due_date: number;
-  contract_type: '2-party' | '3-party';
+  contract_type: '2-party';
+  consignee_sender?: string;
   validity_date: string;
   trip_stage?: string;
   party1_user_id: string;
@@ -145,6 +147,7 @@ export async function createContract(input: CreateContractInput): Promise<Contra
     ltv,
     penalty_after_due_date,
     contract_type,
+    consignee_sender,
     validity_date,
     trip_stage,
     party1_user_id,
@@ -160,18 +163,18 @@ export async function createContract(input: CreateContractInput): Promise<Contra
     `INSERT INTO contracts (
       id, file_name, file_type, file_size, file_url, file_data,
       loan_percentage, ltv, penalty_after_due_date,
-      contract_type, validity_date, trip_stage,
+      contract_type, consignee_sender, validity_date, trip_stage,
       party1_user_id, party1_name,
       party2_user_id, party2_name,
       party3_user_id, party3_name,
       uploaded_by
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
     ) RETURNING *`,
     [
       id, file_name, file_type, file_size, file_url, file_data,
       loan_percentage, ltv, penalty_after_due_date,
-      contract_type, validity_date, trip_stage,
+      contract_type, consignee_sender, validity_date, trip_stage,
       party1_user_id, party1_name,
       party2_user_id, party2_name,
       party3_user_id, party3_name,

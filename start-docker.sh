@@ -90,6 +90,20 @@ else
   echo "⚠️  Migration file not found: src/db/migrations/030_add_reconciliation_claims.sql"
 fi
 
+echo ""
+echo "🔄 Running migration 031: Add consignee_sender to contracts..."
+if [ -f "src/db/migrations/031_add_consignee_sender_to_contracts.sql" ]; then
+  docker exec -i logifin-postgres psql -U "$DB_USER" -d "$DB_NAME" < src/db/migrations/031_add_consignee_sender_to_contracts.sql
+  if [ $? -eq 0 ]; then
+    echo "✅ Migration 031 completed successfully!"
+  else
+    echo "❌ Migration 031 failed!"
+    exit 1
+  fi
+else
+  echo "⚠️  Migration file not found: src/db/migrations/031_add_consignee_sender_to_contracts.sql"
+fi
+
 ## Run migrations (commented out)
 #docker exec -i logifin-postgres psql -U "$DB_USER" -d "$DB_NAME" << 'EOFMIGRATION'
 #-- Create companies table
