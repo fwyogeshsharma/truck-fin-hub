@@ -128,7 +128,8 @@ router.get('/trips/by-lender', async (req, res) => {
     let params;
 
     if (lenderId) {
-      // Get trips for specific lender
+      // Get trips for specific lender where they provided funding
+      // Include funded, in_transit, completed, and repaid statuses
       query = `SELECT
         t.id,
         t.origin,
@@ -139,15 +140,18 @@ router.get('/trips/by-lender', async (req, res) => {
         t.lender_id,
         t.lender_name,
         t.status,
-        t.completion_date
+        t.completed_at as completion_date,
+        t.funded_at,
+        t.interest_rate,
+        t.maturity_days
        FROM trips t
        WHERE t.transporter_id = $1
          AND t.lender_id = $2
-         AND t.status = 'completed'
-       ORDER BY t.completion_date DESC`;
+         AND t.status IN ('funded', 'in_transit', 'completed', 'repaid')
+       ORDER BY t.completed_at DESC NULLS LAST, t.funded_at DESC`;
       params = [transporterId, lenderId];
     } else {
-      // Get all completed trips with lenders, grouped by lender
+      // Get all trips with lenders where funding was provided, grouped by lender
       query = `SELECT
         t.id,
         t.origin,
@@ -158,15 +162,16 @@ router.get('/trips/by-lender', async (req, res) => {
         t.lender_id,
         t.lender_name,
         t.status,
-        t.completion_date,
+        t.completed_at as completion_date,
+        t.funded_at,
         u.name as lender_full_name,
         u.company as lender_company
        FROM trips t
        LEFT JOIN users u ON t.lender_id = u.id
        WHERE t.transporter_id = $1
-         AND t.status = 'completed'
+         AND t.status IN ('funded', 'in_transit', 'completed', 'repaid')
          AND t.lender_id IS NOT NULL
-       ORDER BY t.lender_id, t.completion_date DESC`;
+       ORDER BY t.lender_id, t.completed_at DESC NULLS LAST`;
       params = [transporterId];
     }
 
