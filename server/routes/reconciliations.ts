@@ -696,6 +696,8 @@ router.patch('/:id/approve-claim', async (req, res) => {
       return res.status(400).json({ error: 'Lender ID is required' });
     }
 
+    console.log('Approve claim request - reconciliation ID:', id, 'lender_id:', lender_id);
+
     // Check if the claim columns exist
     const columnCheck = await db.query(
       `SELECT column_name
@@ -708,10 +710,40 @@ router.patch('/:id/approve-claim', async (req, res) => {
       return res.status(400).json({ error: 'Claim approval feature not available. Please run migration 030.' });
     }
 
+    // First, check if the reconciliation exists and get its current state
+    const existingRecon = await db.query(
+      `SELECT id, lender_id, selected_lender_id, workflow_status, status
+       FROM reconciliations
+       WHERE id = $1`,
+      [id]
+    );
+
+    if (existingRecon.rows.length === 0) {
+      console.log('Reconciliation not found:', id);
+      return res.status(404).json({ error: 'Reconciliation not found' });
+    }
+
+    const recon = existingRecon.rows[0];
+    console.log('Found reconciliation:', recon);
+
+    // Check if lender is authorized (matches either lender_id or selected_lender_id)
+    const isAuthorized = recon.lender_id === lender_id || recon.selected_lender_id === lender_id;
+    if (!isAuthorized) {
+      console.log('Lender not authorized. Recon lender_id:', recon.lender_id, 'selected_lender_id:', recon.selected_lender_id, 'provided lender_id:', lender_id);
+      return res.status(403).json({
+        error: 'Not authorized to approve this claim',
+        details: {
+          recon_lender_id: recon.lender_id,
+          recon_selected_lender_id: recon.selected_lender_id,
+          provided_lender_id: lender_id
+        }
+      });
+    }
+
     // Generate payment notification message
     const paymentMessage = 'Within 24 hours you will receive an approval request in Jaipur Golden Trust Account. Please approve that to complete the payment process.';
 
-    // Try to update - check both lender_id (legacy) and selected_lender_id (new workflow)
+    // Update the reconciliation
     const result = await db.query(
       `UPDATE reconciliations
        SET lender_approved = TRUE,
@@ -720,15 +752,12 @@ router.patch('/:id/approve-claim', async (req, res) => {
            payment_notification_message = $1,
            workflow_status = 'lender_approved',
            updated_at = NOW()
-       WHERE id = $2 AND (lender_id = $3 OR selected_lender_id = $3)
+       WHERE id = $2
        RETURNING *`,
-      [paymentMessage, id, lender_id]
+      [paymentMessage, id]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Reconciliation not found or not authorized' });
-    }
-
+    console.log('Reconciliation updated successfully');
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error approving claim:', error);
