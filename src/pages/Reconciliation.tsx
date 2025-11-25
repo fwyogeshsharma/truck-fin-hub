@@ -171,14 +171,25 @@ const Reconciliation = () => {
       // Fetch trip details for reconciliations that have selected_trip_ids
       const tripDetailsMap: Record<string, Trip[]> = {};
       for (const recon of data) {
-        if (recon.selected_trip_ids && recon.selected_trip_ids.length > 0) {
+        // Parse selected_trip_ids if it's a string (JSON)
+        let tripIds = recon.selected_trip_ids;
+        if (typeof tripIds === 'string') {
+          try {
+            tripIds = JSON.parse(tripIds);
+          } catch {
+            tripIds = [];
+          }
+        }
+
+        if (tripIds && Array.isArray(tripIds) && tripIds.length > 0) {
           try {
             const tripDetails = await apiClient.post('/reconciliations/trips/details', {
-              tripIds: recon.selected_trip_ids
+              tripIds: tripIds
             });
             tripDetailsMap[recon.id] = tripDetails;
           } catch (err) {
             console.error(`Error fetching trip details for recon ${recon.id}:`, err);
+            // Don't break the page, just skip this reconciliation's trip details
           }
         }
       }

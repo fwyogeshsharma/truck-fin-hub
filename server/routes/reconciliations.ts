@@ -209,37 +209,47 @@ router.post('/trips/details', async (req, res) => {
     console.log('Fetching trip details for IDs:', tripIds);
 
     // First, fetch basic trip data
-    const tripsResult = await db.query(
-      `SELECT id, origin, destination, load_type, amount, distance, weight,
-              lender_id, lender_name, status, load_owner_name, transporter_name,
-              interest_rate, maturity_days, funded_at, completed_at
-       FROM trips
-       WHERE id = ANY($1)
-       ORDER BY created_at DESC`,
-      [tripIds]
-    );
+    let tripsResult;
+    try {
+      tripsResult = await db.query(
+        `SELECT id, origin, destination, load_type, amount, distance, weight,
+                lender_id, lender_name, status, load_owner_name, transporter_name,
+                interest_rate, maturity_days, funded_at, completed_at
+         FROM trips
+         WHERE id = ANY($1)
+         ORDER BY created_at DESC`,
+        [tripIds]
+      );
+    } catch (queryError: any) {
+      console.error('Error querying trips:', queryError.message);
+      // If query fails, return empty array instead of error
+      return res.json([]);
+    }
+
+    if (!tripsResult || !tripsResult.rows) {
+      return res.json([]);
+    }
 
     // Then, try to fetch interest rates from bids for trips that don't have interest_rate
     let bidRates: Record<string, number> = {};
     try {
+      // First try with status column
       const bidsResult = await db.query(
         `SELECT trip_id, interest_rate
          FROM trip_bids
          WHERE trip_id = ANY($1)
-           AND lender_id IN (SELECT lender_id FROM trips WHERE id = ANY($1))
-           AND (status = 'accepted' OR status = 'confirmed')
          ORDER BY created_at DESC`,
         [tripIds]
       );
 
-      // Map trip_id to interest_rate from accepted bids
+      // Map trip_id to interest_rate from bids (first bid for each trip)
       bidsResult.rows.forEach((bid: any) => {
         if (!bidRates[bid.trip_id] && bid.interest_rate) {
           bidRates[bid.trip_id] = Number(bid.interest_rate);
         }
       });
-    } catch (bidError) {
-      console.log('Could not fetch bid rates, using trip rates only:', bidError);
+    } catch (bidError: any) {
+      console.log('Could not fetch bid rates, using trip rates only:', bidError.message);
     }
 
     // Calculate lender amount (principal + interest) for each trip
