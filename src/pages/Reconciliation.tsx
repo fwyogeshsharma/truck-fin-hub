@@ -812,8 +812,8 @@ const Reconciliation = () => {
                         </div>
                       )}
 
-                      {/* Transporter Approval Button (after trust account approval) */}
-                      {!isTrustAccount && recon.workflow_status === 'trust_approved' && !recon.transporter_approved && (
+                      {/* Transporter Approval Button (after lender approval) */}
+                      {!isTrustAccount && recon.workflow_status === 'lender_approved' && !recon.transporter_approved && (
                         <Button
                           onClick={() => handleApproveAsTransporter(recon.id)}
                           className="w-full mt-3 bg-green-600 hover:bg-green-700 gap-2"
