@@ -273,9 +273,9 @@ const Reconciliation = () => {
       // Fetch trips where load_owner_id is current user and lender_id is selected lender
       const allTrips = await apiClient.get(`/trips?loadOwnerId=${user?.id}&lenderId=${lenderId}`);
 
-      // Filter for active trips (funded, in_transit, completed, repaid)
+      // Filter for active trips (funded, in_transit, completed) - exclude repaid trips
       const filtered = allTrips.filter((trip: any) =>
-        ['funded', 'in_transit', 'completed', 'repaid'].includes(trip.status)
+        ['funded', 'in_transit', 'completed'].includes(trip.status)
       );
 
       // Find the selected lender's name from the lenders list
