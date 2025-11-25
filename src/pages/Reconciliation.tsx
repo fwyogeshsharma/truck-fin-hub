@@ -178,10 +178,11 @@ const Reconciliation = () => {
 
   const fetchTrustAccountLenders = async (trustAccountId: string) => {
     try {
-      const data = await apiClient.get(`/reconciliations/trust-accounts/${trustAccountId}/lenders`);
+      // Fetch all lenders from users API
+      const data = await apiClient.get('/users?role=lender');
       setTrustAccountLenders(data);
     } catch (error: any) {
-      console.error('Error fetching lenders for trust account:', error);
+      console.error('Error fetching lenders:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
