@@ -242,15 +242,23 @@ router.post('/', async (req, res) => {
     }
 
     // Check if selected_trip_ids columns exist
-    const columnCheck = await db.query(
-      `SELECT column_name
-       FROM information_schema.columns
-       WHERE table_name = 'reconciliations'
-       AND column_name = 'selected_trip_ids'`
-    );
+    let hasNewColumns = false;
+    try {
+      const columnCheck = await db.query(
+        `SELECT column_name
+         FROM information_schema.columns
+         WHERE table_name = 'reconciliations'
+         AND column_name = 'selected_trip_ids'`
+      );
+      hasNewColumns = columnCheck.rows.length > 0;
+    } catch (checkError) {
+      console.log('Column check failed, using legacy schema:', checkError);
+      hasNewColumns = false;
+    }
 
     let result;
-    if (columnCheck.rows.length > 0) {
+    if (hasNewColumns) {
+      console.log('Using new schema with selected_trip_ids');
       // New schema with selected_trip_ids
       result = await db.query(
         `INSERT INTO reconciliations (
@@ -284,6 +292,7 @@ router.post('/', async (req, res) => {
         ]
       );
     } else {
+      console.log('Using legacy schema without selected_trip_ids');
       // Legacy schema without selected_trip_ids
       result = await db.query(
         `INSERT INTO reconciliations (
@@ -313,9 +322,10 @@ router.post('/', async (req, res) => {
     }
 
     res.status(201).json(result.rows[0]);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating reconciliation:', error);
-    res.status(500).json({ error: 'Failed to create reconciliation' });
+    console.error('Error details:', error.message);
+    res.status(500).json({ error: 'Failed to create reconciliation', message: error.message });
   }
 });
 
