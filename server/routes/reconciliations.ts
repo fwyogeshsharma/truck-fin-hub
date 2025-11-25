@@ -197,13 +197,18 @@ router.post('/trips/details', async (req, res) => {
       return res.json([]);
     }
 
+    // Fetch trips with their accepted/winning bid's interest rate
     const result = await db.query(
-      `SELECT id, origin, destination, load_type, amount, distance, weight,
-              lender_id, lender_name, status, load_owner_name, transporter_name,
-              interest_rate, maturity_days, funded_at, completed_at
-       FROM trips
-       WHERE id = ANY($1)
-       ORDER BY created_at DESC`,
+      `SELECT t.id, t.origin, t.destination, t.load_type, t.amount, t.distance, t.weight,
+              t.lender_id, t.lender_name, t.status, t.load_owner_name, t.transporter_name,
+              t.maturity_days, t.funded_at, t.completed_at,
+              COALESCE(t.interest_rate, b.interest_rate, 0) as interest_rate
+       FROM trips t
+       LEFT JOIN trip_bids b ON t.id = b.trip_id
+         AND b.lender_id = t.lender_id
+         AND b.status = 'accepted'
+       WHERE t.id = ANY($1)
+       ORDER BY t.created_at DESC`,
       [tripIds]
     );
 

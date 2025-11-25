@@ -401,6 +401,16 @@ const Reconciliation = () => {
       return;
     }
 
+    // Validation - amount is required
+    if (!reconciliationAmount || parseFloat(reconciliationAmount) <= 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing information',
+        description: 'Please enter a valid reconciliation amount.',
+      });
+      return;
+    }
+
     // Validation - lender selection required if trips are selected
     if (selectedTripIds.length > 0 && !selectedLenderId) {
       toast({
@@ -1156,7 +1166,7 @@ const Reconciliation = () => {
               {/* Amount */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="amount">Amount (Optional)</Label>
+                  <Label htmlFor="amount">Amount <span className="text-destructive">*</span></Label>
                   <Input
                     id="amount"
                     type="number"
@@ -1164,6 +1174,7 @@ const Reconciliation = () => {
                     placeholder="0.00"
                     value={reconciliationAmount}
                     onChange={(e) => setReconciliationAmount(e.target.value)}
+                    required
                   />
                 </div>
 
