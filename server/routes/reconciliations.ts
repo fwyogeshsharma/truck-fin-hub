@@ -259,6 +259,29 @@ router.post('/', async (req, res) => {
     let result;
     if (hasNewColumns) {
       console.log('Using new schema with selected_trip_ids');
+
+      // Check the column type for selected_trip_ids (could be TEXT[] or JSONB)
+      const columnTypeCheck = await db.query(
+        `SELECT data_type
+         FROM information_schema.columns
+         WHERE table_name = 'reconciliations'
+         AND column_name = 'selected_trip_ids'`
+      );
+      const columnType = columnTypeCheck.rows[0]?.data_type || 'ARRAY';
+      console.log('selected_trip_ids column type:', columnType);
+
+      // Format selected_trip_ids based on column type
+      let formattedTripIds = null;
+      if (selected_trip_ids && selected_trip_ids.length > 0) {
+        if (columnType === 'jsonb' || columnType === 'json') {
+          // Store as JSON
+          formattedTripIds = JSON.stringify(selected_trip_ids);
+        } else {
+          // Store as array (TEXT[])
+          formattedTripIds = selected_trip_ids;
+        }
+      }
+
       // New schema with selected_trip_ids
       result = await db.query(
         `INSERT INTO reconciliations (
@@ -276,7 +299,7 @@ router.post('/', async (req, res) => {
           trust_account_id,
           trust_account_name,
           trip_id || null,
-          selected_trip_ids && selected_trip_ids.length > 0 ? selected_trip_ids : null,
+          formattedTripIds,
           selected_lender_id || null,
           selected_lender_name || null,
           document_name,
