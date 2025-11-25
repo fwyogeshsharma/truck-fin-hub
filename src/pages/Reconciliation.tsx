@@ -1006,15 +1006,15 @@ const Reconciliation = () => {
 
         {/* Upload Dialog */}
         <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
+          <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>Upload Reconciliation Document</DialogTitle>
               <DialogDescription>
                 Upload a reconciliation document for review by a trust account
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
+            <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-2">
               {/* Trust Account Selection */}
               <div className="space-y-2">
                 <Label htmlFor="trust-account">
@@ -1191,7 +1191,7 @@ const Reconciliation = () => {
               </div>
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="flex-shrink-0 border-t pt-4 mt-2">
               <Button variant="outline" onClick={() => setUploadDialogOpen(false)} disabled={saving}>
                 Cancel
               </Button>
