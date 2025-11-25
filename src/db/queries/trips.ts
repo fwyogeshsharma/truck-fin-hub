@@ -215,18 +215,38 @@ export const getTripsByStatus = async (status: Trip['status']): Promise<(Trip & 
  */
 export const getTripsByLoadOwner = async (loadOwnerId: string): Promise<(Trip & { documents?: Record<string, string> })[]> => {
   const db = await getDatabase();
-  // Join with trip_bids to get the accepted bid's interest rate if trip doesn't have it
-  const result = await db.query(`
-    SELECT DISTINCT ON (t.id) t.*,
-           COALESCE(t.interest_rate, b.interest_rate) as bid_interest_rate
-    FROM trips t
-    LEFT JOIN trip_bids b ON t.id = b.trip_id
-      AND b.lender_id = t.lender_id
-      AND b.status = 'accepted'
-    WHERE t.load_owner_id = $1
-    ORDER BY t.id, t.created_at DESC
-  `, [loadOwnerId]);
-  const trips = result.rows as (Trip & { bid_interest_rate?: number })[];
+
+  // First get trips
+  const result = await db.query('SELECT * FROM trips WHERE load_owner_id = $1 ORDER BY created_at DESC', [loadOwnerId]);
+  let trips = result.rows as (Trip & { bid_interest_rate?: number })[];
+
+  // Try to get interest rates from bids
+  if (trips.length > 0) {
+    try {
+      const tripIds = trips.map(t => t.id);
+      const bidsResult = await db.query(`
+        SELECT trip_id, interest_rate
+        FROM trip_bids
+        WHERE trip_id = ANY($1)
+          AND (status = 'accepted' OR status = 'confirmed')
+      `, [tripIds]);
+
+      const bidRates: Record<string, number> = {};
+      bidsResult.rows.forEach((bid: any) => {
+        if (bid.interest_rate) {
+          bidRates[bid.trip_id] = Number(bid.interest_rate);
+        }
+      });
+
+      // Add bid_interest_rate to trips
+      trips = trips.map(trip => ({
+        ...trip,
+        bid_interest_rate: bidRates[trip.id] || undefined
+      }));
+    } catch (err) {
+      console.log('Could not fetch bid rates for load owner trips');
+    }
+  }
 
   // Get all documents for these trips
   const tripIds = trips.map(t => t.id);
@@ -261,18 +281,39 @@ export const getTripsByLoadOwner = async (loadOwnerId: string): Promise<(Trip & 
  */
 export const getTripsByLender = async (lenderId: string): Promise<(Trip & { documents?: Record<string, string> })[]> => {
   const db = await getDatabase();
-  // Join with trip_bids to get the accepted bid's interest rate if trip doesn't have it
-  const result = await db.query(`
-    SELECT DISTINCT ON (t.id) t.*,
-           COALESCE(t.interest_rate, b.interest_rate) as bid_interest_rate
-    FROM trips t
-    LEFT JOIN trip_bids b ON t.id = b.trip_id
-      AND b.lender_id = t.lender_id
-      AND b.status = 'accepted'
-    WHERE t.lender_id = $1
-    ORDER BY t.id, t.created_at DESC
-  `, [lenderId]);
-  const trips = result.rows as (Trip & { bid_interest_rate?: number })[];
+
+  // First get trips
+  const result = await db.query('SELECT * FROM trips WHERE lender_id = $1 ORDER BY created_at DESC', [lenderId]);
+  let trips = result.rows as (Trip & { bid_interest_rate?: number })[];
+
+  // Try to get interest rates from bids
+  if (trips.length > 0) {
+    try {
+      const tripIds = trips.map(t => t.id);
+      const bidsResult = await db.query(`
+        SELECT trip_id, interest_rate
+        FROM trip_bids
+        WHERE trip_id = ANY($1)
+          AND lender_id = $2
+          AND (status = 'accepted' OR status = 'confirmed')
+      `, [tripIds, lenderId]);
+
+      const bidRates: Record<string, number> = {};
+      bidsResult.rows.forEach((bid: any) => {
+        if (bid.interest_rate) {
+          bidRates[bid.trip_id] = Number(bid.interest_rate);
+        }
+      });
+
+      // Add bid_interest_rate to trips
+      trips = trips.map(trip => ({
+        ...trip,
+        bid_interest_rate: bidRates[trip.id] || undefined
+      }));
+    } catch (err) {
+      console.log('Could not fetch bid rates for lender trips');
+    }
+  }
 
   // Get all documents for these trips
   const tripIds = trips.map(t => t.id);

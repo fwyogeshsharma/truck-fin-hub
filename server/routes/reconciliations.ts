@@ -191,31 +191,62 @@ router.get('/trust-accounts/:trustAccountId/lenders', async (req, res) => {
 router.post('/trips/details', async (req, res) => {
   try {
     const db = await getDatabase();
-    const { tripIds } = req.body;
+    let { tripIds } = req.body;
+
+    // Handle case where tripIds might be a JSON string
+    if (typeof tripIds === 'string') {
+      try {
+        tripIds = JSON.parse(tripIds);
+      } catch {
+        tripIds = [tripIds]; // Single ID as string
+      }
+    }
 
     if (!tripIds || !Array.isArray(tripIds) || tripIds.length === 0) {
       return res.json([]);
     }
 
-    // Fetch trips with their accepted/winning bid's interest rate
-    const result = await db.query(
-      `SELECT t.id, t.origin, t.destination, t.load_type, t.amount, t.distance, t.weight,
-              t.lender_id, t.lender_name, t.status, t.load_owner_name, t.transporter_name,
-              t.maturity_days, t.funded_at, t.completed_at,
-              COALESCE(t.interest_rate, b.interest_rate, 0) as interest_rate
-       FROM trips t
-       LEFT JOIN trip_bids b ON t.id = b.trip_id
-         AND b.lender_id = t.lender_id
-         AND b.status = 'accepted'
-       WHERE t.id = ANY($1)
-       ORDER BY t.created_at DESC`,
+    console.log('Fetching trip details for IDs:', tripIds);
+
+    // First, fetch basic trip data
+    const tripsResult = await db.query(
+      `SELECT id, origin, destination, load_type, amount, distance, weight,
+              lender_id, lender_name, status, load_owner_name, transporter_name,
+              interest_rate, maturity_days, funded_at, completed_at
+       FROM trips
+       WHERE id = ANY($1)
+       ORDER BY created_at DESC`,
       [tripIds]
     );
 
+    // Then, try to fetch interest rates from bids for trips that don't have interest_rate
+    let bidRates: Record<string, number> = {};
+    try {
+      const bidsResult = await db.query(
+        `SELECT trip_id, interest_rate
+         FROM trip_bids
+         WHERE trip_id = ANY($1)
+           AND lender_id IN (SELECT lender_id FROM trips WHERE id = ANY($1))
+           AND (status = 'accepted' OR status = 'confirmed')
+         ORDER BY created_at DESC`,
+        [tripIds]
+      );
+
+      // Map trip_id to interest_rate from accepted bids
+      bidsResult.rows.forEach((bid: any) => {
+        if (!bidRates[bid.trip_id] && bid.interest_rate) {
+          bidRates[bid.trip_id] = Number(bid.interest_rate);
+        }
+      });
+    } catch (bidError) {
+      console.log('Could not fetch bid rates, using trip rates only:', bidError);
+    }
+
     // Calculate lender amount (principal + interest) for each trip
-    const tripsWithCalculations = result.rows.map((trip: any) => {
+    const tripsWithCalculations = tripsResult.rows.map((trip: any) => {
       const principal = Number(trip.amount) || 0;
-      const interestRate = Number(trip.interest_rate) || 0;
+      // Use bid rate if available, otherwise use trip rate
+      const interestRate = bidRates[trip.id] || Number(trip.interest_rate) || 0;
       const maturityDays = Number(trip.maturity_days) || 30;
 
       // Calculate interest: (principal * rate * days) / (365 * 100)
@@ -234,9 +265,10 @@ router.post('/trips/details', async (req, res) => {
     });
 
     res.json(tripsWithCalculations);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching trip details:', error);
-    res.status(500).json({ error: 'Failed to fetch trip details' });
+    console.error('Error message:', error.message);
+    res.status(500).json({ error: 'Failed to fetch trip details', message: error.message });
   }
 });
 
