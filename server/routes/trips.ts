@@ -27,7 +27,13 @@ router.get('/', async (req: Request, res: Response) => {
     const { status, loadOwnerId, lenderId } = req.query;
 
     let trips;
-    if (status) {
+
+    // Support combined filters: loadOwnerId AND lenderId
+    if (loadOwnerId && lenderId) {
+      // Get trips by load owner first, then filter by lender
+      const loadOwnerTrips = await getTripsByLoadOwner(loadOwnerId as string);
+      trips = loadOwnerTrips.filter(trip => trip.lender_id === lenderId);
+    } else if (status) {
       trips = await getTripsByStatus(status as any);
     } else if (loadOwnerId) {
       trips = await getTripsByLoadOwner(loadOwnerId as string);

@@ -200,51 +200,9 @@ const Reconciliation = () => {
     }
   };
 
-  const fetchActiveTrips = async (filterByLenderId?: string) => {
-    try {
-      // Fetch all trips and filter on frontend for active trips of this transporter
-      const allTrips = await apiClient.get('/trips');
-
-      // Filter for active trips where user is the transporter
-      let filtered = allTrips.filter((trip: any) =>
-        trip.transporter_id === user?.id &&
-        ['funded', 'in_transit', 'completed', 'repaid'].includes(trip.status) &&
-        trip.lender_id // Only trips with a lender
-      );
-
-      // Further filter by specific lender if provided
-      if (filterByLenderId) {
-        filtered = filtered.filter((trip: any) => trip.lender_id === filterByLenderId);
-      }
-
-      // Group trips by lender
-      const grouped: Record<string, LenderGroup> = {};
-      filtered.forEach((trip: any) => {
-        const lenderId = trip.lender_id;
-        if (!grouped[lenderId]) {
-          grouped[lenderId] = {
-            lender_id: lenderId,
-            lender_name: trip.lender_name || 'Unknown Lender',
-            trips: [],
-          };
-        }
-        grouped[lenderId].trips.push(trip);
-      });
-
-      setLenderGroups(Object.values(grouped));
-    } catch (error: any) {
-      console.error('Error fetching active trips:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to load trips',
-      });
-    }
-  };
-
   const handleOpenUploadDialog = () => {
     setUploadDialogOpen(true);
-    fetchActiveTrips();
+    // Trips will be fetched when lender is selected from dropdown
   };
 
   const handleTrustAccountChange = (trustAccountId: string) => {
@@ -260,9 +218,52 @@ const Reconciliation = () => {
     }
   };
 
-  const handleLenderChange = (lenderId: string) => {
+  const handleLenderChange = async (lenderId: string) => {
     setSelectedLenderId(lenderId);
     setSelectedTripIds([]); // Clear selected trips when lender changes
+    setLenderGroups([]); // Clear existing trips
+
+    if (lenderId) {
+      // Fetch trips for this lender where current user is the load owner
+      await fetchTripsForLender(lenderId);
+    }
+  };
+
+  const fetchTripsForLender = async (lenderId: string) => {
+    try {
+      // Fetch trips where load_owner_id is current user and lender_id is selected lender
+      const allTrips = await apiClient.get(`/trips?loadOwnerId=${user?.id}&lenderId=${lenderId}`);
+
+      // Filter for active trips (funded, in_transit, completed, repaid)
+      const filtered = allTrips.filter((trip: any) =>
+        ['funded', 'in_transit', 'completed', 'repaid'].includes(trip.status)
+      );
+
+      // Find the selected lender's name from the lenders list
+      const selectedLender = trustAccountLenders.find(l => l.id === lenderId);
+
+      if (filtered.length > 0) {
+        setLenderGroups([{
+          lender_id: lenderId,
+          lender_name: selectedLender?.name || filtered[0]?.lender_name || 'Unknown Lender',
+          trips: filtered,
+        }]);
+      } else {
+        // No trips found, still set up the lender group with empty trips
+        setLenderGroups([{
+          lender_id: lenderId,
+          lender_name: selectedLender?.name || 'Unknown Lender',
+          trips: [],
+        }]);
+      }
+    } catch (error: any) {
+      console.error('Error fetching trips for lender:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to load trips for selected lender',
+      });
+    }
   };
 
   const handleToggleTripSelection = (tripId: string) => {
@@ -883,10 +884,8 @@ const Reconciliation = () => {
                     value={selectedTrustAccountLender}
                     onValueChange={(lenderId) => {
                       setSelectedTrustAccountLender(lenderId);
-                      setSelectedLenderId(lenderId); // Sync with trip lender selection
-                      setSelectedTripIds([]); // Clear selected trips
-                      // Fetch trips for this specific lender
-                      fetchActiveTrips(lenderId);
+                      // Use the new handler that fetches trips by load owner AND lender
+                      handleLenderChange(lenderId);
                     }}
                   >
                     <SelectTrigger id="trust-account-lender">
