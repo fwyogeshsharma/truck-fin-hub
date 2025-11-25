@@ -199,17 +199,22 @@ const Reconciliation = () => {
     }
   };
 
-  const fetchActiveTrips = async () => {
+  const fetchActiveTrips = async (filterByLenderId?: string) => {
     try {
       // Fetch all trips and filter on frontend for active trips of this transporter
       const allTrips = await apiClient.get('/trips');
 
       // Filter for active trips where user is the transporter
-      const filtered = allTrips.filter((trip: any) =>
+      let filtered = allTrips.filter((trip: any) =>
         trip.transporter_id === user?.id &&
         ['funded', 'in_transit', 'completed', 'repaid'].includes(trip.status) &&
         trip.lender_id // Only trips with a lender
       );
+
+      // Further filter by specific lender if provided
+      if (filterByLenderId) {
+        filtered = filtered.filter((trip: any) => trip.lender_id === filterByLenderId);
+      }
 
       // Group trips by lender
       const grouped: Record<string, LenderGroup> = {};
@@ -245,6 +250,9 @@ const Reconciliation = () => {
     setSelectedTrustAccount(trustAccountId);
     setSelectedTrustAccountLender(''); // Clear selected lender when trust account changes
     setTrustAccountLenders([]); // Clear lenders list
+    setSelectedLenderId(''); // Clear selected lender for trips
+    setSelectedTripIds([]); // Clear selected trips
+    setLenderGroups([]); // Clear lender groups
 
     if (trustAccountId) {
       fetchTrustAccountLenders(trustAccountId);
@@ -870,7 +878,16 @@ const Reconciliation = () => {
                   <Label htmlFor="trust-account-lender">
                     Select Lender Associated with Trust Account (Optional)
                   </Label>
-                  <Select value={selectedTrustAccountLender} onValueChange={setSelectedTrustAccountLender}>
+                  <Select
+                    value={selectedTrustAccountLender}
+                    onValueChange={(lenderId) => {
+                      setSelectedTrustAccountLender(lenderId);
+                      setSelectedLenderId(lenderId); // Sync with trip lender selection
+                      setSelectedTripIds([]); // Clear selected trips
+                      // Fetch trips for this specific lender
+                      fetchActiveTrips(lenderId);
+                    }}
+                  >
                     <SelectTrigger id="trust-account-lender">
                       <SelectValue placeholder="Choose lender" />
                     </SelectTrigger>
@@ -887,33 +904,11 @@ const Reconciliation = () => {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    Select a lender if this reconciliation is specific to a lender
+                    Select a lender to view and select their trips
                   </p>
                 </div>
               )}
 
-              {/* Lender Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="lender-select">
-                  Select Lender (Optional - Select to view trips)
-                </Label>
-                <Select value={selectedLenderId} onValueChange={handleLenderChange}>
-                  <SelectTrigger id="lender-select">
-                    <SelectValue placeholder="Choose lender to see their trips" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {lenderGroups.length === 0 ? (
-                      <SelectItem value="none" disabled>No active trips with lenders found</SelectItem>
-                    ) : (
-                      lenderGroups.map((group) => (
-                        <SelectItem key={group.lender_id} value={group.lender_id}>
-                          {group.lender_name} ({group.trips.length} trips)
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
 
               {/* Trip Selection (Multi-select) - Shows only when lender is selected */}
               {selectedLenderId && (

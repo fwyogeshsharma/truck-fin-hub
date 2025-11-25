@@ -21,7 +21,9 @@
       "Bash(dir:*)",
       "Bash(git log:*)",
       "Bash(cat:*)",
-      "Bash(powershell -Command:*)"
+      "Bash(powershell -Command:*)",
+      "Bash(npm run build:server:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []
