@@ -136,6 +136,9 @@ const Reconciliation = () => {
   const [selectedLenderId, setSelectedLenderId] = useState('');
   const [selectedTripIds, setSelectedTripIds] = useState<string[]>([]);
 
+  // State to store trip details for each reconciliation (keyed by reconciliation ID)
+  const [reconTripDetails, setReconTripDetails] = useState<Record<string, Trip[]>>({});
+
   // Form state
   const [selectedTrustAccount, setSelectedTrustAccount] = useState('');
   const [selectedTrustAccountLender, setSelectedTrustAccountLender] = useState('');
@@ -155,6 +158,22 @@ const Reconciliation = () => {
     try {
       const data = await apiClient.get(`/reconciliations?userId=${user?.id}&userRole=${user?.role}`);
       setReconciliations(data);
+
+      // Fetch trip details for reconciliations that have selected_trip_ids
+      const tripDetailsMap: Record<string, Trip[]> = {};
+      for (const recon of data) {
+        if (recon.selected_trip_ids && recon.selected_trip_ids.length > 0) {
+          try {
+            const tripDetails = await apiClient.post('/reconciliations/trips/details', {
+              tripIds: recon.selected_trip_ids
+            });
+            tripDetailsMap[recon.id] = tripDetails;
+          } catch (err) {
+            console.error(`Error fetching trip details for recon ${recon.id}:`, err);
+          }
+        }
+      }
+      setReconTripDetails(tripDetailsMap);
     } catch (error: any) {
       console.error('Error fetching reconciliations:', error);
       toast({
@@ -780,10 +799,55 @@ const Reconciliation = () => {
                       {/* Selected Trips Display */}
                       {recon.selected_trip_ids && recon.selected_trip_ids.length > 0 && (
                         <div className="p-3 bg-muted/50 rounded-lg mt-3">
-                          <p className="text-xs font-medium mb-2">Selected Trips ({recon.selected_trip_ids.length})</p>
-                          <p className="text-xs text-muted-foreground">
-                            Lender: {recon.selected_lender_name}
-                          </p>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs font-medium">Selected Trips ({recon.selected_trip_ids.length})</p>
+                            <Badge variant="outline" className="text-xs">
+                              Lender: {recon.selected_lender_name}
+                            </Badge>
+                          </div>
+
+                          {/* Trip Details List */}
+                          {reconTripDetails[recon.id] && reconTripDetails[recon.id].length > 0 ? (
+                            <div className="space-y-2">
+                              {reconTripDetails[recon.id].map((trip) => (
+                                <div
+                                  key={trip.id}
+                                  className="flex items-center justify-between p-2 bg-background rounded border text-sm"
+                                >
+                                  <div className="flex-1">
+                                    <div className="font-medium">
+                                      {trip.origin} → {trip.destination}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {trip.load_type} • {trip.distance} km
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="font-semibold text-primary">
+                                      {formatCurrency(trip.amount)}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground capitalize">
+                                      {trip.status}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+
+                              {/* Total Amount */}
+                              <div className="flex items-center justify-between pt-2 border-t mt-2">
+                                <span className="text-sm font-medium">Total Trip Value:</span>
+                                <span className="font-bold text-primary">
+                                  {formatCurrency(
+                                    reconTripDetails[recon.id].reduce((sum, t) => sum + Number(t.amount), 0)
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-muted-foreground italic">
+                              Loading trip details...
+                            </p>
+                          )}
                         </div>
                       )}
 

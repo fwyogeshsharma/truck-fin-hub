@@ -156,6 +156,32 @@ router.get('/trust-accounts/:trustAccountId/lenders', async (req, res) => {
   }
 });
 
+// Get trip details for selected trip IDs
+router.post('/trips/details', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { tripIds } = req.body;
+
+    if (!tripIds || !Array.isArray(tripIds) || tripIds.length === 0) {
+      return res.json([]);
+    }
+
+    const result = await db.query(
+      `SELECT id, origin, destination, load_type, amount, distance, weight,
+              lender_id, lender_name, status, load_owner_name, transporter_name
+       FROM trips
+       WHERE id = ANY($1)
+       ORDER BY created_at DESC`,
+      [tripIds]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching trip details:', error);
+    res.status(500).json({ error: 'Failed to fetch trip details' });
+  }
+});
+
 // Get a single reconciliation by ID
 router.get('/:id', async (req, res) => {
   try {
@@ -197,6 +223,9 @@ router.post('/', async (req, res) => {
       trust_account_id,
       trust_account_name,
       trip_id,
+      selected_trip_ids,
+      selected_lender_id,
+      selected_lender_name,
       document_name,
       document_type,
       document_url,
@@ -212,31 +241,76 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const result = await db.query(
-      `INSERT INTO reconciliations (
-        id, transporter_id, transporter_name, trust_account_id, trust_account_name,
-        trip_id, document_name, document_type, document_url, document_data, document_size,
-        description, reconciliation_amount, reconciliation_date, status, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())
-      RETURNING *`,
-      [
-        id,
-        transporter_id,
-        transporter_name,
-        trust_account_id,
-        trust_account_name,
-        trip_id || null,
-        document_name,
-        document_type,
-        document_url || '',
-        document_data,
-        document_size,
-        description || null,
-        reconciliation_amount || null,
-        reconciliation_date || null,
-        'pending',
-      ]
+    // Check if selected_trip_ids columns exist
+    const columnCheck = await db.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = 'reconciliations'
+       AND column_name = 'selected_trip_ids'`
     );
+
+    let result;
+    if (columnCheck.rows.length > 0) {
+      // New schema with selected_trip_ids
+      result = await db.query(
+        `INSERT INTO reconciliations (
+          id, transporter_id, transporter_name, trust_account_id, trust_account_name,
+          trip_id, selected_trip_ids, selected_lender_id, selected_lender_name,
+          document_name, document_type, document_url, document_data, document_size,
+          description, reconciliation_amount, reconciliation_date, status, workflow_status,
+          created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW(), NOW())
+        RETURNING *`,
+        [
+          id,
+          transporter_id,
+          transporter_name,
+          trust_account_id,
+          trust_account_name,
+          trip_id || null,
+          selected_trip_ids && selected_trip_ids.length > 0 ? selected_trip_ids : null,
+          selected_lender_id || null,
+          selected_lender_name || null,
+          document_name,
+          document_type,
+          document_url || '',
+          document_data,
+          document_size,
+          description || null,
+          reconciliation_amount || null,
+          reconciliation_date || null,
+          'pending',
+          'pending',
+        ]
+      );
+    } else {
+      // Legacy schema without selected_trip_ids
+      result = await db.query(
+        `INSERT INTO reconciliations (
+          id, transporter_id, transporter_name, trust_account_id, trust_account_name,
+          trip_id, document_name, document_type, document_url, document_data, document_size,
+          description, reconciliation_amount, reconciliation_date, status, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())
+        RETURNING *`,
+        [
+          id,
+          transporter_id,
+          transporter_name,
+          trust_account_id,
+          trust_account_name,
+          trip_id || null,
+          document_name,
+          document_type,
+          document_url || '',
+          document_data,
+          document_size,
+          description || null,
+          reconciliation_amount || null,
+          reconciliation_date || null,
+          'pending',
+        ]
+      );
+    }
 
     res.status(201).json(result.rows[0]);
   } catch (error) {
