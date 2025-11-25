@@ -1067,13 +1067,18 @@ const LenderDashboard = () => {
                     <div key={claim.id} className="flex items-start justify-between p-4 border rounded-lg bg-purple-50/50 border-purple-200">
                       <div className="flex items-start gap-4 flex-1">
                         <div className="flex-1">
-                          <h4 className="font-semibold">{claim.origin} → {claim.destination}</h4>
+                          <h4 className="font-semibold">Reconciliation from {claim.transporter_name}</h4>
                           <p className="text-sm text-muted-foreground">
-                            Reconciliation Claim from {claim.transporter_name}
+                            Trust Account: {claim.trust_account_name}
                           </p>
                           <p className="text-sm text-muted-foreground mt-1">
                             Document: {claim.document_name}
                           </p>
+                          {claim.selected_trip_ids && claim.selected_trip_ids.length > 0 && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Trips: {claim.selected_trip_ids.length} selected
+                            </p>
+                          )}
                           <div className="mt-2">
                             <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
                               Pending Your Approval
@@ -1083,18 +1088,24 @@ const LenderDashboard = () => {
                       </div>
                       <div className="text-right ml-4">
                         <div className="space-y-2">
+                          {/* Total Reconciliation Amount */}
                           <div>
-                            <p className="text-xs text-muted-foreground">Total Claim Amount</p>
-                            <p className="text-lg font-bold text-purple-700">{formatCurrency(claim.claim_amount)}</p>
+                            <p className="text-xs text-muted-foreground">Reconciliation Amount</p>
+                            <p className="text-lg font-bold text-purple-700">{formatCurrency(claim.reconciliation_amount || claim.claim_amount || 0)}</p>
                           </div>
-                          <div className="p-2 bg-white rounded border">
-                            <p className="text-xs text-muted-foreground">Your Share (70%)</p>
-                            <p className="text-sm font-semibold text-green-600">{formatCurrency(claim.lender_claim_amount)}</p>
+
+                          {/* Lender Amount Breakdown */}
+                          <div className="p-3 bg-blue-50 rounded border border-blue-200">
+                            <p className="text-xs text-blue-700 font-medium mb-1">Your Amount (Principal + Interest)</p>
+                            <p className="text-lg font-bold text-blue-700">{formatCurrency(claim.lender_claim_amount || 0)}</p>
                           </div>
-                          <div className="p-2 bg-white rounded border">
-                            <p className="text-xs text-muted-foreground">Transporter Share (30%)</p>
-                            <p className="text-sm font-semibold">{formatCurrency(claim.transporter_claim_amount)}</p>
+
+                          {/* Transporter Amount */}
+                          <div className="p-2 bg-green-50 rounded border border-green-200">
+                            <p className="text-xs text-green-700">Transporter Amount</p>
+                            <p className="text-sm font-semibold text-green-700">{formatCurrency(claim.transporter_claim_amount || 0)}</p>
                           </div>
+
                           <Button
                             onClick={() => handleApproveClaim(claim.id)}
                             className="w-full mt-2 bg-green-600 hover:bg-green-700"

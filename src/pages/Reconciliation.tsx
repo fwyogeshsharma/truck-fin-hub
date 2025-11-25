@@ -37,6 +37,7 @@ import {
   AlertCircle,
   ArrowUpCircle,
   Info,
+  IndianRupee,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 
@@ -65,6 +66,11 @@ interface Trip {
   lender_name: string;
   status: string;
   completion_date?: string;
+  interest_rate?: number;
+  maturity_days?: number;
+  principal_amount?: number;
+  interest_amount?: number;
+  lender_amount?: number;
 }
 
 interface LenderGroup {
@@ -113,6 +119,9 @@ interface Reconciliation {
   payment_notification_message?: string;
   bank_request_generated?: boolean;
   bank_request_message?: string;
+  // Breakdown amounts calculated from trips
+  total_principal?: number;
+  total_interest?: number;
 }
 
 const Reconciliation = () => {
@@ -513,13 +522,28 @@ const Reconciliation = () => {
 
   const handleApproveReconciliation = async (id: string) => {
     try {
+      // Find the reconciliation
+      const recon = reconciliations.find(r => r.id === id);
+      const tripDetails = reconTripDetails[id] || [];
+
+      // Calculate totals from trip details
+      let lenderTotalAmount = 0;
+      let transporterTotalAmount = 0;
+
+      if (tripDetails.length > 0) {
+        lenderTotalAmount = tripDetails.reduce((sum, t) => sum + Number(t.lender_amount || t.amount || 0), 0);
+        transporterTotalAmount = (recon?.reconciliation_amount || 0) - lenderTotalAmount;
+      }
+
       await apiClient.patch(`/reconciliations/${id}/approve`, {
         reviewed_by: user?.id,
+        lender_total_amount: lenderTotalAmount,
+        transporter_total_amount: transporterTotalAmount,
       });
 
       toast({
         title: 'Approved',
-        description: 'Reconciliation approved successfully. Transporter can now request claim.',
+        description: 'Reconciliation approved successfully. Lender will see this in pending claims.',
       });
 
       fetchReconciliations();
@@ -742,6 +766,31 @@ const Reconciliation = () => {
                         </div>
                       )}
 
+                      {/* Payment Breakdown for Transporter (after trust account approval) */}
+                      {!isTrustAccount && recon.status === 'approved' && (recon.lender_claim_amount || recon.transporter_claim_amount) && (
+                        <div className="p-3 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border border-green-200 dark:border-green-800 mt-3">
+                          <p className="text-xs font-semibold mb-3 text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                            <IndianRupee className="h-3 w-3" />
+                            Payment Breakdown
+                          </p>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="p-2 bg-white dark:bg-gray-800 rounded border">
+                              <p className="text-xs text-muted-foreground">Total Reconciliation</p>
+                              <p className="font-bold text-primary">{formatCurrency(recon.reconciliation_amount || 0)}</p>
+                            </div>
+                            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded border border-blue-200">
+                              <p className="text-xs text-blue-700 dark:text-blue-300">Lender Amount</p>
+                              <p className="font-bold text-blue-700 dark:text-blue-300">{formatCurrency(recon.lender_claim_amount || 0)}</p>
+                              <p className="text-xs text-muted-foreground">(Principal + Interest)</p>
+                            </div>
+                            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded border border-green-200 col-span-2">
+                              <p className="text-xs text-green-700 dark:text-green-300">Your Amount</p>
+                              <p className="text-lg font-bold text-green-700 dark:text-green-300">{formatCurrency(recon.transporter_claim_amount || 0)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Transporter Approval Button (after trust account approval) */}
                       {!isTrustAccount && recon.workflow_status === 'trust_approved' && !recon.transporter_approved && (
                         <Button
@@ -812,35 +861,82 @@ const Reconciliation = () => {
                               {reconTripDetails[recon.id].map((trip) => (
                                 <div
                                   key={trip.id}
-                                  className="flex items-center justify-between p-2 bg-background rounded border text-sm"
+                                  className="p-3 bg-background rounded border text-sm"
                                 >
-                                  <div className="flex-1">
+                                  <div className="flex items-center justify-between mb-2">
                                     <div className="font-medium">
                                       {trip.origin} → {trip.destination}
                                     </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {trip.load_type} • {trip.distance} km
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="font-semibold text-primary">
-                                      {formatCurrency(trip.amount)}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground capitalize">
+                                    <Badge variant="outline" className="text-xs capitalize">
                                       {trip.status}
+                                    </Badge>
+                                  </div>
+                                  <div className="text-xs text-muted-foreground mb-2">
+                                    {trip.load_type} • {trip.distance} km • {trip.interest_rate || 0}% interest • {trip.maturity_days || 30} days
+                                  </div>
+
+                                  {/* Amount Breakdown */}
+                                  <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Principal (Loan)</p>
+                                      <p className="font-medium">{formatCurrency(trip.principal_amount || trip.amount)}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Interest</p>
+                                      <p className="font-medium text-orange-600">{formatCurrency(trip.interest_amount || 0)}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Lender Amount</p>
+                                      <p className="font-semibold text-blue-600">{formatCurrency(trip.lender_amount || trip.amount)}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Transporter Amount</p>
+                                      <p className="font-semibold text-green-600">
+                                        {formatCurrency((recon.reconciliation_amount || 0) - (trip.lender_amount || trip.amount))}
+                                      </p>
                                     </div>
                                   </div>
                                 </div>
                               ))}
 
-                              {/* Total Amount */}
-                              <div className="flex items-center justify-between pt-2 border-t mt-2">
-                                <span className="text-sm font-medium">Total Trip Value:</span>
-                                <span className="font-bold text-primary">
-                                  {formatCurrency(
-                                    reconTripDetails[recon.id].reduce((sum, t) => sum + Number(t.amount), 0)
-                                  )}
-                                </span>
+                              {/* Summary Totals */}
+                              <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 mt-3">
+                                <p className="text-xs font-semibold mb-2 text-primary">Payment Summary</p>
+                                <div className="space-y-1">
+                                  <div className="flex justify-between text-sm">
+                                    <span>Total Principal:</span>
+                                    <span className="font-medium">
+                                      {formatCurrency(
+                                        reconTripDetails[recon.id].reduce((sum, t) => sum + Number(t.principal_amount || t.amount), 0)
+                                      )}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between text-sm">
+                                    <span>Total Interest:</span>
+                                    <span className="font-medium text-orange-600">
+                                      {formatCurrency(
+                                        reconTripDetails[recon.id].reduce((sum, t) => sum + Number(t.interest_amount || 0), 0)
+                                      )}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between text-sm pt-1 border-t">
+                                    <span className="font-semibold">Lender Total:</span>
+                                    <span className="font-bold text-blue-600">
+                                      {formatCurrency(
+                                        reconTripDetails[recon.id].reduce((sum, t) => sum + Number(t.lender_amount || t.amount), 0)
+                                      )}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between text-sm">
+                                    <span className="font-semibold">Transporter Total:</span>
+                                    <span className="font-bold text-green-600">
+                                      {formatCurrency(
+                                        (recon.reconciliation_amount || 0) -
+                                        reconTripDetails[recon.id].reduce((sum, t) => sum + Number(t.lender_amount || t.amount), 0)
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           ) : (

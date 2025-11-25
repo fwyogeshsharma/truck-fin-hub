@@ -59,37 +59,68 @@ router.get('/lender/pending-claims', async (req, res) => {
       return res.status(400).json({ error: 'Lender ID is required' });
     }
 
-    // First check if the claim columns exist
-    const columnCheck = await db.query(
+    // Check if new workflow columns exist
+    const workflowColumnCheck = await db.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = 'reconciliations'
+       AND column_name = 'workflow_status'`
+    );
+
+    // Check if legacy claim columns exist
+    const legacyColumnCheck = await db.query(
       `SELECT column_name
        FROM information_schema.columns
        WHERE table_name = 'reconciliations'
        AND column_name IN ('claim_requested', 'lender_approved', 'lender_id')`
     );
 
-    // If columns don't exist yet, return empty array
-    if (columnCheck.rows.length < 3) {
-      console.log('Reconciliation claim columns not yet created. Run migration 030.');
-      return res.json([]);
+    let results: any[] = [];
+
+    // Query new workflow-based reconciliations (selected_lender_id matches and trust approved)
+    if (workflowColumnCheck.rows.length > 0) {
+      const newWorkflowResult = await db.query(
+        `SELECT r.*,
+                t.name as transporter_name,
+                ta.name as trust_account_name
+         FROM reconciliations r
+         LEFT JOIN users t ON r.transporter_id = t.id
+         LEFT JOIN users ta ON r.trust_account_id = ta.id
+         WHERE r.selected_lender_id = $1
+           AND r.workflow_status = 'trust_approved'
+           AND (r.lender_approved = FALSE OR r.lender_approved IS NULL)
+         ORDER BY r.reviewed_at DESC`,
+        [lenderId]
+      );
+      results = [...results, ...newWorkflowResult.rows];
     }
 
-    const result = await db.query(
-      `SELECT r.*,
-              t.name as transporter_name,
-              ta.name as trust_account_name,
-              tr.origin, tr.destination, tr.load_type, tr.distance, tr.amount as trip_amount
-       FROM reconciliations r
-       LEFT JOIN users t ON r.transporter_id = t.id
-       LEFT JOIN users ta ON r.trust_account_id = ta.id
-       LEFT JOIN trips tr ON r.trip_id = tr.id
-       WHERE r.lender_id = $1
-         AND r.claim_requested = TRUE
-         AND r.lender_approved = FALSE
-       ORDER BY r.claim_requested_at DESC`,
-      [lenderId]
-    );
+    // Also query legacy claim-based reconciliations
+    if (legacyColumnCheck.rows.length >= 3) {
+      const legacyResult = await db.query(
+        `SELECT r.*,
+                t.name as transporter_name,
+                ta.name as trust_account_name,
+                tr.origin, tr.destination, tr.load_type, tr.distance, tr.amount as trip_amount
+         FROM reconciliations r
+         LEFT JOIN users t ON r.transporter_id = t.id
+         LEFT JOIN users ta ON r.trust_account_id = ta.id
+         LEFT JOIN trips tr ON r.trip_id = tr.id
+         WHERE r.lender_id = $1
+           AND r.claim_requested = TRUE
+           AND r.lender_approved = FALSE
+         ORDER BY r.claim_requested_at DESC`,
+        [lenderId]
+      );
+      // Merge without duplicates
+      for (const row of legacyResult.rows) {
+        if (!results.find(r => r.id === row.id)) {
+          results.push(row);
+        }
+      }
+    }
 
-    res.json(result.rows);
+    res.json(results);
   } catch (error) {
     console.error('Error fetching pending claims:', error);
     res.status(500).json({ error: 'Failed to fetch pending claims' });
@@ -168,14 +199,36 @@ router.post('/trips/details', async (req, res) => {
 
     const result = await db.query(
       `SELECT id, origin, destination, load_type, amount, distance, weight,
-              lender_id, lender_name, status, load_owner_name, transporter_name
+              lender_id, lender_name, status, load_owner_name, transporter_name,
+              interest_rate, maturity_days, funded_at, completed_at
        FROM trips
        WHERE id = ANY($1)
        ORDER BY created_at DESC`,
       [tripIds]
     );
 
-    res.json(result.rows);
+    // Calculate lender amount (principal + interest) for each trip
+    const tripsWithCalculations = result.rows.map((trip: any) => {
+      const principal = Number(trip.amount) || 0;
+      const interestRate = Number(trip.interest_rate) || 0;
+      const maturityDays = Number(trip.maturity_days) || 30;
+
+      // Calculate interest: (principal * rate * days) / (365 * 100)
+      const interest = (principal * interestRate * maturityDays) / (365 * 100);
+      const lenderAmount = principal + interest;
+
+      return {
+        ...trip,
+        amount: principal,
+        interest_rate: interestRate,
+        maturity_days: maturityDays,
+        principal_amount: principal,
+        interest_amount: Math.round(interest * 100) / 100,
+        lender_amount: Math.round(lenderAmount * 100) / 100,
+      };
+    });
+
+    res.json(tripsWithCalculations);
   } catch (error) {
     console.error('Error fetching trip details:', error);
     res.status(500).json({ error: 'Failed to fetch trip details' });
@@ -429,22 +482,49 @@ router.patch('/:id/approve', async (req, res) => {
   try {
     const db = await getDatabase();
     const { id } = req.params;
-    const { reviewed_by } = req.body;
+    const { reviewed_by, lender_total_amount, transporter_total_amount } = req.body;
 
     if (!reviewed_by) {
       return res.status(400).json({ error: 'Reviewer ID is required' });
     }
 
-    const result = await db.query(
-      `UPDATE reconciliations
-       SET status = 'approved',
-           reviewed_by = $1,
-           reviewed_at = NOW(),
-           updated_at = NOW()
-       WHERE id = $2
-       RETURNING *`,
-      [reviewed_by, id]
+    // Check if workflow columns exist
+    const columnCheck = await db.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = 'reconciliations'
+       AND column_name = 'workflow_status'`
     );
+
+    let result;
+    if (columnCheck.rows.length > 0) {
+      // New schema with workflow_status and breakdown amounts
+      result = await db.query(
+        `UPDATE reconciliations
+         SET status = 'approved',
+             workflow_status = 'trust_approved',
+             reviewed_by = $1,
+             reviewed_at = NOW(),
+             lender_claim_amount = $3,
+             transporter_claim_amount = $4,
+             updated_at = NOW()
+         WHERE id = $2
+         RETURNING *`,
+        [reviewed_by, id, lender_total_amount || null, transporter_total_amount || null]
+      );
+    } else {
+      // Legacy schema
+      result = await db.query(
+        `UPDATE reconciliations
+         SET status = 'approved',
+             reviewed_by = $1,
+             reviewed_at = NOW(),
+             updated_at = NOW()
+         WHERE id = $2
+         RETURNING *`,
+        [reviewed_by, id]
+      );
+    }
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Reconciliation not found' });
