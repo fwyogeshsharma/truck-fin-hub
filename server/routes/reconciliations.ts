@@ -711,14 +711,16 @@ router.patch('/:id/approve-claim', async (req, res) => {
     // Generate payment notification message
     const paymentMessage = 'Within 24 hours you will receive an approval request in Jaipur Golden Trust Account. Please approve that to complete the payment process.';
 
+    // Try to update - check both lender_id (legacy) and selected_lender_id (new workflow)
     const result = await db.query(
       `UPDATE reconciliations
        SET lender_approved = TRUE,
            lender_approved_at = NOW(),
            payment_notification_sent = TRUE,
            payment_notification_message = $1,
+           workflow_status = 'lender_approved',
            updated_at = NOW()
-       WHERE id = $2 AND lender_id = $3
+       WHERE id = $2 AND (lender_id = $3 OR selected_lender_id = $3)
        RETURNING *`,
       [paymentMessage, id, lender_id]
     );
@@ -731,6 +733,75 @@ router.patch('/:id/approve-claim', async (req, res) => {
   } catch (error) {
     console.error('Error approving claim:', error);
     res.status(500).json({ error: 'Failed to approve claim' });
+  }
+});
+
+// Approve reconciliation (transporter - final step in workflow)
+router.patch('/:id/approve-transporter', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const { id } = req.params;
+    const { transporter_id } = req.body;
+
+    if (!transporter_id) {
+      return res.status(400).json({ error: 'Transporter ID is required' });
+    }
+
+    // Check if the workflow columns exist
+    const columnCheck = await db.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = 'reconciliations'
+       AND column_name IN ('transporter_approved', 'workflow_status')`
+    );
+
+    if (columnCheck.rows.length < 2) {
+      return res.status(400).json({ error: 'Transporter approval feature not available. Please run migration.' });
+    }
+
+    // Verify this reconciliation belongs to the transporter and lender has approved
+    const checkResult = await db.query(
+      `SELECT transporter_id, workflow_status, lender_approved
+       FROM reconciliations
+       WHERE id = $1`,
+      [id]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Reconciliation not found' });
+    }
+
+    const recon = checkResult.rows[0];
+
+    if (recon.transporter_id !== transporter_id) {
+      return res.status(403).json({ error: 'Not authorized to approve this reconciliation' });
+    }
+
+    // Check if lender has already approved (workflow_status should be 'lender_approved')
+    if (recon.workflow_status !== 'lender_approved' && recon.lender_approved !== true) {
+      return res.status(400).json({ error: 'Lender must approve before transporter can approve' });
+    }
+
+    // Update transporter approval
+    const result = await db.query(
+      `UPDATE reconciliations
+       SET transporter_approved = TRUE,
+           transporter_approved_at = NOW(),
+           workflow_status = 'completed',
+           updated_at = NOW()
+       WHERE id = $1 AND transporter_id = $2
+       RETURNING *`,
+      [id, transporter_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Reconciliation not found or not authorized' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error approving reconciliation as transporter:', error);
+    res.status(500).json({ error: 'Failed to approve reconciliation' });
   }
 });
 
