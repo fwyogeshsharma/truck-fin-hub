@@ -124,14 +124,30 @@ router.get('/trust-accounts/:trustAccountId/lenders', async (req, res) => {
       return res.status(400).json({ error: 'Trust account ID is required' });
     }
 
-    // Get distinct lenders who have trips that were reconciled with this trust account
-    // OR get all lenders for now (simpler approach)
-    const result = await db.query(
-      `SELECT DISTINCT u.id, u.name, u.email, u.company
-       FROM users u
-       WHERE u.role = 'lender' AND u.is_active = TRUE
-       ORDER BY u.name ASC`
+    // Check if is_active column exists
+    const columnCheck = await db.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = 'users'
+       AND column_name = 'is_active'`
     );
+
+    let query;
+    if (columnCheck.rows.length > 0) {
+      // Column exists, use it in query
+      query = `SELECT DISTINCT u.id, u.name, u.email, u.company
+               FROM users u
+               WHERE u.role = 'lender' AND u.is_active = TRUE
+               ORDER BY u.name ASC`;
+    } else {
+      // Column doesn't exist, skip the check
+      query = `SELECT DISTINCT u.id, u.name, u.email, u.company
+               FROM users u
+               WHERE u.role = 'lender'
+               ORDER BY u.name ASC`;
+    }
+
+    const result = await db.query(query);
 
     res.json(result.rows);
   } catch (error) {
